@@ -262,9 +262,18 @@ function bindAdmin() {
   listenAllPenalties();
 }
 
+function sortStudents(list) {
+  return [...list].sort((a, b) => {
+    const classA = String(a.className || '');
+    const classB = String(b.className || '');
+    if (classA !== classB) return classA.localeCompare(classB, 'ko');
+    return String(a.name || '').localeCompare(String(b.name || ''), 'ko');
+  });
+}
+
 function listenStudents() {
-  unsubStudents = onSnapshot(query(collection(db, 'students'), orderBy('className'), orderBy('name')), (snapshot) => {
-    students = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+  unsubStudents = onSnapshot(collection(db, 'students'), (snapshot) => {
+    students = sortStudents(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
     studentRows = students.map(s => ({
       originalId: s.id,
       name: s.name || '',
@@ -276,7 +285,7 @@ function listenStudents() {
     renderStudentTable();
   }, (err) => {
     console.error(err);
-    alertMsg('학생 목록을 불러오지 못했습니다.', true);
+    alertMsg(`학생 목록을 불러오지 못했습니다.\n${err.message || ''}`, true);
   });
 }
 
@@ -430,6 +439,8 @@ els.uploadStudentsBtn.addEventListener('click', async () => {
         try {
           const count = await uploadStudentCsvRows(data);
           setUploadMessage(els.studentUploadResult, `${count}명의 학생 명단 업로드가 완료되었습니다.`);
+          // onSnapshot will refresh automatically; force local render too
+          if (unsubStudents === null) listenStudents();
         } catch (e) {
           console.error(e);
           setUploadMessage(els.studentUploadResult, '학생 명단 저장 중 오류가 발생했습니다.', true);
@@ -626,9 +637,13 @@ els.sendResetSelectedBtn.addEventListener('click', async () => {
   }
 });
 
+function sortTeachers(list) {
+  return [...list].sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'ko'));
+}
+
 function listenTeachers() {
-  unsubTeachers = onSnapshot(query(collection(db, 'teachers'), orderBy('name')), (snapshot) => {
-    teachers = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+  unsubTeachers = onSnapshot(collection(db, 'teachers'), (snapshot) => {
+    teachers = sortTeachers(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
     teacherRows = teachers.map(t => ({
       uid: t.uid || t.id,
       name: t.name || '',
@@ -641,7 +656,7 @@ function listenTeachers() {
     renderTeacherTable();
   }, (err) => {
     console.error(err);
-    alertMsg('교사 목록을 불러오지 못했습니다.', true);
+    alertMsg(`교사 목록을 불러오지 못했습니다.\n${err.message || ''}`, true);
   });
 }
 
@@ -690,6 +705,7 @@ els.uploadTeachersBtn.addEventListener('click', async () => {
         try {
           const { savedCount, errorCount } = await uploadTeacherCsvRows(data);
           const message = `교사 ${savedCount}건 업로드 완료${errorCount ? ` / 실패 ${errorCount}건` : ''}`;
+          if (unsubTeachers === null) listenTeachers();
           setUploadMessage(els.teacherUploadResult, message, errorCount > 0);
         } catch (e) {
           console.error(e);
@@ -796,9 +812,17 @@ els.saveStudentTableBtn.addEventListener('click', async () => {
 });
 
 function listenAllPenalties() {
-  unsubAdminPenalties = onSnapshot(query(collection(db, 'penaltyRecords'), orderBy('createdAt', 'desc')), (snapshot) => {
-    allPenaltyRecords = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+  unsubAdminPenalties = onSnapshot(collection(db, 'penaltyRecords'), (snapshot) => {
+    allPenaltyRecords = snapshot.docs.map(d => ({ id: d.id, ...d.data() }))
+      .sort((a, b) => {
+        const at = a.createdAt?.seconds || 0;
+        const bt = b.createdAt?.seconds || 0;
+        return bt - at;
+      });
     renderAdminPenaltyList();
+  }, (err) => {
+    console.error(err);
+    alertMsg(`벌점 기록을 불러오지 못했습니다.\n${err.message || ''}`, true);
   });
 }
 
