@@ -1,23 +1,244 @@
-<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>교사 로그인</title>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=DM+Serif+Display&display=swap" rel="stylesheet"><link rel="stylesheet" href="common.css">
-<style>.admin-link{position:fixed;top:14px;right:14px;background:rgba(255,255,255,.2);color:#fff;padding:8px 14px;border-radius:10px;text-decoration:none;font-size:12px;font-weight:700}</style></head>
-<body><div id="toast"></div><a class="admin-link" href="admin.html">⚙️ 관리자</a>
-<div class="login-page"><div class="login-box">
-<div class="icon">🧑‍🏫</div><h1 style="text-align:center">교사 로그인</h1><p style="text-align:center">교사를 선택하고 비밀번호를 입력하세요.</p>
-<div class="grid">
-<div><label class="label">교사 검색</label><input id="search" class="edit-input" placeholder="교사명/이메일/학반 검색"></div>
-<div><label class="label">교사 선택</label><select id="teacher-select" class="edit-input"><option value="">교사를 선택하세요</option></select></div>
-<div><label class="label">또는 이메일 직접 입력</label><input id="email" class="edit-input" placeholder="teacher@his.sc.kr"></div>
-<div><label class="label">비밀번호</label><input id="pw" type="password" class="edit-input" placeholder="비밀번호" onkeydown="if(event.key==='Enter')login()"></div>
-<button class="btn btn-primary" onclick="login()">로그인</button>
-</div></div></div>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script><script src="common.js"></script>
-<script>
-let teachers={};
-async function init(){try{const snap=await db.ref('teachers').once('value'); teachers=snap.val()||{}; renderTeachers();}catch(e){console.error(e);toast('교사 목록을 불러오지 못했습니다.','err');}}
-function renderTeachers(){const q=(document.getElementById('search').value||'').trim().toLowerCase(); const list=Object.values(teachers).filter(t=>t&&t.active!==false).filter(t=>!q||[t.name,t.email,t.homeroom].some(v=>String(v||'').toLowerCase().includes(q))).sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''))); const sel=document.getElementById('teacher-select'); sel.innerHTML='<option value="">교사를 선택하세요</option>'+list.map(t=>`<option value="${esc(t.email||'')}">${esc(t.name||'')} · ${esc(t.role||'general')}${t.homeroom?' · '+esc(t.homeroom):''}</option>`).join('');}
-async function login(){const email=(document.getElementById('email').value||document.getElementById('teacher-select').value||'').trim().toLowerCase(); const pw=(document.getElementById('pw').value||'').trim(); if(!email||!pw) return toast('교사와 비밀번호를 입력해 주세요.','err'); try{const snap=await db.ref('teachers').once('value'); let found=null,key=''; snap.forEach(child=>{const t=child.val()||{}; if(String(t.email||'').trim().toLowerCase()===email && String(t.password||'')===pw && t.active!==false){found=t; key=child.key;}}); if(!found){document.getElementById('pw').value=''; return toast('아이디 또는 비밀번호가 올바르지 않습니다.','err');} sessionStorage.setItem('his_teacher', JSON.stringify({key,name:found.name||'',email:found.email||'',role:found.role||'general',homeroom:found.homeroom||''})); location.href='teacher.html'; }catch(e){console.error(e);toast('로그인 중 오류가 발생했습니다.','err');}}
-document.getElementById('search').addEventListener('input', renderTeachers);
-document.getElementById('teacher-select').addEventListener('change', e=>{if(e.target.value) document.getElementById('email').value=e.target.value;});
-init();
-</script></body></html>
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>교사 로그인</title>
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=DM+Serif+Display&display=swap"
+    rel="stylesheet"
+  />
+  <link rel="stylesheet" href="common.css" />
+
+  <style>
+    .admin-link {
+      position: fixed;
+      top: 14px;
+      right: 14px;
+      background: rgba(255, 255, 255, 0.2);
+      color: #fff;
+      padding: 8px 14px;
+      border-radius: 10px;
+      text-decoration: none;
+      font-size: 12px;
+      font-weight: 700;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="toast"></div>
+
+  <!-- 관리자 페이지로 이동하는 링크 -->
+  <a class="admin-link" href="admin.html">⚙️ 관리자</a>
+
+  <div class="login-page">
+    <div class="login-box">
+      <div class="icon">🧑‍🏫</div>
+      <h1 style="text-align: center;">교사 로그인</h1>
+      <p style="text-align: center;">교사를 선택하고 비밀번호를 입력하세요.</p>
+
+      <div class="grid">
+        <!-- 교사 검색 -->
+        <div>
+          <label class="label">교사 검색</label>
+          <input
+            id="search"
+            class="edit-input"
+            placeholder="교사명/이메일/학반 검색"
+          />
+        </div>
+
+        <!-- 검색된 교사 목록 선택 -->
+        <div>
+          <label class="label">교사 선택</label>
+          <select id="teacher-select" class="edit-input">
+            <option value="">교사를 선택하세요</option>
+          </select>
+        </div>
+
+        <!-- 이메일 직접 입력 -->
+        <div>
+          <label class="label">또는 이메일 직접 입력</label>
+          <input
+            id="email"
+            class="edit-input"
+            placeholder="teacher@his.sc.kr"
+          />
+        </div>
+
+        <!-- 비밀번호 입력 -->
+        <div>
+          <label class="label">비밀번호</label>
+          <input
+            id="pw"
+            type="password"
+            class="edit-input"
+            placeholder="비밀번호"
+            onkeydown="if(event.key === 'Enter') login()"
+          />
+        </div>
+
+        <!-- 로그인 버튼 -->
+        <button class="btn btn-primary" onclick="login()">로그인</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+
+  <!-- 공통 함수 -->
+  <script src="common.js"></script>
+
+  <script>
+    // 교사 데이터 전체를 담아둘 객체
+    let teachers = {};
+
+    /**
+     * 페이지 초기화
+     * - Firebase에서 교사 목록을 불러온 뒤
+     * - 드롭다운 목록을 렌더링한다.
+     */
+    async function init() {
+      try {
+        const snap = await db.ref('teachers').once('value');
+        teachers = snap.val() || {};
+        renderTeachers();
+      } catch (e) {
+        console.error(e);
+        toast('교사 목록을 불러오지 못했습니다.', 'err');
+      }
+    }
+
+    /**
+     * 교사 목록 렌더링
+     * - 검색어에 맞는 교사만 필터링
+     * - active !== false 인 교사만 표시
+     * - 이름 기준 정렬
+     */
+    function renderTeachers() {
+      const q = (document.getElementById('search').value || '')
+        .trim()
+        .toLowerCase();
+
+      const list = Object.values(teachers)
+        .filter((t) => t && t.active !== false)
+        .filter((t) => {
+          if (!q) return true;
+
+          return [t.name, t.email, t.homeroom].some((v) =>
+            String(v || '').toLowerCase().includes(q)
+          );
+        })
+        .sort((a, b) =>
+          String(a.name || '').localeCompare(String(b.name || ''))
+        );
+
+      const sel = document.getElementById('teacher-select');
+
+      sel.innerHTML =
+        '<option value="">교사를 선택하세요</option>' +
+        list
+          .map(
+            (t) => `
+              <option value="${esc(t.email || '')}">
+                ${esc(t.name || '')} · ${esc(t.role || 'general')}
+                ${t.homeroom ? ' · ' + esc(t.homeroom) : ''}
+              </option>
+            `
+          )
+          .join('');
+    }
+
+    /**
+     * 로그인 처리
+     * - 이메일(직접 입력 또는 선택값)과 비밀번호를 받아서
+     * - teachers 노드 전체를 조회한 뒤 일치하는 교사를 찾는다.
+     * - 로그인 성공 시 sessionStorage에 저장 후 teacher.html로 이동
+     */
+    async function login() {
+      const email = (
+        document.getElementById('email').value ||
+        document.getElementById('teacher-select').value ||
+        ''
+      )
+        .trim()
+        .toLowerCase();
+
+      const pw = (document.getElementById('pw').value || '').trim();
+
+      if (!email || !pw) {
+        return toast('교사와 비밀번호를 입력해 주세요.', 'err');
+      }
+
+      try {
+        const snap = await db.ref('teachers').once('value');
+
+        let found = null;
+        let key = '';
+
+        snap.forEach((child) => {
+          const t = child.val() || {};
+
+          if (
+            String(t.email || '').trim().toLowerCase() === email &&
+            String(t.password || '') === pw &&
+            t.active !== false
+          ) {
+            found = t;
+            key = child.key;
+          }
+        });
+
+        if (!found) {
+          document.getElementById('pw').value = '';
+          return toast('아이디 또는 비밀번호가 올바르지 않습니다.', 'err');
+        }
+
+        // 로그인된 교사 정보를 세션에 저장
+        sessionStorage.setItem(
+          'his_teacher',
+          JSON.stringify({
+            key,
+            name: found.name || '',
+            email: found.email || '',
+            role: found.role || 'general',
+            homeroom: found.homeroom || '',
+          })
+        );
+
+        // 교사 페이지로 이동
+        location.href = 'teacher.html';
+      } catch (e) {
+        console.error(e);
+        toast('로그인 중 오류가 발생했습니다.', 'err');
+      }
+    }
+
+    /**
+     * 검색창 입력 시 드롭다운 목록 다시 그리기
+     */
+    document
+      .getElementById('search')
+      .addEventListener('input', renderTeachers);
+
+    /**
+     * 드롭다운에서 교사 선택 시
+     * 해당 이메일을 이메일 입력칸에 자동 반영
+     */
+    document
+      .getElementById('teacher-select')
+      .addEventListener('change', (e) => {
+        if (e.target.value) {
+          document.getElementById('email').value = e.target.value;
+        }
+      });
+
+    // 초기 실행
+    init();
+  </script>
+</body>
+</html>
