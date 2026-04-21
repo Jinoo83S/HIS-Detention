@@ -1,96 +1,167 @@
 <!doctype html>
 <html lang="ko">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>HIS Detention</title>
-    <link rel="stylesheet" href="./style.css" />
-  </head>
-  <body>
-    <div id="app">
-      <div class="login-wrap" id="loginView">
-        <div class="card login-card">
-          <h1>HIS Detention</h1>
-          <p>교사 계정으로 로그인해 주세요.</p>
-          <button id="googleLoginBtn" class="btn primary">Google 로그인</button>
-          <p class="help-text">
-            Firebase Authentication에서 Google 로그인을 먼저 활성화해야 합니다.
-          </p>
-          <div id="loginMessage" class="message hidden"></div>
-        </div>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HIS Detention</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+</head>
+<body>
+  <div id="app">
+    <header class="topbar">
+      <div>
+        <h1>학생 벌점 관리 시스템</h1>
+        <p class="subtitle">교사용 입력 / 관리자 관리</p>
       </div>
+      <button id="adminLoginBtn" class="ghost-btn">관리자 로그인</button>
+    </header>
 
-      <div id="mainView" class="hidden">
-        <header class="topbar">
-          <div>
-            <h1>HIS Detention</h1>
-            <p class="sub">GitHub Pages + Firebase</p>
-          </div>
-          <div class="topbar-right">
-            <span id="userName" class="user-name"></span>
-            <button id="logoutBtn" class="btn danger">로그아웃</button>
-          </div>
-        </header>
+    <main class="container">
+      <section id="teacherLoginSection" class="card login-card">
+        <h2>교사 로그인</h2>
+        <div class="form-grid">
+          <label>
+            <span>이메일</span>
+            <input id="teacherEmail" type="email" placeholder="teacher@school.org" />
+          </label>
+          <label>
+            <span>비밀번호</span>
+            <input id="teacherPassword" type="password" placeholder="비밀번호" />
+          </label>
+          <button id="teacherLoginBtn" class="primary-btn">교사 로그인</button>
+        </div>
+        <div class="note-box">
+          관리자 계정은 오른쪽 상단의 <strong>관리자 로그인</strong> 버튼으로 Google 로그인합니다.
+        </div>
+      </section>
 
-        <main class="layout">
-          <section class="left-col">
-            <div class="card">
-              <div class="section-head">
-                <h2>학생 검색</h2>
-                <input id="searchInput" type="text" placeholder="이름 / 영문 이름 / 학반 검색" />
+      <section id="teacherApp" class="hidden">
+        <div class="grid-2">
+          <section class="card">
+            <div class="section-header">
+              <div>
+                <h2>학생 목록</h2>
+                <p class="muted">이름 / 영문이름 / 학반 검색</p>
               </div>
-              <div id="studentList" class="student-list"></div>
+              <button id="teacherLogoutBtn" class="danger-btn">로그아웃</button>
             </div>
+            <input id="studentSearch" class="full-width" placeholder="학생 검색" />
+            <div id="teacherInfo" class="badge-row"></div>
+            <div id="studentList" class="student-list"></div>
           </section>
 
-          <section class="right-col">
-            <div class="card">
-              <h2>학생 명단 업로드</h2>
-              <p class="help-text">CSV 첫 줄은 반드시 <strong>name,englishName,className</strong> 여야 합니다.</p>
-              <input id="csvFileInput" type="file" accept=".csv" />
-              <div class="inline-actions">
-                <button id="uploadCsvBtn" class="btn primary">CSV 업로드</button>
-                <button id="downloadSampleBtn" class="btn">샘플 CSV 다운로드</button>
-              </div>
-              <div id="uploadMessage" class="message hidden"></div>
-            </div>
-
-            <div class="card">
+          <section class="stack">
+            <section class="card">
               <h2>벌점 입력</h2>
-              <div id="selectedStudentBox" class="selected-student empty">왼쪽에서 학생을 선택해 주세요.</div>
-              <form id="penaltyForm" class="form-grid">
+              <div id="selectedStudentBox" class="selected-box">학생을 선택해 주세요.</div>
+              <div class="form-grid">
                 <label>
-                  <span>항목</span>
-                  <select id="categorySelect">
-                    <option value="지각" data-points="1">지각</option>
-                    <option value="복장 불량" data-points="1">복장 불량</option>
-                    <option value="수업 방해" data-points="2">수업 방해</option>
-                    <option value="무단 결석" data-points="3">무단 결석</option>
-                    <option value="기타" data-points="1">기타</option>
-                  </select>
+                  <span>벌점 항목</span>
+                  <select id="penaltyCategory"></select>
                 </label>
                 <label>
                   <span>점수</span>
-                  <input id="pointsInput" type="number" min="1" value="1" />
+                  <input id="penaltyPoints" type="number" min="1" value="1" />
                 </label>
                 <label>
-                  <span>사유</span>
-                  <textarea id="reasonInput" rows="4" placeholder="상세 사유를 입력하세요."></textarea>
+                  <span>상세 사유</span>
+                  <textarea id="penaltyReason" rows="4" placeholder="상세 사유를 입력하세요"></textarea>
                 </label>
-                <button id="savePenaltyBtn" type="submit" class="btn primary">벌점 저장</button>
-              </form>
-              <div id="penaltyMessage" class="message hidden"></div>
-            </div>
+                <button id="addPenaltyBtn" class="primary-btn">벌점 등록</button>
+              </div>
+            </section>
 
-            <div class="card">
+            <section class="card">
               <h2>벌점 이력</h2>
-              <div id="historyList" class="history-list empty">학생을 선택하면 벌점 이력이 표시됩니다.</div>
-            </div>
+              <div id="penaltyHistory" class="history-list"></div>
+            </section>
           </section>
-        </main>
-      </div>
-    </div>
+        </div>
+      </section>
 
-    <script type="module" src="./app.js"></script>
-  </body>
+      <section id="adminApp" class="hidden">
+        <div class="card">
+          <div class="section-header">
+            <div>
+              <h2>관리자 페이지</h2>
+              <p class="muted">학생, 교사, 권한을 관리합니다.</p>
+            </div>
+            <div class="btn-row">
+              <button id="adminLogoutBtn" class="danger-btn">로그아웃</button>
+            </div>
+          </div>
+
+          <div class="tab-row">
+            <button data-tab="students" class="tab-btn active">학생 명단 업로드</button>
+            <button data-tab="teachers" class="tab-btn">교사 계정 관리</button>
+            <button data-tab="penalties" class="tab-btn">벌점 기록 관리</button>
+          </div>
+
+          <div id="tab-students" class="tab-panel active">
+            <div class="notice">
+              <strong>한글이 깨질 때:</strong> CSV 파일 인코딩을 <strong>UTF-8</strong> 또는 <strong>EUC-KR(CP949)</strong>로 바꿔서 다시 업로드해 주세요.
+            </div>
+            <div class="form-grid">
+              <label>
+                <span>CSV 인코딩</span>
+                <select id="csvEncoding">
+                  <option value="utf-8">UTF-8</option>
+                  <option value="euc-kr">EUC-KR (CP949)</option>
+                </select>
+              </label>
+              <label>
+                <span>CSV 파일</span>
+                <input id="csvFileInput" type="file" accept=".csv" />
+              </label>
+              <button id="uploadStudentsBtn" class="primary-btn">학생 명단 업로드</button>
+            </div>
+            <div class="note-box">CSV 첫 줄은 반드시 <code>name,englishName,className</code> 이어야 합니다.</div>
+            <div id="studentUploadResult" class="message-box hidden"></div>
+          </div>
+
+          <div id="tab-teachers" class="tab-panel">
+            <div class="notice">
+              Firebase 보안 특성상 <strong>기존 비밀번호를 읽어오거나 화면에 보여줄 수는 없습니다.</strong>
+              대신 새 교사 생성과 비밀번호 재설정 이메일 발송을 지원합니다.
+            </div>
+
+            <div class="grid-2 inner-grid">
+              <section class="card inset">
+                <h3>교사 계정 생성</h3>
+                <div class="form-grid">
+                  <label><span>이름</span><input id="newTeacherName" /></label>
+                  <label><span>이메일</span><input id="newTeacherEmail" type="email" /></label>
+                  <label><span>초기 비밀번호</span><input id="newTeacherPassword" type="password" /></label>
+                  <label>
+                    <span>권한</span>
+                    <select id="newTeacherRole">
+                      <option value="studentAffairs">학생부</option>
+                      <option value="education">교육담당</option>
+                      <option value="notifications">알림담당</option>
+                      <option value="general">일반</option>
+                    </select>
+                  </label>
+                  <button id="createTeacherBtn" class="primary-btn">교사 계정 생성</button>
+                </div>
+              </section>
+
+              <section class="card inset">
+                <h3>교사 목록</h3>
+                <div id="teacherList" class="history-list"></div>
+              </section>
+            </div>
+          </div>
+
+          <div id="tab-penalties" class="tab-panel">
+            <div class="note-box">관리자는 벌점 기록을 취소 처리할 수 있습니다. 기록은 삭제하지 않고 <strong>취소(canceled)</strong> 상태로 남깁니다.</div>
+            <div id="adminPenaltyList" class="history-list"></div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script type="module" src="app.js"></script>
+</body>
 </html>

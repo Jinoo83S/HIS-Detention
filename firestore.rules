@@ -1,13 +1,42 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    function isActiveTeacher() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/teachers/$(request.auth.uid))
+        && get(/databases/$(database)/documents/teachers/$(request.auth.uid)).data.active == true;
+    }
+
+    match /admins/{uid} {
+      allow read: if isAdmin();
+      allow create: if false;   // 첫 관리자 문서는 Firestore 콘솔에서 수동으로 1회 생성
+      allow update, delete: if isAdmin();
+    }
+
+    match /teachers/{uid} {
+      allow read: if isAdmin() || (signedIn() && request.auth.uid == uid);
+      allow create, update, delete: if isAdmin();
+    }
+
     match /students/{studentId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null;
+      allow read: if isAdmin() || isActiveTeacher();
+      allow create, update, delete: if isAdmin();
     }
 
     match /penaltyRecords/{recordId} {
-      allow read, create: if request.auth != null;
+      allow read: if isAdmin() || isActiveTeacher();
+      allow create: if isAdmin() || isActiveTeacher();
+      allow update, delete: if isAdmin();
     }
   }
 }
