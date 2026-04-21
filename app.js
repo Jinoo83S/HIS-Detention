@@ -1,4 +1,4 @@
-import { initializeApp, deleteApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
 import {
   getAuth,
   GoogleAuthProvider,
@@ -6,7 +6,6 @@ import {
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
-  createUserWithEmailAndPassword,
   sendPasswordResetEmail,
 } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
 import {
@@ -78,6 +77,10 @@ const els = {
   csvFileInput: document.getElementById('csvFileInput'),
   uploadStudentsBtn: document.getElementById('uploadStudentsBtn'),
   studentUploadResult: document.getElementById('studentUploadResult'),
+  teacherCsvEncoding: document.getElementById('teacherCsvEncoding'),
+  teacherCsvFileInput: document.getElementById('teacherCsvFileInput'),
+  uploadTeachersBtn: document.getElementById('uploadTeachersBtn'),
+  teacherUploadResult: document.getElementById('teacherUploadResult'),
   adminPenaltyList: document.getElementById('adminPenaltyList'),
   teacherTableSearch: document.getElementById('teacherTableSearch'),
   teacherTableBody: document.getElementById('teacherTableBody'),
@@ -122,11 +125,11 @@ function fmt(ts) {
   return ts?.toDate ? ts.toDate().toLocaleString('ko-KR') : '-';
 }
 
-function setUploadMessage(message, error = false) {
-  els.studentUploadResult.classList.remove('hidden');
-  els.studentUploadResult.textContent = message;
-  els.studentUploadResult.style.background = error ? '#fef2f2' : '#ecfdf5';
-  els.studentUploadResult.style.borderColor = error ? '#fca5a5' : '#86efac';
+function setUploadMessage(element, message, error = false) {
+  element.classList.remove('hidden');
+  element.textContent = message;
+  element.style.background = error ? '#fef2f2' : '#ecfdf5';
+  element.style.borderColor = error ? '#fca5a5' : '#86efac';
 }
 
 function rowStatusClass(status) {
@@ -173,7 +176,6 @@ function renderPenaltyOptions() {
   els.penaltyPoints.value = penaltyCategories[0].points;
 }
 renderPenaltyOptions();
-
 els.penaltyCategory.addEventListener('change', () => {
   const found = penaltyCategories.find(x => x.label === els.penaltyCategory.value);
   if (found) els.penaltyPoints.value = found.points;
@@ -272,6 +274,9 @@ function listenStudents() {
     }));
     renderStudentList();
     renderStudentTable();
+  }, (err) => {
+    console.error(err);
+    alertMsg('학생 목록을 불러오지 못했습니다.', true);
   });
 }
 
@@ -370,9 +375,51 @@ function readTextWithEncoding(file, encoding) {
   });
 }
 
+function normalizeRole(value) {
+  const raw = String(value || '').trim().toLowerCase();
+  const roleMap = {
+    '학생부': 'studentAffairs',
+    'studentaffairs': 'studentAffairs',
+    'student_affairs': 'studentAffairs',
+    '교육담당': 'education',
+    'education': 'education',
+    '알림담당': 'notifications',
+    'notification': 'notifications',
+    'notifications': 'notifications',
+    '일반': 'general',
+    'general': 'general',
+  };
+  return roleMap[raw] || 'general';
+}
+
+function normalizeBoolean(value, fallback = true) {
+  if (value === true || value === false) return value;
+  const raw = String(value ?? '').trim().toLowerCase();
+  if (!raw) return fallback;
+  if (['1', 'true', 'y', 'yes', 'o', '사용', '활성'].includes(raw)) return true;
+  if (['0', 'false', 'n', 'no', 'x', '미사용', '비활성'].includes(raw)) return false;
+  return fallback;
+}
+
+async function uploadStudentCsvRows(rows) {
+  let count = 0;
+  for (const row of rows) {
+    const name = (row.name || '').trim();
+    if (!name) continue;
+    await setDoc(doc(db, 'students', name), {
+      name,
+      englishName: (row.englishName || '').trim(),
+      className: (row.className || '').trim(),
+      updatedAt: serverTimestamp(),
+    }, { merge: true });
+    count += 1;
+  }
+  return count;
+}
+
 els.uploadStudentsBtn.addEventListener('click', async () => {
   const file = els.csvFileInput.files[0];
-  if (!file) return setUploadMessage('CSV 파일을 선택해 주세요.', true);
+  if (!file) return setUploadMessage(els.studentUploadResult, 'CSV 파일을 선택해 주세요.', true);
 
   try {
     const text = await readTextWithEncoding(file, els.csvEncoding.value);
@@ -381,32 +428,21 @@ els.uploadStudentsBtn.addEventListener('click', async () => {
       skipEmptyLines: true,
       complete: async ({ data }) => {
         try {
-          let count = 0;
-          for (const row of data) {
-            const name = (row.name || '').trim();
-            if (!name) continue;
-            await setDoc(doc(db, 'students', name), {
-              name,
-              englishName: (row.englishName || '').trim(),
-              className: (row.className || '').trim(),
-              updatedAt: serverTimestamp(),
-            }, { merge: true });
-            count += 1;
-          }
-          setUploadMessage(`${count}명의 학생 명단 업로드가 완료되었습니다.`);
+          const count = await uploadStudentCsvRows(data);
+          setUploadMessage(els.studentUploadResult, `${count}명의 학생 명단 업로드가 완료되었습니다.`);
         } catch (e) {
           console.error(e);
-          setUploadMessage('학생 명단 저장 중 오류가 발생했습니다.', true);
+          setUploadMessage(els.studentUploadResult, '학생 명단 저장 중 오류가 발생했습니다.', true);
         }
       },
       error: (e) => {
         console.error(e);
-        setUploadMessage('CSV 파싱 중 오류가 발생했습니다.', true);
+        setUploadMessage(els.studentUploadResult, 'CSV 파싱 중 오류가 발생했습니다.', true);
       }
     });
   } catch (e) {
     console.error(e);
-    setUploadMessage('파일 읽기 실패입니다. 인코딩을 UTF-8 / EUC-KR로 바꿔서 다시 시도해 주세요.', true);
+    setUploadMessage(els.studentUploadResult, '파일 읽기 실패입니다. 인코딩을 UTF-8 / EUC-KR로 바꿔서 다시 시도해 주세요.', true);
   }
 });
 
@@ -494,50 +530,75 @@ els.teacherCheckAll?.addEventListener('change', () => {
 });
 
 async function createTeacherAuthAccount(email, password) {
-  const tempApp = initializeApp(firebaseConfig, 'secondary-' + Date.now());
-  const tempAuth = getAuth(tempApp);
-  try {
-    const cred = await createUserWithEmailAndPassword(tempAuth, email, password);
-    await signOut(tempAuth);
-    return cred.user;
-  } finally {
-    await deleteApp(tempApp).catch(() => {});
+  const response = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${firebaseConfig.apiKey}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password, returnSecureToken: false }),
+  });
+  const payload = await response.json();
+  if (!response.ok) {
+    const msg = payload?.error?.message || 'SIGN_UP_FAILED';
+    throw new Error(msg);
   }
+  return { uid: payload.localId };
+}
+
+async function getTeacherUidByEmail(email) {
+  const snap = await getDocs(query(collection(db, 'teachers'), where('email', '==', email)));
+  if (snap.empty) return null;
+  const docSnap = snap.docs[0];
+  return docSnap.data().uid || docSnap.id;
+}
+
+async function saveTeacherRow(row) {
+  if (!row.name.trim() || !row.email.trim()) {
+    row.status = 'error';
+    return false;
+  }
+
+  if (!row.uid) {
+    if (!row.password || row.password.length < 4) {
+      row.status = 'error';
+      return false;
+    }
+
+    const existingUid = await getTeacherUidByEmail(row.email.trim());
+    if (existingUid) {
+      row.uid = existingUid;
+    } else {
+      const user = await createTeacherAuthAccount(row.email.trim(), row.password);
+      row.uid = user.uid;
+    }
+  }
+
+  await setDoc(doc(db, 'teachers', row.uid), {
+    uid: row.uid,
+    name: row.name.trim(),
+    email: row.email.trim(),
+    role: normalizeRole(row.role),
+    active: !!row.active,
+    updatedAt: serverTimestamp(),
+    createdBy: currentUser.uid,
+  }, { merge: true });
+
+  row.password = '';
+  row.status = 'saved';
+  return true;
 }
 
 els.saveTeacherTableBtn.addEventListener('click', async () => {
   try {
+    let savedCount = 0;
     for (const row of teacherRows) {
       if (row.status === 'saved') continue;
-      if (!row.name.trim() || !row.email.trim()) {
-        row.status = 'error';
-        continue;
-      }
-      if (!row.uid) {
-        if (!row.password || row.password.length < 6) {
-          row.status = 'error';
-          continue;
-        }
-        const user = await createTeacherAuthAccount(row.email.trim(), row.password);
-        row.uid = user.uid;
-      }
-      await setDoc(doc(db, 'teachers', row.uid), {
-        uid: row.uid,
-        name: row.name.trim(),
-        email: row.email.trim(),
-        role: row.role,
-        active: !!row.active,
-        updatedAt: serverTimestamp(),
-        createdBy: currentUser.uid,
-      }, { merge: true });
-      row.password = '';
-      row.status = 'saved';
+      const ok = await saveTeacherRow(row);
+      if (ok) savedCount += 1;
     }
-    alertMsg('교사 계정 변경사항을 저장했습니다.');
     renderTeacherTable();
+    alertMsg(savedCount > 0 ? `교사 계정 ${savedCount}건을 저장했습니다.` : '저장할 변경사항이 없습니다.');
   } catch (err) {
     console.error(err);
-    alertMsg('교사 계정 저장 중 오류가 발생했습니다.', true);
+    alertMsg(`교사 계정 저장 중 오류가 발생했습니다.\n${err.message || ''}`, true);
   }
 });
 
@@ -573,13 +634,78 @@ function listenTeachers() {
       name: t.name || '',
       email: t.email || '',
       password: '',
-      role: t.role || 'general',
+      role: normalizeRole(t.role || 'general'),
       active: t.active !== false,
       status: 'saved',
     }));
     renderTeacherTable();
+  }, (err) => {
+    console.error(err);
+    alertMsg('교사 목록을 불러오지 못했습니다.', true);
   });
 }
+
+async function uploadTeacherCsvRows(rows) {
+  let savedCount = 0;
+  let errorCount = 0;
+
+  for (const rawRow of rows) {
+    const row = {
+      uid: '',
+      name: (rawRow.name || '').trim(),
+      email: (rawRow.email || '').trim(),
+      password: (rawRow.password || '').trim(),
+      role: normalizeRole(rawRow.role),
+      active: normalizeBoolean(rawRow.active, true),
+      status: 'new',
+    };
+
+    if (!row.name || !row.email) {
+      errorCount += 1;
+      continue;
+    }
+
+    try {
+      await saveTeacherRow(row);
+      savedCount += 1;
+    } catch (e) {
+      console.error('teacher csv row error', row.email, e);
+      errorCount += 1;
+    }
+  }
+
+  return { savedCount, errorCount };
+}
+
+els.uploadTeachersBtn.addEventListener('click', async () => {
+  const file = els.teacherCsvFileInput.files[0];
+  if (!file) return setUploadMessage(els.teacherUploadResult, 'CSV 파일을 선택해 주세요.', true);
+
+  try {
+    const text = await readTextWithEncoding(file, els.teacherCsvEncoding.value);
+    Papa.parse(text, {
+      header: true,
+      skipEmptyLines: true,
+      complete: async ({ data }) => {
+        try {
+          const { savedCount, errorCount } = await uploadTeacherCsvRows(data);
+          const message = `교사 ${savedCount}건 업로드 완료${errorCount ? ` / 실패 ${errorCount}건` : ''}`;
+          setUploadMessage(els.teacherUploadResult, message, errorCount > 0);
+        } catch (e) {
+          console.error(e);
+          setUploadMessage(els.teacherUploadResult, '교사 명단 저장 중 오류가 발생했습니다.', true);
+        }
+      },
+      error: (e) => {
+        console.error(e);
+        setUploadMessage(els.teacherUploadResult, 'CSV 파싱 중 오류가 발생했습니다.', true);
+      }
+    });
+  } catch (e) {
+    console.error(e);
+    setUploadMessage(els.teacherUploadResult, '파일 읽기 실패입니다. 인코딩을 UTF-8 / EUC-KR로 바꿔서 다시 시도해 주세요.', true);
+  }
+});
 
 function renderStudentTable() {
   const keyword = (els.studentTableSearch.value || '').trim().toLowerCase();
@@ -640,6 +766,7 @@ els.addStudentRowBtn.addEventListener('click', () => {
 
 els.saveStudentTableBtn.addEventListener('click', async () => {
   try {
+    let savedCount = 0;
     for (const row of studentRows) {
       if (row.status === 'saved') continue;
       const newId = row.name.trim();
@@ -658,12 +785,13 @@ els.saveStudentTableBtn.addEventListener('click', async () => {
       }
       row.originalId = newId;
       row.status = 'saved';
+      savedCount += 1;
     }
-    alertMsg('학생 명단 변경사항을 저장했습니다.');
     renderStudentTable();
+    alertMsg(savedCount > 0 ? `학생 명단 ${savedCount}건을 저장했습니다.` : '저장할 변경사항이 없습니다.');
   } catch (err) {
     console.error(err);
-    alertMsg('학생 명단 저장 중 오류가 발생했습니다.', true);
+    alertMsg(`학생 명단 저장 중 오류가 발생했습니다.\n${err.message || ''}`, true);
   }
 });
 

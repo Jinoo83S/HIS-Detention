@@ -10,3 +10,9 @@
 - 기존 교사의 비밀번호는 웹에서 직접 읽거나 표시할 수 없습니다.
 - 기존 계정은 비밀번호 재설정 메일로 관리합니다.
 - 신규 교사는 표에서 이메일/초기 비밀번호를 입력해 생성합니다.
+
+
+교사 CSV 샘플 파일: teachers-sample.csv
+첫 줄: name,email,password,role,active
+role 예시: general, studentAffairs, education, notifications
+active 예시: true / false
