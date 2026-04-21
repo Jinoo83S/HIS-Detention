@@ -1,17 +1,26 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
+  <!-- 문서 문자 인코딩 -->
   <meta charset="UTF-8" />
+
+  <!-- 모바일 화면 대응 -->
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- 브라우저 탭 제목 -->
   <title>교사 로그인</title>
 
+  <!-- 구글 폰트 로드 -->
   <link
     href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=DM+Serif+Display&display=swap"
     rel="stylesheet"
   />
+
+  <!-- 공통 스타일 파일 연결 -->
   <link rel="stylesheet" href="common.css" />
 
   <style>
+    /* 우측 상단 관리자 이동 버튼 스타일 */
     .admin-link {
       position: fixed;
       top: 14px;
@@ -28,19 +37,26 @@
 </head>
 
 <body>
+  <!-- 토스트 메시지 출력 영역 -->
   <div id="toast"></div>
 
   <!-- 관리자 페이지로 이동하는 링크 -->
   <a class="admin-link" href="admin.html">⚙️ 관리자</a>
 
+  <!-- 로그인 화면 전체 -->
   <div class="login-page">
     <div class="login-box">
+      <!-- 아이콘 -->
       <div class="icon">🧑‍🏫</div>
+
+      <!-- 제목 -->
       <h1 style="text-align: center;">교사 로그인</h1>
+
+      <!-- 설명 문구 -->
       <p style="text-align: center;">교사를 선택하고 비밀번호를 입력하세요.</p>
 
       <div class="grid">
-        <!-- 교사 검색 -->
+        <!-- 교사 검색 입력창 -->
         <div>
           <label class="label">교사 검색</label>
           <input
@@ -86,26 +102,30 @@
     </div>
   </div>
 
-  <!-- Firebase -->
+  <!-- Firebase 라이브러리 로드 -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 
-  <!-- 공통 함수 -->
+  <!-- 공통 함수 파일 -->
   <script src="common.js"></script>
 
   <script>
-    // 교사 데이터 전체를 담아둘 객체
+    // Firebase에서 읽어온 전체 교사 데이터 저장용 객체
     let teachers = {};
 
     /**
-     * 페이지 초기화
-     * - Firebase에서 교사 목록을 불러온 뒤
-     * - 드롭다운 목록을 렌더링한다.
+     * 페이지 초기화 함수
+     * 교사 목록을 Firebase에서 불러와 드롭다운을 렌더링합니다.
      */
     async function init() {
       try {
+        // teachers 노드 전체 읽기
         const snap = await db.ref('teachers').once('value');
+
+        // 값이 없으면 빈 객체
         teachers = snap.val() || {};
+
+        // 화면에 렌더링
         renderTeachers();
       } catch (e) {
         console.error(e);
@@ -114,18 +134,19 @@
     }
 
     /**
-     * 교사 목록 렌더링
-     * - 검색어에 맞는 교사만 필터링
-     * - active !== false 인 교사만 표시
-     * - 이름 기준 정렬
+     * 검색어 기준으로 교사 목록을 화면에 다시 그리는 함수
      */
     function renderTeachers() {
+      // 검색 입력값 가져오기
       const q = (document.getElementById('search').value || '')
         .trim()
         .toLowerCase();
 
+      // teachers 객체에서 화면 표시용 목록 생성
       const list = Object.values(teachers)
+        // 비활성 교사는 제외
         .filter((t) => t && t.active !== false)
+        // 검색어가 있으면 이름/이메일/담당학급 기준 필터
         .filter((t) => {
           if (!q) return true;
 
@@ -133,12 +154,15 @@
             String(v || '').toLowerCase().includes(q)
           );
         })
+        // 이름 기준 정렬
         .sort((a, b) =>
           String(a.name || '').localeCompare(String(b.name || ''))
         );
 
+      // select 요소 가져오기
       const sel = document.getElementById('teacher-select');
 
+      // 기본 option + 교사 목록 option 생성
       sel.innerHTML =
         '<option value="">교사를 선택하세요</option>' +
         list
@@ -154,12 +178,11 @@
     }
 
     /**
-     * 로그인 처리
-     * - 이메일(직접 입력 또는 선택값)과 비밀번호를 받아서
-     * - teachers 노드 전체를 조회한 뒤 일치하는 교사를 찾는다.
-     * - 로그인 성공 시 sessionStorage에 저장 후 teacher.html로 이동
+     * 로그인 처리 함수
+     * 이메일과 비밀번호가 일치하는 교사를 찾아 sessionStorage에 저장합니다.
      */
     async function login() {
+      // 이메일 직접 입력값이 우선, 없으면 드롭다운 선택값 사용
       const email = (
         document.getElementById('email').value ||
         document.getElementById('teacher-select').value ||
@@ -168,21 +191,26 @@
         .trim()
         .toLowerCase();
 
+      // 비밀번호 입력값
       const pw = (document.getElementById('pw').value || '').trim();
 
+      // 입력 검증
       if (!email || !pw) {
         return toast('교사와 비밀번호를 입력해 주세요.', 'err');
       }
 
       try {
+        // 로그인 시 teachers 전체를 다시 한 번 읽음
         const snap = await db.ref('teachers').once('value');
 
-        let found = null;
-        let key = '';
+        let found = null; // 찾은 교사 정보
+        let key = '';     // 찾은 교사의 DB key
 
+        // teachers 전체 순회
         snap.forEach((child) => {
           const t = child.val() || {};
 
+          // 이메일, 비밀번호, active 상태가 모두 일치하면 로그인 성공
           if (
             String(t.email || '').trim().toLowerCase() === email &&
             String(t.password || '') === pw &&
@@ -193,12 +221,13 @@
           }
         });
 
+        // 일치하는 계정이 없으면 오류
         if (!found) {
           document.getElementById('pw').value = '';
           return toast('아이디 또는 비밀번호가 올바르지 않습니다.', 'err');
         }
 
-        // 로그인된 교사 정보를 세션에 저장
+        // 로그인 성공한 교사 정보를 sessionStorage에 저장
         sessionStorage.setItem(
           'his_teacher',
           JSON.stringify({
@@ -219,15 +248,15 @@
     }
 
     /**
-     * 검색창 입력 시 드롭다운 목록 다시 그리기
+     * 검색어 입력 시 교사 목록 재렌더링
      */
     document
       .getElementById('search')
       .addEventListener('input', renderTeachers);
 
     /**
-     * 드롭다운에서 교사 선택 시
-     * 해당 이메일을 이메일 입력칸에 자동 반영
+     * 드롭다운에서 교사를 선택하면
+     * 해당 이메일을 이메일 입력칸에 자동으로 넣어줍니다.
      */
     document
       .getElementById('teacher-select')
@@ -237,7 +266,7 @@
         }
       });
 
-    // 초기 실행
+    // 페이지 진입 시 초기 실행
     init();
   </script>
 </body>

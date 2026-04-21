@@ -1,28 +1,356 @@
-<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>교사 페이지</title>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=DM+Serif+Display&display=swap" rel="stylesheet"><link rel="stylesheet" href="common.css"></head>
-<body><div id="toast"></div>
-<div class="topbar"><div><h1>학생 벌점 관리 시스템</h1><div class="sub" id="teacher-sub">교사 페이지</div></div><div class="inline-actions"><button class="btn btn-secondary" onclick="loadData()">새로고침</button><button class="btn btn-danger" onclick="logoutTeacher()">로그아웃</button></div></div>
-<div class="content">
-<div class="card"><div class="card-title">교사 정보</div><div id="teacher-info"></div></div>
-<div class="card">
-  <div class="card-title">학생 선택 및 벌점 입력</div>
-  <div class="filter-bar"><input id="student-search" class="edit-input flex1" placeholder="학생명/영문명/학반 검색"><select id="cat" class="edit-input"></select><input id="pts" class="edit-input" type="number" min="1" style="width:90px"><button class="btn btn-primary" onclick="saveRecord()">벌점 등록</button></div>
-  <textarea id="reason" class="edit-input" placeholder="사유 입력"></textarea>
-  <div style="margin-top:10px"><span class="badge" id="selected-student">학생을 선택해 주세요</span></div>
-  <div class="tbl-wrap" style="margin-top:12px;max-height:380px"><table><thead><tr><th>선택</th><th>학생 이름</th><th>영문 이름</th><th>학반</th></tr></thead><tbody id="student-tbody"></tbody></table></div>
-</div>
-<div class="card"><div class="card-title">최근 기록</div><div class="tbl-wrap"><table><thead><tr><th>학생</th><th>학반</th><th>항목</th><th>점수</th><th>사유</th><th>일시</th></tr></thead><tbody id="record-tbody"></tbody></table></div></div>
-</div>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script><script src="common.js"></script>
-<script>
-const categories=[{label:'지각',points:1},{label:'복장 불량',points:1},{label:'수업 방해',points:2},{label:'무단 결석',points:3},{label:'기타',points:1}];
-let teacher=null, students={}, records={}, selectedKey='';
-function fmt(v){const d=new Date(v||''); return isNaN(d)?'-':d.toLocaleString('ko-KR');}
-function init(){teacher=requireTeacherSession(); if(!teacher) return; document.getElementById('teacher-sub').textContent=`${teacher.name} · ${teacher.role}${teacher.homeroom?' · '+teacher.homeroom:''}`; document.getElementById('teacher-info').innerHTML=`<span class="badge">${esc(teacher.name)}</span> <span class="badge">${esc(teacher.email)}</span> <span class="badge">${esc(teacher.role)}</span> ${teacher.homeroom?`<span class="badge">${esc(teacher.homeroom)}</span>`:''}`; document.getElementById('cat').innerHTML=categories.map(c=>`<option value="${esc(c.label)}">${esc(c.label)}</option>`).join(''); document.getElementById('pts').value=categories[0].points; document.getElementById('cat').addEventListener('change',()=>{const f=categories.find(c=>c.label===document.getElementById('cat').value); document.getElementById('pts').value=f?f.points:1;}); document.getElementById('student-search').addEventListener('input',renderStudents); loadData();}
-async function loadData(){try{const [sSnap,rSnap]=await Promise.all([db.ref('students').once('value'), db.ref('detentionRecords').once('value')]); students=sSnap.val()||{}; records=rSnap.val()||{}; renderStudents(); renderRecords();}catch(e){console.error(e);toast('데이터를 불러오지 못했습니다.','err');}}
-function renderStudents(){const q=(document.getElementById('student-search').value||'').trim().toLowerCase(); const list=Object.entries(students).map(([key,v])=>({key,...v})).filter(s=>!q||[s.name,s.englishName,s.className].some(v=>String(v||'').toLowerCase().includes(q))).sort((a,b)=>String(a.className||'').localeCompare(String(b.className||''))||String(a.name||'').localeCompare(String(b.name||''))); const tb=document.getElementById('student-tbody'); if(!list.length){tb.innerHTML='<tr><td colspan="4" class="empty">학생이 없습니다.</td></tr>'; return;} tb.innerHTML=list.map(s=>`<tr><td><button class="btn ${selectedKey===s.key?'btn-primary':'btn-secondary'}" onclick="pickStudent('${esc(s.key)}')">${selectedKey===s.key?'선택됨':'선택'}</button></td><td>${esc(s.name||'')}</td><td>${esc(s.englishName||'-')}</td><td>${esc(s.className||'-')}</td></tr>`).join('');}
-function pickStudent(key){selectedKey=key; const s=students[key]; document.getElementById('selected-student').textContent=s?`${s.name} / ${s.className||'-'}`:'학생을 선택해 주세요'; renderStudents();}
-function renderRecords(){const list=Object.values(records).filter(r=>(r.teacherEmail||'')===teacher.email).sort((a,b)=>String(b.createdAt||'').localeCompare(String(a.createdAt||''))).slice(0,50); const tb=document.getElementById('record-tbody'); if(!list.length){tb.innerHTML='<tr><td colspan="6" class="empty">기록이 없습니다.</td></tr>'; return;} tb.innerHTML=list.map(r=>`<tr><td>${esc(r.studentName||'')}</td><td>${esc(r.className||'-')}</td><td>${esc(r.category||'')}</td><td>${Number(r.points||0)}</td><td>${esc(r.reason||'')}</td><td>${fmt(r.createdAt)}</td></tr>`).join('');}
-async function saveRecord(){if(!selectedKey||!students[selectedKey]) return toast('학생을 먼저 선택해 주세요.','err'); const s=students[selectedKey]; const payload={studentKey:selectedKey,studentName:s.name||'',englishName:s.englishName||'',className:s.className||'',teacherName:teacher.name||'',teacherEmail:teacher.email||'',teacherRole:teacher.role||'general',category:document.getElementById('cat').value,points:Number(document.getElementById('pts').value||1),reason:(document.getElementById('reason').value||'').trim(),canceled:false,createdAt:new Date().toISOString()}; try{await db.ref('detentionRecords').push(payload); document.getElementById('reason').value=''; toast('벌점이 등록되었습니다.','ok'); loadData();}catch(e){console.error(e);toast('벌점 등록에 실패했습니다.','err');}}
-init();
-</script></body></html>
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <!-- 문자 인코딩 -->
+  <meta charset="UTF-8">
+
+  <!-- 반응형 설정 -->
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+
+  <!-- 문서 제목 -->
+  <title>교사 페이지</title>
+
+  <!-- 폰트 로드 -->
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=DM+Serif+Display&display=swap" rel="stylesheet">
+
+  <!-- 공통 스타일 -->
+  <link rel="stylesheet" href="common.css">
+</head>
+
+<body>
+  <!-- 토스트 메시지 출력 영역 -->
+  <div id="toast"></div>
+
+  <!-- 상단 바 -->
+  <div class="topbar">
+    <div>
+      <h1>학생 벌점 관리 시스템</h1>
+      <div class="sub" id="teacher-sub">교사 페이지</div>
+    </div>
+
+    <div class="inline-actions">
+      <!-- 전체 데이터 다시 로드 -->
+      <button class="btn btn-secondary" onclick="loadData()">새로고침</button>
+
+      <!-- 로그아웃 -->
+      <button class="btn btn-danger" onclick="logoutTeacher()">로그아웃</button>
+    </div>
+  </div>
+
+  <div class="content">
+    <!-- 로그인한 교사 정보 카드 -->
+    <div class="card">
+      <div class="card-title">교사 정보</div>
+      <div id="teacher-info"></div>
+    </div>
+
+    <!-- 학생 선택 및 벌점 입력 카드 -->
+    <div class="card">
+      <div class="card-title">학생 선택 및 벌점 입력</div>
+
+      <div class="filter-bar">
+        <!-- 학생 검색 -->
+        <input id="student-search" class="edit-input flex1" placeholder="학생명/영문명/학반 검색">
+
+        <!-- 벌점 카테고리 -->
+        <select id="cat" class="edit-input"></select>
+
+        <!-- 점수 입력 -->
+        <input id="pts" class="edit-input" type="number" min="1" style="width:90px">
+
+        <!-- 저장 버튼 -->
+        <button class="btn btn-primary" onclick="saveRecord()">벌점 등록</button>
+      </div>
+
+      <!-- 사유 입력 -->
+      <textarea id="reason" class="edit-input" placeholder="사유 입력"></textarea>
+
+      <!-- 현재 선택된 학생 표시 -->
+      <div style="margin-top:10px">
+        <span class="badge" id="selected-student">학생을 선택해 주세요</span>
+      </div>
+
+      <!-- 학생 목록 테이블 -->
+      <div class="tbl-wrap" style="margin-top:12px;max-height:380px">
+        <table>
+          <thead>
+            <tr>
+              <th>선택</th>
+              <th>학생 이름</th>
+              <th>영문 이름</th>
+              <th>학반</th>
+            </tr>
+          </thead>
+          <tbody id="student-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 최근 벌점 기록 카드 -->
+    <div class="card">
+      <div class="card-title">최근 기록</div>
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>학생</th>
+              <th>학반</th>
+              <th>항목</th>
+              <th>점수</th>
+              <th>사유</th>
+              <th>일시</th>
+            </tr>
+          </thead>
+          <tbody id="record-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase 라이브러리 -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+
+  <!-- 공통 JS -->
+  <script src="common.js"></script>
+
+  <script>
+    // 기본 벌점 카테고리 목록
+    const categories = [
+      {label:'지각',points:1},
+      {label:'복장 불량',points:1},
+      {label:'수업 방해',points:2},
+      {label:'무단 결석',points:3},
+      {label:'기타',points:1}
+    ];
+
+    // 전역 상태 변수
+    let teacher = null;      // 로그인한 교사 정보
+    let students = {};       // 학생 전체 데이터
+    let records = {};        // 벌점 기록 전체 데이터
+    let selectedKey = '';    // 현재 선택된 학생 key
+
+    /**
+     * 날짜/시간을 보기 좋은 문자열로 변환
+     * @param {string} v
+     * @returns {string}
+     */
+    function fmt(v){
+      const d = new Date(v||'');
+      return isNaN(d) ? '-' : d.toLocaleString('ko-KR');
+    }
+
+    /**
+     * 페이지 초기화
+     * - 세션 확인
+     * - 교사 정보 표시
+     * - 카테고리 목록 렌더링
+     * - 이벤트 연결
+     * - 데이터 로드
+     */
+    function init(){
+      // 로그인 세션이 없으면 index.html로 이동
+      teacher = requireTeacherSession();
+      if(!teacher) return;
+
+      // 상단 교사 요약 표시
+      document.getElementById('teacher-sub').textContent =
+        `${teacher.name} · ${teacher.role}${teacher.homeroom ? ' · ' + teacher.homeroom : ''}`;
+
+      // 교사 정보 배지 출력
+      document.getElementById('teacher-info').innerHTML =
+        `<span class="badge">${esc(teacher.name)}</span> ` +
+        `<span class="badge">${esc(teacher.email)}</span> ` +
+        `<span class="badge">${esc(teacher.role)}</span> ` +
+        `${teacher.homeroom ? `<span class="badge">${esc(teacher.homeroom)}</span>` : ''}`;
+
+      // 카테고리 select에 option 넣기
+      document.getElementById('cat').innerHTML =
+        categories.map(c => `<option value="${esc(c.label)}">${esc(c.label)}</option>`).join('');
+
+      // 기본 점수 설정
+      document.getElementById('pts').value = categories[0].points;
+
+      // 카테고리 변경 시 기본 점수 자동 반영
+      document.getElementById('cat').addEventListener('change', ()=>{
+        const f = categories.find(c => c.label === document.getElementById('cat').value);
+        document.getElementById('pts').value = f ? f.points : 1;
+      });
+
+      // 학생 검색창 입력 시 학생 목록 재렌더링
+      document.getElementById('student-search').addEventListener('input', renderStudents);
+
+      // 초기 데이터 로드
+      loadData();
+    }
+
+    /**
+     * 학생 목록과 벌점 기록을 Firebase에서 불러옴
+     */
+    async function loadData(){
+      try{
+        const [sSnap, rSnap] = await Promise.all([
+          db.ref('students').once('value'),
+          db.ref('detentionRecords').once('value')
+        ]);
+
+        // 값이 없으면 빈 객체 처리
+        students = sSnap.val() || {};
+        records = rSnap.val() || {};
+
+        // 화면 반영
+        renderStudents();
+        renderRecords();
+      }catch(e){
+        console.error(e);
+        toast('데이터를 불러오지 못했습니다.','err');
+      }
+    }
+
+    /**
+     * 학생 목록을 테이블에 렌더링
+     * 검색어 기준으로 필터링하고 학반/이름 순으로 정렬
+     */
+    function renderStudents(){
+      const q = (document.getElementById('student-search').value||'').trim().toLowerCase();
+
+      const list = Object.entries(students)
+        .map(([key,v]) => ({key, ...v}))
+        .filter(s =>
+          !q || [s.name, s.englishName, s.className]
+            .some(v => String(v||'').toLowerCase().includes(q))
+        )
+        .sort((a,b) =>
+          String(a.className||'').localeCompare(String(b.className||'')) ||
+          String(a.name||'').localeCompare(String(b.name||''))
+        );
+
+      const tb = document.getElementById('student-tbody');
+
+      // 학생이 한 명도 없을 때
+      if(!list.length){
+        tb.innerHTML = '<tr><td colspan="4" class="empty">학생이 없습니다.</td></tr>';
+        return;
+      }
+
+      // 학생 목록 렌더링
+      tb.innerHTML = list.map(s => `
+        <tr>
+          <td>
+            <button
+              class="btn ${selectedKey===s.key ? 'btn-primary' : 'btn-secondary'}"
+              onclick="pickStudent('${esc(s.key)}')"
+            >
+              ${selectedKey===s.key ? '선택됨' : '선택'}
+            </button>
+          </td>
+          <td>${esc(s.name||'')}</td>
+          <td>${esc(s.englishName||'-')}</td>
+          <td>${esc(s.className||'-')}</td>
+        </tr>
+      `).join('');
+    }
+
+    /**
+     * 학생 선택 처리
+     * @param {string} key
+     */
+    function pickStudent(key){
+      // 현재 선택된 학생 key 저장
+      selectedKey = key;
+
+      // 선택된 학생 객체
+      const s = students[key];
+
+      // 화면 상단의 선택 학생 표시 갱신
+      document.getElementById('selected-student').textContent =
+        s ? `${s.name} / ${s.className||'-'}` : '학생을 선택해 주세요';
+
+      // 버튼 표시 상태 갱신
+      renderStudents();
+    }
+
+    /**
+     * 현재 로그인한 교사의 최근 벌점 기록만 표시
+     */
+    function renderRecords(){
+      const list = Object.values(records)
+        // 해당 교사 이메일과 일치하는 기록만 추출
+        .filter(r => (r.teacherEmail||'') === teacher.email)
+        // 최신순 정렬
+        .sort((a,b) => String(b.createdAt||'').localeCompare(String(a.createdAt||'')))
+        // 최근 50개만 표시
+        .slice(0,50);
+
+      const tb = document.getElementById('record-tbody');
+
+      // 기록이 없으면 안내문 표시
+      if(!list.length){
+        tb.innerHTML = '<tr><td colspan="6" class="empty">기록이 없습니다.</td></tr>';
+        return;
+      }
+
+      // 기록 테이블 렌더링
+      tb.innerHTML = list.map(r => `
+        <tr>
+          <td>${esc(r.studentName||'')}</td>
+          <td>${esc(r.className||'-')}</td>
+          <td>${esc(r.category||'')}</td>
+          <td>${Number(r.points||0)}</td>
+          <td>${esc(r.reason||'')}</td>
+          <td>${fmt(r.createdAt)}</td>
+        </tr>
+      `).join('');
+    }
+
+    /**
+     * 선택한 학생에 대한 벌점 기록 저장
+     */
+    async function saveRecord(){
+      // 학생이 선택되지 않았으면 저장 불가
+      if(!selectedKey || !students[selectedKey]) {
+        return toast('학생을 먼저 선택해 주세요.','err');
+      }
+
+      // 선택된 학생 정보
+      const s = students[selectedKey];
+
+      // 저장할 payload 생성
+      const payload = {
+        studentKey: selectedKey,
+        studentName: s.name||'',
+        englishName: s.englishName||'',
+        className: s.className||'',
+        teacherName: teacher.name||'',
+        teacherEmail: teacher.email||'',
+        teacherRole: teacher.role||'general',
+        category: document.getElementById('cat').value,
+        points: Number(document.getElementById('pts').value||1),
+        reason: (document.getElementById('reason').value||'').trim(),
+        canceled: false,
+        createdAt: new Date().toISOString()
+      };
+
+      try{
+        // push()를 사용해 새 기록 생성
+        await db.ref('detentionRecords').push(payload);
+
+        // 사유 입력창 초기화
+        document.getElementById('reason').value='';
+
+        // 성공 메시지
+        toast('벌점이 등록되었습니다.','ok');
+
+        // 목록 새로고침
+        loadData();
+      }catch(e){
+        console.error(e);
+        toast('벌점 등록에 실패했습니다.','err');
+      }
+    }
+
+    // 페이지 시작
+    init();
+  </script>
+</body>
+</html>
