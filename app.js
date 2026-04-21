@@ -1,4 +1,4 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
+import { initializeApp, deleteApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
 import {
   getAuth,
   GoogleAuthProvider,
@@ -7,14 +7,13 @@ import {
   signOut,
   onAuthStateChanged,
   createUserWithEmailAndPassword,
-  sendPasswordResetEmail
+  sendPasswordResetEmail,
 } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
 import {
   getFirestore,
   doc,
   setDoc,
   getDoc,
-  getDocs,
   collection,
   query,
   orderBy,
@@ -22,7 +21,9 @@ import {
   addDoc,
   onSnapshot,
   serverTimestamp,
-  updateDoc
+  updateDoc,
+  deleteDoc,
+  getDocs,
 } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -46,6 +47,7 @@ const penaltyCategories = [
   { label: '무단 결석', points: 3 },
   { label: '기타', points: 1 },
 ];
+
 const roleLabels = {
   studentAffairs: '학생부',
   education: '교육담당',
@@ -76,20 +78,28 @@ const els = {
   csvFileInput: document.getElementById('csvFileInput'),
   uploadStudentsBtn: document.getElementById('uploadStudentsBtn'),
   studentUploadResult: document.getElementById('studentUploadResult'),
-  newTeacherName: document.getElementById('newTeacherName'),
-  newTeacherEmail: document.getElementById('newTeacherEmail'),
-  newTeacherPassword: document.getElementById('newTeacherPassword'),
-  newTeacherRole: document.getElementById('newTeacherRole'),
-  createTeacherBtn: document.getElementById('createTeacherBtn'),
-  teacherList: document.getElementById('teacherList'),
   adminPenaltyList: document.getElementById('adminPenaltyList'),
+  teacherTableSearch: document.getElementById('teacherTableSearch'),
+  teacherTableBody: document.getElementById('teacherTableBody'),
+  addTeacherRowBtn: document.getElementById('addTeacherRowBtn'),
+  saveTeacherTableBtn: document.getElementById('saveTeacherTableBtn'),
+  sendResetSelectedBtn: document.getElementById('sendResetSelectedBtn'),
+  teacherCheckAll: document.getElementById('teacherCheckAll'),
+  studentTableSearch: document.getElementById('studentTableSearch'),
+  studentTableBody: document.getElementById('studentTableBody'),
+  addStudentRowBtn: document.getElementById('addStudentRowBtn'),
+  saveStudentTableBtn: document.getElementById('saveStudentTableBtn'),
+  penaltyTableSearch: document.getElementById('penaltyTableSearch'),
 };
 
 let currentUser = null;
-let currentMode = null;
 let currentTeacherProfile = null;
 let students = [];
+let teachers = [];
 let selectedStudent = null;
+let allPenaltyRecords = [];
+let studentRows = [];
+let teacherRows = [];
 let unsubStudents = null;
 let unsubStudentPenalties = null;
 let unsubTeachers = null;
@@ -97,13 +107,6 @@ let unsubAdminPenalties = null;
 
 function alertMsg(message, error = false) {
   alert((error ? '오류: ' : '') + message);
-}
-
-function setUploadMessage(message, error = false) {
-  els.studentUploadResult.classList.remove('hidden');
-  els.studentUploadResult.textContent = message;
-  els.studentUploadResult.style.background = error ? '#fef2f2' : '#f0fdf4';
-  els.studentUploadResult.style.borderColor = error ? '#fca5a5' : '#86efac';
 }
 
 function escapeHtml(value) {
@@ -119,13 +122,37 @@ function fmt(ts) {
   return ts?.toDate ? ts.toDate().toLocaleString('ko-KR') : '-';
 }
 
+function setUploadMessage(message, error = false) {
+  els.studentUploadResult.classList.remove('hidden');
+  els.studentUploadResult.textContent = message;
+  els.studentUploadResult.style.background = error ? '#fef2f2' : '#ecfdf5';
+  els.studentUploadResult.style.borderColor = error ? '#fca5a5' : '#86efac';
+}
+
+function rowStatusClass(status) {
+  return {
+    saved: 'status-saved',
+    new: 'status-new',
+    dirty: 'status-dirty',
+    error: 'status-error',
+  }[status] || 'status-new';
+}
+
+function rowStatusLabel(status) {
+  return {
+    saved: '저장됨',
+    new: '신규',
+    dirty: '수정됨',
+    error: '오류',
+  }[status] || '신규';
+}
+
 function resetListeners() {
   [unsubStudents, unsubStudentPenalties, unsubTeachers, unsubAdminPenalties].forEach(fn => { if (fn) fn(); });
   unsubStudents = unsubStudentPenalties = unsubTeachers = unsubAdminPenalties = null;
 }
 
 function setMode(mode) {
-  currentMode = mode;
   els.teacherLoginSection.classList.toggle('hidden', mode !== null);
   els.teacherApp.classList.toggle('hidden', mode !== 'teacher');
   els.adminApp.classList.toggle('hidden', mode !== 'admin');
@@ -135,6 +162,7 @@ async function adminDoc(uid) {
   const snap = await getDoc(doc(db, 'admins', uid));
   return snap.exists() ? snap.data() : null;
 }
+
 async function teacherDoc(uid) {
   const snap = await getDoc(doc(db, 'teachers', uid));
   return snap.exists() ? snap.data() : null;
@@ -145,6 +173,7 @@ function renderPenaltyOptions() {
   els.penaltyPoints.value = penaltyCategories[0].points;
 }
 renderPenaltyOptions();
+
 els.penaltyCategory.addEventListener('change', () => {
   const found = penaltyCategories.find(x => x.label === els.penaltyCategory.value);
   if (found) els.penaltyPoints.value = found.points;
@@ -156,21 +185,7 @@ els.adminLoginBtn.addEventListener('click', async () => {
     const admin = await adminDoc(result.user.uid);
 
     if (!admin) {
-      const message = `이 Google 계정은 아직 관리자 등록이 되어 있지 않습니다.
-
-Firestore에 아래 문서를 먼저 만들어 주세요.
-
-컬렉션: admins
-문서 ID: ${result.user.uid}
-
-필드
-- uid: ${result.user.uid}
-- email: ${result.user.email || ''}
-- name: ${result.user.displayName || '관리자'}
-- role: admin
-
-문서를 만든 뒤 다시 로그인해 주세요.`;
-
+      const message = `이 Google 계정은 아직 관리자 등록이 되어 있지 않습니다.\n\nFirestore에 아래 문서를 먼저 만들어 주세요.\n\n컬렉션: admins\n문서 ID: ${result.user.uid}\n\n필드\n- uid: ${result.user.uid}\n- email: ${result.user.email || ''}\n- name: ${result.user.displayName || '관리자'}\n- role: admin\n\n문서를 만든 뒤 다시 로그인해 주세요.`;
       await signOut(auth);
       alert(message);
       return;
@@ -178,7 +193,7 @@ Firestore에 아래 문서를 먼저 만들어 주세요.
 
     if (admin.role !== 'admin') {
       await signOut(auth);
-      alert('오류: 관리자 권한(role=admin)이 없는 계정입니다.');
+      alertMsg('관리자 권한(role=admin)이 없는 계정입니다.', true);
       return;
     }
 
@@ -186,23 +201,15 @@ Firestore에 아래 문서를 먼저 만들어 주세요.
     bindAdmin();
   } catch (err) {
     console.error('관리자 로그인 오류:', err);
-
     const code = err?.code || 'unknown';
     const message = err?.message || '알 수 없는 오류';
-
-    alert(
-      `관리자 로그인에 실패했습니다.
-
-오류 코드: ${code}
-오류 메시지: ${message}`
-    );
+    alert(`관리자 로그인에 실패했습니다.\n\n오류 코드: ${code}\n오류 메시지: ${message}`);
   }
 });
 
 els.teacherLoginBtn.addEventListener('click', async () => {
   try {
     await signInWithEmailAndPassword(auth, els.teacherEmail.value.trim(), els.teacherPassword.value);
-    currentMode = 'teacher';
   } catch (err) {
     console.error(err);
     alertMsg('교사 로그인에 실패했습니다.', true);
@@ -256,7 +263,15 @@ function bindAdmin() {
 function listenStudents() {
   unsubStudents = onSnapshot(query(collection(db, 'students'), orderBy('className'), orderBy('name')), (snapshot) => {
     students = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+    studentRows = students.map(s => ({
+      originalId: s.id,
+      name: s.name || '',
+      englishName: s.englishName || '',
+      className: s.className || '',
+      status: 'saved',
+    }));
     renderStudentList();
+    renderStudentTable();
   });
 }
 
@@ -264,7 +279,7 @@ function renderStudentList() {
   const keyword = (els.studentSearch.value || '').trim().toLowerCase();
   const filtered = students.filter(student => [student.name, student.englishName, student.className].filter(Boolean).some(v => String(v).toLowerCase().includes(keyword)));
   if (!filtered.length) {
-    els.studentList.innerHTML = '<div class="empty-box">학생이 없습니다.</div>';
+    els.studentList.innerHTML = '<div class="helper-box">학생이 없습니다.</div>';
     return;
   }
   els.studentList.innerHTML = filtered.map(student => `
@@ -295,13 +310,13 @@ function renderSelectedStudent() {
 function listenStudentPenalties() {
   if (unsubStudentPenalties) unsubStudentPenalties();
   if (!selectedStudent) {
-    els.penaltyHistory.innerHTML = '<div class="empty-box">학생을 선택하면 벌점 이력이 표시됩니다.</div>';
+    els.penaltyHistory.innerHTML = '<div class="helper-box">학생을 선택하면 벌점 이력이 표시됩니다.</div>';
     return;
   }
   unsubStudentPenalties = onSnapshot(query(collection(db, 'penaltyRecords'), where('studentId', '==', selectedStudent.id), orderBy('createdAt', 'desc')), (snapshot) => {
     const records = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
     if (!records.length) {
-      els.penaltyHistory.innerHTML = '<div class="empty-box">벌점 이력이 없습니다.</div>';
+      els.penaltyHistory.innerHTML = '<div class="helper-box">벌점 이력이 없습니다.</div>';
       return;
     }
     els.penaltyHistory.innerHTML = records.map(r => `
@@ -346,7 +361,9 @@ function readTextWithEncoding(file, encoding) {
     reader.onload = () => {
       try {
         resolve(new TextDecoder(encoding).decode(reader.result));
-      } catch (e) { reject(e); }
+      } catch (e) {
+        reject(e);
+      }
     };
     reader.onerror = reject;
     reader.readAsArrayBuffer(file);
@@ -373,7 +390,7 @@ els.uploadStudentsBtn.addEventListener('click', async () => {
               englishName: (row.englishName || '').trim(),
               className: (row.className || '').trim(),
               updatedAt: serverTimestamp(),
-            });
+            }, { merge: true });
             count += 1;
           }
           setUploadMessage(`${count}명의 학생 명단 업로드가 완료되었습니다.`);
@@ -393,118 +410,298 @@ els.uploadStudentsBtn.addEventListener('click', async () => {
   }
 });
 
-async function createTeacherAuthAccount(email, password) {
-  const secondary = initializeApp(firebaseConfig, 'secondary-' + Date.now());
-  const secondaryAuth = getAuth(secondary);
-  const cred = await createUserWithEmailAndPassword(secondaryAuth, email, password);
-  await secondaryAuth.signOut();
-  return cred.user;
+function markTeacherRowDirty(index) {
+  const row = teacherRows[index];
+  if (row && row.status === 'saved') row.status = 'dirty';
 }
 
-els.createTeacherBtn.addEventListener('click', async () => {
-  const name = els.newTeacherName.value.trim();
-  const email = els.newTeacherEmail.value.trim();
-  const password = els.newTeacherPassword.value;
-  const role = els.newTeacherRole.value;
-  if (!name || !email || !password) return alertMsg('이름, 이메일, 비밀번호를 모두 입력해 주세요.', true);
+function renderTeacherTable() {
+  const keyword = (els.teacherTableSearch.value || '').trim().toLowerCase();
+  const filtered = teacherRows.filter(row => [row.name, row.email].some(v => String(v || '').toLowerCase().includes(keyword)));
+  if (!filtered.length) {
+    els.teacherTableBody.innerHTML = `<tr><td colspan="9"><div class="helper-box">등록된 교사가 없습니다.</div></td></tr>`;
+    return;
+  }
 
-  try {
-    const user = await createTeacherAuthAccount(email, password);
-    await setDoc(doc(db, 'teachers', user.uid), {
-      uid: user.uid,
-      name,
-      email,
-      role,
-      active: true,
-      createdAt: serverTimestamp(),
-      createdBy: currentUser.uid,
+  els.teacherTableBody.innerHTML = filtered.map(row => {
+    const index = teacherRows.indexOf(row);
+    return `
+      <tr data-index="${index}">
+        <td class="cell-check"><input class="teacher-row-check" type="checkbox" /></td>
+        <td><span class="status-badge ${rowStatusClass(row.status)}">${rowStatusLabel(row.status)}</span></td>
+        <td><input class="teacher-name" value="${escapeHtml(row.name)}" /></td>
+        <td><input class="teacher-email" type="email" value="${escapeHtml(row.email)}" ${row.uid ? 'readonly' : ''} /></td>
+        <td><input class="teacher-password" type="text" value="${escapeHtml(row.password || '')}" placeholder="신규만 입력" ${row.uid ? 'disabled' : ''} /></td>
+        <td>
+          <select class="teacher-role">
+            ${Object.entries(roleLabels).map(([key, label]) => `<option value="${key}" ${row.role === key ? 'selected' : ''}>${label}</option>`).join('')}
+          </select>
+        </td>
+        <td style="text-align:center"><input class="teacher-active inline-toggle" type="checkbox" ${row.active ? 'checked' : ''} /></td>
+        <td>${row.uid ? (row.uid.slice(0, 8) + '...') : '신규 행'}</td>
+        <td><button class="row-delete-btn teacher-delete-btn">삭제</button></td>
+      </tr>
+    `;
+  }).join('');
+
+  els.teacherTableBody.querySelectorAll('tr').forEach(tr => {
+    const index = Number(tr.dataset.index);
+    tr.querySelector('.teacher-name').addEventListener('input', e => {
+      teacherRows[index].name = e.target.value;
+      markTeacherRowDirty(index);
+      renderTeacherTable();
     });
-    els.newTeacherName.value = '';
-    els.newTeacherEmail.value = '';
-    els.newTeacherPassword.value = '';
-    alertMsg('교사 계정이 생성되었습니다.');
+    tr.querySelector('.teacher-email').addEventListener('input', e => {
+      teacherRows[index].email = e.target.value.trim();
+      markTeacherRowDirty(index);
+      renderTeacherTable();
+    });
+    tr.querySelector('.teacher-password').addEventListener('input', e => {
+      teacherRows[index].password = e.target.value;
+      markTeacherRowDirty(index);
+      renderTeacherTable();
+    });
+    tr.querySelector('.teacher-role').addEventListener('change', e => {
+      teacherRows[index].role = e.target.value;
+      markTeacherRowDirty(index);
+      renderTeacherTable();
+    });
+    tr.querySelector('.teacher-active').addEventListener('change', e => {
+      teacherRows[index].active = e.target.checked;
+      markTeacherRowDirty(index);
+      renderTeacherTable();
+    });
+    tr.querySelector('.teacher-delete-btn').addEventListener('click', async () => {
+      if (!confirm('이 행을 삭제하시겠습니까?\n기존 계정은 Firestore에서 비활성 처리됩니다.')) return;
+      const row = teacherRows[index];
+      if (row.uid) {
+        await updateDoc(doc(db, 'teachers', row.uid), { active: false, updatedAt: serverTimestamp() });
+      } else {
+        teacherRows.splice(index, 1);
+        renderTeacherTable();
+      }
+    });
+  });
+}
+
+els.teacherTableSearch.addEventListener('input', renderTeacherTable);
+els.addTeacherRowBtn.addEventListener('click', () => {
+  teacherRows.unshift({ uid: '', name: '', email: '', password: '', role: 'general', active: true, status: 'new' });
+  renderTeacherTable();
+});
+els.teacherCheckAll?.addEventListener('change', () => {
+  document.querySelectorAll('.teacher-row-check').forEach(cb => { cb.checked = els.teacherCheckAll.checked; });
+});
+
+async function createTeacherAuthAccount(email, password) {
+  const tempApp = initializeApp(firebaseConfig, 'secondary-' + Date.now());
+  const tempAuth = getAuth(tempApp);
+  try {
+    const cred = await createUserWithEmailAndPassword(tempAuth, email, password);
+    await signOut(tempAuth);
+    return cred.user;
+  } finally {
+    await deleteApp(tempApp).catch(() => {});
+  }
+}
+
+els.saveTeacherTableBtn.addEventListener('click', async () => {
+  try {
+    for (const row of teacherRows) {
+      if (row.status === 'saved') continue;
+      if (!row.name.trim() || !row.email.trim()) {
+        row.status = 'error';
+        continue;
+      }
+      if (!row.uid) {
+        if (!row.password || row.password.length < 6) {
+          row.status = 'error';
+          continue;
+        }
+        const user = await createTeacherAuthAccount(row.email.trim(), row.password);
+        row.uid = user.uid;
+      }
+      await setDoc(doc(db, 'teachers', row.uid), {
+        uid: row.uid,
+        name: row.name.trim(),
+        email: row.email.trim(),
+        role: row.role,
+        active: !!row.active,
+        updatedAt: serverTimestamp(),
+        createdBy: currentUser.uid,
+      }, { merge: true });
+      row.password = '';
+      row.status = 'saved';
+    }
+    alertMsg('교사 계정 변경사항을 저장했습니다.');
+    renderTeacherTable();
   } catch (err) {
     console.error(err);
-    alertMsg('교사 계정 생성에 실패했습니다. 이미 존재하는 이메일인지 확인해 주세요.', true);
+    alertMsg('교사 계정 저장 중 오류가 발생했습니다.', true);
+  }
+});
+
+els.sendResetSelectedBtn.addEventListener('click', async () => {
+  const rows = [...document.querySelectorAll('.teacher-row-check')]
+    .map((checkbox, visibleIndex) => ({ checkbox, visibleIndex }))
+    .filter(x => x.checkbox.checked)
+    .map(x => document.querySelectorAll('#teacherTableBody tr')[x.visibleIndex])
+    .map(tr => teacherRows[Number(tr.dataset.index)])
+    .filter(row => row?.email);
+
+  if (!rows.length) {
+    alertMsg('재설정 메일을 보낼 교사를 선택해 주세요.', true);
+    return;
+  }
+
+  try {
+    for (const row of rows) {
+      await sendPasswordResetEmail(auth, row.email);
+    }
+    alertMsg(`${rows.length}명에게 비밀번호 재설정 이메일을 보냈습니다.`);
+  } catch (err) {
+    console.error(err);
+    alertMsg('비밀번호 재설정 이메일 전송에 실패했습니다.', true);
   }
 });
 
 function listenTeachers() {
   unsubTeachers = onSnapshot(query(collection(db, 'teachers'), orderBy('name')), (snapshot) => {
-    const teachers = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-    if (!teachers.length) {
-      els.teacherList.innerHTML = '<div class="empty-box">등록된 교사가 없습니다.</div>';
-      return;
-    }
-    els.teacherList.innerHTML = teachers.map(t => `
-      <div class="teacher-card">
-        <div class="teacher-top"><strong>${escapeHtml(t.name || '')}</strong><span>${t.active ? '활성' : '비활성'}</span></div>
-        <div class="teacher-meta">${escapeHtml(t.email || '')}</div>
-        <div class="teacher-meta">권한: ${escapeHtml(roleLabels[t.role] || '일반')}</div>
-        <div class="teacher-actions">
-          <select class="role-select" data-id="${t.id}">
-            ${Object.entries(roleLabels).map(([key, label]) => `<option value="${key}" ${t.role === key ? 'selected' : ''}>${label}</option>`).join('')}
-          </select>
-          <button class="secondary-btn reset-password-btn" data-email="${escapeHtml(t.email || '')}">비밀번호 재설정 메일</button>
-          <button class="${t.active ? 'secondary-btn' : 'primary-btn'} toggle-active-btn" data-id="${t.id}" data-active="${t.active ? '1' : '0'}">${t.active ? '비활성화' : '활성화'}</button>
-        </div>
-      </div>
-    `).join('');
+    teachers = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+    teacherRows = teachers.map(t => ({
+      uid: t.uid || t.id,
+      name: t.name || '',
+      email: t.email || '',
+      password: '',
+      role: t.role || 'general',
+      active: t.active !== false,
+      status: 'saved',
+    }));
+    renderTeacherTable();
+  });
+}
 
-    els.teacherList.querySelectorAll('.role-select').forEach(sel => {
-      sel.addEventListener('change', async () => {
-        await updateDoc(doc(db, 'teachers', sel.dataset.id), { role: sel.value, updatedAt: serverTimestamp() });
-        alertMsg('교사 권한이 변경되었습니다.');
-      });
+function renderStudentTable() {
+  const keyword = (els.studentTableSearch.value || '').trim().toLowerCase();
+  const filtered = studentRows.filter(row => [row.name, row.englishName, row.className].some(v => String(v || '').toLowerCase().includes(keyword)));
+  if (!filtered.length) {
+    els.studentTableBody.innerHTML = `<tr><td colspan="6"><div class="helper-box">학생이 없습니다.</div></td></tr>`;
+    return;
+  }
+  els.studentTableBody.innerHTML = filtered.map(row => {
+    const index = studentRows.indexOf(row);
+    return `
+      <tr data-index="${index}">
+        <td>${escapeHtml(row.originalId || '신규')}</td>
+        <td><input class="student-name-input" value="${escapeHtml(row.name)}" /></td>
+        <td><input class="student-english-input" value="${escapeHtml(row.englishName)}" /></td>
+        <td><input class="student-class-input" value="${escapeHtml(row.className)}" /></td>
+        <td><span class="status-badge ${rowStatusClass(row.status)}">${rowStatusLabel(row.status)}</span></td>
+        <td><button class="row-delete-btn student-delete-btn">삭제</button></td>
+      </tr>
+    `;
+  }).join('');
+
+  els.studentTableBody.querySelectorAll('tr').forEach(tr => {
+    const index = Number(tr.dataset.index);
+    const row = studentRows[index];
+    tr.querySelector('.student-name-input').addEventListener('input', e => {
+      row.name = e.target.value;
+      if (row.status === 'saved') row.status = 'dirty';
+      renderStudentTable();
     });
-    els.teacherList.querySelectorAll('.toggle-active-btn').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        const active = btn.dataset.active === '1';
-        await updateDoc(doc(db, 'teachers', btn.dataset.id), { active: !active, updatedAt: serverTimestamp() });
-        alertMsg(active ? '교사를 비활성화했습니다.' : '교사를 활성화했습니다.');
-      });
+    tr.querySelector('.student-english-input').addEventListener('input', e => {
+      row.englishName = e.target.value;
+      if (row.status === 'saved') row.status = 'dirty';
+      renderStudentTable();
     });
-    els.teacherList.querySelectorAll('.reset-password-btn').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        try {
-          await sendPasswordResetEmail(auth, btn.dataset.email);
-          alertMsg('비밀번호 재설정 이메일을 보냈습니다.');
-        } catch (err) {
-          console.error(err);
-          alertMsg('비밀번호 재설정 이메일 전송에 실패했습니다.', true);
-        }
-      });
+    tr.querySelector('.student-class-input').addEventListener('input', e => {
+      row.className = e.target.value;
+      if (row.status === 'saved') row.status = 'dirty';
+      renderStudentTable();
+    });
+    tr.querySelector('.student-delete-btn').addEventListener('click', async () => {
+      if (!confirm('이 학생을 삭제하시겠습니까?')) return;
+      if (row.originalId) {
+        await deleteDoc(doc(db, 'students', row.originalId));
+      } else {
+        studentRows.splice(index, 1);
+        renderStudentTable();
+      }
     });
   });
 }
+
+els.studentTableSearch.addEventListener('input', renderStudentTable);
+els.addStudentRowBtn.addEventListener('click', () => {
+  studentRows.unshift({ originalId: '', name: '', englishName: '', className: '', status: 'new' });
+  renderStudentTable();
+});
+
+els.saveStudentTableBtn.addEventListener('click', async () => {
+  try {
+    for (const row of studentRows) {
+      if (row.status === 'saved') continue;
+      const newId = row.name.trim();
+      if (!newId) {
+        row.status = 'error';
+        continue;
+      }
+      await setDoc(doc(db, 'students', newId), {
+        name: row.name.trim(),
+        englishName: row.englishName.trim(),
+        className: row.className.trim(),
+        updatedAt: serverTimestamp(),
+      }, { merge: true });
+      if (row.originalId && row.originalId !== newId) {
+        await deleteDoc(doc(db, 'students', row.originalId));
+      }
+      row.originalId = newId;
+      row.status = 'saved';
+    }
+    alertMsg('학생 명단 변경사항을 저장했습니다.');
+    renderStudentTable();
+  } catch (err) {
+    console.error(err);
+    alertMsg('학생 명단 저장 중 오류가 발생했습니다.', true);
+  }
+});
 
 function listenAllPenalties() {
   unsubAdminPenalties = onSnapshot(query(collection(db, 'penaltyRecords'), orderBy('createdAt', 'desc')), (snapshot) => {
-    const records = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-    if (!records.length) {
-      els.adminPenaltyList.innerHTML = '<div class="empty-box">벌점 기록이 없습니다.</div>';
-      return;
-    }
-    els.adminPenaltyList.innerHTML = records.map(r => `
-      <div class="history-item">
-        <div class="history-top"><strong>${escapeHtml(r.studentName || '')} · ${escapeHtml(r.category || '')}</strong><span>${Number(r.points || 0)}점 ${r.canceled ? '· 취소됨' : ''}</span></div>
-        <div>${escapeHtml(r.reason || '사유 없음')}</div>
-        <div class="history-meta">${escapeHtml(r.teacherName || '')} · ${escapeHtml(roleLabels[r.teacherRole] || '일반')} · ${fmt(r.createdAt)}</div>
-        ${!r.canceled ? `<div class="teacher-actions"><button class="danger-btn cancel-penalty-btn" data-id="${r.id}">기록 취소</button></div>` : ''}
-      </div>
-    `).join('');
-    els.adminPenaltyList.querySelectorAll('.cancel-penalty-btn').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        await updateDoc(doc(db, 'penaltyRecords', btn.dataset.id), {
-          canceled: true,
-          canceledAt: serverTimestamp(),
-          canceledBy: currentUser.uid,
-        });
-        alertMsg('벌점 기록을 취소 처리했습니다.');
+    allPenaltyRecords = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderAdminPenaltyList();
+  });
+}
+
+function renderAdminPenaltyList() {
+  const keyword = (els.penaltyTableSearch.value || '').trim().toLowerCase();
+  const records = allPenaltyRecords.filter(r => [r.studentName, r.teacherName, r.category, r.reason].some(v => String(v || '').toLowerCase().includes(keyword)));
+  if (!records.length) {
+    els.adminPenaltyList.innerHTML = '<div class="helper-box">벌점 기록이 없습니다.</div>';
+    return;
+  }
+  els.adminPenaltyList.innerHTML = records.map(r => `
+    <div class="history-item">
+      <div class="history-top"><strong>${escapeHtml(r.studentName || '')} · ${escapeHtml(r.category || '')}</strong><span>${Number(r.points || 0)}점 ${r.canceled ? '· 취소됨' : ''}</span></div>
+      <div>${escapeHtml(r.reason || '사유 없음')}</div>
+      <div class="history-meta">${escapeHtml(r.teacherName || '')} · ${escapeHtml(roleLabels[r.teacherRole] || '일반')} · ${fmt(r.createdAt)}</div>
+      ${!r.canceled ? `<div class="row-actions"><button class="danger-btn cancel-penalty-btn" data-id="${r.id}">기록 취소</button></div>` : ''}
+    </div>
+  `).join('');
+  els.adminPenaltyList.querySelectorAll('.cancel-penalty-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      await updateDoc(doc(db, 'penaltyRecords', btn.dataset.id), {
+        canceled: true,
+        canceledAt: serverTimestamp(),
+        canceledBy: currentUser.uid,
       });
+      alertMsg('벌점 기록을 취소 처리했습니다.');
     });
   });
 }
+
+els.penaltyTableSearch.addEventListener('input', renderAdminPenaltyList);
 
 document.querySelectorAll('.tab-btn').forEach(btn => {
   btn.addEventListener('click', () => {
