@@ -53,7 +53,40 @@ function renderTeachers(){const q=(document.getElementById('teacher-search').val
 function renderStudents(){const q=(document.getElementById('student-search').value||'').trim().toLowerCase(); const list=studentRows.filter(r=>!r._delete).filter(r=>!q||[r.name,r.englishName,r.className].some(v=>String(v||'').toLowerCase().includes(q))); const tb=document.getElementById('student-tbody'); if(!list.length){tb.innerHTML='<tr><td colspan="6" class="empty">등록된 학생이 없습니다.</td></tr>'; return;} tb.innerHTML=list.map(r=>{const i=studentRows.indexOf(r); return `<tr><td>${esc(r.oldKey||'')}</td><td><input class="edit-input" value="${esc(r.name||'')}" onchange="studentRows[${i}].name=this.value"></td><td><input class="edit-input" value="${esc(r.englishName||'')}" onchange="studentRows[${i}].englishName=this.value"></td><td><input class="edit-input" value="${esc(r.className||'')}" onchange="studentRows[${i}].className=this.value"></td><td><span class="pill ${r._status==='오류'?'err':'ok'}">${esc(r._status||'기존')}</span></td><td><button class="btn btn-danger" onclick="studentRows[${i}]._delete=true; renderStudents()">삭제</button></td></tr>`;}).join('');}
 function renderRecords(){const q=(document.getElementById('record-search').value||'').trim().toLowerCase(); const list=Object.entries(recordsRaw).map(([k,v])=>({key:k,...v})).filter(r=>!q||[r.studentName,r.teacherName,r.className].some(v=>String(v||'').toLowerCase().includes(q))).sort((a,b)=>String(b.createdAt||'').localeCompare(String(a.createdAt||''))); const tb=document.getElementById('record-tbody'); if(!list.length){tb.innerHTML='<tr><td colspan="11" class="empty">기록이 없습니다.</td></tr>'; return;} tb.innerHTML=list.map(r=>`<tr><td>${esc(r.studentName||'')}</td><td>${esc(r.englishName||'-')}</td><td>${esc(r.className||'-')}</td><td>${esc(r.teacherName||'')}</td><td>${esc(r.teacherRole||'')}</td><td>${esc(r.category||'')}</td><td>${Number(r.points||0)}</td><td>${esc(r.reason||'')}</td><td>${esc(new Date(r.createdAt||'').toLocaleString('ko-KR')||'-')}</td><td>${r.canceled?'<span class="pill err">취소됨</span>':'<span class="pill ok">정상</span>'}</td><td>${r.canceled?'—':`<button class="btn btn-danger" onclick="cancelRecord('${esc(r.key)}')">취소</button>`}</td></tr>`).join('');}
 async function cancelRecord(key){if(!confirm('이 기록을 취소하시겠습니까?')) return; await db.ref('detentionRecords/'+key).update({canceled:true,canceledAt:new Date().toISOString()}); toast('기록이 취소되었습니다.','ok'); refreshAll();}
-async function saveTeachers(){try{const next={}; teacherRows.forEach(r=>{if(r._delete) return; const key=teacherKey(r.email,r.name); if(!key||!r.name||!r.email||!r.password){r._status='오류'; return;} next[key]={{name:r.name.trim(),email:r.email.trim().toLowerCase(),password:String(r.password).trim(),role:r.role||'general',homeroom:r.homeroom||'',active:r.active!==false}}; r._status='저장됨'; r.oldKey=key;}); await db.ref('teachers').set(next); toast('교사 데이터가 저장되었습니다.','ok'); refreshAll();}catch(e){console.error(e);toast('교사 데이터 저장 실패','err');}}
+async function saveStudents() {
+  try {
+    const next = {};
+
+    studentRows.forEach(r => {
+      if (r._delete) return;
+
+      const key = studentKey(r.name);
+
+      if (!key || !r.name) {
+        r._status = '오류';
+        return;
+      }
+
+      next[key] = {
+        name: r.name.trim(),
+        englishName: (r.englishName || '').trim(),
+        className: (r.className || '').trim(),
+        updatedAt: new Date().toISOString()
+      };
+
+      r._status = '저장됨';
+      r.oldKey = key;
+    });
+
+    await db.ref('students').set(next);
+    toast('학생 데이터가 저장되었습니다.', 'ok');
+    refreshAll();
+  } catch (e) {
+    console.error(e);
+    toast('학생 데이터 저장 실패', 'err');
+  }
+}
+
 async function saveStudents(){try{const next={}; studentRows.forEach(r=>{if(r._delete) return; const key=studentKey(r.name); if(!key||!r.name){r._status='오류'; return;} next[key]={{name:r.name.trim(),englishName:(r.englishName||'').trim(),className:(r.className||'').trim(),updatedAt:new Date().toISOString()}}; r._status='저장됨'; r.oldKey=key;}); await db.ref('students').set(next); toast('학생 데이터가 저장되었습니다.','ok'); refreshAll();}catch(e){console.error(e);toast('학생 데이터 저장 실패','err');}}
 async function uploadStudentsCsv(){const file=document.getElementById('student-csv').files[0]; if(!file) return toast('학생 CSV 파일을 선택해 주세요.','err'); try{const rows=parseCsv(await readFileText(file, document.getElementById('student-csv-enc').value)); rows.forEach(r=>studentRows.push({oldKey:'',name:r.name||'',englishName:r.englishName||'',className:r.className||'',_status:'신규',_delete:false})); renderStudents(); document.getElementById('student-upload-msg').textContent=`${rows.length}개의 학생 행을 불러왔습니다. 학생 명단 관리 탭에서 [변경 저장]을 누르세요.`; toast('학생 CSV를 불러왔습니다.','ok');}catch(e){console.error(e);toast('학생 CSV 처리 실패','err');}}
 async function uploadTeachersCsv(){const file=document.getElementById('teacher-csv').files[0]; if(!file) return toast('교사 CSV 파일을 선택해 주세요.','err'); try{const rows=parseCsv(await readFileText(file, document.getElementById('teacher-csv-enc').value)); rows.forEach(r=>teacherRows.push({oldKey:'',name:r.name||'',email:(r.email||'').toLowerCase(),password:r.password||'',role:r.role||'general',active:parseBool(r.active),homeroom:r.homeroom||'',_status:'신규',_delete:false})); renderTeachers(); document.getElementById('teacher-upload-msg').textContent=`${rows.length}개의 교사 행을 불러왔습니다. 교사 계정 관리 탭에서 [변경 저장]을 누르세요.`; toast('교사 CSV를 불러왔습니다.','ok');}catch(e){console.error(e);toast('교사 CSV 처리 실패','err');}}
