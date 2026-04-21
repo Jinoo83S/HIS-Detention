@@ -153,17 +153,43 @@ els.penaltyCategory.addEventListener('change', () => {
 els.adminLoginBtn.addEventListener('click', async () => {
   try {
     const result = await signInWithPopup(auth, new GoogleAuthProvider());
+
     const admin = await adminDoc(result.user.uid);
+
     if (!admin) {
-      const message = `이 Google 계정은 아직 관리자 등록이 되어 있지 않습니다.\n\nFirestore에 아래 문서를 먼저 만들어 주세요.\n컬렉션: admins\n문서 ID: ${result.user.uid}\n필드: uid=${result.user.uid}, email=${result.user.email || ''}, name=${result.user.displayName || '관리자'}\n\n문서를 만든 뒤 다시 로그인해 주세요.`;
+      const message = `이 Google 계정은 아직 관리자 등록이 되어 있지 않습니다.
+
+Firestore에 아래 문서를 먼저 만들어 주세요.
+
+컬렉션: admins
+문서 ID: ${result.user.uid}
+
+필드
+- uid: ${result.user.uid}
+- email: ${result.user.email || ''}
+- name: ${result.user.displayName || '관리자'}
+- role: admin
+
+문서를 만든 뒤 다시 로그인해 주세요.`;
+
       await signOut(auth);
       alert(message);
       return;
     }
+
     currentMode = 'admin';
   } catch (err) {
-    console.error(err);
-    alertMsg('관리자 로그인에 실패했습니다.', true);
+    console.error('관리자 로그인 오류:', err);
+
+    const code = err?.code || 'unknown';
+    const message = err?.message || '알 수 없는 오류';
+
+    alert(
+      `관리자 로그인에 실패했습니다.
+
+오류 코드: ${code}
+오류 메시지: ${message}`
+    );
   }
 });
 
