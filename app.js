@@ -153,7 +153,6 @@ els.penaltyCategory.addEventListener('change', () => {
 els.adminLoginBtn.addEventListener('click', async () => {
   try {
     const result = await signInWithPopup(auth, new GoogleAuthProvider());
-
     const admin = await adminDoc(result.user.uid);
 
     if (!admin) {
@@ -177,7 +176,14 @@ Firestore에 아래 문서를 먼저 만들어 주세요.
       return;
     }
 
-    currentMode = 'admin';
+    if (admin.role !== 'admin') {
+      await signOut(auth);
+      alert('오류: 관리자 권한(role=admin)이 없는 계정입니다.');
+      return;
+    }
+
+    setMode('admin');
+    bindAdmin();
   } catch (err) {
     console.error('관리자 로그인 오류:', err);
 
@@ -218,7 +224,7 @@ onAuthStateChanged(auth, async (user) => {
   }
 
   const admin = await adminDoc(user.uid);
-  if (admin && currentMode === 'admin') {
+  if (admin && admin.role === 'admin') {
     setMode('admin');
     bindAdmin();
     return;
