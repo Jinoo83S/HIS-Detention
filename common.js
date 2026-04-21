@@ -1,7 +1,7 @@
 const firebaseConfig = {
   "apiKey": "AIzaSyCc3rwlIlZd7NaFkd2viT-tYhS9IemsV9o",
   "authDomain": "his-detention.firebaseapp.com",
-  "databaseURL": "https://his-detention-default-rtdb.asia-northeast3.firebasedatabase.app",
+  "databaseURL": "https://his-detention-default-rtdb.asia-southeast1.firebasedatabase.app/",
   "projectId": "his-detention",
   "storageBucket": "his-detention.firebasestorage.app",
   "messagingSenderId": "357843127217",
