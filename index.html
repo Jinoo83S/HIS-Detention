@@ -1,181 +1,23 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>학생 벌점 관리 시스템</title>
-  <link rel="stylesheet" href="style.css" />
-  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-</head>
-<body>
-  <header class="site-header">
-    <div>
-      <h1>학생 벌점 관리 시스템</h1>
-      <p>교사용 입력 / 관리자 관리</p>
-    </div>
-    <div class="header-actions">
-      <button id="adminLoginBtn" class="ghost-btn">관리자 로그인</button>
-    </div>
-  </header>
-
-  <main class="page-shell">
-    <section id="teacherLoginSection" class="panel login-panel">
-      <h2>교사 로그인</h2>
-      <label>이메일
-        <input id="teacherEmail" type="email" placeholder="teacher@school.org" />
-      </label>
-      <label>비밀번호
-        <input id="teacherPassword" type="password" placeholder="비밀번호" />
-      </label>
-      <button id="teacherLoginBtn" class="primary-btn full">교사 로그인</button>
-      <div class="helper-box">관리자 계정은 오른쪽 상단의 <strong>관리자 로그인</strong> 버튼으로 Google 로그인합니다.</div>
-    </section>
-
-    <section id="teacherApp" class="hidden app-grid teacher-grid">
-      <div class="panel sidebar-panel">
-        <div class="toolbar-row sticky-top">
-          <input id="studentSearch" type="text" placeholder="학생명/영문명/학반 검색" />
-          <button id="teacherLogoutBtn" class="danger-btn">로그아웃</button>
-        </div>
-        <div id="teacherInfo" class="badge-row"></div>
-        <div id="studentList" class="student-list"></div>
-      </div>
-      <div class="panel content-panel">
-        <div class="section-card">
-          <h3>벌점 입력</h3>
-          <div id="selectedStudentBox" class="selected-box">학생을 선택해 주세요.</div>
-          <div class="form-grid">
-            <label>벌점 항목
-              <select id="penaltyCategory"></select>
-            </label>
-            <label>점수
-              <input id="penaltyPoints" type="number" min="1" />
-            </label>
-            <label>사유
-              <textarea id="penaltyReason" rows="4" placeholder="상세 사유"></textarea>
-            </label>
-          </div>
-          <button id="addPenaltyBtn" class="primary-btn">벌점 등록</button>
-        </div>
-        <div class="section-card">
-          <h3>학생 벌점 이력</h3>
-          <div id="penaltyHistory" class="history-list"></div>
-        </div>
-      </div>
-    </section>
-
-    <section id="adminApp" class="hidden panel admin-panel">
-      <div class="admin-header">
-        <div>
-          <h2>관리자 페이지</h2>
-          <p>학생, 교사, 권한을 관리합니다.</p>
-        </div>
-        <button id="adminLogoutBtn" class="danger-btn">로그아웃</button>
-      </div>
-
-      <div class="tab-bar">
-        <button class="tab-btn active" data-tab="teachers">교사 계정 관리</button>
-        <button class="tab-btn" data-tab="students">학생 명단 관리</button>
-        <button class="tab-btn" data-tab="penalties">벌점 기록 관리</button>
-        <button class="tab-btn" data-tab="upload">학생 명단 업로드</button>
-      </div>
-
-      <section id="tab-teachers" class="tab-panel active">
-        <div class="toolbar-row compact-gap">
-          <input id="teacherTableSearch" type="text" placeholder="교사명/이메일 검색" />
-          <button id="addTeacherRowBtn" class="secondary-btn">행 추가</button>
-          <button id="saveTeacherTableBtn" class="primary-btn">변경 저장</button>
-          <button id="sendResetSelectedBtn" class="ghost-btn">선택 교사 재설정 메일</button>
-        </div>
-        <div class="table-wrap">
-          <table class="editor-table" id="teacherTable">
-            <thead>
-              <tr>
-                <th class="cell-check"><input id="teacherCheckAll" type="checkbox" /></th>
-                <th>상태</th>
-                <th>이름</th>
-                <th>이메일</th>
-                <th>초기 비밀번호(신규만)</th>
-                <th>권한</th>
-                <th>활성</th>
-                <th>저장 상태</th>
-                <th>삭제</th>
-              </tr>
-            </thead>
-            <tbody id="teacherTableBody"></tbody>
-          </table>
-        </div>
-        <div class="helper-box">기존 교사의 비밀번호는 보안상 표시/직접 수정할 수 없습니다. 기존 계정은 <strong>재설정 메일</strong>을 보내는 방식으로 관리합니다.</div>
-
-        <div class="subsection-card">
-          <h3>교사 명단 CSV 업로드</h3>
-          <div class="helper-box warning">CSV 첫 줄은 반드시 <code>name,email,password,role,active</code> 이어야 합니다. 기존 이메일은 Firestore 정보만 갱신되고, 신규 이메일은 계정이 생성됩니다.</div>
-          <div class="form-grid admin-upload-grid two-column">
-            <label>CSV 인코딩
-              <select id="teacherCsvEncoding">
-                <option value="utf-8">UTF-8</option>
-                <option value="euc-kr" selected>EUC-KR (CP949)</option>
-              </select>
-            </label>
-            <label>CSV 파일
-              <input id="teacherCsvFileInput" type="file" accept=".csv" />
-            </label>
-          </div>
-          <button id="uploadTeachersBtn" class="primary-btn full">교사 명단 업로드</button>
-          <div id="teacherUploadResult" class="helper-box hidden"></div>
-        </div>
-      </section>
-
-      <section id="tab-students" class="tab-panel">
-        <div class="toolbar-row compact-gap">
-          <input id="studentTableSearch" type="text" placeholder="학생명/영문명/학반 검색" />
-          <button id="addStudentRowBtn" class="secondary-btn">행 추가</button>
-          <button id="saveStudentTableBtn" class="primary-btn">변경 저장</button>
-        </div>
-        <div class="table-wrap">
-          <table class="editor-table" id="studentTable">
-            <thead>
-              <tr>
-                <th>이전 ID</th>
-                <th>학생 이름</th>
-                <th>영문 이름</th>
-                <th>학반</th>
-                <th>저장 상태</th>
-                <th>삭제</th>
-              </tr>
-            </thead>
-            <tbody id="studentTableBody"></tbody>
-          </table>
-        </div>
-      </section>
-
-      <section id="tab-penalties" class="tab-panel">
-        <div class="toolbar-row compact-gap">
-          <input id="penaltyTableSearch" type="text" placeholder="학생명/교사명/항목 검색" />
-        </div>
-        <div id="adminPenaltyList" class="history-list"></div>
-      </section>
-
-      <section id="tab-upload" class="tab-panel">
-        <div class="helper-box warning">한글이 깨질 때: CSV 파일 인코딩을 <strong>UTF-8</strong> 또는 <strong>EUC-KR(CP949)</strong>로 바꿔서 다시 업로드해 주세요.</div>
-        <div class="form-grid admin-upload-grid two-column">
-          <label>CSV 인코딩
-            <select id="csvEncoding">
-              <option value="utf-8">UTF-8</option>
-              <option value="euc-kr" selected>EUC-KR (CP949)</option>
-            </select>
-          </label>
-          <label>CSV 파일
-            <input id="csvFileInput" type="file" accept=".csv" />
-          </label>
-        </div>
-        <button id="uploadStudentsBtn" class="primary-btn full">학생 명단 업로드</button>
-        <div class="helper-box">CSV 첫 줄은 반드시 <code>name,englishName,className</code> 이어야 합니다.</div>
-        <div id="studentUploadResult" class="helper-box hidden"></div>
-      </section>
-    </section>
-  </main>
-
-  <script type="module" src="app.js"></script>
-</body>
-</html>
+<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>교사 로그인</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=DM+Serif+Display&display=swap" rel="stylesheet"><link rel="stylesheet" href="common.css">
+<style>.admin-link{position:fixed;top:14px;right:14px;background:rgba(255,255,255,.2);color:#fff;padding:8px 14px;border-radius:10px;text-decoration:none;font-size:12px;font-weight:700}</style></head>
+<body><div id="toast"></div><a class="admin-link" href="admin.html">⚙️ 관리자</a>
+<div class="login-page"><div class="login-box">
+<div class="icon">🧑‍🏫</div><h1 style="text-align:center">교사 로그인</h1><p style="text-align:center">교사를 선택하고 비밀번호를 입력하세요.</p>
+<div class="grid">
+<div><label class="label">교사 검색</label><input id="search" class="edit-input" placeholder="교사명/이메일/학반 검색"></div>
+<div><label class="label">교사 선택</label><select id="teacher-select" class="edit-input"><option value="">교사를 선택하세요</option></select></div>
+<div><label class="label">또는 이메일 직접 입력</label><input id="email" class="edit-input" placeholder="teacher@his.sc.kr"></div>
+<div><label class="label">비밀번호</label><input id="pw" type="password" class="edit-input" placeholder="비밀번호" onkeydown="if(event.key==='Enter')login()"></div>
+<button class="btn btn-primary" onclick="login()">로그인</button>
+</div></div></div>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script><script src="common.js"></script>
+<script>
+let teachers={};
+async function init(){try{const snap=await db.ref('teachers').once('value'); teachers=snap.val()||{}; renderTeachers();}catch(e){console.error(e);toast('교사 목록을 불러오지 못했습니다.','err');}}
+function renderTeachers(){const q=(document.getElementById('search').value||'').trim().toLowerCase(); const list=Object.values(teachers).filter(t=>t&&t.active!==false).filter(t=>!q||[t.name,t.email,t.homeroom].some(v=>String(v||'').toLowerCase().includes(q))).sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''))); const sel=document.getElementById('teacher-select'); sel.innerHTML='<option value="">교사를 선택하세요</option>'+list.map(t=>`<option value="${esc(t.email||'')}">${esc(t.name||'')} · ${esc(t.role||'general')}${t.homeroom?' · '+esc(t.homeroom):''}</option>`).join('');}
+async function login(){const email=(document.getElementById('email').value||document.getElementById('teacher-select').value||'').trim().toLowerCase(); const pw=(document.getElementById('pw').value||'').trim(); if(!email||!pw) return toast('교사와 비밀번호를 입력해 주세요.','err'); try{const snap=await db.ref('teachers').once('value'); let found=null,key=''; snap.forEach(child=>{const t=child.val()||{}; if(String(t.email||'').trim().toLowerCase()===email && String(t.password||'')===pw && t.active!==false){found=t; key=child.key;}}); if(!found){document.getElementById('pw').value=''; return toast('아이디 또는 비밀번호가 올바르지 않습니다.','err');} sessionStorage.setItem('his_teacher', JSON.stringify({key,name:found.name||'',email:found.email||'',role:found.role||'general',homeroom:found.homeroom||''})); location.href='teacher.html'; }catch(e){console.error(e);toast('로그인 중 오류가 발생했습니다.','err');}}
+document.getElementById('search').addEventListener('input', renderTeachers);
+document.getElementById('teacher-select').addEventListener('change', e=>{if(e.target.value) document.getElementById('email').value=e.target.value;});
+init();
+</script></body></html>

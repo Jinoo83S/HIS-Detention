@@ -1,18 +1,26 @@
-# HIS Detention Static v3
+# HIS Detention · PTC-style full set
 
-변경 사항
-- 관리자 편집 UI를 표 형태로 변경
-- 학생 명단 업로드 탭을 마지막으로 이동
-- 학생 명단 확인/편집 테이블 추가
-- 교사 계정 관리 테이블 추가
+구성
+- `index.html` : 교사 로그인
+- `teacher.html` : 교사용 벌점 입력
+- `admin.html` : 관리자 페이지
+- `common.css`, `common.js` : 공통 파일
+- `students-sample.csv`, `teachers-sample.csv`
 
-주의
-- 기존 교사의 비밀번호는 웹에서 직접 읽거나 표시할 수 없습니다.
-- 기존 계정은 비밀번호 재설정 메일로 관리합니다.
-- 신규 교사는 표에서 이메일/초기 비밀번호를 입력해 생성합니다.
+## 방식
+사용자가 제공한 PTC 예시처럼, Firebase Auth 없이 Realtime Database의 값을
+브라우저에서 읽어 로그인 비교 후 `sessionStorage`에 저장하는 방식입니다.
 
+## RTDB 구조
+- `teachers/{key}`
+- `students/{key}`
+- `detentionRecords/{pushKey}`
 
-교사 CSV 샘플 파일: teachers-sample.csv
-첫 줄: name,email,password,role,active
-role 예시: general, studentAffairs, education, notifications
-active 예시: true / false
+## 관리자 비밀번호
+`admin.html` 안의 `ADMIN_PW` 값을 원하는 값으로 바꾸세요.
+
+## 교사 CSV
+`name,email,password,role,active,homeroom`
+
+## 학생 CSV
+`name,englishName,className`
