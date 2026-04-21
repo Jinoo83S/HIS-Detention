@@ -160,6 +160,7 @@
 
       <!-- ================= CSV 업로드 ================= -->
       <div id="tab-uploads" class="tab-panel">
+        <!-- 학생 CSV 업로드 -->
         <div class="card">
           <div class="card-title">학생 명단 CSV 업로드</div>
           <div class="notice">CSV 첫 줄: name,englishName,className</div>
@@ -171,13 +172,31 @@
             </select>
 
             <input id="student-csv" type="file" accept=".csv">
-
             <button class="btn btn-primary" onclick="uploadStudentsCsv()">업로드</button>
           </div>
 
           <div id="student-upload-msg" class="small"></div>
         </div>
+
+        <!-- 교사 CSV 업로드 -->
+        <div class="card">
+          <div class="card-title">교사 계정 CSV 업로드</div>
+          <div class="notice">CSV 첫 줄: name,email,password,role,active,homeroom</div>
+
+          <div class="filter-bar">
+            <select id="teacher-csv-enc" class="edit-input">
+              <option value="utf-8">UTF-8</option>
+              <option value="euc-kr">EUC-KR</option>
+            </select>
+
+          <input id="teacher-csv" type="file" accept=".csv">
+          <button class="btn btn-primary" onclick="uploadTeachersCsv()">업로드</button>
+        </div>
+
+        <div id="teacher-upload-msg" class="small"></div>
       </div>
+    </div>
+    </div>
     </div>
   </div>
 
