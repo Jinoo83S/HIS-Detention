@@ -9,46 +9,24 @@
   <link rel="stylesheet" href="common.css">
 
   <style>
-    .title-en {
-      display:block;
-      margin-top:2px;
-      font-size:.9em;
-    }
-
-    .sub-en,
-    .desc-en,
-    .label-en {
-      display:block;
-      margin-top:2px;
-    }
-
-    .desc-ko,
-    .desc-en {
-      color:var(--sb);
-      font-size:12px;
-    }
-
-    .label-en {
-      font-size:11px;
-      color:var(--sb);
-      font-weight:500;
-    }
+    .title-en{display:block;margin-top:2px;font-size:.9em}
+    .sub-en,.desc-en,.label-en{display:block;margin-top:2px}
+    .desc-ko,.desc-en{color:var(--sb);font-size:12px}
+    .label-en{font-size:11px;color:var(--sb);font-weight:500}
 
     .page-grid{
       display:grid;
-      grid-template-columns: 1.15fr .85fr;
+      grid-template-columns:1.15fr .85fr;
       gap:12px;
     }
 
     .form-grid{
       display:grid;
-      grid-template-columns: repeat(2, minmax(0,1fr));
+      grid-template-columns:repeat(2,minmax(0,1fr));
       gap:10px;
     }
 
-    .form-grid .full{
-      grid-column: 1 / -1;
-    }
+    .form-grid .full{grid-column:1 / -1}
 
     .section-note{
       font-size:12px;
@@ -75,17 +53,12 @@
       margin-top:10px;
     }
 
-    .role-only{
-      display:none;
-    }
-
-    .role-show{
-      display:block;
-    }
+    .role-only{display:none}
+    .role-show{display:block}
 
     .stat-boxes{
       display:grid;
-      grid-template-columns: repeat(3, minmax(0,1fr));
+      grid-template-columns:repeat(3,minmax(0,1fr));
       gap:8px;
       margin-top:10px;
     }
@@ -110,15 +83,14 @@
       color:var(--nv);
     }
 
-    .criteria-table td:nth-child(1),
     .criteria-table td:nth-child(3),
-    .criteria-table td:nth-child(4){
+    .criteria-table td:nth-child(5){
       white-space:nowrap;
     }
 
-    tbody tr:nth-child(odd){ background:#ffffff; }
-    tbody tr:nth-child(even){ background:#f7faff; }
-    tbody tr:hover{ background:#edf3ff; }
+    tbody tr:nth-child(odd){background:#ffffff}
+    tbody tr:nth-child(even){background:#f7faff}
+    tbody tr:hover{background:#edf3ff}
 
     .status-confirmed{
       background:#e8f8ee;
@@ -150,24 +122,35 @@
       display:inline-block;
     }
 
-    .info-badges {
+    .info-badges{
       display:flex;
       gap:6px;
       flex-wrap:wrap;
     }
 
-    @media (max-width: 980px){
-      .page-grid{
-        grid-template-columns: 1fr;
-      }
+    .criteria-textarea{
+      width:100%;
+      min-height:56px;
+      padding:8px 10px;
+      border:1px solid var(--bd);
+      border-radius:8px;
+      outline:none;
+      font-size:13px;
+      line-height:1.4;
+      resize:vertical;
+      font-family:inherit;
+      background:#fff;
+    }
 
-      .form-grid{
-        grid-template-columns: 1fr;
-      }
+    .criteria-textarea:focus{
+      border-color:var(--nv2);
+      box-shadow:0 0 0 2px rgba(27,47,122,.08);
+    }
 
-      .stat-boxes{
-        grid-template-columns: 1fr;
-      }
+    @media (max-width:980px){
+      .page-grid{grid-template-columns:1fr}
+      .form-grid{grid-template-columns:1fr}
+      .stat-boxes{grid-template-columns:1fr}
     }
   </style>
 </head>
@@ -229,12 +212,10 @@
       <button class="tab-btn" data-tab="standard">디텐션 기준표 | Standards</button>
       <button class="tab-btn" data-tab="all">디텐션 전체보기 | All Records</button>
       <button class="tab-btn role-only" data-role="master" data-tab="confirm">디텐션 확정 | Confirm</button>
-
-      <button class="tab-btn role-only" data-role="master,ms_notice" data-tab="notify-ms">중등 디텐션 알림 | MS Notice</button>
-      <button class="tab-btn role-only" data-role="master,hs_notice" data-tab="notify-hs">고등 디텐션 알림 | HS Notice</button>
-
-      <button class="tab-btn role-only" data-role="master,ms_restore" data-tab="recovery-ms">중등 회복교육 | MS Restore</button>
-      <button class="tab-btn role-only" data-role="master,hs_restore" data-tab="recovery-hs">고등 회복교육 | HS Restore</button>
+      <button class="tab-btn role-only" data-role="ms_notice" data-tab="notify-ms">중등 디텐션 알림 | MS Notice</button>
+      <button class="tab-btn role-only" data-role="hs_notice" data-tab="notify-hs">고등 디텐션 알림 | HS Notice</button>
+      <button class="tab-btn role-only" data-role="ms_restore" data-tab="recovery-ms">중등 회복교육 | MS Restore</button>
+      <button class="tab-btn role-only" data-role="hs_restore" data-tab="recovery-hs">고등 회복교육 | HS Restore</button>
     </div>
 
     <!-- 디텐션 입력 -->
@@ -246,15 +227,15 @@
           <div class="form-grid">
             <div class="full">
               <label class="label">이름 검색 / 학생 선택 | Student Search / Select Student</label>
-                <input
-                  id="student-search-input"
-                  class="edit-input"
-                  list="student-list"
-                  placeholder="학생 이름 검색 / Search by Korean or English name"
-                  oninput="syncStudentSelection()"
-                />
-                <datalist id="student-list"></datalist>
-              </div>
+              <input
+                id="student-search-input"
+                class="edit-input"
+                list="student-list"
+                placeholder="학생 이름 검색 / Search by Korean or English name"
+                oninput="syncStudentSelection()"
+              />
+              <datalist id="student-list"></datalist>
+            </div>
 
             <div>
               <label class="label">벌점 구분 | Category</label>
@@ -315,7 +296,10 @@
       <div class="card">
         <div class="card-title">
           <span>디텐션 기준표 | Detention Standards</span>
-          <span class="small" id="standard-edit-note">기본 보기 모드 | View Mode</span>
+          <div style="text-align:right;">
+            <div class="small" id="standard-edit-note">기본 보기 모드 | View Mode</div>
+            <div class="small" id="standard-save-status">저장 이력 없음 | Not saved yet</div>
+          </div>
         </div>
 
         <div class="section-note">
@@ -545,11 +529,11 @@
     const DETENTION_STANDARD_PATH = 'detentionStandards';
 
     let detentionStandards = [
-      { category: '수업', violation: '과제 미제출', autoPoints: 3, note: '기초값' },
-      { category: '수업', violation: '수업 지각', autoPoints: 3, note: '기초값' },
-      { category: '수업', violation: '수업 중 자는 행위', autoPoints: 3, note: '기초값' },
-      { category: '수업', violation: '수업 방해', autoPoints: 3, note: '기초값' },
-      { category: '수업', violation: '수업 준비물 미지참', autoPoints: 3, note: '기초값' },
+      { category: '수업 | Class', violation: '다음 사항에서 3회 이상 위반 시 디텐', autoPoints: 3, note: '기초값' },
+      { category: '수업 | Class', violation: '수업 지각', autoPoints: 3, note: '기초값' },
+      { category: '수업 | Class', violation: '수업 중 자는 행위', autoPoints: 3, note: '기초값' },
+      { category: '수업 | Class', violation: '수업 방해', autoPoints: 3, note: '기초값' },
+      { category: '수업 | Class', violation: '수업 준비물 미지참', autoPoints: 3, note: '기초값' },
       { category: '표절 및 부정행위', violation: '표절', autoPoints: 9, note: '기준표 반영' },
       { category: '표절 및 부정행위', violation: '부정행위 및 방조', autoPoints: 12, note: '기준표 반영' },
       { category: '표절 및 부정행위', violation: 'AI 사용 금지 과제 전체 작성/번역', autoPoints: 12, note: '기준표 반영' },
@@ -591,7 +575,6 @@
     let teacherRoles = [];
     let students = {};
     let entries = {};
-
     let studentSearchMap = {};
     let selectedStudentKey = '';
 
@@ -610,14 +593,12 @@
 
     function normalizeRoles(roles){
       if (Array.isArray(roles)) return roles.filter(Boolean);
-
       if (typeof roles === 'string') {
         return roles
           .split(/[|,]/)
           .map(v => String(v || '').trim().toLowerCase())
           .filter(Boolean);
       }
-
       return [];
     }
 
@@ -626,7 +607,7 @@
     }
 
     function canEditStandard(){
-      return hasRole('master');
+      return Array.isArray(teacherRoles) && teacherRoles.includes('master');
     }
 
     function canConfirmDetention(){
@@ -645,9 +626,14 @@
       return list.join(', ');
     }
 
+    function setStandardSaveStatus(text){
+      const el = document.getElementById('standard-save-status');
+      if (el) el.textContent = text;
+    }
+
     function init(){
       teacher = requireTeacherSession();
-      if(!teacher) return;
+      if (!teacher) return;
 
       teacherRoles = normalizeRoles(teacher.roles || []);
 
@@ -670,31 +656,26 @@
       loadData();
     }
 
-  function setupRoleVisibility(){
-    const isMaster = hasRole('master');
+    function setupRoleVisibility(){
+      const isMaster = hasRole('master');
 
-    document.querySelectorAll('.role-only').forEach(el => {
-      const roles = String(el.dataset.role || '')
-        .split(',')
-        .map(v => v.trim())
-        .filter(Boolean);
+      document.querySelectorAll('.role-only').forEach(el => {
+        const roles = String(el.dataset.role || '')
+          .split(',')
+          .map(v => v.trim())
+          .filter(Boolean);
 
-      let visible = false;
+        let visible = false;
 
-      if (isMaster) {
-        visible = true;
-      } else {
-        visible = roles.some(role => hasRole(role));
-      }
+        if (isMaster) visible = true;
+        else visible = roles.some(role => hasRole(role));
 
-      el.classList.toggle('role-show', visible);
-    });
+        el.classList.toggle('role-show', visible);
+      });
 
-  document.getElementById('standard-edit-note').textContent =
-    isMaster
-      ? '편집 가능 모드 | Editable Mode'
-      : '기본 보기 모드 | View Mode';
-}
+      document.getElementById('standard-edit-note').textContent =
+        isMaster ? '편집 가능 모드 | Editable Mode' : '기본 보기 모드 | View Mode';
+    }
 
     function setupRecoveryTable(){
       const msTb = document.getElementById('recovery-ms-tbody');
@@ -733,10 +714,10 @@
       if (!editable) {
         tb.innerHTML = detentionStandards.map((row) => `
           <tr>
-            <td>${esc(row.category || '')}</td>
-            <td>${esc(row.violation || '')}</td>
+            <td style="white-space:pre-wrap;">${esc(row.category || '')}</td>
+            <td style="white-space:pre-wrap;">${esc(row.violation || '')}</td>
             <td>${esc(String(row.autoPoints ?? ''))}</td>
-            <td>${esc(row.note || '')}</td>
+            <td style="white-space:pre-wrap;">${esc(row.note || '')}</td>
           </tr>
         `).join('');
         return;
@@ -745,18 +726,10 @@
       tb.innerHTML = detentionStandards.map((row, idx) => `
         <tr>
           <td>
-            <input
-              class="edit-input"
-              value="${esc(row.category || '')}"
-              oninput="detentionStandards[${idx}].category=this.value"
-            >
+            <textarea class="criteria-textarea" oninput="detentionStandards[${idx}].category=this.value">${esc(row.category || '')}</textarea>
           </td>
           <td>
-            <input
-              class="edit-input"
-              value="${esc(row.violation || '')}"
-              oninput="detentionStandards[${idx}].violation=this.value"
-            >
+            <textarea class="criteria-textarea" oninput="detentionStandards[${idx}].violation=this.value">${esc(row.violation || '')}</textarea>
           </td>
           <td>
             <input
@@ -768,11 +741,7 @@
             >
           </td>
           <td>
-            <input
-              class="edit-input"
-              value="${esc(row.note || '')}"
-              oninput="detentionStandards[${idx}].note=this.value"
-            >
+            <textarea class="criteria-textarea" oninput="detentionStandards[${idx}].note=this.value">${esc(row.note || '')}</textarea>
           </td>
           <td style="text-align:center;">
             <button class="btn btn-danger" onclick="deleteCriteriaRow(${idx})">삭제 | Delete</button>
@@ -796,7 +765,6 @@
 
     function deleteCriteriaRow(idx){
       if (!canEditStandard()) return;
-
       detentionStandards.splice(idx, 1);
       renderCriteriaTable();
     }
@@ -809,19 +777,30 @@
       try {
         const cleaned = detentionStandards
           .map(row => ({
-            category: String(row.category || '').trim(),
-            violation: String(row.violation || '').trim(),
+            category: String(row.category || ''),
+            violation: String(row.violation || ''),
             autoPoints: Number(row.autoPoints || 0),
-            note: String(row.note || '').trim()
+            note: String(row.note || '')
           }))
-          .filter(row => row.category && row.violation);
+          .filter(row => row.category.trim() && row.violation.trim());
+
+        const savedAt = new Date().toISOString();
 
         await db.ref(DETENTION_STANDARD_PATH).set(cleaned);
+        await db.ref(DETENTION_STANDARD_PATH + '_meta').set({
+          savedAt,
+          savedBy: teacher.name || '',
+          savedByEmail: teacher.email || ''
+        });
 
         detentionStandards = cleaned;
         renderCriteriaTable();
         setupSelectors();
         renderViolationOptions();
+
+        const formatted = new Date(savedAt).toLocaleString('ko-KR');
+        setStandardSaveStatus(`마지막 저장: ${formatted} | Last saved: ${formatted}`);
+
         toast('디텐션 기준표가 저장되었습니다.\nDetention standards have been saved.', 'ok');
       } catch (e) {
         console.error(e);
@@ -859,6 +838,48 @@
       document.getElementById('auto-points').textContent = found ? String(found.autoPoints) : '-';
     }
 
+    function renderStudentOptions(){
+      const list = Object.entries(students)
+        .map(([key, v]) => ({ key, ...v }))
+        .sort((a, b) =>
+          String(a.className || '').localeCompare(String(b.className || ''), 'ko', { numeric: true }) ||
+          String(a.name || '').localeCompare(String(b.name || ''), 'ko')
+        );
+
+      const dataList = document.getElementById('student-list');
+      const studentFilter = document.getElementById('all-student-filter');
+      studentSearchMap = {};
+
+      dataList.innerHTML = list.map(s => {
+        const label = `${String(s.className || '-')} · ${String(s.name || '').trim()} · ${String(s.englishName || '').trim()}`;
+        studentSearchMap[label] = s.key;
+        return `<option value="${esc(label)}"></option>`;
+      }).join('');
+
+      studentFilter.innerHTML =
+        '<option value="">전체 학생 | All Students</option>' +
+        list.map(s => `
+          <option value="${esc(s.key)}">${esc(s.name || '')}</option>
+        `).join('');
+    }
+
+    function syncStudentSelection(){
+      const inputValue = (document.getElementById('student-search-input').value || '').trim();
+      selectedStudentKey = studentSearchMap[inputValue] || '';
+      return selectedStudentKey;
+    }
+
+    function renderFilters(){
+      const classes = [...new Set(
+        Object.values(students).map(s => String(s.className || '').trim()).filter(Boolean)
+      )].sort((a, b) => a.localeCompare(b, 'ko', { numeric: true }));
+
+      const classFilter = document.getElementById('all-class-filter');
+      classFilter.innerHTML =
+        '<option value="">전체 학반 | All Classes</option>' +
+        classes.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
+    }
+
     function setupEvents(){
       document.getElementById('category-select').addEventListener('change', renderViolationOptions);
       document.getElementById('violation-select').addEventListener('change', syncAutoPoints);
@@ -881,10 +902,11 @@
 
     async function loadData(){
       try{
-        const [sSnap, eSnap, stdSnap] = await Promise.all([
+        const [sSnap, eSnap, stdSnap, metaSnap] = await Promise.all([
           db.ref('students').once('value'),
           db.ref(DETENTION_DB_PATH).once('value'),
-          db.ref(DETENTION_STANDARD_PATH).once('value')
+          db.ref(DETENTION_STANDARD_PATH).once('value'),
+          db.ref(DETENTION_STANDARD_PATH + '_meta').once('value')
         ]);
 
         students = sSnap.val() || {};
@@ -893,6 +915,14 @@
         const dbStandards = stdSnap.val();
         if (Array.isArray(dbStandards) && dbStandards.length) {
           detentionStandards = dbStandards;
+        }
+
+        const meta = metaSnap.val() || {};
+        if (meta.savedAt) {
+          const formatted = new Date(meta.savedAt).toLocaleString('ko-KR');
+          setStandardSaveStatus(`마지막 저장: ${formatted} | Last saved: ${formatted}`);
+        } else {
+          setStandardSaveStatus('저장 이력 없음 | Not saved yet');
         }
 
         renderStudentOptions();
@@ -908,49 +938,6 @@
         console.error(e);
         toast('데이터를 불러오지 못했습니다.\nFailed to load data.', 'err');
       }
-    }
-
-  function renderStudentOptions(){
-    const list = Object.entries(students)
-      .map(([key, v]) => ({ key, ...v }))
-      .sort((a, b) =>
-        String(a.className || '').localeCompare(String(b.className || ''), 'ko', { numeric: true }) ||
-        String(a.name || '').localeCompare(String(b.name || ''), 'ko')
-      );
-
-    const dataList = document.getElementById('student-list');
-    const studentFilter = document.getElementById('all-student-filter');
-
-    studentSearchMap = {};
-
-    dataList.innerHTML = list.map(s => {
-      const label = `${String(s.className || '-')} · ${String(s.name || '').trim()} · ${String(s.englishName || '').trim()}`;
-      studentSearchMap[label] = s.key;
-      return `<option value="${esc(label)}"></option>`;
-    }).join('');
-
-    studentFilter.innerHTML =
-      '<option value="">전체 학생 | All Students</option>' +
-      list.map(s => `
-        <option value="${esc(s.key)}">${esc(s.name || '')}</option>
-      `).join('');
-  }
-
-  function syncStudentSelection(){
-    const inputValue = (document.getElementById('student-search-input').value || '').trim();
-    selectedStudentKey = studentSearchMap[inputValue] || '';
-    return selectedStudentKey;
-  }
-
-    function renderFilters(){
-      const classes = [...new Set(
-        Object.values(students).map(s => String(s.className || '').trim()).filter(Boolean)
-      )].sort((a, b) => a.localeCompare(b, 'ko', { numeric: true }));
-
-      const classFilter = document.getElementById('all-class-filter');
-      classFilter.innerHTML =
-        '<option value="">전체 학반 | All Classes</option>' +
-        classes.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
     }
 
     function renderRecentEntries(){
@@ -987,17 +974,12 @@
 
       let list = Object.entries(entries).map(([key, value]) => ({ key, ...value }));
 
-      if (classFilter){
-        list = list.filter(r => String(r.className || '') === classFilter);
-      }
-
-      if (studentFilter){
-        list = list.filter(r => String(r.studentKey || '') === studentFilter);
-      }
+      if (classFilter) list = list.filter(r => String(r.className || '') === classFilter);
+      if (studentFilter) list = list.filter(r => String(r.studentKey || '') === studentFilter);
 
       if (q){
         list = list.filter(r =>
-          [r.studentName, r.violation, r.memo, r.category]
+          [r.studentName, r.englishName, r.violation, r.memo, r.category]
             .some(v => String(v || '').toLowerCase().includes(q))
         );
       }
@@ -1051,13 +1033,13 @@
           <td>
             ${
               canManage
-              ? `
-                <div class="mini-actions" style="margin-top:0;">
-                  <button class="btn btn-primary" onclick="confirmDetention('${esc(r.key)}')">확정 | Confirm</button>
-                  <button class="btn btn-danger" onclick="rejectDetention('${esc(r.key)}')">반려 | Reject</button>
-                </div>
-              `
-              : '-'
+                ? `
+                  <div class="mini-actions" style="margin-top:0;">
+                    <button class="btn btn-primary" onclick="confirmDetention('${esc(r.key)}')">확정 | Confirm</button>
+                    <button class="btn btn-danger" onclick="rejectDetention('${esc(r.key)}')">반려 | Reject</button>
+                  </div>
+                `
+                : '-'
             }
           </td>
         </tr>

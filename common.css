@@ -439,3 +439,17 @@ tbody tr td .edit-input{
 tbody tr:hover td .edit-input{
   background:#ffffff;
 }
+
+.criteria-textarea{
+  width:100%;
+  min-height:56px;
+  padding:8px 10px;
+  border:1px solid var(--bd);
+  border-radius:8px;
+  outline:none;
+  font-size:13px;
+  line-height:1.4;
+  resize:vertical;
+  font-family:inherit;
+  background:#fff;
+}
