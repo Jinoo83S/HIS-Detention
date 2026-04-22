@@ -14,19 +14,23 @@
       grid-template-columns: 1.15fr .85fr;
       gap:12px;
     }
+
     .form-grid{
       display:grid;
       grid-template-columns: repeat(2, minmax(0,1fr));
       gap:10px;
     }
+
     .form-grid .full{
       grid-column: 1 / -1;
     }
+
     .section-note{
       font-size:12px;
       color:var(--sb);
       margin-top:4px;
     }
+
     .readonly-box{
       padding:8px 10px;
       border:1px solid var(--bd);
@@ -37,45 +41,54 @@
       align-items:center;
       font-size:13px;
     }
+
     .mini-actions{
       display:flex;
       gap:6px;
       flex-wrap:wrap;
       margin-top:10px;
     }
+
     .role-only{
       display:none;
     }
+
     .role-show{
       display:block;
     }
+
     .stat-boxes{
       display:grid;
       grid-template-columns: repeat(3, minmax(0,1fr));
       gap:8px;
       margin-top:10px;
     }
+
     .stat-box{
       border:1px solid var(--bd);
       border-radius:10px;
       background:#f9fbff;
       padding:10px 12px;
     }
+
     .stat-box .k{
       font-size:11px;
       color:var(--sb);
       margin-bottom:4px;
     }
+
     .stat-box .v{
       font-size:18px;
       font-weight:800;
       color:var(--nv);
     }
+
     .criteria-table td:nth-child(1),
     .criteria-table td:nth-child(3),
     .criteria-table td:nth-child(4){
       white-space:nowrap;
     }
+
     tbody tr:nth-child(odd){ background:#ffffff; }
     tbody tr:nth-child(even){ background:#f7faff; }
     tbody tr:hover{ background:#edf3ff; }
@@ -84,9 +97,11 @@
       .page-grid{
         grid-template-columns: 1fr;
       }
+
       .form-grid{
         grid-template-columns: 1fr;
       }
+
       .stat-boxes{
         grid-template-columns: 1fr;
       }
@@ -112,6 +127,7 @@
     <div class="card">
       <div class="card-title">교사 정보</div>
       <div id="teacher-info"></div>
+
       <div class="stat-boxes">
         <div class="stat-box">
           <div class="k">오늘 등록 건수</div>
@@ -137,6 +153,7 @@
       <button class="tab-btn role-only" data-role="head,admin" data-tab="recovery">회복교육</button>
     </div>
 
+    <!-- 디텐션 입력 -->
     <div id="tab-entry" class="tab-panel active">
       <div class="page-grid">
         <div class="card">
@@ -201,13 +218,22 @@
       </div>
     </div>
 
+    <!-- 기준표 -->
     <div id="tab-standard" class="tab-panel">
       <div class="card">
         <div class="card-title">
           <span>디텐션 기준표</span>
           <span class="small" id="standard-edit-note">기본 보기 모드</span>
         </div>
-        <div class="section-note">기초 버전입니다. 세부 수정/편집 권한 로직은 다음 단계에서 연결하면 됩니다.</div>
+
+        <div class="section-note">
+          권한에 따라 보기 또는 편집이 가능합니다.
+        </div>
+
+        <div id="standard-actions" class="mini-actions role-only" data-role="head,admin" style="margin-top:10px;">
+          <button class="btn btn-secondary" onclick="addCriteriaRow()">행 추가</button>
+          <button class="btn btn-primary" onclick="saveCriteriaTable()">기준표 저장</button>
+        </div>
 
         <div class="tbl-wrap" style="margin-top:10px;">
           <table class="criteria-table">
@@ -217,6 +243,7 @@
                 <th>위반행위</th>
                 <th>자동 점수</th>
                 <th>비고</th>
+                <th id="criteria-action-head" class="hidden">삭제</th>
               </tr>
             </thead>
             <tbody id="criteria-tbody"></tbody>
@@ -225,6 +252,7 @@
       </div>
     </div>
 
+    <!-- 전체보기 -->
     <div id="tab-all" class="tab-panel">
       <div class="card">
         <div class="card-title">디텐션 전체보기</div>
@@ -263,6 +291,7 @@
       </div>
     </div>
 
+    <!-- 확정 -->
     <div id="tab-confirm" class="tab-panel">
       <div class="card">
         <div class="card-title">디텐션 확정</div>
@@ -285,10 +314,12 @@
       </div>
     </div>
 
+    <!-- 알림 -->
     <div id="tab-notify" class="tab-panel">
       <div class="card">
         <div class="card-title">디텐션 알림</div>
         <div class="notice">권한 보유자만 보이는 기초 화면입니다. 다음 단계에서 학부모/학생 알림 발송 로직을 붙일 수 있습니다.</div>
+
         <div class="form-grid" style="margin-top:10px;">
           <div>
             <label class="label">발송 대상</label>
@@ -296,6 +327,7 @@
               <option>미정</option>
             </select>
           </div>
+
           <div>
             <label class="label">발송 방식</label>
             <select class="edit-input">
@@ -304,6 +336,7 @@
               <option>앱 알림</option>
             </select>
           </div>
+
           <div class="full">
             <label class="label">알림 내용</label>
             <textarea class="edit-input" placeholder="알림 내용 초안"></textarea>
@@ -312,6 +345,7 @@
       </div>
     </div>
 
+    <!-- 회복교육 -->
     <div id="tab-recovery" class="tab-panel">
       <div class="card">
         <div class="card-title">회복교육</div>
@@ -341,34 +375,42 @@
 
   <script>
     const DETENTION_DB_PATH = 'detentionEntries';
+    const DETENTION_STANDARD_PATH = 'detentionStandards';
 
-    const detentionStandards = [
+    let detentionStandards = [
       { category: '수업', violation: '과제 미제출', autoPoints: 3, note: '기초값' },
       { category: '수업', violation: '수업 지각', autoPoints: 3, note: '기초값' },
       { category: '수업', violation: '수업 중 자는 행위', autoPoints: 3, note: '기초값' },
       { category: '수업', violation: '수업 방해', autoPoints: 3, note: '기초값' },
       { category: '수업', violation: '수업 준비물 미지참', autoPoints: 3, note: '기초값' },
+
       { category: '표절 및 부정행위', violation: '표절', autoPoints: 9, note: '기준표 반영' },
       { category: '표절 및 부정행위', violation: '부정행위 및 방조', autoPoints: 12, note: '기준표 반영' },
       { category: '표절 및 부정행위', violation: 'AI 사용 금지 과제 전체 작성/번역', autoPoints: 12, note: '기준표 반영' },
+
       { category: '언어 및 품행', violation: '욕설', autoPoints: 3, note: '기준표 반영' },
       { category: '언어 및 품행', violation: '거짓말', autoPoints: 3, note: '기준표 반영' },
       { category: '언어 및 품행', violation: '회복교육 무단 불참', autoPoints: 3, note: '기준표 반영' },
       { category: '언어 및 품행', violation: '타인에게 불쾌감을 주는 언행', autoPoints: 6, note: '3-12점 범위의 기초값' },
       { category: '언어 및 품행', violation: '교사의 지시 불이행', autoPoints: 6, note: '3-12점 범위의 기초값' },
+
       { category: '복장', violation: '모자 착용', autoPoints: 1, note: '1차 기본값' },
       { category: '복장', violation: '단정하지 않은 복장 착용', autoPoints: 1, note: '1차 기본값' },
       { category: '복장', violation: '공식행사 복장 위반', autoPoints: 1, note: '기준표 반영' },
+
       { category: '두발', violation: '염색/삭발/규정 위반 펌', autoPoints: 1, note: '1차 기본값' },
       { category: '두발', violation: '두발 길이 규정 위반', autoPoints: 1, note: '1차 기본값' },
+
       { category: '화장 및 문신', violation: '색조 화장', autoPoints: 1, note: '1차 기본값' },
       { category: '화장 및 문신', violation: '네일 아트', autoPoints: 1, note: '1차 기본값' },
       { category: '화장 및 문신', violation: '문신', autoPoints: 12, note: '12-15점 범위의 기초값' },
+
       { category: '시설 및 기물', violation: '교내 엘리베이터 사용', autoPoints: 3, note: '기준표 반영' },
       { category: '시설 및 기물', violation: '학교/타인 소유물 낙서', autoPoints: 3, note: '기준표 반영' },
       { category: '시설 및 기물', violation: '타인 소유물 무단 유용', autoPoints: 3, note: '기준표 반영' },
       { category: '시설 및 기물', violation: '출입금지 시간 무단 위반', autoPoints: 9, note: '9-12점 범위의 기초값' },
       { category: '시설 및 기물', violation: '일과 중 무단 이탈', autoPoints: 9, note: '9-18점 범위의 기초값' },
+
       { category: '이성교제', violation: '이성교제 규정 1회 위반', autoPoints: 12, note: '12-15점 범위의 기초값' },
       { category: '흡연', violation: '담배 소지 또는 흡연 1차 적발', autoPoints: 12, note: '12-15점 범위의 기초값' },
       { category: '교외 생활', violation: '전동 킥보드 탑승', autoPoints: 12, note: '12-15점 범위의 기초값' },
@@ -402,6 +444,11 @@
       return `${y}-${m}-${day}`;
     }
 
+    function canEditStandard(){
+      const role = String(teacher?.role || 'general');
+      return ['head', 'admin'].includes(role);
+    }
+
     function init(){
       teacher = requireTeacherSession();
       if(!teacher) return;
@@ -417,9 +464,9 @@
       `;
 
       setupRoleVisibility();
-      setupStandardTable();
       setupSelectors();
       setupEvents();
+      setupRecoveryTable();
       loadData();
     }
 
@@ -428,25 +475,16 @@
       const isPrivileged = ['head', 'admin'].includes(role);
 
       document.querySelectorAll('.role-only').forEach(el => {
-        if (isPrivileged) el.classList.add('role-show');
+        const roles = String(el.dataset.role || '').split(',').map(v => v.trim()).filter(Boolean);
+        if (!roles.length || roles.includes(role)) el.classList.add('role-show');
         else el.classList.remove('role-show');
       });
 
       document.getElementById('standard-edit-note').textContent =
-        isPrivileged ? '편집 가능 권한(기초 표시)' : '기본 보기 모드';
+        isPrivileged ? '편집 가능 모드' : '기본 보기 모드';
     }
 
-    function setupStandardTable(){
-      const tb = document.getElementById('criteria-tbody');
-      tb.innerHTML = detentionStandards.map(row => `
-        <tr>
-          <td>${esc(row.category)}</td>
-          <td>${esc(row.violation)}</td>
-          <td>${esc(String(row.autoPoints))}</td>
-          <td>${esc(row.note || '')}</td>
-        </tr>
-      `).join('');
-
+    function setupRecoveryTable(){
       const recoveryTb = document.getElementById('recovery-tbody');
       recoveryTb.innerHTML = recoveryActivities.map(r => `
         <tr>
@@ -460,9 +498,123 @@
       `).join('');
     }
 
+    function renderCriteriaTable(){
+      const tb = document.getElementById('criteria-tbody');
+      const editable = canEditStandard();
+
+      document.getElementById('criteria-action-head').classList.toggle('hidden', !editable);
+
+      if (!detentionStandards.length) {
+        tb.innerHTML = `
+          <tr>
+            <td colspan="${editable ? 5 : 4}" class="empty">기준표 항목이 없습니다.</td>
+          </tr>
+        `;
+        return;
+      }
+
+      if (!editable) {
+        tb.innerHTML = detentionStandards.map((row) => `
+          <tr>
+            <td>${esc(row.category || '')}</td>
+            <td>${esc(row.violation || '')}</td>
+            <td>${esc(String(row.autoPoints ?? ''))}</td>
+            <td>${esc(row.note || '')}</td>
+          </tr>
+        `).join('');
+        return;
+      }
+
+      tb.innerHTML = detentionStandards.map((row, idx) => `
+        <tr>
+          <td>
+            <input
+              class="edit-input"
+              value="${esc(row.category || '')}"
+              oninput="detentionStandards[${idx}].category=this.value"
+            >
+          </td>
+          <td>
+            <input
+              class="edit-input"
+              value="${esc(row.violation || '')}"
+              oninput="detentionStandards[${idx}].violation=this.value"
+            >
+          </td>
+          <td>
+            <input
+              class="edit-input"
+              type="number"
+              min="0"
+              value="${esc(String(row.autoPoints ?? 0))}"
+              oninput="detentionStandards[${idx}].autoPoints=Number(this.value || 0)"
+            >
+          </td>
+          <td>
+            <input
+              class="edit-input"
+              value="${esc(row.note || '')}"
+              oninput="detentionStandards[${idx}].note=this.value"
+            >
+          </td>
+          <td style="text-align:center;">
+            <button class="btn btn-danger" onclick="deleteCriteriaRow(${idx})">삭제</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function addCriteriaRow(){
+      if (!canEditStandard()) return;
+
+      detentionStandards.push({
+        category: '',
+        violation: '',
+        autoPoints: 0,
+        note: ''
+      });
+
+      renderCriteriaTable();
+    }
+
+    function deleteCriteriaRow(idx){
+      if (!canEditStandard()) return;
+
+      detentionStandards.splice(idx, 1);
+      renderCriteriaTable();
+    }
+
+    async function saveCriteriaTable(){
+      if (!canEditStandard()) {
+        return toast('편집 권한이 없습니다.', 'err');
+      }
+
+      try {
+        const cleaned = detentionStandards
+          .map(row => ({
+            category: String(row.category || '').trim(),
+            violation: String(row.violation || '').trim(),
+            autoPoints: Number(row.autoPoints || 0),
+            note: String(row.note || '').trim()
+          }))
+          .filter(row => row.category && row.violation);
+
+        await db.ref(DETENTION_STANDARD_PATH).set(cleaned);
+
+        detentionStandards = cleaned;
+        renderCriteriaTable();
+        setupSelectors();
+        renderViolationOptions();
+        toast('디텐션 기준표가 저장되었습니다.', 'ok');
+      } catch (e) {
+        console.error(e);
+        toast('기준표 저장 실패', 'err');
+      }
+    }
+
     function setupSelectors(){
       const categorySel = document.getElementById('category-select');
-      const categories = [...new Set(detentionStandards.map(x => x.category))];
+      const categories = [...new Set(detentionStandards.map(x => x.category).filter(Boolean))];
 
       categorySel.innerHTML = categories.map(c => `
         <option value="${esc(c)}">${esc(c)}</option>
@@ -512,20 +664,29 @@
 
     async function loadData(){
       try{
-        const [sSnap, eSnap] = await Promise.all([
+        const [sSnap, eSnap, stdSnap] = await Promise.all([
           db.ref('students').once('value'),
-          db.ref(DETENTION_DB_PATH).once('value')
+          db.ref(DETENTION_DB_PATH).once('value'),
+          db.ref(DETENTION_STANDARD_PATH).once('value')
         ]);
 
         students = sSnap.val() || {};
         entries = eSnap.val() || {};
 
+        const dbStandards = stdSnap.val();
+        if (Array.isArray(dbStandards) && dbStandards.length) {
+          detentionStandards = dbStandards;
+        }
+
         renderStudentOptions();
         renderFilters();
+        renderCriteriaTable();
         renderRecentEntries();
         renderAllEntries();
         renderConfirmEntries();
         renderStats();
+        setupSelectors();
+        renderViolationOptions();
       }catch(e){
         console.error(e);
         toast('데이터를 불러오지 못했습니다.', 'err');
