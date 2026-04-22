@@ -302,13 +302,16 @@
       const q = (document.getElementById('teacher-search').value || '').trim().toLowerCase();
       const tb = document.getElementById('teacher-tbody');
 
-      const filtered = teacherRows.filter(r => {
-        if (!q) return true;
-        return [r.name, r.email, r.homeroom].some(v =>
-          String(v || '').toLowerCase().includes(q)
-        );
-      });
-
+      const filtered = teacherRows
+        .filter(r => {
+          if (!q) return true;
+          return [r.name, r.email, r.homeroom].some(v =>
+            String(v || '').toLowerCase().includes(q)
+          );
+        })
+  .sort((a, b) =>
+    String(a.name || '').localeCompare(String(b.name || ''), 'ko')
+  );
       if (!filtered.length) {
         tb.innerHTML = '<tr><td colspan="9" class="empty">교사 데이터가 없습니다.</td></tr>';
         return;
@@ -367,12 +370,18 @@
       const q = (document.getElementById('student-search').value || '').trim().toLowerCase();
       const tb = document.getElementById('student-tbody');
 
-      const filtered = studentRows.filter(r => {
-        if (!q) return true;
-        return [r.name, r.englishName, r.className].some(v =>
-          String(v || '').toLowerCase().includes(q)
-        );
-      });
+      const filtered = studentRows
+        .filter(r => {
+          if (!q) return true;
+          return [r.name, r.englishName, r.className].some(v =>
+            String(v || '').toLowerCase().includes(q)
+          );
+        })
+        
+  .sort((a, b) =>
+    String(a.className || '').localeCompare(String(b.className || ''), 'ko', { numeric: true }) ||
+    String(a.name || '').localeCompare(String(b.name || ''), 'ko')
+  );
 
       if (!filtered.length) {
         tb.innerHTML = '<tr><td colspan="6" class="empty">학생 데이터가 없습니다.</td></tr>';
