@@ -83,9 +83,34 @@
       color:var(--nv);
     }
 
-    .criteria-table td:nth-child(3),
+    .criteria-table{
+      table-layout:fixed;
+      width:100%;
+    }
+
+    .criteria-table th:nth-child(1),
+    .criteria-table td:nth-child(1){
+      width:20%;
+    }
+
+    .criteria-table th:nth-child(2),
+    .criteria-table td:nth-child(2){
+      width:38%;
+    }
+
+    .criteria-table th:nth-child(3),
+    .criteria-table td:nth-child(3){
+      width:10%;
+    }
+
+    .criteria-table th:nth-child(4),
+    .criteria-table td:nth-child(4){
+      width:20%;
+    }
+
+    .criteria-table th:nth-child(5),
     .criteria-table td:nth-child(5){
-      white-space:nowrap;
+      width:12%;
     }
 
     tbody tr:nth-child(odd){background:#ffffff}
@@ -145,6 +170,11 @@
     .criteria-textarea:focus{
       border-color:var(--nv2);
       box-shadow:0 0 0 2px rgba(27,47,122,.08);
+    }
+
+    .criteria-points-input{
+      width:100%;
+      min-width:0;
     }
 
     @media (max-width:980px){
@@ -218,7 +248,6 @@
       <button class="tab-btn role-only" data-role="hs_restore" data-tab="recovery-hs">고등 회복교육 | HS Restore</button>
     </div>
 
-    <!-- 디텐션 입력 -->
     <div id="tab-entry" class="tab-panel active">
       <div class="page-grid">
         <div class="card">
@@ -250,6 +279,11 @@
             <div>
               <label class="label">자동벌점 | Auto Points</label>
               <div id="auto-points" class="readonly-box">-</div>
+              <div class="small">
+                숫자 범위(예: 1-12, 1,3)는 기준에 따라 수동 입력이 필요합니다.
+                <br>
+                Ranges such as 1-12 or 1,3 require manual judgment.
+              </div>
             </div>
 
             <div>
@@ -291,7 +325,6 @@
       </div>
     </div>
 
-    <!-- 기준표 -->
     <div id="tab-standard" class="tab-panel">
       <div class="card">
         <div class="card-title">
@@ -329,7 +362,6 @@
       </div>
     </div>
 
-    <!-- 전체보기 -->
     <div id="tab-all" class="tab-panel">
       <div class="card">
         <div class="card-title">디텐션 전체보기 | All Detention Records</div>
@@ -368,7 +400,6 @@
       </div>
     </div>
 
-    <!-- 확정 -->
     <div id="tab-confirm" class="tab-panel">
       <div class="card">
         <div class="card-title">디텐션 확정 | Confirm Detention</div>
@@ -397,7 +428,6 @@
       </div>
     </div>
 
-    <!-- 중등 알림 -->
     <div id="tab-notify-ms" class="tab-panel">
       <div class="card">
         <div class="card-title">중등 디텐션 알림 | MS Detention Notice</div>
@@ -431,7 +461,6 @@
       </div>
     </div>
 
-    <!-- 고등 알림 -->
     <div id="tab-notify-hs" class="tab-panel">
       <div class="card">
         <div class="card-title">고등 디텐션 알림 | HS Detention Notice</div>
@@ -465,7 +494,6 @@
       </div>
     </div>
 
-    <!-- 중등 회복교육 -->
     <div id="tab-recovery-ms" class="tab-panel">
       <div class="card">
         <div class="card-title">중등 회복교육 | MS Restorative Education</div>
@@ -492,7 +520,6 @@
       </div>
     </div>
 
-    <!-- 고등 회복교육 -->
     <div id="tab-recovery-hs" class="tab-panel">
       <div class="card">
         <div class="card-title">고등 회복교육 | HS Restorative Education</div>
@@ -529,36 +556,34 @@
     const DETENTION_STANDARD_PATH = 'detentionStandards';
 
     let detentionStandards = [
-      { category: '수업 | Class', violation: '다음 사항에서 3회 이상 위반 시 디텐', autoPoints: 3, note: '기초값' },
-      { category: '수업 | Class', violation: '수업 지각', autoPoints: 3, note: '기초값' },
-      { category: '수업 | Class', violation: '수업 중 자는 행위', autoPoints: 3, note: '기초값' },
-      { category: '수업 | Class', violation: '수업 방해', autoPoints: 3, note: '기초값' },
-      { category: '수업 | Class', violation: '수업 준비물 미지참', autoPoints: 3, note: '기초값' },
-      { category: '표절 및 부정행위', violation: '표절', autoPoints: 9, note: '기준표 반영' },
-      { category: '표절 및 부정행위', violation: '부정행위 및 방조', autoPoints: 12, note: '기준표 반영' },
-      { category: '표절 및 부정행위', violation: 'AI 사용 금지 과제 전체 작성/번역', autoPoints: 12, note: '기준표 반영' },
-      { category: '언어 및 품행', violation: '욕설', autoPoints: 3, note: '기준표 반영' },
-      { category: '언어 및 품행', violation: '거짓말', autoPoints: 3, note: '기준표 반영' },
-      { category: '언어 및 품행', violation: '회복교육 무단 불참', autoPoints: 3, note: '기준표 반영' },
-      { category: '언어 및 품행', violation: '타인에게 불쾌감을 주는 언행', autoPoints: 6, note: '3-12점 범위의 기초값' },
-      { category: '언어 및 품행', violation: '교사의 지시 불이행', autoPoints: 6, note: '3-12점 범위의 기초값' },
-      { category: '복장', violation: '모자 착용', autoPoints: 1, note: '1차 기본값' },
-      { category: '복장', violation: '단정하지 않은 복장 착용', autoPoints: 1, note: '1차 기본값' },
-      { category: '복장', violation: '공식행사 복장 위반', autoPoints: 1, note: '기준표 반영' },
-      { category: '두발', violation: '염색/삭발/규정 위반 펌', autoPoints: 1, note: '1차 기본값' },
-      { category: '두발', violation: '두발 길이 규정 위반', autoPoints: 1, note: '1차 기본값' },
-      { category: '화장 및 문신', violation: '색조 화장', autoPoints: 1, note: '1차 기본값' },
-      { category: '화장 및 문신', violation: '네일 아트', autoPoints: 1, note: '1차 기본값' },
-      { category: '화장 및 문신', violation: '문신', autoPoints: 12, note: '12-15점 범위의 기초값' },
-      { category: '시설 및 기물', violation: '교내 엘리베이터 사용', autoPoints: 3, note: '기준표 반영' },
-      { category: '시설 및 기물', violation: '학교/타인 소유물 낙서', autoPoints: 3, note: '기준표 반영' },
-      { category: '시설 및 기물', violation: '타인 소유물 무단 유용', autoPoints: 3, note: '기준표 반영' },
-      { category: '시설 및 기물', violation: '출입금지 시간 무단 위반', autoPoints: 9, note: '9-12점 범위의 기초값' },
-      { category: '시설 및 기물', violation: '일과 중 무단 이탈', autoPoints: 9, note: '9-18점 범위의 기초값' },
-      { category: '이성교제', violation: '이성교제 규정 1회 위반', autoPoints: 12, note: '12-15점 범위의 기초값' },
-      { category: '흡연', violation: '담배 소지 또는 흡연 1차 적발', autoPoints: 12, note: '12-15점 범위의 기초값' },
-      { category: '교외 생활', violation: '전동 킥보드 탑승', autoPoints: 12, note: '12-15점 범위의 기초값' },
-      { category: '그 외', violation: '기타 학생 본분에 어긋나는 위반', autoPoints: 3, note: '1-15점 범위의 기초값' }
+      {
+        category: '수업|Class',
+        violation: '다음 사항에서 3회 이상 위반 시 디텐션 포인트 3점 발생\n- 과제 미제출\n- 수업 지각\n- 수업 중 자는 행위\n- 수업 방해\n- 수업 준비물 미지참\n3 or more violations of the following:\n- Not submitting assignments\n- Being late for class\n- Sleeping in class\n- Disrupting the class\n- Not preparing class materials',
+        autoPoints: '1-12',
+        note: ''
+      },
+      { category: '표절 및 부정행위|Plagiarism & Cheating', violation: '표절 | Plagiarism', autoPoints: '9', note: '' },
+      { category: '표절 및 부정행위|Plagiarism & Cheating', violation: '부정행위 및 이에 대한 동조 또는 방조 | Cheating, aligning with cheating, or related aiding and abetting', autoPoints: '12', note: '해당 시험 점수는 0점 처리\n0 score given for the test' },
+      { category: '표절 및 부정행위|Plagiarism & Cheating', violation: '수업 규정에 명시되어 있음에도 불구하고 이에 반하여 AI를 사용하여 전체 과제를 작성하거나 번역하고 이를 시인한 경우\nWhen a student completes an entire assignment or translates it using AI, despite such use being explicitly prohibited in the class regulations, and admits to having done so', autoPoints: '12', note: '' },
+      { category: '언어 및 품행|Language & Behavior', violation: '욕설 | Foul language', autoPoints: '3', note: '' },
+      { category: '언어 및 품행|Language & Behavior', violation: '거짓말 | Lying', autoPoints: '3', note: '' },
+      { category: '언어 및 품행|Language & Behavior', violation: '회복교육 무단 불참 | Unexcused absence from Restorative Education', autoPoints: '3', note: '' },
+      { category: '언어 및 품행|Language & Behavior', violation: 'EPE 회복교육 무단 불참 | Unexcused absence from EPE Restorative Education', autoPoints: '3', note: '' },
+      { category: '언어 및 품행|Language & Behavior', violation: '타인에게 불쾌감을 주는 언행 하거나 이를 반복하는 행위 | Verbal or behavioral actions that cause discomfort to others, or repeatedly engaging in such actions', autoPoints: '3-12', note: '' },
+      { category: '언어 및 품행|Language & Behavior', violation: '다른 학생의 안전을 위협하는 장난 | Any behavior that endangers the safety of other students', autoPoints: '3-12', note: '' },
+      { category: '언어 및 품행|Language & Behavior', violation: '교사의 지시 불이행 | Failure to follow teacher instructions', autoPoints: '3-12', note: '' },
+      { category: '복장|Dress', violation: '링 또는 큰 귀걸이 착용, 피어싱 기준 위반 | Wearing hoops or drop earrings, Violation of piercing standards', autoPoints: '1,3', note: '첫 위반은 1점, 그 이후로는 3점을 부과함\nFirst violation: 1 point, afterwards: 3 points' },
+      { category: '복장|Dress', violation: '교내에서 허락 없이 모자 착용 | Wearing hats on campus without permission', autoPoints: '1,3', note: '첫 위반은 1점, 그 이후로는 3점을 부과함\nFirst violation: 1 point, afterwards: 3 points' },
+      { category: '복장|Dress', violation: '슬리퍼 및 굽이 높은 신발 착용 | Wearing slippers or high-heeled shoes', autoPoints: '1,3', note: '첫 위반은 1점, 그 이후로는 3점을 부과함\nFirst violation: 1 point, afterwards: 3 points' },
+      { category: '복장|Dress', violation: '단정하지 않은 복장 착용 | Inappropriate dressing', autoPoints: '1,3', note: '첫 위반은 1점, 그 이후로는 3점을 부과함\nFirst violation: 1 point, afterwards: 3 points' },
+      { category: '복장|Dress', violation: '색이 있는 안경 및 서클렌즈 착용 | Wearing glasses with colored lenses or colored contact lenses (circle lenses)', autoPoints: '1,3', note: '첫 위반은 1점, 그 이후로는 3점을 부과함\nFirst violation: 1 point, afterwards: 3 points' },
+      { category: '복장|Dress', violation: '과도한 장신구 착용 | Wearing excessive jewelry or accessories', autoPoints: '1,3', note: '첫 위반은 1점, 그 이후로는 3점을 부과함\nFirst violation: 1 point, afterwards: 3 points' },
+      { category: '복장|Dress', violation: '공식행사 복장 위반 | Violation of official event dress code', autoPoints: '1', note: '' },
+      { category: '두발|Hair', violation: '헤어롤 착용 | Wearing hair rollers', autoPoints: '1,3', note: '첫 위반은 1점, 그 이후로는 3점을 부과함\nFirst violation: 1 point, afterwards: 3 points' },
+      { category: '두발|Hair', violation: '염색, 삭발, 규정에 위반 되는 종류의 펌 | Hair dyed or shaved off', autoPoints: '1,3', note: '첫 위반은 1점, 그 이후로는 3점을 부과함\nFirst violation: 1 point, afterwards: 3 points' },
+      { category: '두발|Hair', violation: '두발 길이 규정 위반 | Violation of hair length standards', autoPoints: '1,3', note: '첫 위반은 1점, 그 이후로는 3점을 부과함\nFirst violation: 1 point, afterwards: 3 points' },
+      { category: '화장 및 문신|Makeup & tattoos', violation: '색조 화장 | Color makeup', autoPoints: '1,3', note: '첫 위반은 1점, 그 이후로는 3점을 부과함\nFirst violation: 1 point, afterwards: 3 points' },
+      { category: '화장 및 문신|Makeup & tattoos', violation: '네일 아트 | Nail art', autoPoints: '1,3', note: '첫 위반은 1점, 그 이후로는 3점을 부과함\nFirst violation: 1 point, afterwards: 3 points' }
     ];
 
     const recoveryActivities = [
@@ -666,7 +691,6 @@
           .filter(Boolean);
 
         let visible = false;
-
         if (isMaster) visible = true;
         else visible = roles.some(role => hasRole(role));
 
@@ -674,7 +698,9 @@
       });
 
       document.getElementById('standard-edit-note').textContent =
-        isMaster ? '편집 가능 모드 | Editable Mode' : '기본 보기 모드 | View Mode';
+        isMaster
+          ? '편집 가능 모드 | Editable Mode'
+          : '기본 보기 모드 | View Mode';
     }
 
     function setupRecoveryTable(){
@@ -726,22 +752,29 @@
       tb.innerHTML = detentionStandards.map((row, idx) => `
         <tr>
           <td>
-            <textarea class="criteria-textarea" oninput="detentionStandards[${idx}].category=this.value">${esc(row.category || '')}</textarea>
+            <textarea
+              class="criteria-textarea"
+              oninput="detentionStandards[${idx}].category=this.value"
+            >${esc(row.category || '')}</textarea>
           </td>
           <td>
-            <textarea class="criteria-textarea" oninput="detentionStandards[${idx}].violation=this.value">${esc(row.violation || '')}</textarea>
+            <textarea
+              class="criteria-textarea"
+              oninput="detentionStandards[${idx}].violation=this.value"
+            >${esc(row.violation || '')}</textarea>
           </td>
           <td>
             <input
-              class="edit-input"
-              type="number"
-              min="0"
-              value="${esc(String(row.autoPoints ?? 0))}"
-              oninput="detentionStandards[${idx}].autoPoints=Number(this.value || 0)"
+              class="edit-input criteria-points-input"
+              value="${esc(String(row.autoPoints ?? ''))}"
+              oninput="detentionStandards[${idx}].autoPoints=this.value"
             >
           </td>
           <td>
-            <textarea class="criteria-textarea" oninput="detentionStandards[${idx}].note=this.value">${esc(row.note || '')}</textarea>
+            <textarea
+              class="criteria-textarea"
+              oninput="detentionStandards[${idx}].note=this.value"
+            >${esc(row.note || '')}</textarea>
           </td>
           <td style="text-align:center;">
             <button class="btn btn-danger" onclick="deleteCriteriaRow(${idx})">삭제 | Delete</button>
@@ -756,7 +789,7 @@
       detentionStandards.push({
         category: '',
         violation: '',
-        autoPoints: 0,
+        autoPoints: '',
         note: ''
       });
 
@@ -779,7 +812,7 @@
           .map(row => ({
             category: String(row.category || ''),
             violation: String(row.violation || ''),
-            autoPoints: Number(row.autoPoints || 0),
+            autoPoints: String(row.autoPoints || '').trim(),
             note: String(row.note || '')
           }))
           .filter(row => row.category.trim() && row.violation.trim());
@@ -835,7 +868,7 @@
       const category = document.getElementById('category-select').value;
       const violation = document.getElementById('violation-select').value;
       const found = detentionStandards.find(x => x.category === category && x.violation === violation);
-      document.getElementById('auto-points').textContent = found ? String(found.autoPoints) : '-';
+      document.getElementById('auto-points').textContent = found ? String(found.autoPoints || '') : '-';
     }
 
     function renderStudentOptions(){
@@ -959,7 +992,7 @@
           <td>${esc(r.className || '-')}</td>
           <td>${esc(r.category || '')}</td>
           <td>${esc(r.violation || '')}</td>
-          <td>${Number(r.totalPoints || 0)}</td>
+          <td>${esc(String(r.totalPoints || 0))}</td>
           <td>${statusBadge(r.status || '임시저장')}</td>
           <td>${fmt(r.createdAt)}</td>
         </tr>
@@ -997,9 +1030,9 @@
           <td>${esc(r.className || '-')}</td>
           <td>${esc(r.category || '')}</td>
           <td>${esc(r.violation || '')}</td>
-          <td>${Number(r.autoPoints || 0)}</td>
-          <td>${Number(r.manualPoints || 0)}</td>
-          <td>${Number(r.totalPoints || 0)}</td>
+          <td>${esc(String(r.autoPoints || ''))}</td>
+          <td>${esc(String(r.manualPoints || 0))}</td>
+          <td>${esc(String(r.totalPoints || 0))}</td>
           <td>${esc(r.teacherName || '')}</td>
           <td>${statusBadge(r.status || '임시저장')}</td>
           <td>${fmt(r.createdAt)}</td>
@@ -1027,7 +1060,7 @@
           <td>${esc(r.className || '-')}</td>
           <td>${esc(r.category || '')}</td>
           <td>${esc(r.violation || '')}</td>
-          <td>${Number(r.totalPoints || 0)}</td>
+          <td>${esc(String(r.totalPoints || 0))}</td>
           <td>${esc(r.teacherName || '')}</td>
           <td>${statusBadge(r.status || '임시저장')}</td>
           <td>
@@ -1062,7 +1095,7 @@
       const studentKey = syncStudentSelection();
       const category = document.getElementById('category-select').value;
       const violation = document.getElementById('violation-select').value;
-      const autoPoints = Number(document.getElementById('auto-points').textContent || 0);
+      const autoPointsRaw = String(document.getElementById('auto-points').textContent || '').trim();
       const manualPoints = Number(document.getElementById('manual-points').value || 0);
       const memo = (document.getElementById('memo').value || '').trim();
 
@@ -1071,6 +1104,10 @@
       }
 
       const s = students[studentKey];
+      const totalPoints = autoPointsRaw && !isNaN(Number(autoPointsRaw))
+        ? Number(autoPointsRaw) + manualPoints
+        : manualPoints;
+
       const payload = {
         studentKey,
         studentName: s.name || '',
@@ -1078,9 +1115,9 @@
         className: s.className || '',
         category,
         violation,
-        autoPoints,
+        autoPoints: autoPointsRaw,
         manualPoints,
-        totalPoints: autoPoints + manualPoints,
+        totalPoints,
         memo,
         teacherName: teacher.name || '',
         teacherEmail: teacher.email || '',

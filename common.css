@@ -453,3 +453,38 @@ tbody tr:hover td .edit-input{
   font-family:inherit;
   background:#fff;
 }
+
+.criteria-table{
+  table-layout:fixed;
+  width:100%;
+}
+
+.criteria-table th:nth-child(1),
+.criteria-table td:nth-child(1){
+  width:20%;
+}
+
+.criteria-table th:nth-child(2),
+.criteria-table td:nth-child(2){
+  width:38%;
+}
+
+.criteria-table th:nth-child(3),
+.criteria-table td:nth-child(3){
+  width:10%;
+}
+
+.criteria-table th:nth-child(4),
+.criteria-table td:nth-child(4){
+  width:20%;
+}
+
+.criteria-table th:nth-child(5),
+.criteria-table td:nth-child(5){
+  width:12%;
+}
+
+.criteria-points-input{
+  width:100%;
+  min-width:0;
+}
