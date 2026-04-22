@@ -33,7 +33,23 @@
       width: 100%;
     }
 
-    .bilingual-sub {
+    .title-en {
+      display:block;
+      margin-top:2px;
+      font-size:.9em;
+    }
+
+    .desc-ko,
+    .desc-en {
+      display:block;
+      text-align:center;
+    }
+
+    .desc-en {
+      margin-top:2px;
+    }
+
+    .label-en {
       display:block;
       font-size:11px;
       color:var(--sb);
@@ -52,14 +68,22 @@
     <div class="login-box">
       <div class="icon">🧑‍🏫</div>
 
-      <h1 style="text-align:center;">교사 로그인 | Teacher Login</h1>
-      <p style="text-align:center;">교사를 선택하고 비밀번호를 입력해 주세요. | Please select a teacher and enter the password.</p>
+      <h1 style="text-align:center;">
+        교사 로그인
+        <span class="title-en">Teacher Login</span>
+      </h1>
+
+      <p>
+        <span class="desc-ko">교사를 선택하고 비밀번호를 입력해 주세요.</span>
+        <span class="desc-en">Please select a teacher and enter the password.</span>
+      </p>
 
       <div class="grid">
         <div>
           <label class="label">
             교사 선택 | Teacher
-            <span class="bilingual-sub">이름으로 검색할 수 있습니다. | Search by teacher name</span>
+            <span class="label-en">이름으로 검색할 수 있습니다.</span>
+            <span class="label-en">You can search by teacher name.</span>
           </label>
 
           <input
@@ -75,7 +99,9 @@
         </div>
 
         <div>
-          <label class="label">비밀번호 | Password</label>
+          <label class="label">
+            비밀번호 | Password
+          </label>
           <input
             id="pw"
             type="password"
@@ -105,7 +131,7 @@
         renderTeachers();
       } catch (e) {
         console.error(e);
-        toast('교사 목록을 불러오지 못했습니다. | Failed to load teacher list.', 'err');
+        toast('교사 목록을 불러오지 못했습니다.\nFailed to load teacher list.', 'err');
       }
     }
 
@@ -134,7 +160,7 @@
       const pw = (document.getElementById('pw').value || '').trim();
 
       if (!selectedEmail || !pw) {
-        return toast('교사와 비밀번호를 입력해 주세요. | Please select a teacher and enter the password.', 'err');
+        return toast('교사와 비밀번호를 입력해 주세요.\nPlease select a teacher and enter the password.', 'err');
       }
 
       try {
@@ -157,7 +183,7 @@
 
         if (!found) {
           document.getElementById('pw').value = '';
-          return toast('아이디 또는 비밀번호가 올바르지 않습니다. | Invalid teacher or password.', 'err');
+          return toast('아이디 또는 비밀번호가 올바르지 않습니다.\nInvalid teacher or password.', 'err');
         }
 
         sessionStorage.setItem(
@@ -174,7 +200,7 @@
         location.href = 'teacher.html';
       } catch (e) {
         console.error(e);
-        toast('로그인 중 오류가 발생했습니다. | An error occurred during login.', 'err');
+        toast('로그인 중 오류가 발생했습니다.\nAn error occurred during login.', 'err');
       }
     }
 
