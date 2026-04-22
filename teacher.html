@@ -557,33 +557,214 @@
 
     let detentionStandards = [
       {
-        category: '수업|Class',
-        violation: '다음 사항에서 3회 이상 위반 시 디텐션 포인트 3점 발생\n- 과제 미제출\n- 수업 지각\n- 수업 중 자는 행위\n- 수업 방해\n- 수업 준비물 미지참\n3 or more violations of the following:\n- Not submitting assignments\n- Being late for class\n- Sleeping in class\n- Disrupting the class\n- Not preparing class materials',
+        category: '수업 Class',
+        violation: `다음 사항에서 3회 이상 위반 시 디텐션 포인트 3점 발생
+                      - 과제 미제출
+                      - 수업 지각
+                      - 수업 중 자는 행위
+                      - 수업 방해
+                      - 수업 준비물 미지참
+                    3 or more violations of the following:
+                      - Not submitting assignments
+                      - Being late for class
+                      - Sleeping in class
+                      - Disrupting the class
+                      - Not preparing class materials`,
         autoPoints: '1-12',
         note: ''
       },
-      { category: '표절 및 부정행위|Plagiarism & Cheating', violation: '표절 | Plagiarism', autoPoints: '9', note: '' },
-      { category: '표절 및 부정행위|Plagiarism & Cheating', violation: '부정행위 및 이에 대한 동조 또는 방조 | Cheating, aligning with cheating, or related aiding and abetting', autoPoints: '12', note: '해당 시험 점수는 0점 처리\n0 score given for the test' },
-      { category: '표절 및 부정행위|Plagiarism & Cheating', violation: '수업 규정에 명시되어 있음에도 불구하고 이에 반하여 AI를 사용하여 전체 과제를 작성하거나 번역하고 이를 시인한 경우\nWhen a student completes an entire assignment or translates it using AI, despite such use being explicitly prohibited in the class regulations, and admits to having done so', autoPoints: '12', note: '' },
-      { category: '언어 및 품행|Language & Behavior', violation: '욕설 | Foul language', autoPoints: '3', note: '' },
-      { category: '언어 및 품행|Language & Behavior', violation: '거짓말 | Lying', autoPoints: '3', note: '' },
-      { category: '언어 및 품행|Language & Behavior', violation: '회복교육 무단 불참 | Unexcused absence from Restorative Education', autoPoints: '3', note: '' },
-      { category: '언어 및 품행|Language & Behavior', violation: 'EPE 회복교육 무단 불참 | Unexcused absence from EPE Restorative Education', autoPoints: '3', note: '' },
-      { category: '언어 및 품행|Language & Behavior', violation: '타인에게 불쾌감을 주는 언행 하거나 이를 반복하는 행위 | Verbal or behavioral actions that cause discomfort to others, or repeatedly engaging in such actions', autoPoints: '3-12', note: '' },
-      { category: '언어 및 품행|Language & Behavior', violation: '다른 학생의 안전을 위협하는 장난 | Any behavior that endangers the safety of other students', autoPoints: '3-12', note: '' },
-      { category: '언어 및 품행|Language & Behavior', violation: '교사의 지시 불이행 | Failure to follow teacher instructions', autoPoints: '3-12', note: '' },
-      { category: '복장|Dress', violation: '링 또는 큰 귀걸이 착용, 피어싱 기준 위반 | Wearing hoops or drop earrings, Violation of piercing standards', autoPoints: '1,3', note: '첫 위반은 1점, 그 이후로는 3점을 부과함\nFirst violation: 1 point, afterwards: 3 points' },
-      { category: '복장|Dress', violation: '교내에서 허락 없이 모자 착용 | Wearing hats on campus without permission', autoPoints: '1,3', note: '첫 위반은 1점, 그 이후로는 3점을 부과함\nFirst violation: 1 point, afterwards: 3 points' },
-      { category: '복장|Dress', violation: '슬리퍼 및 굽이 높은 신발 착용 | Wearing slippers or high-heeled shoes', autoPoints: '1,3', note: '첫 위반은 1점, 그 이후로는 3점을 부과함\nFirst violation: 1 point, afterwards: 3 points' },
-      { category: '복장|Dress', violation: '단정하지 않은 복장 착용 | Inappropriate dressing', autoPoints: '1,3', note: '첫 위반은 1점, 그 이후로는 3점을 부과함\nFirst violation: 1 point, afterwards: 3 points' },
-      { category: '복장|Dress', violation: '색이 있는 안경 및 서클렌즈 착용 | Wearing glasses with colored lenses or colored contact lenses (circle lenses)', autoPoints: '1,3', note: '첫 위반은 1점, 그 이후로는 3점을 부과함\nFirst violation: 1 point, afterwards: 3 points' },
-      { category: '복장|Dress', violation: '과도한 장신구 착용 | Wearing excessive jewelry or accessories', autoPoints: '1,3', note: '첫 위반은 1점, 그 이후로는 3점을 부과함\nFirst violation: 1 point, afterwards: 3 points' },
-      { category: '복장|Dress', violation: '공식행사 복장 위반 | Violation of official event dress code', autoPoints: '1', note: '' },
-      { category: '두발|Hair', violation: '헤어롤 착용 | Wearing hair rollers', autoPoints: '1,3', note: '첫 위반은 1점, 그 이후로는 3점을 부과함\nFirst violation: 1 point, afterwards: 3 points' },
-      { category: '두발|Hair', violation: '염색, 삭발, 규정에 위반 되는 종류의 펌 | Hair dyed or shaved off', autoPoints: '1,3', note: '첫 위반은 1점, 그 이후로는 3점을 부과함\nFirst violation: 1 point, afterwards: 3 points' },
-      { category: '두발|Hair', violation: '두발 길이 규정 위반 | Violation of hair length standards', autoPoints: '1,3', note: '첫 위반은 1점, 그 이후로는 3점을 부과함\nFirst violation: 1 point, afterwards: 3 points' },
-      { category: '화장 및 문신|Makeup & tattoos', violation: '색조 화장 | Color makeup', autoPoints: '1,3', note: '첫 위반은 1점, 그 이후로는 3점을 부과함\nFirst violation: 1 point, afterwards: 3 points' },
-      { category: '화장 및 문신|Makeup & tattoos', violation: '네일 아트 | Nail art', autoPoints: '1,3', note: '첫 위반은 1점, 그 이후로는 3점을 부과함\nFirst violation: 1 point, afterwards: 3 points' }
+      {
+        category: '표절 및 부정행위 Plagiarism & Cheating',
+        violation: '표절 Plagiarism',
+        autoPoints: '9',
+        note: ''
+      },
+      {
+        category: '표절 및 부정행위 Plagiarism & Cheating',
+        violation: '부정행위 및 이에 대한 동조 또는 방조 Cheating, aligning with cheating, or related aiding and abetting',
+        autoPoints: '12',
+        note: `해당 시험 점수는 0점 처리
+              0 score given for the test`
+      },
+      {
+        category: '표절 및 부정행위 Plagiarism & Cheating',
+        violation: `수업 규정에 명시되어 있음에도 불구하고 이에 반하여 AI를 사용하여 전체 과제를 작성하거나 번역하고 이를 시인한 경우
+    When a student completes an entire assignment or translates it using AI, despite such use being explicitly prohibited in the class regulations, and admits to having done so`,
+        autoPoints: '12',
+        note: ''
+      },
+      {
+        category: '언어 및 품행 Language & Behavior',
+        violation: '욕설 Foul language',
+        autoPoints: '3',
+        note: ''
+      },
+      {
+        category: '언어 및 품행 Language & Behavior',
+        violation: '거짓말 Lying',
+        autoPoints: '3',
+        note: ''
+      },
+      {
+        category: '언어 및 품행 Language & Behavior',
+        violation: '회복교육 무단 불참 Unexcused absence from Restorative Education',
+        autoPoints: '3',
+        note: ''
+      },
+      {
+        category: '언어 및 품행 Language & Behavior',
+        violation: 'EPE 회복교육 무단 불참 Unexcused absence from EPE Restorative Education',
+        autoPoints: '3',
+        note: ''
+      },
+      {
+        category: '언어 및 품행 Language & Behavior',
+        violation: '타인에게 불쾌감을 주는 언행을 하거나 이를 반복하는 행위 Verbal or behavioral actions that cause discomfort to others, or repeatedly engaging in such actions',
+        autoPoints: '3-12',
+        note: ''
+      },
+      {
+        category: '언어 및 품행 Language & Behavior',
+        violation: '다른 학생의 안전을 위협하는 장난 Any behavior that endangers the safety of other students',
+        autoPoints: '3-12',
+        note: ''
+      },
+      {
+        category: '언어 및 품행 Language & Behavior',
+        violation: '교사의 지시 불이행 Failure to follow teacher instructions',
+        autoPoints: '3-12',
+        note: ''
+      },
+      {
+        category: '복장 Dress',
+        violation: '링 또는 드롭 귀걸이 착용, 피어싱 기준 위반 Wearing hoops or drop earrings, Violation of piercing standards',
+        autoPoints: '1,3',
+        note: '첫 위반은 1점, 그 이후로는 3점을 부과함'
+      },
+      {
+        category: '복장 Dress',
+        violation: '교내에서 허락 없이 모자 착용 Wearing hats on campus without permission',
+        autoPoints: '1,3',
+        note: '첫 위반은 1점, 그 이후로는 3점을 부과함'
+      },
+      {
+        category: '복장 Dress',
+        violation: '슬리퍼 및 굽이 높은 신발 착용 Wearing slippers or high-heeled shoes',
+        autoPoints: '1,3',
+        note: '첫 위반은 1점, 그 이후로는 3점을 부과함'
+      },
+      {
+        category: '복장 Dress',
+        violation: '단정하지 않은 복장 착용 Inappropriate dressing',
+        autoPoints: '1,3',
+        note: '첫 위반은 1점, 그 이후로는 3점을 부과함'
+      },
+      {    
+        category: '복장 Dress',
+        violation: "색이 있는 안경 및 서클렌즈 착용 Wearing glasses with colored lenses or colored contact lenses ('circle lenses')",
+        autoPoints: '1,3',
+        note: '첫 위반은 1점, 그 이후로는 3점을 부과함'
+      },
+      {    
+        category: '복장 Dress',
+        violation: '과도한 장신구 착용 Wearing excessive jewelry or accessories',
+        autoPoints: '1,3',
+        note: '첫 위반은 1점, 그 이후로는 3점을 부과함'
+      },
+      {
+        category: '복장 Dress',
+        violation: '공식행사 복장 위반 Violation of official event dress code',
+        autoPoints: '1',
+        note: ''
+      },
+      {
+        category: '두발 Hair',
+        violation: '헤어롤 착용 Wearing hair rollers',
+        autoPoints: '1,3',
+        note: '첫 위반은 1점, 그 이후로는 3점을 부과함'
+      },
+      {
+        category: '두발 Hair',
+        violation: '염색, 삭발, 규정에 위반 되는 종류의 펌 Hair dyed or shaved off',
+        autoPoints: '1,3',
+        note: '첫 위반은 1점, 그 이후로는 3점을 부과함'
+      },
+      {
+        category: '두발 Hair',
+        violation: '두발 길이 규정 위반 Violation of hair length standards',
+        autoPoints: '1,3',
+        note: '첫 위반은 1점, 그 이후로는 3점을 부과함'
+      },
+      {
+        category: '화장 및 문신 Makeup & tattoos',
+        violation: '색조 화장 Color makeup',
+        autoPoints: '1,3',
+        note: '첫 위반은 1점, 그 이후로는 3점을 부과함'
+      },
+      {
+        category: '화장 및 문신 Makeup & tattoos',
+        violation: '네일 아트 Nail art',
+        autoPoints: '1,3',
+        note: '첫 위반은 1점, 그 이후로는 3점을 부과함'
+      },
+      {
+        category: '화장 및 문신 Makeup & tattoos',
+        violation: '문신 Tattoos',
+        autoPoints: '12-15',
+        note: ''
+      },
+      {
+        category: '시설 및 기물 Facility & Property',
+        violation: '교내 엘리베이터 사용 Using a school elevator',
+        autoPoints: '3',
+        note: ''
+      },
+      {
+        category: '시설 및 기물 Facility & Property',
+        violation: '학교 기물 혹은 타인의 소유물에 낙서 Scribbling or drawing graffiti on property of school or others',
+        autoPoints: '3',
+        note: ''
+      },
+      {
+        category: '시설 및 기물 Facility & Property',
+        violation: "타인의 소유물을 무단으로 유용하거나 장기간 돌려주지 않는 행위 Misappropriating someone else's property without authorization or failing to return it for an extended period of time.",
+        autoPoints: '3',
+        note: ''
+      },
+      {
+        category: '시설 및 기물 Facility & Property',
+        violation: '한동대학교에서 출입 제한한 건물 및 시설 사용으로 신고가 접수된 경우 If the student is reported for using buildings and facilities that Handong University has restricted access to.',
+        autoPoints: '3',
+        note: ''
+      },
+      {
+        category: '시설 및 기물 Facility & Property',
+        violation: '교내의 출입금지 시간 무단 위반 Violation of school no-entry time',
+        autoPoints: '9-12',
+        note: ''
+      },
+      {
+        category: '시설 및 기물 Facility & Property',
+        violation: '일과 중 무단 이탈 Unauthorized departure during the school day',
+        autoPoints: '9-18',
+        note: ''
+      },
+      {
+        category: '이성교제 Dating',
+        violation: '이성교제 규정 1회 위반 1st violation of dating regulation',
+        autoPoints: '12-15',
+        note: `2회 이상 적발된 경우 선도위원회 회부
+        In cases of two or more violations, the matter will be referred to the Disciplinary Committee.`
+      },
+      {
+        category: '흡연 Smoking',
+        violation: '담배 소지 또는 흡연 1차 적발 1st detection of possession or smoking of cigarettes',
+        autoPoints: '12-15',
+        note: `- 금연 및 이에 준한 교육에 의무적으로 참여하여야 함
+            Mandatory participation in anti-smoking or equivalent education
+            - 2회 이상 적발된 경우 선도위원회 회부
+            In cases of two or more violations, the matter will be referred to the Disciplinary Committee.`
+      }
     ];
 
     const recoveryActivities = [
