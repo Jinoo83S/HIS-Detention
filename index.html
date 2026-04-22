@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>교사 로그인</title>
+  <title>교사 로그인 | Teacher Login</title>
 
   <link
     href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=DM+Serif+Display&display=swap"
@@ -32,40 +32,60 @@
     .login-box .btn {
       width: 100%;
     }
+
+    .bilingual-sub {
+      display:block;
+      font-size:11px;
+      color:var(--sb);
+      margin-top:2px;
+      font-weight:500;
+    }
   </style>
 </head>
 
 <body>
   <div id="toast"></div>
 
-  <a class="admin-link" href="admin.html">⚙️ 관리자</a>
+  <a class="admin-link" href="admin.html">⚙️ 관리자 | Admin</a>
 
   <div class="login-page">
     <div class="login-box">
       <div class="icon">🧑‍🏫</div>
-      <h1 style="text-align:center;">교사 로그인</h1>
-      <p style="text-align:center;">교사를 선택하고 비밀번호를 입력해 주세요.</p>
+
+      <h1 style="text-align:center;">교사 로그인 | Teacher Login</h1>
+      <p style="text-align:center;">교사를 선택하고 비밀번호를 입력해 주세요. | Please select a teacher and enter the password.</p>
 
       <div class="grid">
         <div>
-          <label class="label">교사 선택</label>
-          <select id="teacher-select" class="edit-input">
-            <option value="">교사를 선택하세요</option>
-          </select>
+          <label class="label">
+            교사 선택 | Teacher
+            <span class="bilingual-sub">이름으로 검색할 수 있습니다. | Search by teacher name</span>
+          </label>
+
+          <input
+            id="teacher-search"
+            class="edit-input"
+            list="teacher-list"
+            placeholder="교사 이름 검색 / Search teacher name"
+            oninput="syncTeacherSelection()"
+            onkeydown="if(event.key === 'Enter') login()"
+          />
+
+          <datalist id="teacher-list"></datalist>
         </div>
 
         <div>
-          <label class="label">비밀번호</label>
+          <label class="label">비밀번호 | Password</label>
           <input
             id="pw"
             type="password"
             class="edit-input"
-            placeholder="비밀번호"
+            placeholder="비밀번호 / Password"
             onkeydown="if(event.key === 'Enter') login()"
           />
         </div>
 
-        <button class="btn btn-primary" onclick="login()">로그인</button>
+        <button class="btn btn-primary" onclick="login()">로그인 | Login</button>
       </div>
     </div>
   </div>
@@ -76,6 +96,7 @@
 
   <script>
     let teachers = {};
+    let teacherSearchMap = {};
 
     async function init() {
       try {
@@ -84,7 +105,7 @@
         renderTeachers();
       } catch (e) {
         console.error(e);
-        toast('교사 목록을 불러오지 못했습니다.', 'err');
+        toast('교사 목록을 불러오지 못했습니다. | Failed to load teacher list.', 'err');
       }
     }
 
@@ -93,22 +114,27 @@
         .filter(t => t && t.active !== false)
         .sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'ko'));
 
-      const sel = document.getElementById('teacher-select');
-      sel.innerHTML =
-        '<option value="">교사를 선택하세요</option>' +
-        list.map(t => `
-          <option value="${esc(t.email || '')}">
-            ${esc(t.name || '')}
-          </option>
-        `).join('');
+      const dataList = document.getElementById('teacher-list');
+      teacherSearchMap = {};
+
+      dataList.innerHTML = list.map(t => {
+        const label = `${String(t.name || '').trim()} | ${String(t.email || '').trim()}`;
+        teacherSearchMap[label] = String(t.email || '').trim().toLowerCase();
+        return `<option value="${esc(label)}"></option>`;
+      }).join('');
+    }
+
+    function syncTeacherSelection() {
+      const inputValue = (document.getElementById('teacher-search').value || '').trim();
+      return teacherSearchMap[inputValue] || '';
     }
 
     async function login() {
-      const email = (document.getElementById('teacher-select').value || '').trim().toLowerCase();
+      const selectedEmail = syncTeacherSelection();
       const pw = (document.getElementById('pw').value || '').trim();
 
-      if (!email || !pw) {
-        return toast('교사와 비밀번호를 입력해 주세요.', 'err');
+      if (!selectedEmail || !pw) {
+        return toast('교사와 비밀번호를 입력해 주세요. | Please select a teacher and enter the password.', 'err');
       }
 
       try {
@@ -120,7 +146,7 @@
         snap.forEach(child => {
           const t = child.val() || {};
           if (
-            String(t.email || '').trim().toLowerCase() === email &&
+            String(t.email || '').trim().toLowerCase() === selectedEmail &&
             String(t.password || '') === pw &&
             t.active !== false
           ) {
@@ -131,7 +157,7 @@
 
         if (!found) {
           document.getElementById('pw').value = '';
-          return toast('아이디 또는 비밀번호가 올바르지 않습니다.', 'err');
+          return toast('아이디 또는 비밀번호가 올바르지 않습니다. | Invalid teacher or password.', 'err');
         }
 
         sessionStorage.setItem(
@@ -148,7 +174,7 @@
         location.href = 'teacher.html';
       } catch (e) {
         console.error(e);
-        toast('로그인 중 오류가 발생했습니다.', 'err');
+        toast('로그인 중 오류가 발생했습니다. | An error occurred during login.', 'err');
       }
     }
 
