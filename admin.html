@@ -3,10 +3,72 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>관리자 페이지</title>
+  <title>관리자 페이지 | Admin Page</title>
 
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=DM+Serif+Display&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="common.css" />
+
+  <style>
+    .title-en {
+      display:block;
+      margin-top:2px;
+      font-size:.9em;
+    }
+
+    .desc-ko,
+    .desc-en {
+      display:block;
+      text-align:center;
+    }
+
+    .desc-en {
+      margin-top:2px;
+    }
+
+    .label-en {
+      display:block;
+      font-size:11px;
+      color:var(--sb);
+      margin-top:2px;
+      font-weight:500;
+    }
+
+    .sub-en {
+      display:block;
+      margin-top:2px;
+    }
+
+    .role-box {
+      display:grid;
+      grid-template-columns: repeat(2, minmax(120px, 1fr));
+      gap:4px 10px;
+      font-size:12px;
+      line-height:1.3;
+    }
+
+    .role-box label {
+      display:flex;
+      align-items:center;
+      gap:6px;
+      white-space:nowrap;
+    }
+
+    .role-box input[type="checkbox"] {
+      margin:0;
+    }
+
+    .pw-change-row {
+      display:grid;
+      gap:8px;
+      margin-top:10px;
+    }
+
+    @media (max-width: 900px) {
+      .role-box {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
 </head>
 
 <body>
@@ -17,25 +79,36 @@
     <div class="login-box">
       <div class="icon">⚙️</div>
 
-      <h1 style="text-align:center">관리자 페이지</h1>
-      <p style="text-align:center">학생, 교사, 벌점 데이터를 관리합니다.</p>
+      <h1 style="text-align:center;">
+        관리자 페이지
+        <span class="title-en">Admin Page</span>
+      </h1>
+
+      <p>
+        <span class="desc-ko">학생, 교사, 벌점 데이터를 관리합니다.</span>
+        <span class="desc-en">Manage students, teachers, and detention records.</span>
+      </p>
 
       <div class="grid">
         <div>
-          <label class="label">관리자 비밀번호</label>
+          <label class="label">
+            관리자 비밀번호 | Admin Password
+          </label>
           <input
             id="admin-pw"
             type="password"
             class="edit-input"
-            placeholder="비밀번호"
+            placeholder="비밀번호 / Password"
             onkeydown="if(event.key==='Enter') checkAdmin()"
           />
         </div>
 
-        <button class="btn btn-primary" onclick="checkAdmin()">로그인</button>
+        <button class="btn btn-primary" onclick="checkAdmin()">로그인 | Login</button>
 
         <a href="index.html" style="text-align:center;color:var(--sb);text-decoration:none">
           ← 교사 로그인으로
+          <br>
+          ← Back to Teacher Login
         </a>
       </div>
     </div>
@@ -45,49 +118,79 @@
   <div id="admin-screen" class="hidden">
     <div class="topbar">
       <div>
-        <h1>관리자 페이지</h1>
-        <div class="sub">학생, 교사, 권한, 벌점 데이터를 관리합니다.</div>
+        <h1>
+          관리자 페이지
+          <span class="title-en" style="color:#fff;">Admin Page</span>
+        </h1>
+        <div class="sub">
+          학생, 교사, 권한, 벌점 데이터를 관리합니다.
+          <span class="sub-en">Manage students, teachers, roles, and detention data.</span>
+        </div>
       </div>
 
       <div class="inline-actions">
-        <button class="btn btn-secondary" onclick="refreshAll()">새로고침</button>
-        <button class="btn btn-danger" onclick="adminLogout()">로그아웃</button>
+        <button class="btn btn-secondary" onclick="refreshAll()">새로고침 | Refresh</button>
+        <button class="btn btn-secondary" onclick="togglePwChangeBox()">비밀번호 변경 | Change Password</button>
+        <button class="btn btn-danger" onclick="adminLogout()">로그아웃 | Logout</button>
       </div>
     </div>
 
     <div class="content">
+      <div id="pw-change-box" class="card hidden">
+        <div class="card-title">관리자 비밀번호 변경 | Change Admin Password</div>
+
+        <div class="pw-change-row">
+          <div>
+            <label class="label">현재 비밀번호 | Current Password</label>
+            <input id="current-admin-pw" type="password" class="edit-input" placeholder="현재 비밀번호 / Current password">
+          </div>
+
+          <div>
+            <label class="label">새 비밀번호 | New Password</label>
+            <input id="new-admin-pw" type="password" class="edit-input" placeholder="새 비밀번호 / New password">
+          </div>
+
+          <div>
+            <label class="label">새 비밀번호 확인 | Confirm New Password</label>
+            <input id="new-admin-pw-confirm" type="password" class="edit-input" placeholder="새 비밀번호 확인 / Confirm new password">
+          </div>
+
+          <div class="inline-actions">
+            <button class="btn btn-primary" onclick="changeAdminPassword()">변경 저장 | Save Change</button>
+            <button class="btn btn-secondary" onclick="togglePwChangeBox()">닫기 | Close</button>
+          </div>
+        </div>
+      </div>
+
       <!-- 탭 -->
       <div class="tabs">
-        <button class="tab-btn active" data-tab="teachers">교사 계정 관리</button>
-        <button class="tab-btn" data-tab="students">학생 명단 관리</button>
-        <button class="tab-btn" data-tab="records">벌점 기록 관리</button>
-        <button class="tab-btn" data-tab="uploads">CSV 업로드</button>
+        <button class="tab-btn active" data-tab="teachers">교사 계정 관리 | Teachers</button>
+        <button class="tab-btn" data-tab="students">학생 명단 관리 | Students</button>
+        <button class="tab-btn" data-tab="records">벌점 기록 관리 | Records</button>
+        <button class="tab-btn" data-tab="uploads">CSV 업로드 | CSV Upload</button>
       </div>
 
       <!-- ================= 교사 관리 ================= -->
       <div id="tab-teachers" class="tab-panel active">
         <div class="card">
-          <div class="card-title">교사 계정 관리</div>
+          <div class="card-title">교사 계정 관리 | Teacher Account Management</div>
 
           <div class="filter-bar">
-            <input id="teacher-search" class="edit-input flex1" placeholder="교사명/이메일/학반 검색">
-            <button class="btn btn-secondary" onclick="addTeacherRow()">행 추가</button>
-            <button class="btn btn-primary" onclick="saveTeachers()">변경 저장</button>
+            <input id="teacher-search" class="edit-input flex1" placeholder="교사명/이메일/학반 검색 | Search by name/email/class">
+            <button class="btn btn-secondary" onclick="addTeacherRow()">행 추가 | Add Row</button>
+            <button class="btn btn-primary" onclick="saveTeachers()">변경 저장 | Save Changes</button>
           </div>
 
           <div class="tbl-wrap">
             <table>
               <thead>
                 <tr>
-                  <th>이전 ID</th>
-                  <th>상태</th>
-                  <th>이름</th>
-                  <th>이메일</th>
-                  <th>비밀번호</th>
-                  <th>권한</th>
-                  <th>담당학반</th>
-                  <th>활성</th>
-                  <th>삭제</th>
+                  <th>이름 | Name</th>
+                  <th>이메일 | Email</th>
+                  <th>비밀번호 | Password</th>
+                  <th>권한 | Roles</th>
+                  <th>담당학반 | Class</th>
+                  <th>삭제 | Delete</th>
                 </tr>
               </thead>
               <tbody id="teacher-tbody"></tbody>
@@ -99,24 +202,23 @@
       <!-- ================= 학생 관리 ================= -->
       <div id="tab-students" class="tab-panel">
         <div class="card">
-          <div class="card-title">학생 명단 관리</div>
+          <div class="card-title">학생 명단 관리 | Student List Management</div>
 
           <div class="filter-bar">
-            <input id="student-search" class="edit-input flex1" placeholder="학생명/영문명/학반 검색">
-            <button class="btn btn-secondary" onclick="addStudentRow()">행 추가</button>
-            <button class="btn btn-primary" onclick="saveStudents()">변경 저장</button>
+            <input id="student-search" class="edit-input flex1" placeholder="학생명/영문명/학반 검색 | Search by name/English/class">
+            <button class="btn btn-secondary" onclick="addStudentRow()">행 추가 | Add Row</button>
+            <button class="btn btn-primary" onclick="saveStudents()">변경 저장 | Save Changes</button>
           </div>
 
           <div class="tbl-wrap">
             <table>
               <thead>
                 <tr>
-                  <th>이전 ID</th>
-                  <th>학생 이름</th>
-                  <th>영문 이름</th>
-                  <th>학반</th>
-                  <th>저장 상태</th>
-                  <th>삭제</th>
+                  <th>학생 이름 | Name</th>
+                  <th>영문 이름 | English Name</th>
+                  <th>학반 | Class</th>
+                  <th>저장 상태 | Status</th>
+                  <th>삭제 | Delete</th>
                 </tr>
               </thead>
               <tbody id="student-tbody"></tbody>
@@ -128,27 +230,27 @@
       <!-- ================= 기록 관리 ================= -->
       <div id="tab-records" class="tab-panel">
         <div class="card">
-          <div class="card-title">벌점 기록 관리</div>
+          <div class="card-title">벌점 기록 관리 | Detention Record Management</div>
 
           <div class="filter-bar">
-            <input id="record-search" class="edit-input flex1" placeholder="학생명/교사명/학반 검색">
+            <input id="record-search" class="edit-input flex1" placeholder="학생명/교사명/학반 검색 | Search by student/teacher/class">
           </div>
 
           <div class="tbl-wrap">
             <table>
               <thead>
                 <tr>
-                  <th>학생</th>
-                  <th>영문 이름</th>
-                  <th>학반</th>
-                  <th>교사</th>
-                  <th>권한</th>
-                  <th>항목</th>
-                  <th>점수</th>
-                  <th>사유</th>
-                  <th>일시</th>
-                  <th>상태</th>
-                  <th>취소</th>
+                  <th>학생 | Student</th>
+                  <th>영문 이름 | English Name</th>
+                  <th>학반 | Class</th>
+                  <th>교사 | Teacher</th>
+                  <th>권한 | Role</th>
+                  <th>항목 | Category</th>
+                  <th>점수 | Points</th>
+                  <th>사유 | Reason</th>
+                  <th>일시 | Date/Time</th>
+                  <th>상태 | Status</th>
+                  <th>취소 | Cancel</th>
                 </tr>
               </thead>
               <tbody id="record-tbody"></tbody>
@@ -161,7 +263,7 @@
       <div id="tab-uploads" class="tab-panel">
         <!-- 학생 CSV 업로드 -->
         <div class="card">
-          <div class="card-title">학생 명단 CSV 업로드</div>
+          <div class="card-title">학생 명단 CSV 업로드 | Student CSV Upload</div>
           <div class="notice">CSV 첫 줄: name,englishName,className</div>
 
           <div class="filter-bar">
@@ -171,7 +273,7 @@
             </select>
 
             <input id="student-csv" type="file" accept=".csv">
-            <button class="btn btn-primary" onclick="uploadStudentsCsv()">업로드</button>
+            <button class="btn btn-primary" onclick="uploadStudentsCsv()">업로드 | Upload</button>
           </div>
 
           <div id="student-upload-msg" class="small"></div>
@@ -179,8 +281,11 @@
 
         <!-- 교사 CSV 업로드 -->
         <div class="card">
-          <div class="card-title">교사 계정 CSV 업로드</div>
-          <div class="notice">CSV 첫 줄: name,email,password,role,active,homeroom</div>
+          <div class="card-title">교사 계정 CSV 업로드 | Teacher CSV Upload</div>
+          <div class="notice">CSV 첫 줄: name,email,password,homeroom,roles</div>
+          <div class="small" style="margin-bottom:10px;">
+            roles 예시: master|ms_notice|hs_notice
+          </div>
 
           <div class="filter-bar">
             <select id="teacher-csv-enc" class="edit-input">
@@ -189,7 +294,7 @@
             </select>
 
             <input id="teacher-csv" type="file" accept=".csv">
-            <button class="btn btn-primary" onclick="uploadTeachersCsv()">업로드</button>
+            <button class="btn btn-primary" onclick="uploadTeachersCsv()">업로드 | Upload</button>
           </div>
 
           <div id="teacher-upload-msg" class="small"></div>
@@ -205,7 +310,15 @@
 
   <script>
     /* ================= 기본 상태 ================= */
-    const ADMIN_PW = '1751';
+    let ADMIN_PW = localStorage.getItem('his_admin_pw') || '1751';
+
+    const ROLE_OPTIONS = [
+      { key: 'master', label: 'Master' },
+      { key: 'ms_notice', label: 'MS Notice' },
+      { key: 'hs_notice', label: 'HS Notice' },
+      { key: 'ms_restore', label: 'MS Restore' },
+      { key: 'hs_restore', label: 'HS Restore' }
+    ];
 
     let teachersRaw = {};
     let studentsRaw = {};
@@ -221,16 +334,58 @@
     }
 
     function statusPill(status) {
-      if (status === '오류') return '<span class="pill err">오류</span>';
-      if (status === '저장됨') return '<span class="pill ok">저장됨</span>';
-      if (status === '업로드됨') return '<span class="pill">업로드됨</span>';
-      if (status === '신규') return '<span class="pill">신규</span>';
-      return '<span class="pill">기존</span>';
+      if (status === '오류') return '<span class="pill err">오류 | Error</span>';
+      if (status === '저장됨') return '<span class="pill ok">저장됨 | Saved</span>';
+      if (status === '업로드됨') return '<span class="pill">업로드됨 | Uploaded</span>';
+      if (status === '신규') return '<span class="pill">신규 | New</span>';
+      return '<span class="pill">기존 | Existing</span>';
     }
 
-    function safeTeacherDbKey(email, name) {
-      const raw = String(email || name || '').trim().toLowerCase();
-      return raw.replace(/[.#$/\[\]]/g, '_');
+    function normalizeRoles(roles) {
+      if (Array.isArray(roles)) return roles.filter(Boolean);
+
+      if (typeof roles === 'string') {
+        return roles
+          .split(/[|,]/)
+          .map(v => String(v || '').trim().toLowerCase())
+          .filter(Boolean);
+      }
+
+      return [];
+    }
+
+    function hasRole(row, roleKey) {
+      return normalizeRoles(row.roles).includes(roleKey);
+    }
+
+    function toggleRole(idx, roleKey, checked) {
+      const current = normalizeRoles(teacherRows[idx].roles);
+
+      if (checked) {
+        if (!current.includes(roleKey)) current.push(roleKey);
+      } else {
+        teacherRows[idx].roles = current.filter(r => r !== roleKey);
+        return;
+      }
+
+      teacherRows[idx].roles = current;
+    }
+
+    function rolesCellHtml(idx, row) {
+      return `
+        <div class="role-box">
+          ${ROLE_OPTIONS.map(role => `
+            <label>
+              <input
+                type="checkbox"
+                ${hasRole(row, role.key) ? 'checked' : ''}
+                onchange="toggleRole(${idx}, '${role.key}', this.checked)"
+              >
+              ${role.label}
+            </label>
+          `).join('')}
+        </div>
+      `;
     }
 
     /* ================= 로그인 ================= */
@@ -239,7 +394,7 @@
 
       if (pw !== ADMIN_PW) {
         document.getElementById('admin-pw').value = '';
-        return toast('비밀번호가 올바르지 않습니다.', 'err');
+        return toast('비밀번호가 올바르지 않습니다.\nInvalid password.', 'err');
       }
 
       document.getElementById('login-screen').classList.add('hidden');
@@ -252,6 +407,39 @@
       document.getElementById('login-screen').classList.remove('hidden');
       document.getElementById('admin-screen').classList.add('hidden');
       document.getElementById('admin-pw').value = '';
+      document.getElementById('pw-change-box').classList.add('hidden');
+    }
+
+    function togglePwChangeBox() {
+      document.getElementById('pw-change-box').classList.toggle('hidden');
+    }
+
+    function changeAdminPassword() {
+      const currentPw = document.getElementById('current-admin-pw').value;
+      const newPw = document.getElementById('new-admin-pw').value;
+      const confirmPw = document.getElementById('new-admin-pw-confirm').value;
+
+      if (currentPw !== ADMIN_PW) {
+        return toast('현재 비밀번호가 올바르지 않습니다.\nCurrent password is incorrect.', 'err');
+      }
+
+      if (!newPw) {
+        return toast('새 비밀번호를 입력해 주세요.\nPlease enter a new password.', 'err');
+      }
+
+      if (newPw !== confirmPw) {
+        return toast('새 비밀번호가 일치하지 않습니다.\nNew passwords do not match.', 'err');
+      }
+
+      ADMIN_PW = newPw;
+      localStorage.setItem('his_admin_pw', newPw);
+
+      document.getElementById('current-admin-pw').value = '';
+      document.getElementById('new-admin-pw').value = '';
+      document.getElementById('new-admin-pw-confirm').value = '';
+
+      toast('관리자 비밀번호가 변경되었습니다.\nAdmin password changed.', 'ok');
+      document.getElementById('pw-change-box').classList.add('hidden');
     }
 
     /* ================= 데이터 로드 ================= */
@@ -272,9 +460,8 @@
           name: v.name || '',
           email: v.email || '',
           password: v.password || '',
-          role: v.role || 'general',
           homeroom: v.homeroom || '',
-          active: v.active !== false,
+          roles: normalizeRoles(v.roles || v.role || []),
           _delete: false,
           _status: '기존'
         }));
@@ -293,7 +480,7 @@
         renderRecords();
       } catch (e) {
         console.error(e);
-        toast('데이터 로드 실패', 'err');
+        toast('데이터 로드 실패\nFailed to load data', 'err');
       }
     }
 
@@ -309,11 +496,12 @@
             String(v || '').toLowerCase().includes(q)
           );
         })
-  .sort((a, b) =>
-    String(a.name || '').localeCompare(String(b.name || ''), 'ko')
-  );
+        .sort((a, b) =>
+          String(a.name || '').localeCompare(String(b.name || ''), 'ko')
+        );
+
       if (!filtered.length) {
-        tb.innerHTML = '<tr><td colspan="9" class="empty">교사 데이터가 없습니다.</td></tr>';
+        tb.innerHTML = '<tr><td colspan="6" class="empty">교사 데이터가 없습니다. | No teacher data.</td></tr>';
         return;
       }
 
@@ -321,48 +509,39 @@
         const idx = teacherRows.indexOf(r);
         return `
           <tr>
-            <td>${esc(r.oldKey || '-')}</td>
-            <td>${statusPill(r._status)}</td>
             <td>
-              <input class="edit-input" value="${esc(r.name || '')}"
+              <input class="edit-input" style="min-width:0" value="${esc(r.name || '')}"
                 oninput="teacherRows[${idx}].name=this.value">
             </td>
             <td>
-              <input class="edit-input" value="${esc(r.email || '')}"
+              <input class="edit-input" style="min-width:0" value="${esc(r.email || '')}"
                 oninput="teacherRows[${idx}].email=this.value">
             </td>
             <td>
-              <input class="edit-input" value="${esc(r.password || '')}"
+              <input class="edit-input" style="min-width:0" value="${esc(r.password || '')}"
                 oninput="teacherRows[${idx}].password=this.value">
             </td>
+            <td>${rolesCellHtml(idx, r)}</td>
             <td>
-              <select class="edit-input" onchange="teacherRows[${idx}].role=this.value">
-                <option value="general" ${r.role === 'general' ? 'selected' : ''}>general</option>
-                <option value="head" ${r.role === 'head' ? 'selected' : ''}>head</option>
-                <option value="admin" ${r.role === 'admin' ? 'selected' : ''}>admin</option>
-              </select>
-            </td>
-            <td>
-              <input class="edit-input" value="${esc(r.homeroom || '')}"
+              <input class="edit-input" style="min-width:0" value="${esc(r.homeroom || '')}"
                 oninput="teacherRows[${idx}].homeroom=this.value">
             </td>
             <td style="text-align:center">
-              <input
-                type="checkbox"
-                ${r.active !== false ? 'checked' : ''}
-                onchange="teacherRows[${idx}].active=this.checked"
-              >
-            </td>
-            <td style="text-align:center">
-              <input
-                type="checkbox"
-                ${r._delete ? 'checked' : ''}
-                onchange="teacherRows[${idx}]._delete=this.checked"
-              >
+              <button class="btn btn-danger" onclick="deleteTeacherRow(${idx})">삭제 | Delete</button>
             </td>
           </tr>
         `;
       }).join('');
+    }
+
+    function deleteTeacherRow(idx) {
+      const row = teacherRows[idx];
+      const name = row?.name || '';
+      const ok = confirm(`정말 삭제하시겠습니까?\n${name}\n\nAre you sure you want to delete this teacher?`);
+      if (!ok) return;
+
+      teacherRows[idx]._delete = true;
+      renderTeachers();
     }
 
     /* ================= 학생 렌더링 ================= */
@@ -377,14 +556,13 @@
             String(v || '').toLowerCase().includes(q)
           );
         })
-        
-  .sort((a, b) =>
-    String(a.className || '').localeCompare(String(b.className || ''), 'ko', { numeric: true }) ||
-    String(a.name || '').localeCompare(String(b.name || ''), 'ko')
-  );
+        .sort((a, b) =>
+          String(a.className || '').localeCompare(String(b.className || ''), 'ko', { numeric: true }) ||
+          String(a.name || '').localeCompare(String(b.name || ''), 'ko')
+        );
 
       if (!filtered.length) {
-        tb.innerHTML = '<tr><td colspan="6" class="empty">학생 데이터가 없습니다.</td></tr>';
+        tb.innerHTML = '<tr><td colspan="5" class="empty">학생 데이터가 없습니다. | No student data.</td></tr>';
         return;
       }
 
@@ -392,17 +570,16 @@
         const idx = studentRows.indexOf(r);
         return `
           <tr>
-            <td>${esc(r.oldKey || '-')}</td>
             <td>
-              <input class="edit-input" value="${esc(r.name || '')}"
+              <input class="edit-input" style="min-width:0" value="${esc(r.name || '')}"
                 oninput="studentRows[${idx}].name=this.value">
             </td>
             <td>
-              <input class="edit-input" value="${esc(r.englishName || '')}"
+              <input class="edit-input" style="min-width:0" value="${esc(r.englishName || '')}"
                 oninput="studentRows[${idx}].englishName=this.value">
             </td>
             <td>
-              <input class="edit-input" value="${esc(r.className || '')}"
+              <input class="edit-input" style="min-width:0" value="${esc(r.className || '')}"
                 oninput="studentRows[${idx}].className=this.value">
             </td>
             <td>${statusPill(r._status)}</td>
@@ -434,7 +611,7 @@
         .sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
 
       if (!list.length) {
-        tb.innerHTML = '<tr><td colspan="11" class="empty">벌점 기록이 없습니다.</td></tr>';
+        tb.innerHTML = '<tr><td colspan="11" class="empty">벌점 기록이 없습니다. | No detention records.</td></tr>';
         return;
       }
 
@@ -444,16 +621,16 @@
           <td>${esc(r.englishName || '')}</td>
           <td>${esc(r.className || '')}</td>
           <td>${esc(r.teacherName || '')}</td>
-          <td>${esc(r.teacherRole || '')}</td>
+          <td>${esc(Array.isArray(r.teacherRoles) ? r.teacherRoles.join(', ') : (r.teacherRole || ''))}</td>
           <td>${esc(r.category || '')}</td>
           <td>${Number(r.points || 0)}</td>
           <td>${esc(r.reason || '')}</td>
           <td>${fmt(r.createdAt)}</td>
-          <td>${r.canceled ? '<span class="pill err">취소됨</span>' : '<span class="pill ok">유효</span>'}</td>
+          <td>${r.canceled ? '<span class="pill err">취소됨 | Canceled</span>' : '<span class="pill ok">유효 | Active</span>'}</td>
           <td>
             ${r.canceled
               ? '-'
-              : `<button class="btn btn-danger" onclick="cancelRecord('${esc(r.key)}')">취소</button>`}
+              : `<button class="btn btn-danger" onclick="cancelRecord('${esc(r.key)}')">취소 | Cancel</button>`}
           </td>
         </tr>
       `).join('');
@@ -466,9 +643,8 @@
         name: '',
         email: '',
         password: '',
-        role: 'general',
         homeroom: '',
-        active: true,
+        roles: [],
         _delete: false,
         _status: '신규'
       });
@@ -496,20 +672,21 @@
         teacherRows.forEach(r => {
           if (r._delete) return;
 
-          const key = safeTeacherDbKey(r.email, r.name);
+          const key = teacherKey(r.email, r.name);
 
           if (!key || !String(r.name || '').trim()) {
             r._status = '오류';
             return;
           }
 
+          const roles = normalizeRoles(r.roles);
+
           next[key] = {
             name: String(r.name || '').trim(),
             email: String(r.email || '').trim().toLowerCase(),
             password: String(r.password || '').trim(),
-            role: String(r.role || 'general').trim(),
             homeroom: String(r.homeroom || '').trim(),
-            active: r.active !== false,
+            roles,
             updatedAt: new Date().toISOString()
           };
 
@@ -518,11 +695,11 @@
         });
 
         await db.ref('teachers').set(next);
-        toast('교사 데이터가 저장되었습니다.', 'ok');
+        toast('교사 데이터가 저장되었습니다.\nTeacher data has been saved.', 'ok');
         refreshAll();
       } catch (e) {
         console.error(e);
-        toast('교사 데이터 저장 실패', 'err');
+        toast('교사 데이터 저장 실패\nFailed to save teacher data', 'err');
       }
     }
 
@@ -554,11 +731,11 @@
 
         await db.ref('students').set(next);
 
-        toast('학생 데이터가 저장되었습니다.', 'ok');
+        toast('학생 데이터가 저장되었습니다.\nStudent data has been saved.', 'ok');
         refreshAll();
       } catch (e) {
         console.error(e);
-        toast('학생 데이터 저장 실패', 'err');
+        toast('학생 데이터 저장 실패\nFailed to save student data', 'err');
       }
     }
 
@@ -566,11 +743,11 @@
     async function cancelRecord(key) {
       try {
         await db.ref('detentionRecords/' + key + '/canceled').set(true);
-        toast('벌점 기록이 취소되었습니다.', 'ok');
+        toast('벌점 기록이 취소되었습니다.\nRecord canceled.', 'ok');
         refreshAll();
       } catch (e) {
         console.error(e);
-        toast('벌점 취소 실패', 'err');
+        toast('벌점 취소 실패\nFailed to cancel record', 'err');
       }
     }
 
@@ -582,15 +759,15 @@
         const msg = document.getElementById('student-upload-msg');
 
         if (!file) {
-          return toast('CSV 파일을 선택해 주세요.', 'err');
+          return toast('CSV 파일을 선택해 주세요.\nPlease select a CSV file.', 'err');
         }
 
         const text = await readFileText(file, enc);
         const rows = parseCsv(text);
 
         if (!rows.length) {
-          msg.textContent = 'CSV 내용이 비어 있습니다.';
-          return toast('CSV 내용이 비어 있습니다.', 'err');
+          msg.textContent = 'CSV 내용이 비어 있습니다. | CSV is empty.';
+          return toast('CSV 내용이 비어 있습니다.\nCSV is empty.', 'err');
         }
 
         studentRows = rows.map(r => ({
@@ -602,8 +779,8 @@
           _status: '업로드됨'
         }));
 
-        msg.textContent = `${studentRows.length}명의 학생 데이터를 불러왔습니다. 학생 명단 관리 탭에서 확인 후 "변경 저장"을 눌러 반영하세요.`;
-        toast('CSV를 불러왔습니다.', 'ok');
+        msg.textContent = `${studentRows.length}명의 학생 데이터를 불러왔습니다. | Loaded ${studentRows.length} student rows.`;
+        toast('CSV를 불러왔습니다.\nCSV loaded.', 'ok');
 
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
@@ -613,7 +790,7 @@
         renderStudents();
       } catch (e) {
         console.error(e);
-        toast('CSV 업로드 실패', 'err');
+        toast('CSV 업로드 실패\nCSV upload failed', 'err');
       }
     }
 
@@ -625,15 +802,15 @@
         const msg = document.getElementById('teacher-upload-msg');
 
         if (!file) {
-          return toast('교사 CSV 파일을 선택해 주세요.', 'err');
+          return toast('교사 CSV 파일을 선택해 주세요.\nPlease select a teacher CSV file.', 'err');
         }
 
         const text = await readFileText(file, enc);
         const rows = parseCsv(text);
 
         if (!rows.length) {
-          msg.textContent = 'CSV 내용이 비어 있습니다.';
-          return toast('CSV 내용이 비어 있습니다.', 'err');
+          msg.textContent = 'CSV 내용이 비어 있습니다. | CSV is empty.';
+          return toast('CSV 내용이 비어 있습니다.\nCSV is empty.', 'err');
         }
 
         teacherRows = rows.map(r => ({
@@ -641,17 +818,14 @@
           name: String(r.name || '').trim(),
           email: String(r.email || '').trim().toLowerCase(),
           password: String(r.password || '').trim(),
-          role: String(r.role || 'general').trim() || 'general',
           homeroom: String(r.homeroom || '').trim(),
-          active: String(r.active ?? '').trim() === ''
-            ? true
-            : parseBool(r.active),
+          roles: normalizeRoles(r.roles || ''),
           _delete: false,
           _status: '업로드됨'
         }));
 
-        msg.textContent = `${teacherRows.length}명의 교사 데이터를 불러왔습니다. 교사 계정 관리 탭에서 확인 후 "변경 저장"을 눌러 반영하세요.`;
-        toast('교사 CSV를 불러왔습니다.', 'ok');
+        msg.textContent = `${teacherRows.length}명의 교사 데이터를 불러왔습니다. | Loaded ${teacherRows.length} teacher rows.`;
+        toast('교사 CSV를 불러왔습니다.\nTeacher CSV loaded.', 'ok');
 
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
@@ -661,7 +835,7 @@
         renderTeachers();
       } catch (e) {
         console.error(e);
-        toast('교사 CSV 업로드 실패', 'err');
+        toast('교사 CSV 업로드 실패\nTeacher CSV upload failed', 'err');
       }
     }
 
