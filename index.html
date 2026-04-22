@@ -155,6 +155,19 @@
       return teacherSearchMap[inputValue] || '';
     }
 
+    function normalizeRoles(roles) {
+      if (Array.isArray(roles)) return roles.filter(Boolean);
+
+      if (typeof roles === 'string') {
+        return roles
+          .split(/[|,]/)
+          .map(v => String(v || '').trim().toLowerCase())
+          .filter(Boolean);
+      }
+
+      return [];
+    }
+
     async function login() {
       const selectedEmail = syncTeacherSelection();
       const pw = (document.getElementById('pw').value || '').trim();
@@ -173,8 +186,7 @@
           const t = child.val() || {};
           if (
             String(t.email || '').trim().toLowerCase() === selectedEmail &&
-            String(t.password || '') === pw &&
-            t.active !== false
+            String(t.password || '') === pw
           ) {
             found = t;
             key = child.key;
@@ -186,14 +198,16 @@
           return toast('아이디 또는 비밀번호가 올바르지 않습니다.\nInvalid teacher or password.', 'err');
         }
 
+        const roles = normalizeRoles(found.roles || found.role || []);
+
         sessionStorage.setItem(
           'his_teacher',
           JSON.stringify({
             key,
             name: found.name || '',
             email: found.email || '',
-            role: found.role || 'general',
-            homeroom: found.homeroom || '',
+            roles: roles,
+            homeroom: found.homeroom || ''
           })
         );
 
