@@ -93,6 +93,36 @@
     tbody tr:nth-child(even){ background:#f7faff; }
     tbody tr:hover{ background:#edf3ff; }
 
+    .status-confirmed{
+      background:#e8f8ee;
+      color:#15803D;
+      padding:3px 8px;
+      border-radius:999px;
+      font-size:11px;
+      font-weight:700;
+      display:inline-block;
+    }
+
+    .status-pending{
+      background:#eef3ff;
+      color:#1B2F7A;
+      padding:3px 8px;
+      border-radius:999px;
+      font-size:11px;
+      font-weight:700;
+      display:inline-block;
+    }
+
+    .status-rejected{
+      background:#fde8e8;
+      color:#DC2626;
+      padding:3px 8px;
+      border-radius:999px;
+      font-size:11px;
+      font-weight:700;
+      display:inline-block;
+    }
+
     @media (max-width: 980px){
       .page-grid{
         grid-template-columns: 1fr;
@@ -208,6 +238,7 @@
                   <th>구분</th>
                   <th>위반행위</th>
                   <th>점수</th>
+                  <th>상태</th>
                   <th>일시</th>
                 </tr>
               </thead>
@@ -295,17 +326,20 @@
     <div id="tab-confirm" class="tab-panel">
       <div class="card">
         <div class="card-title">디텐션 확정</div>
-        <div class="notice">권한 보유자만 보이는 기초 화면입니다. 다음 단계에서 확정/반려/일괄처리 기능을 연결하면 됩니다.</div>
+        <div class="notice">head/admin 권한은 대기 중인 디텐션을 확정 또는 반려할 수 있습니다.</div>
+
         <div class="tbl-wrap">
           <table>
             <thead>
               <tr>
                 <th>학생</th>
                 <th>학반</th>
+                <th>구분</th>
                 <th>위반행위</th>
                 <th>합계</th>
                 <th>작성자</th>
                 <th>상태</th>
+                <th>처리</th>
               </tr>
             </thead>
             <tbody id="confirm-tbody"></tbody>
@@ -318,7 +352,7 @@
     <div id="tab-notify" class="tab-panel">
       <div class="card">
         <div class="card-title">디텐션 알림</div>
-        <div class="notice">권한 보유자만 보이는 기초 화면입니다. 다음 단계에서 학부모/학생 알림 발송 로직을 붙일 수 있습니다.</div>
+        <div class="notice">기초 화면입니다. 다음 단계에서 이메일/문자 발송 로직을 연결할 수 있습니다.</div>
 
         <div class="form-grid" style="margin-top:10px;">
           <div>
@@ -349,7 +383,8 @@
     <div id="tab-recovery" class="tab-panel">
       <div class="card">
         <div class="card-title">회복교육</div>
-        <div class="notice">권한 보유자만 보이는 기초 화면입니다. 다음 단계에서 회복 포인트/과제/참여 여부를 연결할 수 있습니다.</div>
+        <div class="notice">기초 화면입니다. 다음 단계에서 회복 포인트 / 과제 / 참여 상태를 연결할 수 있습니다.</div>
+
         <div class="tbl-wrap">
           <table>
             <thead>
@@ -447,6 +482,17 @@
     function canEditStandard(){
       const role = String(teacher?.role || 'general');
       return ['head', 'admin'].includes(role);
+    }
+
+    function canConfirmDetention(){
+      const role = String(teacher?.role || 'general');
+      return ['head', 'admin'].includes(role);
+    }
+
+    function statusBadge(status){
+      if (status === '확정') return '<span class="status-confirmed">확정</span>';
+      if (status === '반려') return '<span class="status-rejected">반려</span>';
+      return '<span class="status-pending">임시저장</span>';
     }
 
     function init(){
@@ -736,7 +782,7 @@
         .slice(0, 10);
 
       if (!list.length){
-        tb.innerHTML = '<tr><td colspan="6" class="empty">기록이 없습니다.</td></tr>';
+        tb.innerHTML = '<tr><td colspan="7" class="empty">기록이 없습니다.</td></tr>';
         return;
       }
 
@@ -747,6 +793,7 @@
           <td>${esc(r.category || '')}</td>
           <td>${esc(r.violation || '')}</td>
           <td>${Number(r.totalPoints || 0)}</td>
+          <td>${statusBadge(r.status || '임시저장')}</td>
           <td>${fmt(r.createdAt)}</td>
         </tr>
       `).join('');
@@ -758,7 +805,7 @@
       const q = (document.getElementById('all-search').value || '').trim().toLowerCase();
       const tb = document.getElementById('all-records-tbody');
 
-      let list = Object.values(entries);
+      let list = Object.entries(entries).map(([key, value]) => ({ key, ...value }));
 
       if (classFilter){
         list = list.filter(r => String(r.className || '') === classFilter);
@@ -792,7 +839,7 @@
           <td>${Number(r.manualPoints || 0)}</td>
           <td>${Number(r.totalPoints || 0)}</td>
           <td>${esc(r.teacherName || '')}</td>
-          <td>${esc(r.status || '임시저장')}</td>
+          <td>${statusBadge(r.status || '임시저장')}</td>
           <td>${fmt(r.createdAt)}</td>
         </tr>
       `).join('');
@@ -800,13 +847,15 @@
 
     function renderConfirmEntries(){
       const tb = document.getElementById('confirm-tbody');
-      const list = Object.values(entries)
-        .filter(r => String(r.status || '임시저장') !== '확정')
-        .sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')))
-        .slice(0, 20);
+      const canManage = canConfirmDetention();
+
+      let list = Object.entries(entries)
+        .map(([key, value]) => ({ key, ...value }))
+        .filter(r => String(r.status || '임시저장') === '임시저장')
+        .sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
 
       if (!list.length){
-        tb.innerHTML = '<tr><td colspan="6" class="empty">확정 대기 항목이 없습니다.</td></tr>';
+        tb.innerHTML = '<tr><td colspan="8" class="empty">확정 대기 항목이 없습니다.</td></tr>';
         return;
       }
 
@@ -814,10 +863,23 @@
         <tr>
           <td>${esc(r.studentName || '')}</td>
           <td>${esc(r.className || '-')}</td>
+          <td>${esc(r.category || '')}</td>
           <td>${esc(r.violation || '')}</td>
           <td>${Number(r.totalPoints || 0)}</td>
           <td>${esc(r.teacherName || '')}</td>
-          <td>${esc(r.status || '임시저장')}</td>
+          <td>${statusBadge(r.status || '임시저장')}</td>
+          <td>
+            ${
+              canManage
+              ? `
+                <div class="mini-actions" style="margin-top:0;">
+                  <button class="btn btn-primary" onclick="confirmDetention('${esc(r.key)}')">확정</button>
+                  <button class="btn btn-danger" onclick="rejectDetention('${esc(r.key)}')">반려</button>
+                </div>
+              `
+              : '-'
+            }
+          </td>
         </tr>
       `).join('');
     }
@@ -827,7 +889,7 @@
       const today = todayKey();
 
       const todayCount = list.filter(r => String(r.createdAt || '').slice(0,10) === today).length;
-      const pendingCount = list.filter(r => String(r.status || '임시저장') !== '확정').length;
+      const pendingCount = list.filter(r => String(r.status || '임시저장') === '임시저장').length;
 
       document.getElementById('today-count').textContent = String(todayCount);
       document.getElementById('pending-count').textContent = String(pendingCount);
@@ -873,6 +935,48 @@
       }catch(e){
         console.error(e);
         toast('디텐션 저장 실패', 'err');
+      }
+    }
+
+    async function confirmDetention(key){
+      if (!canConfirmDetention()) {
+        return toast('확정 권한이 없습니다.', 'err');
+      }
+
+      try{
+        await db.ref(`${DETENTION_DB_PATH}/${key}`).update({
+          status: '확정',
+          confirmedAt: new Date().toISOString(),
+          confirmedBy: teacher.name || '',
+          confirmedByEmail: teacher.email || ''
+        });
+
+        toast('디텐션이 확정되었습니다.', 'ok');
+        loadData();
+      }catch(e){
+        console.error(e);
+        toast('디텐션 확정 실패', 'err');
+      }
+    }
+
+    async function rejectDetention(key){
+      if (!canConfirmDetention()) {
+        return toast('반려 권한이 없습니다.', 'err');
+      }
+
+      try{
+        await db.ref(`${DETENTION_DB_PATH}/${key}`).update({
+          status: '반려',
+          rejectedAt: new Date().toISOString(),
+          rejectedBy: teacher.name || '',
+          rejectedByEmail: teacher.email || ''
+        });
+
+        toast('디텐션이 반려되었습니다.', 'ok');
+        loadData();
+      }catch(e){
+        console.error(e);
+        toast('디텐션 반려 실패', 'err');
       }
     }
 
