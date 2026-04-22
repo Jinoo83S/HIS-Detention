@@ -3,12 +3,37 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>디텐션 관리</title>
+  <title>디텐션 관리 | Detention Management</title>
 
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=DM+Serif+Display&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="common.css">
 
   <style>
+    .title-en {
+      display:block;
+      margin-top:2px;
+      font-size:.9em;
+    }
+
+    .sub-en,
+    .desc-en,
+    .label-en {
+      display:block;
+      margin-top:2px;
+    }
+
+    .desc-ko,
+    .desc-en {
+      color:var(--sb);
+      font-size:12px;
+    }
+
+    .label-en {
+      font-size:11px;
+      color:var(--sb);
+      font-weight:500;
+    }
+
     .page-grid{
       display:grid;
       grid-template-columns: 1.15fr .85fr;
@@ -29,6 +54,7 @@
       font-size:12px;
       color:var(--sb);
       margin-top:4px;
+      line-height:1.5;
     }
 
     .readonly-box{
@@ -75,6 +101,7 @@
       font-size:11px;
       color:var(--sb);
       margin-bottom:4px;
+      line-height:1.4;
     }
 
     .stat-box .v{
@@ -123,6 +150,12 @@
       display:inline-block;
     }
 
+    .info-badges {
+      display:flex;
+      gap:6px;
+      flex-wrap:wrap;
+    }
+
     @media (max-width: 980px){
       .page-grid{
         grid-template-columns: 1fr;
@@ -143,103 +176,124 @@
 
   <div class="topbar">
     <div>
-      <h1>디텐션 관리</h1>
-      <div class="sub" id="teacher-sub">교사 페이지</div>
+      <h1>
+        디텐션 관리
+        <span class="title-en" style="color:#fff;">Detention Management</span>
+      </h1>
+      <div class="sub" id="teacher-sub">
+        교사 페이지
+        <span class="sub-en">Teacher Page</span>
+      </div>
     </div>
 
     <div class="inline-actions">
-      <button class="btn btn-secondary" onclick="loadData()">새로고침</button>
-      <button class="btn btn-danger" onclick="logoutTeacher()">로그아웃</button>
+      <button class="btn btn-secondary" onclick="loadData()">새로고침 | Refresh</button>
+      <button class="btn btn-danger" onclick="logoutTeacher()">로그아웃 | Logout</button>
     </div>
   </div>
 
   <div class="content">
     <div class="card">
-      <div class="card-title">교사 정보</div>
-      <div id="teacher-info"></div>
+      <div class="card-title">교사 정보 | Teacher Information</div>
+      <div id="teacher-info" class="info-badges"></div>
 
       <div class="stat-boxes">
         <div class="stat-box">
-          <div class="k">오늘 등록 건수</div>
+          <div class="k">
+            오늘 등록 건수
+            <span class="label-en">Entries Today</span>
+          </div>
           <div class="v" id="today-count">0</div>
         </div>
+
         <div class="stat-box">
-          <div class="k">미확정 건수</div>
+          <div class="k">
+            미확정 건수
+            <span class="label-en">Pending Confirmations</span>
+          </div>
           <div class="v" id="pending-count">0</div>
         </div>
+
         <div class="stat-box">
-          <div class="k">전체 기록</div>
+          <div class="k">
+            전체 기록
+            <span class="label-en">Total Records</span>
+          </div>
           <div class="v" id="total-count">0</div>
         </div>
       </div>
     </div>
 
     <div class="tabs">
-      <button class="tab-btn active" data-tab="entry">디텐션 입력</button>
-      <button class="tab-btn" data-tab="standard">디텐션 기준표</button>
-      <button class="tab-btn" data-tab="all">디텐션 전체보기</button>
-      <button class="tab-btn role-only" data-role="head,admin" data-tab="confirm">디텐션 확정</button>
-      <button class="tab-btn role-only" data-role="head,admin" data-tab="notify">디텐션 알림</button>
-      <button class="tab-btn role-only" data-role="head,admin" data-tab="recovery">회복교육</button>
+      <button class="tab-btn active" data-tab="entry">디텐션 입력 | Entry</button>
+      <button class="tab-btn" data-tab="standard">디텐션 기준표 | Standards</button>
+      <button class="tab-btn" data-tab="all">디텐션 전체보기 | All Records</button>
+      <button class="tab-btn role-only" data-role="master" data-tab="confirm">디텐션 확정 | Confirm</button>
+
+      <button class="tab-btn role-only" data-role="master,ms_notice" data-tab="notify-ms">중등 디텐션 알림 | MS Notice</button>
+      <button class="tab-btn role-only" data-role="master,hs_notice" data-tab="notify-hs">고등 디텐션 알림 | HS Notice</button>
+
+      <button class="tab-btn role-only" data-role="master,ms_restore" data-tab="recovery-ms">중등 회복교육 | MS Restore</button>
+      <button class="tab-btn role-only" data-role="master,hs_restore" data-tab="recovery-hs">고등 회복교육 | HS Restore</button>
     </div>
 
     <!-- 디텐션 입력 -->
     <div id="tab-entry" class="tab-panel active">
       <div class="page-grid">
         <div class="card">
-          <div class="card-title">디텐션 입력</div>
+          <div class="card-title">디텐션 입력 | Detention Entry</div>
 
           <div class="form-grid">
             <div class="full">
-              <label class="label">이름 검색 / 학생 선택</label>
+              <label class="label">이름 검색 / 학생 선택 | Student Search / Select Student</label>
               <select id="student-select" class="edit-input"></select>
             </div>
 
             <div>
-              <label class="label">벌점 구분</label>
+              <label class="label">벌점 구분 | Category</label>
               <select id="category-select" class="edit-input"></select>
             </div>
 
             <div>
-              <label class="label">위반행위</label>
+              <label class="label">위반행위 | Violation</label>
               <select id="violation-select" class="edit-input"></select>
             </div>
 
             <div>
-              <label class="label">자동벌점</label>
+              <label class="label">자동벌점 | Auto Points</label>
               <div id="auto-points" class="readonly-box">-</div>
             </div>
 
             <div>
-              <label class="label">수동벌점</label>
+              <label class="label">수동벌점 | Manual Points</label>
               <input id="manual-points" type="number" min="0" class="edit-input" value="0">
             </div>
 
             <div class="full">
-              <label class="label">메모</label>
-              <textarea id="memo" class="edit-input" placeholder="상세 메모를 입력해 주세요."></textarea>
+              <label class="label">메모 | Memo</label>
+              <textarea id="memo" class="edit-input" placeholder="상세 메모를 입력해 주세요. / Enter memo details."></textarea>
             </div>
           </div>
 
           <div class="mini-actions">
-            <button class="btn btn-primary" onclick="saveDetention()">디텐션 저장</button>
-            <button class="btn btn-secondary" onclick="resetEntryForm()">초기화</button>
+            <button class="btn btn-primary" onclick="saveDetention()">디텐션 저장 | Save Entry</button>
+            <button class="btn btn-secondary" onclick="resetEntryForm()">초기화 | Reset</button>
           </div>
         </div>
 
         <div class="card">
-          <div class="card-title">최근 입력 내역</div>
+          <div class="card-title">최근 입력 내역 | Recent Entries</div>
           <div class="tbl-wrap">
             <table>
               <thead>
                 <tr>
-                  <th>학생</th>
-                  <th>학반</th>
-                  <th>구분</th>
-                  <th>위반행위</th>
-                  <th>점수</th>
-                  <th>상태</th>
-                  <th>일시</th>
+                  <th>학생 | Student</th>
+                  <th>학반 | Class</th>
+                  <th>구분 | Category</th>
+                  <th>위반행위 | Violation</th>
+                  <th>점수 | Points</th>
+                  <th>상태 | Status</th>
+                  <th>일시 | Date/Time</th>
                 </tr>
               </thead>
               <tbody id="recent-entry-tbody"></tbody>
@@ -253,28 +307,29 @@
     <div id="tab-standard" class="tab-panel">
       <div class="card">
         <div class="card-title">
-          <span>디텐션 기준표</span>
-          <span class="small" id="standard-edit-note">기본 보기 모드</span>
+          <span>디텐션 기준표 | Detention Standards</span>
+          <span class="small" id="standard-edit-note">기본 보기 모드 | View Mode</span>
         </div>
 
         <div class="section-note">
-          권한에 따라 보기 또는 편집이 가능합니다.
+          <div>권한에 따라 보기 또는 편집이 가능합니다.</div>
+          <div>View or edit access is available depending on your role.</div>
         </div>
 
-        <div id="standard-actions" class="mini-actions role-only" data-role="head,admin" style="margin-top:10px;">
-          <button class="btn btn-secondary" onclick="addCriteriaRow()">행 추가</button>
-          <button class="btn btn-primary" onclick="saveCriteriaTable()">기준표 저장</button>
+        <div id="standard-actions" class="mini-actions role-only" data-role="master" style="margin-top:10px;">
+          <button class="btn btn-secondary" onclick="addCriteriaRow()">행 추가 | Add Row</button>
+          <button class="btn btn-primary" onclick="saveCriteriaTable()">기준표 저장 | Save Standards</button>
         </div>
 
         <div class="tbl-wrap" style="margin-top:10px;">
           <table class="criteria-table">
             <thead>
               <tr>
-                <th>구분</th>
-                <th>위반행위</th>
-                <th>자동 점수</th>
-                <th>비고</th>
-                <th id="criteria-action-head" class="hidden">삭제</th>
+                <th>구분 | Category</th>
+                <th>위반행위 | Violation</th>
+                <th>자동 점수 | Auto Points</th>
+                <th>비고 | Notes</th>
+                <th id="criteria-action-head" class="hidden">삭제 | Delete</th>
               </tr>
             </thead>
             <tbody id="criteria-tbody"></tbody>
@@ -286,34 +341,34 @@
     <!-- 전체보기 -->
     <div id="tab-all" class="tab-panel">
       <div class="card">
-        <div class="card-title">디텐션 전체보기</div>
+        <div class="card-title">디텐션 전체보기 | All Detention Records</div>
 
         <div class="filter-bar">
           <select id="all-class-filter" class="edit-input">
-            <option value="">전체 학반</option>
+            <option value="">전체 학반 | All Classes</option>
           </select>
 
           <select id="all-student-filter" class="edit-input">
-            <option value="">전체 학생</option>
+            <option value="">전체 학생 | All Students</option>
           </select>
 
-          <input id="all-search" class="edit-input flex1" placeholder="학생명/위반행위/메모 검색">
+          <input id="all-search" class="edit-input flex1" placeholder="학생명/위반행위/메모 검색 | Search student/violation/memo">
         </div>
 
         <div class="tbl-wrap">
           <table>
             <thead>
               <tr>
-                <th>학생</th>
-                <th>학반</th>
-                <th>구분</th>
-                <th>위반행위</th>
-                <th>자동</th>
-                <th>수동</th>
-                <th>합계</th>
-                <th>담당교사</th>
-                <th>상태</th>
-                <th>일시</th>
+                <th>학생 | Student</th>
+                <th>학반 | Class</th>
+                <th>구분 | Category</th>
+                <th>위반행위 | Violation</th>
+                <th>자동 | Auto</th>
+                <th>수동 | Manual</th>
+                <th>합계 | Total</th>
+                <th>담당교사 | Teacher</th>
+                <th>상태 | Status</th>
+                <th>일시 | Date/Time</th>
               </tr>
             </thead>
             <tbody id="all-records-tbody"></tbody>
@@ -325,21 +380,24 @@
     <!-- 확정 -->
     <div id="tab-confirm" class="tab-panel">
       <div class="card">
-        <div class="card-title">디텐션 확정</div>
-        <div class="notice">head/admin 권한은 대기 중인 디텐션을 확정 또는 반려할 수 있습니다.</div>
+        <div class="card-title">디텐션 확정 | Confirm Detention</div>
+        <div class="notice">
+          <div>Master 권한은 대기 중인 디텐션을 확정 또는 반려할 수 있습니다.</div>
+          <div>Users with Master role can confirm or reject pending detention records.</div>
+        </div>
 
         <div class="tbl-wrap">
           <table>
             <thead>
               <tr>
-                <th>학생</th>
-                <th>학반</th>
-                <th>구분</th>
-                <th>위반행위</th>
-                <th>합계</th>
-                <th>작성자</th>
-                <th>상태</th>
-                <th>처리</th>
+                <th>학생 | Student</th>
+                <th>학반 | Class</th>
+                <th>구분 | Category</th>
+                <th>위반행위 | Violation</th>
+                <th>합계 | Total</th>
+                <th>작성자 | Created By</th>
+                <th>상태 | Status</th>
+                <th>처리 | Action</th>
               </tr>
             </thead>
             <tbody id="confirm-tbody"></tbody>
@@ -348,56 +406,123 @@
       </div>
     </div>
 
-    <!-- 알림 -->
-    <div id="tab-notify" class="tab-panel">
+    <!-- 중등 알림 -->
+    <div id="tab-notify-ms" class="tab-panel">
       <div class="card">
-        <div class="card-title">디텐션 알림</div>
-        <div class="notice">기초 화면입니다. 다음 단계에서 이메일/문자 발송 로직을 연결할 수 있습니다.</div>
+        <div class="card-title">중등 디텐션 알림 | MS Detention Notice</div>
+        <div class="notice">
+          <div>중등 디텐션 알림용 기초 화면입니다.</div>
+          <div>This is the basic screen for middle school detention notices.</div>
+        </div>
 
         <div class="form-grid" style="margin-top:10px;">
           <div>
-            <label class="label">발송 대상</label>
+            <label class="label">발송 대상 | Recipient</label>
             <select class="edit-input">
-              <option>미정</option>
+              <option>중등 학생/학부모 | MS Students/Parents</option>
             </select>
           </div>
 
           <div>
-            <label class="label">발송 방식</label>
+            <label class="label">발송 방식 | Delivery Method</label>
             <select class="edit-input">
-              <option>이메일</option>
-              <option>문자</option>
-              <option>앱 알림</option>
+              <option>이메일 | Email</option>
+              <option>문자 | SMS</option>
+              <option>앱 알림 | App Notification</option>
             </select>
           </div>
 
           <div class="full">
-            <label class="label">알림 내용</label>
-            <textarea class="edit-input" placeholder="알림 내용 초안"></textarea>
+            <label class="label">알림 내용 | Notice Message</label>
+            <textarea class="edit-input" placeholder="중등 알림 내용 초안 / Draft MS notice message"></textarea>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- 회복교육 -->
-    <div id="tab-recovery" class="tab-panel">
+    <!-- 고등 알림 -->
+    <div id="tab-notify-hs" class="tab-panel">
       <div class="card">
-        <div class="card-title">회복교육</div>
-        <div class="notice">기초 화면입니다. 다음 단계에서 회복 포인트 / 과제 / 참여 상태를 연결할 수 있습니다.</div>
+        <div class="card-title">고등 디텐션 알림 | HS Detention Notice</div>
+        <div class="notice">
+          <div>고등 디텐션 알림용 기초 화면입니다.</div>
+          <div>This is the basic screen for high school detention notices.</div>
+        </div>
+
+        <div class="form-grid" style="margin-top:10px;">
+          <div>
+            <label class="label">발송 대상 | Recipient</label>
+            <select class="edit-input">
+              <option>고등 학생/학부모 | HS Students/Parents</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="label">발송 방식 | Delivery Method</label>
+            <select class="edit-input">
+              <option>이메일 | Email</option>
+              <option>문자 | SMS</option>
+              <option>앱 알림 | App Notification</option>
+            </select>
+          </div>
+
+          <div class="full">
+            <label class="label">알림 내용 | Notice Message</label>
+            <textarea class="edit-input" placeholder="고등 알림 내용 초안 / Draft HS notice message"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 중등 회복교육 -->
+    <div id="tab-recovery-ms" class="tab-panel">
+      <div class="card">
+        <div class="card-title">중등 회복교육 | MS Restorative Education</div>
+        <div class="notice">
+          <div>중등 회복교육용 기초 화면입니다.</div>
+          <div>This is the basic screen for middle school restorative education.</div>
+        </div>
 
         <div class="tbl-wrap">
           <table>
             <thead>
               <tr>
-                <th>학생</th>
-                <th>학반</th>
-                <th>회복 활동</th>
-                <th>회복 포인트</th>
-                <th>담당</th>
-                <th>상태</th>
+                <th>학생 | Student</th>
+                <th>학반 | Class</th>
+                <th>회복 활동 | Recovery Activity</th>
+                <th>회복 포인트 | Recovery Points</th>
+                <th>담당 | Staff</th>
+                <th>상태 | Status</th>
               </tr>
             </thead>
-            <tbody id="recovery-tbody"></tbody>
+            <tbody id="recovery-ms-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- 고등 회복교육 -->
+    <div id="tab-recovery-hs" class="tab-panel">
+      <div class="card">
+        <div class="card-title">고등 회복교육 | HS Restorative Education</div>
+        <div class="notice">
+          <div>고등 회복교육용 기초 화면입니다.</div>
+          <div>This is the basic screen for high school restorative education.</div>
+        </div>
+
+        <div class="tbl-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>학생 | Student</th>
+                <th>학반 | Class</th>
+                <th>회복 활동 | Recovery Activity</th>
+                <th>회복 포인트 | Recovery Points</th>
+                <th>담당 | Staff</th>
+                <th>상태 | Status</th>
+              </tr>
+            </thead>
+            <tbody id="recovery-hs-tbody"></tbody>
           </table>
         </div>
       </div>
@@ -418,34 +543,27 @@
       { category: '수업', violation: '수업 중 자는 행위', autoPoints: 3, note: '기초값' },
       { category: '수업', violation: '수업 방해', autoPoints: 3, note: '기초값' },
       { category: '수업', violation: '수업 준비물 미지참', autoPoints: 3, note: '기초값' },
-
       { category: '표절 및 부정행위', violation: '표절', autoPoints: 9, note: '기준표 반영' },
       { category: '표절 및 부정행위', violation: '부정행위 및 방조', autoPoints: 12, note: '기준표 반영' },
       { category: '표절 및 부정행위', violation: 'AI 사용 금지 과제 전체 작성/번역', autoPoints: 12, note: '기준표 반영' },
-
       { category: '언어 및 품행', violation: '욕설', autoPoints: 3, note: '기준표 반영' },
       { category: '언어 및 품행', violation: '거짓말', autoPoints: 3, note: '기준표 반영' },
       { category: '언어 및 품행', violation: '회복교육 무단 불참', autoPoints: 3, note: '기준표 반영' },
       { category: '언어 및 품행', violation: '타인에게 불쾌감을 주는 언행', autoPoints: 6, note: '3-12점 범위의 기초값' },
       { category: '언어 및 품행', violation: '교사의 지시 불이행', autoPoints: 6, note: '3-12점 범위의 기초값' },
-
       { category: '복장', violation: '모자 착용', autoPoints: 1, note: '1차 기본값' },
       { category: '복장', violation: '단정하지 않은 복장 착용', autoPoints: 1, note: '1차 기본값' },
       { category: '복장', violation: '공식행사 복장 위반', autoPoints: 1, note: '기준표 반영' },
-
       { category: '두발', violation: '염색/삭발/규정 위반 펌', autoPoints: 1, note: '1차 기본값' },
       { category: '두발', violation: '두발 길이 규정 위반', autoPoints: 1, note: '1차 기본값' },
-
       { category: '화장 및 문신', violation: '색조 화장', autoPoints: 1, note: '1차 기본값' },
       { category: '화장 및 문신', violation: '네일 아트', autoPoints: 1, note: '1차 기본값' },
       { category: '화장 및 문신', violation: '문신', autoPoints: 12, note: '12-15점 범위의 기초값' },
-
       { category: '시설 및 기물', violation: '교내 엘리베이터 사용', autoPoints: 3, note: '기준표 반영' },
       { category: '시설 및 기물', violation: '학교/타인 소유물 낙서', autoPoints: 3, note: '기준표 반영' },
       { category: '시설 및 기물', violation: '타인 소유물 무단 유용', autoPoints: 3, note: '기준표 반영' },
       { category: '시설 및 기물', violation: '출입금지 시간 무단 위반', autoPoints: 9, note: '9-12점 범위의 기초값' },
       { category: '시설 및 기물', violation: '일과 중 무단 이탈', autoPoints: 9, note: '9-18점 범위의 기초값' },
-
       { category: '이성교제', violation: '이성교제 규정 1회 위반', autoPoints: 12, note: '12-15점 범위의 기초값' },
       { category: '흡연', violation: '담배 소지 또는 흡연 1차 적발', autoPoints: 12, note: '12-15점 범위의 기초값' },
       { category: '교외 생활', violation: '전동 킥보드 탑승', autoPoints: 12, note: '12-15점 범위의 기초값' },
@@ -463,6 +581,7 @@
     ];
 
     let teacher = null;
+    let teacherRoles = [];
     let students = {};
     let entries = {};
 
@@ -479,33 +598,58 @@
       return `${y}-${m}-${day}`;
     }
 
+    function normalizeRoles(roles){
+      if (Array.isArray(roles)) return roles.filter(Boolean);
+
+      if (typeof roles === 'string') {
+        return roles
+          .split(/[|,]/)
+          .map(v => String(v || '').trim().toLowerCase())
+          .filter(Boolean);
+      }
+
+      return [];
+    }
+
+    function hasRole(roleName){
+      return teacherRoles.includes(roleName);
+    }
+
     function canEditStandard(){
-      const role = String(teacher?.role || 'general');
-      return ['head', 'admin'].includes(role);
+      return hasRole('master');
     }
 
     function canConfirmDetention(){
-      const role = String(teacher?.role || 'general');
-      return ['head', 'admin'].includes(role);
+      return hasRole('master');
     }
 
     function statusBadge(status){
-      if (status === '확정') return '<span class="status-confirmed">확정</span>';
-      if (status === '반려') return '<span class="status-rejected">반려</span>';
-      return '<span class="status-pending">임시저장</span>';
+      if (status === '확정') return '<span class="status-confirmed">확정 | Confirmed</span>';
+      if (status === '반려') return '<span class="status-rejected">반려 | Rejected</span>';
+      return '<span class="status-pending">임시저장 | Pending</span>';
+    }
+
+    function rolesLabel(roles){
+      const list = normalizeRoles(roles);
+      if (!list.length) return '권한 없음 | No Roles';
+      return list.join(', ');
     }
 
     function init(){
       teacher = requireTeacherSession();
       if(!teacher) return;
 
-      document.getElementById('teacher-sub').textContent =
-        `${teacher.name} · ${teacher.role}${teacher.homeroom ? ' · ' + teacher.homeroom : ''}`;
+      teacherRoles = normalizeRoles(teacher.roles || []);
+
+      document.getElementById('teacher-sub').innerHTML = `
+        교사 페이지
+        <span class="sub-en">Teacher Page</span>
+      `;
 
       document.getElementById('teacher-info').innerHTML = `
-        <span class="badge">${esc(teacher.name)}</span>
-        <span class="badge">${esc(teacher.email)}</span>
-        <span class="badge">${esc(teacher.role)}</span>
+        <span class="badge">${esc(teacher.name || '')}</span>
+        <span class="badge">${esc(teacher.email || '')}</span>
+        <span class="badge">${esc(rolesLabel(teacher.roles || []))}</span>
         ${teacher.homeroom ? `<span class="badge">${esc(teacher.homeroom)}</span>` : ''}
       `;
 
@@ -517,31 +661,39 @@
     }
 
     function setupRoleVisibility(){
-      const role = String(teacher.role || 'general');
-      const isPrivileged = ['head', 'admin'].includes(role);
-
       document.querySelectorAll('.role-only').forEach(el => {
-        const roles = String(el.dataset.role || '').split(',').map(v => v.trim()).filter(Boolean);
-        if (!roles.length || roles.includes(role)) el.classList.add('role-show');
-        else el.classList.remove('role-show');
+        const roles = String(el.dataset.role || '')
+          .split(',')
+          .map(v => v.trim())
+          .filter(Boolean);
+
+        const visible = roles.some(role => hasRole(role));
+        el.classList.toggle('role-show', visible);
       });
 
       document.getElementById('standard-edit-note').textContent =
-        isPrivileged ? '편집 가능 모드' : '기본 보기 모드';
+        canEditStandard()
+          ? '편집 가능 모드 | Editable Mode'
+          : '기본 보기 모드 | View Mode';
     }
 
     function setupRecoveryTable(){
-      const recoveryTb = document.getElementById('recovery-tbody');
-      recoveryTb.innerHTML = recoveryActivities.map(r => `
+      const msTb = document.getElementById('recovery-ms-tbody');
+      const hsTb = document.getElementById('recovery-hs-tbody');
+
+      const rows = recoveryActivities.map(r => `
         <tr>
           <td>-</td>
           <td>-</td>
           <td>${esc(r.activity)}</td>
           <td>${esc(r.points)}</td>
           <td>-</td>
-          <td>대기</td>
+          <td>대기 | Pending</td>
         </tr>
       `).join('');
+
+      if (msTb) msTb.innerHTML = rows;
+      if (hsTb) hsTb.innerHTML = rows;
     }
 
     function renderCriteriaTable(){
@@ -553,7 +705,7 @@
       if (!detentionStandards.length) {
         tb.innerHTML = `
           <tr>
-            <td colspan="${editable ? 5 : 4}" class="empty">기준표 항목이 없습니다.</td>
+            <td colspan="${editable ? 5 : 4}" class="empty">기준표 항목이 없습니다. | No standards available.</td>
           </tr>
         `;
         return;
@@ -604,7 +756,7 @@
             >
           </td>
           <td style="text-align:center;">
-            <button class="btn btn-danger" onclick="deleteCriteriaRow(${idx})">삭제</button>
+            <button class="btn btn-danger" onclick="deleteCriteriaRow(${idx})">삭제 | Delete</button>
           </td>
         </tr>
       `).join('');
@@ -632,7 +784,7 @@
 
     async function saveCriteriaTable(){
       if (!canEditStandard()) {
-        return toast('편집 권한이 없습니다.', 'err');
+        return toast('편집 권한이 없습니다.\nYou do not have permission to edit standards.', 'err');
       }
 
       try {
@@ -651,10 +803,10 @@
         renderCriteriaTable();
         setupSelectors();
         renderViolationOptions();
-        toast('디텐션 기준표가 저장되었습니다.', 'ok');
+        toast('디텐션 기준표가 저장되었습니다.\nDetention standards have been saved.', 'ok');
       } catch (e) {
         console.error(e);
-        toast('기준표 저장 실패', 'err');
+        toast('기준표 저장 실패\nFailed to save standards', 'err');
       }
     }
 
@@ -735,7 +887,7 @@
         renderViolationOptions();
       }catch(e){
         console.error(e);
-        toast('데이터를 불러오지 못했습니다.', 'err');
+        toast('데이터를 불러오지 못했습니다.\nFailed to load data.', 'err');
       }
     }
 
@@ -749,14 +901,14 @@
 
       const sel = document.getElementById('student-select');
       sel.innerHTML =
-        '<option value="">학생을 선택하세요</option>' +
+        '<option value="">학생을 선택하세요 | Select a student</option>' +
         list.map(s => `
           <option value="${esc(s.key)}">${esc(s.className || '-')} · ${esc(s.name || '')}</option>
         `).join('');
 
       const studentFilter = document.getElementById('all-student-filter');
       studentFilter.innerHTML =
-        '<option value="">전체 학생</option>' +
+        '<option value="">전체 학생 | All Students</option>' +
         list.map(s => `
           <option value="${esc(s.key)}">${esc(s.name || '')}</option>
         `).join('');
@@ -769,7 +921,7 @@
 
       const classFilter = document.getElementById('all-class-filter');
       classFilter.innerHTML =
-        '<option value="">전체 학반</option>' +
+        '<option value="">전체 학반 | All Classes</option>' +
         classes.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
     }
 
@@ -782,7 +934,7 @@
         .slice(0, 10);
 
       if (!list.length){
-        tb.innerHTML = '<tr><td colspan="7" class="empty">기록이 없습니다.</td></tr>';
+        tb.innerHTML = '<tr><td colspan="7" class="empty">기록이 없습니다. | No records found.</td></tr>';
         return;
       }
 
@@ -825,7 +977,7 @@
       list = list.sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
 
       if (!list.length){
-        tb.innerHTML = '<tr><td colspan="10" class="empty">기록이 없습니다.</td></tr>';
+        tb.innerHTML = '<tr><td colspan="10" class="empty">기록이 없습니다. | No records found.</td></tr>';
         return;
       }
 
@@ -855,7 +1007,7 @@
         .sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
 
       if (!list.length){
-        tb.innerHTML = '<tr><td colspan="8" class="empty">확정 대기 항목이 없습니다.</td></tr>';
+        tb.innerHTML = '<tr><td colspan="8" class="empty">확정 대기 항목이 없습니다. | No pending records.</td></tr>';
         return;
       }
 
@@ -873,8 +1025,8 @@
               canManage
               ? `
                 <div class="mini-actions" style="margin-top:0;">
-                  <button class="btn btn-primary" onclick="confirmDetention('${esc(r.key)}')">확정</button>
-                  <button class="btn btn-danger" onclick="rejectDetention('${esc(r.key)}')">반려</button>
+                  <button class="btn btn-primary" onclick="confirmDetention('${esc(r.key)}')">확정 | Confirm</button>
+                  <button class="btn btn-danger" onclick="rejectDetention('${esc(r.key)}')">반려 | Reject</button>
                 </div>
               `
               : '-'
@@ -905,7 +1057,7 @@
       const memo = (document.getElementById('memo').value || '').trim();
 
       if (!studentKey || !students[studentKey]){
-        return toast('학생을 선택해 주세요.', 'err');
+        return toast('학생을 선택해 주세요.\nPlease select a student.', 'err');
       }
 
       const s = students[studentKey];
@@ -922,25 +1074,25 @@
         memo,
         teacherName: teacher.name || '',
         teacherEmail: teacher.email || '',
-        teacherRole: teacher.role || 'general',
+        teacherRoles: teacherRoles,
         status: '임시저장',
         createdAt: new Date().toISOString()
       };
 
       try{
         await db.ref(DETENTION_DB_PATH).push(payload);
-        toast('디텐션이 저장되었습니다.', 'ok');
+        toast('디텐션이 저장되었습니다.\nDetention entry has been saved.', 'ok');
         resetEntryForm();
         loadData();
       }catch(e){
         console.error(e);
-        toast('디텐션 저장 실패', 'err');
+        toast('디텐션 저장 실패\nFailed to save detention entry', 'err');
       }
     }
 
     async function confirmDetention(key){
       if (!canConfirmDetention()) {
-        return toast('확정 권한이 없습니다.', 'err');
+        return toast('확정 권한이 없습니다.\nYou do not have permission to confirm.', 'err');
       }
 
       try{
@@ -951,17 +1103,17 @@
           confirmedByEmail: teacher.email || ''
         });
 
-        toast('디텐션이 확정되었습니다.', 'ok');
+        toast('디텐션이 확정되었습니다.\nDetention entry confirmed.', 'ok');
         loadData();
       }catch(e){
         console.error(e);
-        toast('디텐션 확정 실패', 'err');
+        toast('디텐션 확정 실패\nFailed to confirm detention entry', 'err');
       }
     }
 
     async function rejectDetention(key){
       if (!canConfirmDetention()) {
-        return toast('반려 권한이 없습니다.', 'err');
+        return toast('반려 권한이 없습니다.\nYou do not have permission to reject.', 'err');
       }
 
       try{
@@ -972,11 +1124,11 @@
           rejectedByEmail: teacher.email || ''
         });
 
-        toast('디텐션이 반려되었습니다.', 'ok');
+        toast('디텐션이 반려되었습니다.\nDetention entry rejected.', 'ok');
         loadData();
       }catch(e){
         console.error(e);
-        toast('디텐션 반려 실패', 'err');
+        toast('디텐션 반려 실패\nFailed to reject detention entry', 'err');
       }
     }
 
