@@ -1,26 +1,17 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <!-- 문서 문자 인코딩 -->
   <meta charset="UTF-8" />
-
-  <!-- 모바일 화면 대응 -->
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-
-  <!-- 브라우저 탭 제목 -->
   <title>교사 로그인</title>
 
-  <!-- 구글 폰트 로드 -->
   <link
     href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=DM+Serif+Display&display=swap"
     rel="stylesheet"
   />
-
-  <!-- 공통 스타일 파일 연결 -->
   <link rel="stylesheet" href="common.css" />
 
   <style>
-    /* 우측 상단 관리자 이동 버튼 스타일 */
     .admin-link {
       position: fixed;
       top: 14px;
@@ -33,40 +24,29 @@
       font-size: 12px;
       font-weight: 700;
     }
+
+    .login-box {
+      max-width: 460px;
+    }
+
+    .login-box .btn {
+      width: 100%;
+    }
   </style>
 </head>
 
 <body>
-  <!-- 토스트 메시지 출력 영역 -->
   <div id="toast"></div>
 
-  <!-- 관리자 페이지로 이동하는 링크 -->
   <a class="admin-link" href="admin.html">⚙️ 관리자</a>
 
-  <!-- 로그인 화면 전체 -->
   <div class="login-page">
     <div class="login-box">
-      <!-- 아이콘 -->
       <div class="icon">🧑‍🏫</div>
-
-      <!-- 제목 -->
-      <h1 style="text-align: center;">교사 로그인</h1>
-
-      <!-- 설명 문구 -->
-      <p style="text-align: center;">교사를 선택하고 비밀번호를 입력하세요.</p>
+      <h1 style="text-align:center;">교사 로그인</h1>
+      <p style="text-align:center;">교사를 선택하고 비밀번호를 입력해 주세요.</p>
 
       <div class="grid">
-        <!-- 교사 검색 입력창 -->
-        <div>
-          <label class="label">교사 검색</label>
-          <input
-            id="search"
-            class="edit-input"
-            placeholder="교사명/이메일/학반 검색"
-          />
-        </div>
-
-        <!-- 검색된 교사 목록 선택 -->
         <div>
           <label class="label">교사 선택</label>
           <select id="teacher-select" class="edit-input">
@@ -74,17 +54,6 @@
           </select>
         </div>
 
-        <!-- 이메일 직접 입력 -->
-        <div>
-          <label class="label">또는 이메일 직접 입력</label>
-          <input
-            id="email"
-            class="edit-input"
-            placeholder="teacher@his.sc.kr"
-          />
-        </div>
-
-        <!-- 비밀번호 입력 -->
         <div>
           <label class="label">비밀번호</label>
           <input
@@ -96,36 +65,22 @@
           />
         </div>
 
-        <!-- 로그인 버튼 -->
         <button class="btn btn-primary" onclick="login()">로그인</button>
       </div>
     </div>
   </div>
 
-  <!-- Firebase 라이브러리 로드 -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
-
-  <!-- 공통 함수 파일 -->
   <script src="common.js"></script>
 
   <script>
-    // Firebase에서 읽어온 전체 교사 데이터 저장용 객체
     let teachers = {};
 
-    /**
-     * 페이지 초기화 함수
-     * 교사 목록을 Firebase에서 불러와 드롭다운을 렌더링합니다.
-     */
     async function init() {
       try {
-        // teachers 노드 전체 읽기
         const snap = await db.ref('teachers').once('value');
-
-        // 값이 없으면 빈 객체
         teachers = snap.val() || {};
-
-        // 화면에 렌더링
         renderTeachers();
       } catch (e) {
         console.error(e);
@@ -133,84 +88,37 @@
       }
     }
 
-    /**
-     * 검색어 기준으로 교사 목록을 화면에 다시 그리는 함수
-     */
     function renderTeachers() {
-      // 검색 입력값 가져오기
-      const q = (document.getElementById('search').value || '')
-        .trim()
-        .toLowerCase();
-
-      // teachers 객체에서 화면 표시용 목록 생성
       const list = Object.values(teachers)
-        // 비활성 교사는 제외
-        .filter((t) => t && t.active !== false)
-        // 검색어가 있으면 이름/이메일/담당학급 기준 필터
-        .filter((t) => {
-          if (!q) return true;
+        .filter(t => t && t.active !== false)
+        .sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'ko'));
 
-          return [t.name, t.email, t.homeroom].some((v) =>
-            String(v || '').toLowerCase().includes(q)
-          );
-        })
-        // 이름 기준 정렬
-        .sort((a, b) =>
-          String(a.name || '').localeCompare(String(b.name || ''))
-        );
-
-      // select 요소 가져오기
       const sel = document.getElementById('teacher-select');
-
-      // 기본 option + 교사 목록 option 생성
       sel.innerHTML =
         '<option value="">교사를 선택하세요</option>' +
-        list
-          .map(
-            (t) => `
-              <option value="${esc(t.email || '')}">
-                ${esc(t.name || '')} · ${esc(t.role || 'general')}
-                ${t.homeroom ? ' · ' + esc(t.homeroom) : ''}
-              </option>
-            `
-          )
-          .join('');
+        list.map(t => `
+          <option value="${esc(t.email || '')}">
+            ${esc(t.name || '')}
+          </option>
+        `).join('');
     }
 
-    /**
-     * 로그인 처리 함수
-     * 이메일과 비밀번호가 일치하는 교사를 찾아 sessionStorage에 저장합니다.
-     */
     async function login() {
-      // 이메일 직접 입력값이 우선, 없으면 드롭다운 선택값 사용
-      const email = (
-        document.getElementById('email').value ||
-        document.getElementById('teacher-select').value ||
-        ''
-      )
-        .trim()
-        .toLowerCase();
-
-      // 비밀번호 입력값
+      const email = (document.getElementById('teacher-select').value || '').trim().toLowerCase();
       const pw = (document.getElementById('pw').value || '').trim();
 
-      // 입력 검증
       if (!email || !pw) {
         return toast('교사와 비밀번호를 입력해 주세요.', 'err');
       }
 
       try {
-        // 로그인 시 teachers 전체를 다시 한 번 읽음
         const snap = await db.ref('teachers').once('value');
 
-        let found = null; // 찾은 교사 정보
-        let key = '';     // 찾은 교사의 DB key
+        let found = null;
+        let key = '';
 
-        // teachers 전체 순회
-        snap.forEach((child) => {
+        snap.forEach(child => {
           const t = child.val() || {};
-
-          // 이메일, 비밀번호, active 상태가 모두 일치하면 로그인 성공
           if (
             String(t.email || '').trim().toLowerCase() === email &&
             String(t.password || '') === pw &&
@@ -221,13 +129,11 @@
           }
         });
 
-        // 일치하는 계정이 없으면 오류
         if (!found) {
           document.getElementById('pw').value = '';
           return toast('아이디 또는 비밀번호가 올바르지 않습니다.', 'err');
         }
 
-        // 로그인 성공한 교사 정보를 sessionStorage에 저장
         sessionStorage.setItem(
           'his_teacher',
           JSON.stringify({
@@ -239,7 +145,6 @@
           })
         );
 
-        // 교사 페이지로 이동
         location.href = 'teacher.html';
       } catch (e) {
         console.error(e);
@@ -247,72 +152,7 @@
       }
     }
 
-    /**
-     * 검색어 입력 시 교사 목록 재렌더링
-     */
-    document
-      .getElementById('search')
-      .addEventListener('input', renderTeachers);
-
-    /**
-     * 드롭다운에서 교사를 선택하면
-     * 해당 이메일을 이메일 입력칸에 자동으로 넣어줍니다.
-     */
-    document
-      .getElementById('teacher-select')
-      .addEventListener('change', (e) => {
-        if (e.target.value) {
-          document.getElementById('email').value = e.target.value;
-        }
-      });
-
-    // 페이지 진입 시 초기 실행
     init();
-
-    async function uploadTeachersCsv() {
-      try {
-        const file = document.getElementById('teacher-csv').files[0];
-        const enc = document.getElementById('teacher-csv-enc').value;
-        const msg = document.getElementById('teacher-upload-msg');
-
-        if (!file) {
-          return toast('교사 CSV 파일을 선택해 주세요.', 'err');
-        }
-
-        const text = await readFileText(file, enc);
-        const rows = parseCsv(text);
-
-        if (!rows.length) {
-          msg.textContent = 'CSV 내용이 비어 있습니다.';
-          return toast('CSV 내용이 비어 있습니다.', 'err');
-        }
-
-        teacherRows = rows.map(r => ({
-          oldKey: '',
-          name: String(r.name || '').trim(),
-          email: String(r.email || '').trim().toLowerCase(),
-          password: String(r.password || '').trim(),
-          role: String(r.role || 'general').trim() || 'general',
-          homeroom: String(r.homeroom || '').trim(),
-          active: parseBool(r.active),
-          _delete: false,
-          _status: '업로드됨'
-        }));
-
-        msg.textContent = `${teacherRows.length}명의 교사 데이터를 불러왔습니다. 교사 계정 관리 탭에서 확인 후 "변경 저장"을 눌러 반영하세요.`;
-        toast('교사 CSV를 불러왔습니다.', 'ok');
-
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-        document.querySelector('.tab-btn[data-tab="teachers"]').classList.add('active');
-        document.getElementById('tab-teachers').classList.add('active');
-
-        renderTeachers();
-      } catch (e) {
-        console.error(e);
-        toast('교사 CSV 업로드 실패', 'err');
-      }
-    }
   </script>
 </body>
 </html>

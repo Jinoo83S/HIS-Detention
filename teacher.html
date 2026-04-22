@@ -1,355 +1,728 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <!-- 문자 인코딩 -->
   <meta charset="UTF-8">
-
-  <!-- 반응형 설정 -->
   <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>디텐션 관리</title>
 
-  <!-- 문서 제목 -->
-  <title>교사 페이지</title>
-
-  <!-- 폰트 로드 -->
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=DM+Serif+Display&display=swap" rel="stylesheet">
-
-  <!-- 공통 스타일 -->
   <link rel="stylesheet" href="common.css">
-</head>
 
+  <style>
+    .page-grid{
+      display:grid;
+      grid-template-columns: 1.15fr .85fr;
+      gap:12px;
+    }
+    .form-grid{
+      display:grid;
+      grid-template-columns: repeat(2, minmax(0,1fr));
+      gap:10px;
+    }
+    .form-grid .full{
+      grid-column: 1 / -1;
+    }
+    .section-note{
+      font-size:12px;
+      color:var(--sb);
+      margin-top:4px;
+    }
+    .readonly-box{
+      padding:8px 10px;
+      border:1px solid var(--bd);
+      border-radius:8px;
+      background:#f8fbff;
+      min-height:37px;
+      display:flex;
+      align-items:center;
+      font-size:13px;
+    }
+    .mini-actions{
+      display:flex;
+      gap:6px;
+      flex-wrap:wrap;
+      margin-top:10px;
+    }
+    .role-only{
+      display:none;
+    }
+    .role-show{
+      display:block;
+    }
+    .stat-boxes{
+      display:grid;
+      grid-template-columns: repeat(3, minmax(0,1fr));
+      gap:8px;
+      margin-top:10px;
+    }
+    .stat-box{
+      border:1px solid var(--bd);
+      border-radius:10px;
+      background:#f9fbff;
+      padding:10px 12px;
+    }
+    .stat-box .k{
+      font-size:11px;
+      color:var(--sb);
+      margin-bottom:4px;
+    }
+    .stat-box .v{
+      font-size:18px;
+      font-weight:800;
+      color:var(--nv);
+    }
+    .criteria-table td:nth-child(1),
+    .criteria-table td:nth-child(3),
+    .criteria-table td:nth-child(4){
+      white-space:nowrap;
+    }
+    tbody tr:nth-child(odd){ background:#ffffff; }
+    tbody tr:nth-child(even){ background:#f7faff; }
+    tbody tr:hover{ background:#edf3ff; }
+
+    @media (max-width: 980px){
+      .page-grid{
+        grid-template-columns: 1fr;
+      }
+      .form-grid{
+        grid-template-columns: 1fr;
+      }
+      .stat-boxes{
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
 <body>
-  <!-- 토스트 메시지 출력 영역 -->
   <div id="toast"></div>
 
-  <!-- 상단 바 -->
   <div class="topbar">
     <div>
-      <h1>학생 벌점 관리 시스템</h1>
+      <h1>디텐션 관리</h1>
       <div class="sub" id="teacher-sub">교사 페이지</div>
     </div>
 
     <div class="inline-actions">
-      <!-- 전체 데이터 다시 로드 -->
       <button class="btn btn-secondary" onclick="loadData()">새로고침</button>
-
-      <!-- 로그아웃 -->
       <button class="btn btn-danger" onclick="logoutTeacher()">로그아웃</button>
     </div>
   </div>
 
   <div class="content">
-    <!-- 로그인한 교사 정보 카드 -->
     <div class="card">
       <div class="card-title">교사 정보</div>
       <div id="teacher-info"></div>
-    </div>
-
-    <!-- 학생 선택 및 벌점 입력 카드 -->
-    <div class="card">
-      <div class="card-title">학생 선택 및 벌점 입력</div>
-
-      <div class="filter-bar">
-        <!-- 학생 검색 -->
-        <input id="student-search" class="edit-input flex1" placeholder="학생명/영문명/학반 검색">
-
-        <!-- 벌점 카테고리 -->
-        <select id="cat" class="edit-input"></select>
-
-        <!-- 점수 입력 -->
-        <input id="pts" class="edit-input" type="number" min="1" style="width:90px">
-
-        <!-- 저장 버튼 -->
-        <button class="btn btn-primary" onclick="saveRecord()">벌점 등록</button>
-      </div>
-
-      <!-- 사유 입력 -->
-      <textarea id="reason" class="edit-input" placeholder="사유 입력"></textarea>
-
-      <!-- 현재 선택된 학생 표시 -->
-      <div style="margin-top:10px">
-        <span class="badge" id="selected-student">학생을 선택해 주세요</span>
-      </div>
-
-      <!-- 학생 목록 테이블 -->
-      <div class="tbl-wrap" style="margin-top:12px;max-height:380px">
-        <table>
-          <thead>
-            <tr>
-              <th>선택</th>
-              <th>학생 이름</th>
-              <th>영문 이름</th>
-              <th>학반</th>
-            </tr>
-          </thead>
-          <tbody id="student-tbody"></tbody>
-        </table>
+      <div class="stat-boxes">
+        <div class="stat-box">
+          <div class="k">오늘 등록 건수</div>
+          <div class="v" id="today-count">0</div>
+        </div>
+        <div class="stat-box">
+          <div class="k">미확정 건수</div>
+          <div class="v" id="pending-count">0</div>
+        </div>
+        <div class="stat-box">
+          <div class="k">전체 기록</div>
+          <div class="v" id="total-count">0</div>
+        </div>
       </div>
     </div>
 
-    <!-- 최근 벌점 기록 카드 -->
-    <div class="card">
-      <div class="card-title">최근 기록</div>
-      <div class="tbl-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>학생</th>
-              <th>학반</th>
-              <th>항목</th>
-              <th>점수</th>
-              <th>사유</th>
-              <th>일시</th>
-            </tr>
-          </thead>
-          <tbody id="record-tbody"></tbody>
-        </table>
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="entry">디텐션 입력</button>
+      <button class="tab-btn" data-tab="standard">디텐션 기준표</button>
+      <button class="tab-btn" data-tab="all">디텐션 전체보기</button>
+      <button class="tab-btn role-only" data-role="head,admin" data-tab="confirm">디텐션 확정</button>
+      <button class="tab-btn role-only" data-role="head,admin" data-tab="notify">디텐션 알림</button>
+      <button class="tab-btn role-only" data-role="head,admin" data-tab="recovery">회복교육</button>
+    </div>
+
+    <div id="tab-entry" class="tab-panel active">
+      <div class="page-grid">
+        <div class="card">
+          <div class="card-title">디텐션 입력</div>
+
+          <div class="form-grid">
+            <div class="full">
+              <label class="label">이름 검색 / 학생 선택</label>
+              <select id="student-select" class="edit-input"></select>
+            </div>
+
+            <div>
+              <label class="label">벌점 구분</label>
+              <select id="category-select" class="edit-input"></select>
+            </div>
+
+            <div>
+              <label class="label">위반행위</label>
+              <select id="violation-select" class="edit-input"></select>
+            </div>
+
+            <div>
+              <label class="label">자동벌점</label>
+              <div id="auto-points" class="readonly-box">-</div>
+            </div>
+
+            <div>
+              <label class="label">수동벌점</label>
+              <input id="manual-points" type="number" min="0" class="edit-input" value="0">
+            </div>
+
+            <div class="full">
+              <label class="label">메모</label>
+              <textarea id="memo" class="edit-input" placeholder="상세 메모를 입력해 주세요."></textarea>
+            </div>
+          </div>
+
+          <div class="mini-actions">
+            <button class="btn btn-primary" onclick="saveDetention()">디텐션 저장</button>
+            <button class="btn btn-secondary" onclick="resetEntryForm()">초기화</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">최근 입력 내역</div>
+          <div class="tbl-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>학생</th>
+                  <th>학반</th>
+                  <th>구분</th>
+                  <th>위반행위</th>
+                  <th>점수</th>
+                  <th>일시</th>
+                </tr>
+              </thead>
+              <tbody id="recent-entry-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="tab-standard" class="tab-panel">
+      <div class="card">
+        <div class="card-title">
+          <span>디텐션 기준표</span>
+          <span class="small" id="standard-edit-note">기본 보기 모드</span>
+        </div>
+        <div class="section-note">기초 버전입니다. 세부 수정/편집 권한 로직은 다음 단계에서 연결하면 됩니다.</div>
+
+        <div class="tbl-wrap" style="margin-top:10px;">
+          <table class="criteria-table">
+            <thead>
+              <tr>
+                <th>구분</th>
+                <th>위반행위</th>
+                <th>자동 점수</th>
+                <th>비고</th>
+              </tr>
+            </thead>
+            <tbody id="criteria-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div id="tab-all" class="tab-panel">
+      <div class="card">
+        <div class="card-title">디텐션 전체보기</div>
+
+        <div class="filter-bar">
+          <select id="all-class-filter" class="edit-input">
+            <option value="">전체 학반</option>
+          </select>
+
+          <select id="all-student-filter" class="edit-input">
+            <option value="">전체 학생</option>
+          </select>
+
+          <input id="all-search" class="edit-input flex1" placeholder="학생명/위반행위/메모 검색">
+        </div>
+
+        <div class="tbl-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>학생</th>
+                <th>학반</th>
+                <th>구분</th>
+                <th>위반행위</th>
+                <th>자동</th>
+                <th>수동</th>
+                <th>합계</th>
+                <th>담당교사</th>
+                <th>상태</th>
+                <th>일시</th>
+              </tr>
+            </thead>
+            <tbody id="all-records-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div id="tab-confirm" class="tab-panel">
+      <div class="card">
+        <div class="card-title">디텐션 확정</div>
+        <div class="notice">권한 보유자만 보이는 기초 화면입니다. 다음 단계에서 확정/반려/일괄처리 기능을 연결하면 됩니다.</div>
+        <div class="tbl-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>학생</th>
+                <th>학반</th>
+                <th>위반행위</th>
+                <th>합계</th>
+                <th>작성자</th>
+                <th>상태</th>
+              </tr>
+            </thead>
+            <tbody id="confirm-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div id="tab-notify" class="tab-panel">
+      <div class="card">
+        <div class="card-title">디텐션 알림</div>
+        <div class="notice">권한 보유자만 보이는 기초 화면입니다. 다음 단계에서 학부모/학생 알림 발송 로직을 붙일 수 있습니다.</div>
+        <div class="form-grid" style="margin-top:10px;">
+          <div>
+            <label class="label">발송 대상</label>
+            <select class="edit-input">
+              <option>미정</option>
+            </select>
+          </div>
+          <div>
+            <label class="label">발송 방식</label>
+            <select class="edit-input">
+              <option>이메일</option>
+              <option>문자</option>
+              <option>앱 알림</option>
+            </select>
+          </div>
+          <div class="full">
+            <label class="label">알림 내용</label>
+            <textarea class="edit-input" placeholder="알림 내용 초안"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="tab-recovery" class="tab-panel">
+      <div class="card">
+        <div class="card-title">회복교육</div>
+        <div class="notice">권한 보유자만 보이는 기초 화면입니다. 다음 단계에서 회복 포인트/과제/참여 여부를 연결할 수 있습니다.</div>
+        <div class="tbl-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>학생</th>
+                <th>학반</th>
+                <th>회복 활동</th>
+                <th>회복 포인트</th>
+                <th>담당</th>
+                <th>상태</th>
+              </tr>
+            </thead>
+            <tbody id="recovery-tbody"></tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- Firebase 라이브러리 -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
-
-  <!-- 공통 JS -->
   <script src="common.js"></script>
 
   <script>
-    // 기본 벌점 카테고리 목록
-    const categories = [
-      {label:'지각',points:1},
-      {label:'복장 불량',points:1},
-      {label:'수업 방해',points:2},
-      {label:'무단 결석',points:3},
-      {label:'기타',points:1}
+    const DETENTION_DB_PATH = 'detentionEntries';
+
+    const detentionStandards = [
+      { category: '수업', violation: '과제 미제출', autoPoints: 3, note: '기초값' },
+      { category: '수업', violation: '수업 지각', autoPoints: 3, note: '기초값' },
+      { category: '수업', violation: '수업 중 자는 행위', autoPoints: 3, note: '기초값' },
+      { category: '수업', violation: '수업 방해', autoPoints: 3, note: '기초값' },
+      { category: '수업', violation: '수업 준비물 미지참', autoPoints: 3, note: '기초값' },
+      { category: '표절 및 부정행위', violation: '표절', autoPoints: 9, note: '기준표 반영' },
+      { category: '표절 및 부정행위', violation: '부정행위 및 방조', autoPoints: 12, note: '기준표 반영' },
+      { category: '표절 및 부정행위', violation: 'AI 사용 금지 과제 전체 작성/번역', autoPoints: 12, note: '기준표 반영' },
+      { category: '언어 및 품행', violation: '욕설', autoPoints: 3, note: '기준표 반영' },
+      { category: '언어 및 품행', violation: '거짓말', autoPoints: 3, note: '기준표 반영' },
+      { category: '언어 및 품행', violation: '회복교육 무단 불참', autoPoints: 3, note: '기준표 반영' },
+      { category: '언어 및 품행', violation: '타인에게 불쾌감을 주는 언행', autoPoints: 6, note: '3-12점 범위의 기초값' },
+      { category: '언어 및 품행', violation: '교사의 지시 불이행', autoPoints: 6, note: '3-12점 범위의 기초값' },
+      { category: '복장', violation: '모자 착용', autoPoints: 1, note: '1차 기본값' },
+      { category: '복장', violation: '단정하지 않은 복장 착용', autoPoints: 1, note: '1차 기본값' },
+      { category: '복장', violation: '공식행사 복장 위반', autoPoints: 1, note: '기준표 반영' },
+      { category: '두발', violation: '염색/삭발/규정 위반 펌', autoPoints: 1, note: '1차 기본값' },
+      { category: '두발', violation: '두발 길이 규정 위반', autoPoints: 1, note: '1차 기본값' },
+      { category: '화장 및 문신', violation: '색조 화장', autoPoints: 1, note: '1차 기본값' },
+      { category: '화장 및 문신', violation: '네일 아트', autoPoints: 1, note: '1차 기본값' },
+      { category: '화장 및 문신', violation: '문신', autoPoints: 12, note: '12-15점 범위의 기초값' },
+      { category: '시설 및 기물', violation: '교내 엘리베이터 사용', autoPoints: 3, note: '기준표 반영' },
+      { category: '시설 및 기물', violation: '학교/타인 소유물 낙서', autoPoints: 3, note: '기준표 반영' },
+      { category: '시설 및 기물', violation: '타인 소유물 무단 유용', autoPoints: 3, note: '기준표 반영' },
+      { category: '시설 및 기물', violation: '출입금지 시간 무단 위반', autoPoints: 9, note: '9-12점 범위의 기초값' },
+      { category: '시설 및 기물', violation: '일과 중 무단 이탈', autoPoints: 9, note: '9-18점 범위의 기초값' },
+      { category: '이성교제', violation: '이성교제 규정 1회 위반', autoPoints: 12, note: '12-15점 범위의 기초값' },
+      { category: '흡연', violation: '담배 소지 또는 흡연 1차 적발', autoPoints: 12, note: '12-15점 범위의 기초값' },
+      { category: '교외 생활', violation: '전동 킥보드 탑승', autoPoints: 12, note: '12-15점 범위의 기초값' },
+      { category: '그 외', violation: '기타 학생 본분에 어긋나는 위반', autoPoints: 3, note: '1-15점 범위의 기초값' }
     ];
 
-    // 전역 상태 변수
-    let teacher = null;      // 로그인한 교사 정보
-    let students = {};       // 학생 전체 데이터
-    let records = {};        // 벌점 기록 전체 데이터
-    let selectedKey = '';    // 현재 선택된 학생 key
+    const recoveryActivities = [
+      { activity: '회복활동 과제 수행', points: '3-12' },
+      { activity: '회복활동 훈련 수행', points: '3-12' },
+      { activity: '회복활동 학습 수행', points: '3-12' },
+      { activity: '모범적인 생활', points: '3-12' },
+      { activity: '사실관계 확인서 및 자아성찰문 작성', points: '3-12' },
+      { activity: '교내 캠페인 활동 3일 이상', points: '3-12' },
+      { activity: '교내 봉사', points: '3-12' }
+    ];
 
-    /**
-     * 날짜/시간을 보기 좋은 문자열로 변환
-     * @param {string} v
-     * @returns {string}
-     */
+    let teacher = null;
+    let students = {};
+    let entries = {};
+
     function fmt(v){
-      const d = new Date(v||'');
+      const d = new Date(v || '');
       return isNaN(d) ? '-' : d.toLocaleString('ko-KR');
     }
 
-    /**
-     * 페이지 초기화
-     * - 세션 확인
-     * - 교사 정보 표시
-     * - 카테고리 목록 렌더링
-     * - 이벤트 연결
-     * - 데이터 로드
-     */
+    function todayKey(){
+      const d = new Date();
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    }
+
     function init(){
-      // 로그인 세션이 없으면 index.html로 이동
       teacher = requireTeacherSession();
       if(!teacher) return;
 
-      // 상단 교사 요약 표시
       document.getElementById('teacher-sub').textContent =
         `${teacher.name} · ${teacher.role}${teacher.homeroom ? ' · ' + teacher.homeroom : ''}`;
 
-      // 교사 정보 배지 출력
-      document.getElementById('teacher-info').innerHTML =
-        `<span class="badge">${esc(teacher.name)}</span> ` +
-        `<span class="badge">${esc(teacher.email)}</span> ` +
-        `<span class="badge">${esc(teacher.role)}</span> ` +
-        `${teacher.homeroom ? `<span class="badge">${esc(teacher.homeroom)}</span>` : ''}`;
+      document.getElementById('teacher-info').innerHTML = `
+        <span class="badge">${esc(teacher.name)}</span>
+        <span class="badge">${esc(teacher.email)}</span>
+        <span class="badge">${esc(teacher.role)}</span>
+        ${teacher.homeroom ? `<span class="badge">${esc(teacher.homeroom)}</span>` : ''}
+      `;
 
-      // 카테고리 select에 option 넣기
-      document.getElementById('cat').innerHTML =
-        categories.map(c => `<option value="${esc(c.label)}">${esc(c.label)}</option>`).join('');
-
-      // 기본 점수 설정
-      document.getElementById('pts').value = categories[0].points;
-
-      // 카테고리 변경 시 기본 점수 자동 반영
-      document.getElementById('cat').addEventListener('change', ()=>{
-        const f = categories.find(c => c.label === document.getElementById('cat').value);
-        document.getElementById('pts').value = f ? f.points : 1;
-      });
-
-      // 학생 검색창 입력 시 학생 목록 재렌더링
-      document.getElementById('student-search').addEventListener('input', renderStudents);
-
-      // 초기 데이터 로드
+      setupRoleVisibility();
+      setupStandardTable();
+      setupSelectors();
+      setupEvents();
       loadData();
     }
 
-    /**
-     * 학생 목록과 벌점 기록을 Firebase에서 불러옴
-     */
-    async function loadData(){
-      try{
-        const [sSnap, rSnap] = await Promise.all([
-          db.ref('students').once('value'),
-          db.ref('detentionRecords').once('value')
-        ]);
+    function setupRoleVisibility(){
+      const role = String(teacher.role || 'general');
+      const isPrivileged = ['head', 'admin'].includes(role);
 
-        // 값이 없으면 빈 객체 처리
-        students = sSnap.val() || {};
-        records = rSnap.val() || {};
+      document.querySelectorAll('.role-only').forEach(el => {
+        if (isPrivileged) el.classList.add('role-show');
+        else el.classList.remove('role-show');
+      });
 
-        // 화면 반영
-        renderStudents();
-        renderRecords();
-      }catch(e){
-        console.error(e);
-        toast('데이터를 불러오지 못했습니다.','err');
-      }
+      document.getElementById('standard-edit-note').textContent =
+        isPrivileged ? '편집 가능 권한(기초 표시)' : '기본 보기 모드';
     }
 
-    /**
-     * 학생 목록을 테이블에 렌더링
-     * 검색어 기준으로 필터링하고 학반/이름 순으로 정렬
-     */
-    function renderStudents(){
-      const q = (document.getElementById('student-search').value||'').trim().toLowerCase();
-
-      const list = Object.entries(students)
-        .map(([key,v]) => ({key, ...v}))
-        .filter(s =>
-          !q || [s.name, s.englishName, s.className]
-            .some(v => String(v||'').toLowerCase().includes(q))
-        )
-        .sort((a,b) =>
-          String(a.className||'').localeCompare(String(b.className||'')) ||
-          String(a.name||'').localeCompare(String(b.name||''))
-        );
-
-      const tb = document.getElementById('student-tbody');
-
-      // 학생이 한 명도 없을 때
-      if(!list.length){
-        tb.innerHTML = '<tr><td colspan="4" class="empty">학생이 없습니다.</td></tr>';
-        return;
-      }
-
-      // 학생 목록 렌더링
-      tb.innerHTML = list.map(s => `
+    function setupStandardTable(){
+      const tb = document.getElementById('criteria-tbody');
+      tb.innerHTML = detentionStandards.map(row => `
         <tr>
-          <td>
-            <button
-              class="btn ${selectedKey===s.key ? 'btn-primary' : 'btn-secondary'}"
-              onclick="pickStudent('${esc(s.key)}')"
-            >
-              ${selectedKey===s.key ? '선택됨' : '선택'}
-            </button>
-          </td>
-          <td>${esc(s.name||'')}</td>
-          <td>${esc(s.englishName||'-')}</td>
-          <td>${esc(s.className||'-')}</td>
+          <td>${esc(row.category)}</td>
+          <td>${esc(row.violation)}</td>
+          <td>${esc(String(row.autoPoints))}</td>
+          <td>${esc(row.note || '')}</td>
+        </tr>
+      `).join('');
+
+      const recoveryTb = document.getElementById('recovery-tbody');
+      recoveryTb.innerHTML = recoveryActivities.map(r => `
+        <tr>
+          <td>-</td>
+          <td>-</td>
+          <td>${esc(r.activity)}</td>
+          <td>${esc(r.points)}</td>
+          <td>-</td>
+          <td>대기</td>
         </tr>
       `).join('');
     }
 
-    /**
-     * 학생 선택 처리
-     * @param {string} key
-     */
-    function pickStudent(key){
-      // 현재 선택된 학생 key 저장
-      selectedKey = key;
+    function setupSelectors(){
+      const categorySel = document.getElementById('category-select');
+      const categories = [...new Set(detentionStandards.map(x => x.category))];
 
-      // 선택된 학생 객체
-      const s = students[key];
+      categorySel.innerHTML = categories.map(c => `
+        <option value="${esc(c)}">${esc(c)}</option>
+      `).join('');
 
-      // 화면 상단의 선택 학생 표시 갱신
-      document.getElementById('selected-student').textContent =
-        s ? `${s.name} / ${s.className||'-'}` : '학생을 선택해 주세요';
-
-      // 버튼 표시 상태 갱신
-      renderStudents();
+      renderViolationOptions();
     }
 
-    /**
-     * 현재 로그인한 교사의 최근 벌점 기록만 표시
-     */
-    function renderRecords(){
-      const list = Object.values(records)
-        // 해당 교사 이메일과 일치하는 기록만 추출
-        .filter(r => (r.teacherEmail||'') === teacher.email)
-        // 최신순 정렬
-        .sort((a,b) => String(b.createdAt||'').localeCompare(String(a.createdAt||'')))
-        // 최근 50개만 표시
-        .slice(0,50);
+    function renderViolationOptions(){
+      const category = document.getElementById('category-select').value;
+      const violationSel = document.getElementById('violation-select');
+      const list = detentionStandards.filter(x => x.category === category);
 
-      const tb = document.getElementById('record-tbody');
+      violationSel.innerHTML = list.map(x => `
+        <option value="${esc(x.violation)}">${esc(x.violation)}</option>
+      `).join('');
 
-      // 기록이 없으면 안내문 표시
-      if(!list.length){
+      syncAutoPoints();
+    }
+
+    function syncAutoPoints(){
+      const category = document.getElementById('category-select').value;
+      const violation = document.getElementById('violation-select').value;
+      const found = detentionStandards.find(x => x.category === category && x.violation === violation);
+      document.getElementById('auto-points').textContent = found ? String(found.autoPoints) : '-';
+    }
+
+    function setupEvents(){
+      document.getElementById('category-select').addEventListener('change', renderViolationOptions);
+      document.getElementById('violation-select').addEventListener('change', syncAutoPoints);
+
+      document.getElementById('all-class-filter').addEventListener('change', renderAllEntries);
+      document.getElementById('all-student-filter').addEventListener('change', renderAllEntries);
+      document.getElementById('all-search').addEventListener('input', renderAllEntries);
+
+      document.addEventListener('click', e => {
+        const btn = e.target.closest('.tab-btn');
+        if (!btn) return;
+
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+
+        btn.classList.add('active');
+        document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+      });
+    }
+
+    async function loadData(){
+      try{
+        const [sSnap, eSnap] = await Promise.all([
+          db.ref('students').once('value'),
+          db.ref(DETENTION_DB_PATH).once('value')
+        ]);
+
+        students = sSnap.val() || {};
+        entries = eSnap.val() || {};
+
+        renderStudentOptions();
+        renderFilters();
+        renderRecentEntries();
+        renderAllEntries();
+        renderConfirmEntries();
+        renderStats();
+      }catch(e){
+        console.error(e);
+        toast('데이터를 불러오지 못했습니다.', 'err');
+      }
+    }
+
+    function renderStudentOptions(){
+      const list = Object.entries(students)
+        .map(([key, v]) => ({ key, ...v }))
+        .sort((a, b) =>
+          String(a.className || '').localeCompare(String(b.className || ''), 'ko', { numeric: true }) ||
+          String(a.name || '').localeCompare(String(b.name || ''), 'ko')
+        );
+
+      const sel = document.getElementById('student-select');
+      sel.innerHTML =
+        '<option value="">학생을 선택하세요</option>' +
+        list.map(s => `
+          <option value="${esc(s.key)}">${esc(s.className || '-')} · ${esc(s.name || '')}</option>
+        `).join('');
+
+      const studentFilter = document.getElementById('all-student-filter');
+      studentFilter.innerHTML =
+        '<option value="">전체 학생</option>' +
+        list.map(s => `
+          <option value="${esc(s.key)}">${esc(s.name || '')}</option>
+        `).join('');
+    }
+
+    function renderFilters(){
+      const classes = [...new Set(
+        Object.values(students).map(s => String(s.className || '').trim()).filter(Boolean)
+      )].sort((a, b) => a.localeCompare(b, 'ko', { numeric: true }));
+
+      const classFilter = document.getElementById('all-class-filter');
+      classFilter.innerHTML =
+        '<option value="">전체 학반</option>' +
+        classes.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
+    }
+
+    function renderRecentEntries(){
+      const tb = document.getElementById('recent-entry-tbody');
+
+      const list = Object.values(entries)
+        .filter(r => String(r.teacherEmail || '') === String(teacher.email || ''))
+        .sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')))
+        .slice(0, 10);
+
+      if (!list.length){
         tb.innerHTML = '<tr><td colspan="6" class="empty">기록이 없습니다.</td></tr>';
         return;
       }
 
-      // 기록 테이블 렌더링
       tb.innerHTML = list.map(r => `
         <tr>
-          <td>${esc(r.studentName||'')}</td>
-          <td>${esc(r.className||'-')}</td>
-          <td>${esc(r.category||'')}</td>
-          <td>${Number(r.points||0)}</td>
-          <td>${esc(r.reason||'')}</td>
+          <td>${esc(r.studentName || '')}</td>
+          <td>${esc(r.className || '-')}</td>
+          <td>${esc(r.category || '')}</td>
+          <td>${esc(r.violation || '')}</td>
+          <td>${Number(r.totalPoints || 0)}</td>
           <td>${fmt(r.createdAt)}</td>
         </tr>
       `).join('');
     }
 
-    /**
-     * 선택한 학생에 대한 벌점 기록 저장
-     */
-    async function saveRecord(){
-      // 학생이 선택되지 않았으면 저장 불가
-      if(!selectedKey || !students[selectedKey]) {
-        return toast('학생을 먼저 선택해 주세요.','err');
+    function renderAllEntries(){
+      const classFilter = document.getElementById('all-class-filter').value;
+      const studentFilter = document.getElementById('all-student-filter').value;
+      const q = (document.getElementById('all-search').value || '').trim().toLowerCase();
+      const tb = document.getElementById('all-records-tbody');
+
+      let list = Object.values(entries);
+
+      if (classFilter){
+        list = list.filter(r => String(r.className || '') === classFilter);
       }
 
-      // 선택된 학생 정보
-      const s = students[selectedKey];
+      if (studentFilter){
+        list = list.filter(r => String(r.studentKey || '') === studentFilter);
+      }
 
-      // 저장할 payload 생성
+      if (q){
+        list = list.filter(r =>
+          [r.studentName, r.violation, r.memo, r.category]
+            .some(v => String(v || '').toLowerCase().includes(q))
+        );
+      }
+
+      list = list.sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
+
+      if (!list.length){
+        tb.innerHTML = '<tr><td colspan="10" class="empty">기록이 없습니다.</td></tr>';
+        return;
+      }
+
+      tb.innerHTML = list.map(r => `
+        <tr>
+          <td>${esc(r.studentName || '')}</td>
+          <td>${esc(r.className || '-')}</td>
+          <td>${esc(r.category || '')}</td>
+          <td>${esc(r.violation || '')}</td>
+          <td>${Number(r.autoPoints || 0)}</td>
+          <td>${Number(r.manualPoints || 0)}</td>
+          <td>${Number(r.totalPoints || 0)}</td>
+          <td>${esc(r.teacherName || '')}</td>
+          <td>${esc(r.status || '임시저장')}</td>
+          <td>${fmt(r.createdAt)}</td>
+        </tr>
+      `).join('');
+    }
+
+    function renderConfirmEntries(){
+      const tb = document.getElementById('confirm-tbody');
+      const list = Object.values(entries)
+        .filter(r => String(r.status || '임시저장') !== '확정')
+        .sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')))
+        .slice(0, 20);
+
+      if (!list.length){
+        tb.innerHTML = '<tr><td colspan="6" class="empty">확정 대기 항목이 없습니다.</td></tr>';
+        return;
+      }
+
+      tb.innerHTML = list.map(r => `
+        <tr>
+          <td>${esc(r.studentName || '')}</td>
+          <td>${esc(r.className || '-')}</td>
+          <td>${esc(r.violation || '')}</td>
+          <td>${Number(r.totalPoints || 0)}</td>
+          <td>${esc(r.teacherName || '')}</td>
+          <td>${esc(r.status || '임시저장')}</td>
+        </tr>
+      `).join('');
+    }
+
+    function renderStats(){
+      const list = Object.values(entries);
+      const today = todayKey();
+
+      const todayCount = list.filter(r => String(r.createdAt || '').slice(0,10) === today).length;
+      const pendingCount = list.filter(r => String(r.status || '임시저장') !== '확정').length;
+
+      document.getElementById('today-count').textContent = String(todayCount);
+      document.getElementById('pending-count').textContent = String(pendingCount);
+      document.getElementById('total-count').textContent = String(list.length);
+    }
+
+    async function saveDetention(){
+      const studentKey = document.getElementById('student-select').value;
+      const category = document.getElementById('category-select').value;
+      const violation = document.getElementById('violation-select').value;
+      const autoPoints = Number(document.getElementById('auto-points').textContent || 0);
+      const manualPoints = Number(document.getElementById('manual-points').value || 0);
+      const memo = (document.getElementById('memo').value || '').trim();
+
+      if (!studentKey || !students[studentKey]){
+        return toast('학생을 선택해 주세요.', 'err');
+      }
+
+      const s = students[studentKey];
       const payload = {
-        studentKey: selectedKey,
-        studentName: s.name||'',
-        englishName: s.englishName||'',
-        className: s.className||'',
-        teacherName: teacher.name||'',
-        teacherEmail: teacher.email||'',
-        teacherRole: teacher.role||'general',
-        category: document.getElementById('cat').value,
-        points: Number(document.getElementById('pts').value||1),
-        reason: (document.getElementById('reason').value||'').trim(),
-        canceled: false,
+        studentKey,
+        studentName: s.name || '',
+        englishName: s.englishName || '',
+        className: s.className || '',
+        category,
+        violation,
+        autoPoints,
+        manualPoints,
+        totalPoints: autoPoints + manualPoints,
+        memo,
+        teacherName: teacher.name || '',
+        teacherEmail: teacher.email || '',
+        teacherRole: teacher.role || 'general',
+        status: '임시저장',
         createdAt: new Date().toISOString()
       };
 
       try{
-        // push()를 사용해 새 기록 생성
-        await db.ref('detentionRecords').push(payload);
-
-        // 사유 입력창 초기화
-        document.getElementById('reason').value='';
-
-        // 성공 메시지
-        toast('벌점이 등록되었습니다.','ok');
-
-        // 목록 새로고침
+        await db.ref(DETENTION_DB_PATH).push(payload);
+        toast('디텐션이 저장되었습니다.', 'ok');
+        resetEntryForm();
         loadData();
       }catch(e){
         console.error(e);
-        toast('벌점 등록에 실패했습니다.','err');
+        toast('디텐션 저장 실패', 'err');
       }
     }
 
-    // 페이지 시작
+    function resetEntryForm(){
+      document.getElementById('student-select').value = '';
+      document.getElementById('category-select').selectedIndex = 0;
+      renderViolationOptions();
+      document.getElementById('manual-points').value = 0;
+      document.getElementById('memo').value = '';
+    }
+
     init();
   </script>
 </body>
