@@ -415,3 +415,27 @@ select.edit-input{
     font-size:12px;
   }
 }
+
+/* 테이블 행 교차 색상 */
+tbody tr:nth-child(odd){
+  background:#ffffff;
+}
+
+tbody tr:nth-child(even){
+  background:#f7faff;
+}
+
+/* 줄 위에 마우스를 올렸을 때 */
+tbody tr:hover{
+  background:#edf3ff;
+}
+
+/* 교차 배경 위에서도 입력칸은 깔끔하게 유지 */
+tbody tr td .edit-input{
+  background:rgba(255,255,255,0.92);
+}
+
+/* hover 시 입력칸도 약간 강조 */
+tbody tr:hover td .edit-input{
+  background:#ffffff;
+}
