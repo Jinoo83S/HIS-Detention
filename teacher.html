@@ -8,11 +8,32 @@
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=DM+Serif+Display&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="common.css">
 
+
   <style>
-    .title-en{display:block;margin-top:2px;font-size:.9em}
-    .sub-en,.desc-en,.label-en{display:block;margin-top:2px}
-    .desc-ko,.desc-en{color:var(--sb);font-size:12px}
-    .label-en{font-size:11px;color:var(--sb);font-weight:500}
+    .title-en{
+      display:block;
+      margin-top:2px;
+      font-size:.9em;
+    }
+
+    .sub-en,
+    .desc-en,
+    .label-en{
+      display:block;
+      margin-top:2px;
+    }
+
+    .desc-ko,
+    .desc-en{
+      color:var(--sb);
+      font-size:12px;
+    }
+
+    .label-en{
+      font-size:11px;
+      color:var(--sb);
+      font-weight:500;
+    }
 
     .page-grid{
       display:grid;
@@ -26,7 +47,9 @@
       gap:10px;
     }
 
-    .form-grid .full{grid-column:1 / -1}
+    .form-grid .full{
+      grid-column:1 / -1;
+    }
 
     .section-note{
       font-size:12px;
@@ -53,8 +76,13 @@
       margin-top:10px;
     }
 
-    .role-only{display:none}
-    .role-show{display:block}
+    .role-only{
+      display:none;
+    }
+
+    .role-show{
+      display:block;
+    }
 
     .stat-boxes{
       display:grid;
@@ -81,6 +109,42 @@
       font-size:18px;
       font-weight:800;
       color:var(--nv);
+    }
+
+    .info-badges{
+      display:flex;
+      gap:6px;
+      flex-wrap:wrap;
+    }
+
+    .status-confirmed{
+      background:#e8f8ee;
+      color:#15803D;
+      padding:3px 8px;
+      border-radius:999px;
+      font-size:11px;
+      font-weight:700;
+      display:inline-block;
+    }
+
+    .status-pending{
+      background:#eef3ff;
+      color:#1B2F7A;
+      padding:3px 8px;
+      border-radius:999px;
+      font-size:11px;
+      font-weight:700;
+      display:inline-block;
+    }
+
+    .status-rejected{
+      background:#fde8e8;
+      color:#DC2626;
+      padding:3px 8px;
+      border-radius:999px;
+      font-size:11px;
+      font-weight:700;
+      display:inline-block;
     }
 
     .criteria-table{
@@ -113,44 +177,38 @@
       width:12%;
     }
 
-    tbody tr:nth-child(odd){background:#ffffff}
-    tbody tr:nth-child(even){background:#f7faff}
-    tbody tr:hover{background:#edf3ff}
-
-    .status-confirmed{
-      background:#e8f8ee;
-      color:#15803D;
-      padding:3px 8px;
-      border-radius:999px;
-      font-size:11px;
-      font-weight:700;
-      display:inline-block;
+    .criteria-table th,
+    .criteria-table td{
+      vertical-align:top;
     }
 
-    .status-pending{
-      background:#eef3ff;
-      color:#1B2F7A;
-      padding:3px 8px;
-      border-radius:999px;
-      font-size:11px;
-      font-weight:700;
-      display:inline-block;
+    .criteria-table td{
+      padding-top:8px;
+      padding-bottom:8px;
     }
 
-    .status-rejected{
-      background:#fde8e8;
-      color:#DC2626;
-      padding:3px 8px;
-      border-radius:999px;
-      font-size:11px;
-      font-weight:700;
-      display:inline-block;
+    .criteria-table td > input,
+    .criteria-table td > textarea,
+    .criteria-table td > .edit-input,
+    .criteria-table td > .criteria-textarea{
+      display:block;
+      box-sizing:border-box;
     }
 
-    .info-badges{
-      display:flex;
-      gap:6px;
-      flex-wrap:wrap;
+    .criteria-table td .btn{
+      vertical-align:top;
+    }
+
+    tbody tr:nth-child(odd){
+      background:#ffffff;
+    }
+
+    tbody tr:nth-child(even){
+      background:#f7faff;
+    }
+
+    tbody tr:hover{
+      background:#edf3ff;
     }
 
     .criteria-textarea{
@@ -165,6 +223,8 @@
       resize:vertical;
       font-family:inherit;
       background:#fff;
+      box-sizing:border-box;
+      vertical-align:top;
     }
 
     .criteria-textarea:focus{
@@ -175,14 +235,24 @@
     .criteria-points-input{
       width:100%;
       min-width:0;
+      box-sizing:border-box;
     }
 
     @media (max-width:980px){
-      .page-grid{grid-template-columns:1fr}
-      .form-grid{grid-template-columns:1fr}
-      .stat-boxes{grid-template-columns:1fr}
+      .page-grid{
+        grid-template-columns:1fr;
+      }
+
+      .form-grid{
+        grid-template-columns:1fr;
+      }
+
+      .stat-boxes{
+        grid-template-columns:1fr;
+      }
     }
   </style>
+
 </head>
 <body>
   <div id="toast"></div>
@@ -966,7 +1036,7 @@
               oninput="detentionStandards[${idx}].note=this.value"
             >${esc(row.note || '')}</textarea>
           </td>
-          <td style="text-align:center;">
+          <td style="text-align:center; vertical-align:top;">
             <button class="btn btn-danger" onclick="deleteCriteriaRow(${idx})">삭제 | Delete</button>
           </td>
         </tr>
