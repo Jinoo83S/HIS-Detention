@@ -110,6 +110,12 @@
       color:var(--nv);
     }
 
+    .info-badges{
+      display:flex;
+      gap:6px;
+      flex-wrap:wrap;
+    }
+
     .criteria-table{
       table-layout:fixed;
       width:100%;
@@ -162,54 +168,6 @@
       vertical-align:top;
     }
 
-    tbody tr:nth-child(odd){
-      background:#ffffff;
-    }
-
-    tbody tr:nth-child(even){
-      background:#f7faff;
-    }
-
-    tbody tr:hover{
-      background:#edf3ff;
-    }
-
-    .status-confirmed{
-      background:#e8f8ee;
-      color:#15803D;
-      padding:3px 8px;
-      border-radius:999px;
-      font-size:11px;
-      font-weight:700;
-      display:inline-block;
-    }
-
-    .status-pending{
-      background:#eef3ff;
-      color:#1B2F7A;
-      padding:3px 8px;
-      border-radius:999px;
-      font-size:11px;
-      font-weight:700;
-      display:inline-block;
-    }
-
-    .status-rejected{
-      background:#fde8e8;
-      color:#DC2626;
-      padding:3px 8px;
-      border-radius:999px;
-      font-size:11px;
-      font-weight:700;
-      display:inline-block;
-    }
-
-    .info-badges{
-      display:flex;
-      gap:6px;
-      flex-wrap:wrap;
-    }
-
     .criteria-textarea{
       width:100%;
       min-height:56px;
@@ -235,20 +193,6 @@
       width:100%;
       min-width:0;
       box-sizing:border-box;
-    }
-
-    @media (max-width:980px){
-      .page-grid{
-        grid-template-columns:1fr;
-      }
-
-      .form-grid{
-        grid-template-columns:1fr;
-      }
-
-      .stat-boxes{
-        grid-template-columns:1fr;
-      }
     }
 
     .recent-entry-list{
@@ -341,6 +285,71 @@
       background:#fff;
     }
 
+    .status-confirmed{
+      background:#e8f8ee;
+      color:#15803D;
+      padding:3px 8px;
+      border-radius:999px;
+      font-size:11px;
+      font-weight:700;
+      display:inline-block;
+    }
+
+    .status-pending{
+      background:#eef3ff;
+      color:#1B2F7A;
+      padding:3px 8px;
+      border-radius:999px;
+      font-size:11px;
+      font-weight:700;
+      display:inline-block;
+    }
+
+    .status-rejected{
+      background:#fde8e8;
+      color:#DC2626;
+      padding:3px 8px;
+      border-radius:999px;
+      font-size:11px;
+      font-weight:700;
+      display:inline-block;
+    }
+
+    tbody tr:nth-child(odd){
+      background:#ffffff;
+    }
+
+    tbody tr:nth-child(even){
+      background:#f7faff;
+    }
+
+    tbody tr:hover{
+      background:#edf3ff;
+    }
+
+    @media (max-width:980px){
+      .page-grid{
+        grid-template-columns:1fr;
+      }
+
+      .form-grid{
+        grid-template-columns:1fr;
+      }
+
+      .stat-boxes{
+        grid-template-columns:1fr;
+      }
+
+      .recent-entry-top{
+        flex-direction:column;
+      }
+
+      .recent-entry-side{
+        min-width:0;
+        align-items:flex-start;
+        text-align:left;
+      }
+    }
   </style>
 </head>
 <body>
@@ -524,11 +533,16 @@
             <option value="">전체 학반 | All Classes</option>
           </select>
 
-          <select id="all-student-filter" class="edit-input">
-            <option value="">전체 학생 | All Students</option>
-          </select>
+          <input
+            id="all-student-search"
+            class="edit-input"
+            list="all-student-list"
+            placeholder="전체 학생 | All Students (이름 검색 / Search by name)"
+            oninput="syncAllStudentFilter()"
+          />
+          <datalist id="all-student-list"></datalist>
 
-          <input id="all-search" class="edit-input flex1" placeholder="학생명/위반행위/메모 검색 | Search student/violation/memo">
+          <input id="all-search" class="edit-input flex1" placeholder="학생명/영문명/위반행위/메모 검색 | Search student/English/violation/memo">
         </div>
 
         <div class="tbl-wrap">
@@ -536,14 +550,14 @@
             <thead>
               <tr>
                 <th>학생 | Student</th>
+                <th>영문 이름 | English Name</th>
                 <th>학반 | Class</th>
                 <th>구분 | Category</th>
                 <th>위반행위 | Violation</th>
-                <th>자동 | Auto</th>
-                <th>수동 | Manual</th>
-                <th>합계 | Total</th>
+                <th>점수 | Points</th>
+                <th>현재 누적점수 | Current Total</th>
+                <th>전체 누적점수 | Overall Total</th>
                 <th>담당교사 | Teacher</th>
-                <th>상태 | Status</th>
                 <th>일시 | Date/Time</th>
               </tr>
             </thead>
@@ -707,6 +721,7 @@
   <script>
     const DETENTION_DB_PATH = 'detentionEntries';
     const DETENTION_STANDARD_PATH = 'detentionStandards';
+    const RECOVERY_DB_PATH = 'recoveryEntries';
 
     let detentionStandards = [
       {
@@ -934,12 +949,22 @@ In cases of two or more violations, the matter will be referred to the Disciplin
     let teacherRoles = [];
     let students = {};
     let entries = {};
+    let recoveryEntries = {};
     let studentSearchMap = {};
     let selectedStudentKey = '';
+    let allStudentFilterKey = '';
 
     function fmt(v){
       const d = new Date(v || '');
-      return isNaN(d) ? '-' : d.toLocaleString('ko-KR');
+      if (isNaN(d)) return '-';
+
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      const hh = String(d.getHours()).padStart(2, '0');
+      const mi = String(d.getMinutes()).padStart(2, '0');
+
+      return `${yyyy}. ${mm}. ${dd}. ${hh}:${mi}`;
     }
 
     function todayKey(){
@@ -1011,6 +1036,25 @@ In cases of two or more violations, the matter will be referred to the Disciplin
                String(r.violation || '') === String(violation || '') &&
                String(r.status || '') !== '반려';
       }).length;
+    }
+
+    function getStudentOverallTotal(studentKey){
+      return Object.values(entries || {})
+        .filter(r =>
+          String(r.studentKey || '') === String(studentKey || '') &&
+          String(r.status || '') === '확정'
+        )
+        .reduce((sum, r) => sum + Number(r.totalPoints || 0), 0);
+    }
+
+    function getStudentRecoveryTotal(studentKey){
+      return Object.values(recoveryEntries || {})
+        .filter(r => String(r.studentKey || '') === String(studentKey || ''))
+        .reduce((sum, r) => sum + Number(r.recoveryPoints || r.points || 0), 0);
+    }
+
+    function getStudentCurrentTotal(studentKey){
+      return getStudentOverallTotal(studentKey) - getStudentRecoveryTotal(studentKey);
     }
 
     function updateManualPointsMode(){
@@ -1099,7 +1143,6 @@ In cases of two or more violations, the matter will be referred to the Disciplin
           .filter(Boolean);
 
         let visible = false;
-
         if (isMaster) visible = true;
         else visible = roles.some(role => hasRole(role));
 
@@ -1107,9 +1150,7 @@ In cases of two or more violations, the matter will be referred to the Disciplin
       });
 
       document.getElementById('standard-edit-note').textContent =
-        isMaster
-          ? '편집 가능 모드 | Editable Mode'
-          : '기본 보기 모드 | View Mode';
+        isMaster ? '편집 가능 모드 | Editable Mode' : '기본 보기 모드 | View Mode';
     }
 
     function setupRecoveryTable(){
@@ -1161,29 +1202,16 @@ In cases of two or more violations, the matter will be referred to the Disciplin
       tb.innerHTML = detentionStandards.map((row, idx) => `
         <tr>
           <td>
-            <textarea
-              class="criteria-textarea"
-              oninput="detentionStandards[${idx}].category=this.value"
-            >${esc(row.category || '')}</textarea>
+            <textarea class="criteria-textarea" oninput="detentionStandards[${idx}].category=this.value">${esc(row.category || '')}</textarea>
           </td>
           <td>
-            <textarea
-              class="criteria-textarea"
-              oninput="detentionStandards[${idx}].violation=this.value"
-            >${esc(row.violation || '')}</textarea>
+            <textarea class="criteria-textarea" oninput="detentionStandards[${idx}].violation=this.value">${esc(row.violation || '')}</textarea>
           </td>
           <td>
-            <input
-              class="edit-input criteria-points-input"
-              value="${esc(String(row.autoPoints ?? ''))}"
-              oninput="detentionStandards[${idx}].autoPoints=this.value"
-            >
+            <input class="edit-input criteria-points-input" value="${esc(String(row.autoPoints ?? ''))}" oninput="detentionStandards[${idx}].autoPoints=this.value">
           </td>
           <td>
-            <textarea
-              class="criteria-textarea"
-              oninput="detentionStandards[${idx}].note=this.value"
-            >${esc(row.note || '')}</textarea>
+            <textarea class="criteria-textarea" oninput="detentionStandards[${idx}].note=this.value">${esc(row.note || '')}</textarea>
           </td>
           <td style="text-align:center; vertical-align:top;">
             <button class="btn btn-danger" onclick="deleteCriteriaRow(${idx})">삭제 | Delete</button>
@@ -1240,7 +1268,7 @@ In cases of two or more violations, the matter will be referred to the Disciplin
         setupSelectors();
         renderViolationOptions();
 
-        const formatted = new Date(savedAt).toLocaleString('ko-KR');
+        const formatted = fmt(savedAt);
         setStandardSaveStatus(`마지막 저장: ${formatted} | Last saved: ${formatted}`);
 
         toast('디텐션 기준표가 저장되었습니다.\nDetention standards have been saved.', 'ok');
@@ -1290,7 +1318,6 @@ In cases of two or more violations, the matter will be referred to the Disciplin
         );
 
       const dataList = document.getElementById('student-list');
-      const studentFilter = document.getElementById('all-student-filter');
       studentSearchMap = {};
 
       dataList.innerHTML = list.map(s => {
@@ -1298,12 +1325,32 @@ In cases of two or more violations, the matter will be referred to the Disciplin
         studentSearchMap[label] = s.key;
         return `<option value="${esc(label)}"></option>`;
       }).join('');
+    }
 
-      studentFilter.innerHTML =
-        '<option value="">전체 학생 | All Students</option>' +
-        list.map(s => `
-          <option value="${esc(s.key)}">${esc(s.name || '')}</option>
-        `).join('');
+    function renderAllStudentSearchOptions(){
+      const list = Object.entries(students)
+        .map(([key, v]) => ({ key, ...v }))
+        .sort((a, b) =>
+          String(a.className || '').localeCompare(String(b.className || ''), 'ko', { numeric: true }) ||
+          String(a.name || '').localeCompare(String(b.name || ''), 'ko')
+        );
+
+      const dataList = document.getElementById('all-student-list');
+      if (!dataList) return;
+
+      window.allStudentSearchMap = {};
+
+      dataList.innerHTML = list.map(s => {
+        const label = `${String(s.name || '').trim()} · ${String(s.englishName || '').trim()} · ${String(s.className || '').trim()}`;
+        window.allStudentSearchMap[label] = s.key;
+        return `<option value="${esc(label)}"></option>`;
+      }).join('');
+    }
+
+    function syncAllStudentFilter(){
+      const inputValue = (document.getElementById('all-student-search').value || '').trim();
+      allStudentFilterKey = (window.allStudentSearchMap && window.allStudentSearchMap[inputValue]) || '';
+      renderAllEntries();
     }
 
     function syncStudentSelectionWithoutUpdate(){
@@ -1335,7 +1382,6 @@ In cases of two or more violations, the matter will be referred to the Disciplin
       document.getElementById('violation-select').addEventListener('change', syncAutoPoints);
 
       document.getElementById('all-class-filter').addEventListener('change', renderAllEntries);
-      document.getElementById('all-student-filter').addEventListener('change', renderAllEntries);
       document.getElementById('all-search').addEventListener('input', renderAllEntries);
 
       document.addEventListener('click', e => {
@@ -1352,15 +1398,17 @@ In cases of two or more violations, the matter will be referred to the Disciplin
 
     async function loadData(){
       try{
-        const [sSnap, eSnap, stdSnap, metaSnap] = await Promise.all([
+        const [sSnap, eSnap, stdSnap, metaSnap, recoverySnap] = await Promise.all([
           db.ref('students').once('value'),
           db.ref(DETENTION_DB_PATH).once('value'),
           db.ref(DETENTION_STANDARD_PATH).once('value'),
-          db.ref(DETENTION_STANDARD_PATH + '_meta').once('value')
+          db.ref(DETENTION_STANDARD_PATH + '_meta').once('value'),
+          db.ref(RECOVERY_DB_PATH).once('value')
         ]);
 
         students = sSnap.val() || {};
         entries = eSnap.val() || {};
+        recoveryEntries = recoverySnap.val() || {};
 
         const dbStandards = stdSnap.val();
         if (Array.isArray(dbStandards) && dbStandards.length) {
@@ -1369,13 +1417,14 @@ In cases of two or more violations, the matter will be referred to the Disciplin
 
         const meta = metaSnap.val() || {};
         if (meta.savedAt) {
-          const formatted = new Date(meta.savedAt).toLocaleString('ko-KR');
+          const formatted = fmt(meta.savedAt);
           setStandardSaveStatus(`마지막 저장: ${formatted} | Last saved: ${formatted}`);
         } else {
           setStandardSaveStatus('저장 이력 없음 | Not saved yet');
         }
 
         renderStudentOptions();
+        renderAllStudentSearchOptions();
         renderFilters();
         renderCriteriaTable();
         renderRecentEntries();
@@ -1412,9 +1461,7 @@ In cases of two or more violations, the matter will be referred to the Disciplin
         <div class="recent-entry-item">
           <div class="recent-entry-top">
             <div class="recent-entry-main">
-              <div class="recent-entry-title">
-                ${esc(r.studentName || '')}
-              </div>
+              <div class="recent-entry-title">${esc(r.studentName || '')}</div>
 
               <div class="recent-entry-meta">
                 <span class="recent-chip">${esc(r.className || '-')}</span>
@@ -1434,17 +1481,22 @@ In cases of two or more violations, the matter will be referred to the Disciplin
       `).join('');
     }
 
-
     function renderAllEntries(){
       const classFilter = document.getElementById('all-class-filter').value;
-      const studentFilter = document.getElementById('all-student-filter').value;
       const q = (document.getElementById('all-search').value || '').trim().toLowerCase();
       const tb = document.getElementById('all-records-tbody');
 
-      let list = Object.entries(entries).map(([key, value]) => ({ key, ...value }));
+      let list = Object.entries(entries)
+        .map(([key, value]) => ({ key, ...value }))
+        .filter(r => String(r.status || '') === '확정');
 
-      if (classFilter) list = list.filter(r => String(r.className || '') === classFilter);
-      if (studentFilter) list = list.filter(r => String(r.studentKey || '') === studentFilter);
+      if (classFilter) {
+        list = list.filter(r => String(r.className || '') === classFilter);
+      }
+
+      if (allStudentFilterKey) {
+        list = list.filter(r => String(r.studentKey || '') === String(allStudentFilterKey));
+      }
 
       if (q){
         list = list.filter(r =>
@@ -1463,14 +1515,14 @@ In cases of two or more violations, the matter will be referred to the Disciplin
       tb.innerHTML = list.map(r => `
         <tr>
           <td>${esc(r.studentName || '')}</td>
+          <td>${esc(r.englishName || '')}</td>
           <td>${esc(r.className || '-')}</td>
           <td>${esc(r.category || '')}</td>
-          <td>${esc(r.violation || '')}</td>
-          <td>${esc(String(r.autoPoints || ''))}</td>
-          <td>${esc(String(r.manualPoints || 0))}</td>
-          <td>${esc(String(r.totalPoints || 0))}</td>
+          <td style="white-space:pre-wrap;">${esc(r.violation || '')}</td>
+          <td>${esc(String(r.manualPoints || r.totalPoints || 0))}</td>
+          <td>${getStudentCurrentTotal(r.studentKey)}</td>
+          <td>${getStudentOverallTotal(r.studentKey)}</td>
           <td>${esc(r.teacherName || '')}</td>
-          <td>${statusBadge(r.status || '임시저장')}</td>
           <td>${fmt(r.createdAt)}</td>
         </tr>
       `).join('');
@@ -1516,15 +1568,15 @@ In cases of two or more violations, the matter will be referred to the Disciplin
     }
 
     function renderStats(){
-      const list = Object.values(entries);
+      const entryList = Object.values(entries || {});
       const today = todayKey();
 
-      const todayCount = list.filter(r => String(r.createdAt || '').slice(0,10) === today).length;
-      const pendingCount = list.filter(r => String(r.status || '임시저장') === '임시저장').length;
+      const todayCount = entryList.filter(r => String(r.createdAt || '').slice(0,10) === today).length;
+      const pendingCount = entryList.filter(r => String(r.status || '임시저장') === '임시저장').length;
 
       document.getElementById('today-count').textContent = String(todayCount);
       document.getElementById('pending-count').textContent = String(pendingCount);
-      document.getElementById('total-count').textContent = String(list.length);
+      document.getElementById('total-count').textContent = String(entryList.length);
     }
 
     async function saveDetention(){
