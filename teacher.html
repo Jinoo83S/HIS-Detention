@@ -293,34 +293,109 @@
       background:#fff;
     }
 
-    .status-confirmed{
-      background:#e8f8ee;
-      color:#15803D;
-      padding:3px 8px;
+    .status-confirmed,
+    .status-pending,
+    .status-rejected{
+      padding:4px 10px;
       border-radius:999px;
       font-size:11px;
       font-weight:700;
-      display:inline-block;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      white-space:nowrap;
+      line-height:1.2;
+      min-width:96px;
+    }
+
+    .status-confirmed{
+      background:#e8f8ee;
+      color:#15803D;
     }
 
     .status-pending{
       background:#eef3ff;
       color:#1B2F7A;
-      padding:3px 8px;
-      border-radius:999px;
-      font-size:11px;
-      font-weight:700;
-      display:inline-block;
     }
 
     .status-rejected{
       background:#fde8e8;
       color:#DC2626;
-      padding:3px 8px;
-      border-radius:999px;
+    }
+
+    .tbl-wrap table{
+      width:100%;
+      border-collapse:separate;
+      border-spacing:0;
+    }
+
+    .tbl-wrap th,
+    .tbl-wrap td{
+      font-size:12px;
+      padding:7px 8px;
+      vertical-align:top;
+      line-height:1.35;
+    }
+
+    .tbl-wrap td.nowrap,
+    .tbl-wrap th.nowrap{
+      white-space:nowrap;
+    }
+
+    .summary-row{
+      cursor:pointer;
+    }
+
+    .summary-row:hover{
+      background:#eef4ff !important;
+    }
+
+    .detail-row{
+      display:none;
+      background:#fbfdff !important;
+    }
+
+    .detail-row.show{
+      display:table-row;
+    }
+
+    .detail-box{
+      padding:8px 6px 4px;
+      display:grid;
+      gap:8px;
+    }
+
+    .detail-section{
+      border:1px solid var(--bd);
+      border-radius:10px;
+      background:#fff;
+      padding:8px 10px;
+    }
+
+    .detail-title{
       font-size:11px;
       font-weight:700;
-      display:inline-block;
+      color:var(--sb);
+      margin-bottom:4px;
+    }
+
+    .detail-content{
+      white-space:pre-wrap;
+      word-break:keep-all;
+      line-height:1.5;
+      font-size:12px;
+    }
+
+    .notice-actions{
+      display:flex;
+      flex-wrap:wrap;
+      gap:6px;
+    }
+
+    .small-muted{
+      font-size:11px;
+      color:var(--sb);
+      line-height:1.4;
     }
 
     tbody tr:nth-child(odd){
@@ -424,6 +499,7 @@
       <button class="tab-btn role-only" data-role="hs_restore" data-tab="recovery-hs">고등 회복교육 | HS Restore</button>
     </div>
 
+    <!-- ENTRY -->
     <div id="tab-entry" class="tab-panel active">
       <div class="page-grid">
         <div class="card">
@@ -486,6 +562,7 @@
       </div>
     </div>
 
+    <!-- STANDARDS -->
     <div id="tab-standard" class="tab-panel">
       <div class="card">
         <div class="card-title">
@@ -532,6 +609,7 @@
       </div>
     </div>
 
+    <!-- ALL RECORDS -->
     <div id="tab-all" class="tab-panel">
       <div class="card">
         <div class="card-title">디텐션 전체보기 | All Detention Records</div>
@@ -553,34 +631,59 @@
           <input id="all-search" class="edit-input flex1" placeholder="학생명/영문명/위반행위/메모 검색 | Search student/English/violation/memo">
         </div>
 
+        <div class="mini-actions">
+          <button class="btn btn-secondary" onclick="setAllExpanded(true)">전체 펼침 | Expand All</button>
+          <button class="btn btn-secondary" onclick="setAllExpanded(false)">전체 접기 | Collapse All</button>
+        </div>
+
         <div class="tbl-wrap">
           <table>
             <thead>
               <tr>
-                <th>학생<span class="th-en">Student</span></th>
-                <th>영문 이름<span class="th-en">English Name</span></th>
-                <th>학반<span class="th-en">Class</span></th>
-                <th>구분<span class="th-en">Category</span></th>
+                <th class="nowrap">학생<span class="th-en">Student</span></th>
+                <th class="nowrap">영문 이름<span class="th-en">English Name</span></th>
+                <th class="nowrap">학반<span class="th-en">Class</span></th>
+                <th class="nowrap">구분<span class="th-en">Category</span></th>
                 <th>위반행위<span class="th-en">Violation</span></th>
-                <th>점수<span class="th-en">Points</span></th>
-                <th>현재 누적점수<span class="th-en">Current Total</span></th>
-                <th>전체 누적점수<span class="th-en">Overall Total</span></th>
-                <th>담당교사<span class="th-en">Teacher</span></th>
-                <th>일시<span class="th-en">Date/Time</span></th>
+                <th class="nowrap">점수<span class="th-en">Points</span></th>
+                <th class="nowrap">현재 누적점수<span class="th-en">Current Total</span></th>
+                <th class="nowrap">전체 누적점수<span class="th-en">Overall Total</span></th>
+                <th class="nowrap">담당교사<span class="th-en">Teacher</span></th>
+                <th class="nowrap">일시<span class="th-en">Date/Time</span></th>
               </tr>
             </thead>
             <tbody id="all-records-tbody"></tbody>
           </table>
         </div>
+
+        <div class="card-title" style="margin-top:16px;">회복교육 기록 | Recovery History</div>
+        <div class="tbl-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th class="nowrap">학생<span class="th-en">Student</span></th>
+                <th class="nowrap">영문 이름<span class="th-en">English Name</span></th>
+                <th class="nowrap">학반<span class="th-en">Class</span></th>
+                <th class="nowrap">회복 포인트<span class="th-en">Recovery Points</span></th>
+                <th class="nowrap">현재 누적점수<span class="th-en">Current Total</span></th>
+                <th class="nowrap">전체 누적점수<span class="th-en">Overall Total</span></th>
+                <th class="nowrap">담당<span class="th-en">Staff</span></th>
+                <th class="nowrap">완료 시간<span class="th-en">Completed At</span></th>
+              </tr>
+            </thead>
+            <tbody id="all-recovery-tbody"></tbody>
+          </table>
+        </div>
       </div>
     </div>
 
+    <!-- CONFIRM -->
     <div id="tab-confirm" class="tab-panel">
       <div class="card">
         <div class="card-title">디텐션 확정 | Confirm Detention</div>
         <div class="notice">
-          <div>Master 권한은 대기 중인 디텐션을 확정 또는 반려할 수 있습니다.</div>
-          <div>Users with Master role can confirm or reject pending detention records.</div>
+          <div>Master 권한은 디텐션 상태를 조회하고 대기 항목을 확정 또는 반려할 수 있습니다.</div>
+          <div>Users with Master role can review all records and confirm or reject pending entries.</div>
         </div>
 
         <div class="filter-bar" style="margin-top:10px;">
@@ -593,18 +696,23 @@
           <input id="confirm-search" class="edit-input flex1" placeholder="학생명/영문명/구분/위반행위 검색 | Search student/English/category/violation">
         </div>
 
+        <div class="mini-actions">
+          <button class="btn btn-secondary" onclick="setConfirmExpanded(true)">전체 펼침 | Expand All</button>
+          <button class="btn btn-secondary" onclick="setConfirmExpanded(false)">전체 접기 | Collapse All</button>
+        </div>
+
         <div class="tbl-wrap">
           <table>
             <thead>
               <tr>
-                <th>학생<span class="th-en">Student</span></th>
-                <th>학반<span class="th-en">Class</span></th>
-                <th>구분<span class="th-en">Category</span></th>
+                <th class="nowrap">학생<span class="th-en">Student</span></th>
+                <th class="nowrap">학반<span class="th-en">Class</span></th>
+                <th class="nowrap">구분<span class="th-en">Category</span></th>
                 <th>위반행위<span class="th-en">Violation</span></th>
-                <th>합계<span class="th-en">Total</span></th>
-                <th>작성자<span class="th-en">Created By</span></th>
-                <th>상태<span class="th-en">Status</span></th>
-                <th>처리<span class="th-en">Action</span></th>
+                <th class="nowrap">합계<span class="th-en">Total</span></th>
+                <th class="nowrap">작성자<span class="th-en">Created By</span></th>
+                <th class="nowrap">상태<span class="th-en">Status</span></th>
+                <th class="nowrap">처리<span class="th-en">Action</span></th>
               </tr>
             </thead>
             <tbody id="confirm-tbody"></tbody>
@@ -613,119 +721,157 @@
       </div>
     </div>
 
+    <!-- MS NOTICE -->
     <div id="tab-notify-ms" class="tab-panel">
       <div class="card">
         <div class="card-title">중등 디텐션 알림 | MS Detention Notice</div>
         <div class="notice">
-          <div>중등 디텐션 알림용 기초 화면입니다.</div>
-          <div>This is the basic screen for middle school detention notices.</div>
+          <div>현재 누적점수가 3점 이상인 중등 학생 목록입니다.</div>
+          <div>This list shows middle school students whose current total is 3 points or more.</div>
         </div>
 
-        <div class="form-grid" style="margin-top:10px;">
-          <div>
-            <label class="label">발송 대상 | Recipient</label>
-            <select class="edit-input">
-              <option>중등 학생/학부모 | MS Students/Parents</option>
-            </select>
-          </div>
-
-          <div>
-            <label class="label">발송 방식 | Delivery Method</label>
-            <select class="edit-input">
-              <option>이메일 | Email</option>
-              <option>문자 | SMS</option>
-              <option>앱 알림 | App Notification</option>
-            </select>
-          </div>
-
-          <div class="full">
-            <label class="label">알림 내용 | Notice Message</label>
-            <textarea class="edit-input" placeholder="중등 알림 내용 초안 / Draft MS notice message"></textarea>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div id="tab-notify-hs" class="tab-panel">
-      <div class="card">
-        <div class="card-title">고등 디텐션 알림 | HS Detention Notice</div>
-        <div class="notice">
-          <div>고등 디텐션 알림용 기초 화면입니다.</div>
-          <div>This is the basic screen for high school detention notices.</div>
-        </div>
-
-        <div class="form-grid" style="margin-top:10px;">
-          <div>
-            <label class="label">발송 대상 | Recipient</label>
-            <select class="edit-input">
-              <option>고등 학생/학부모 | HS Students/Parents</option>
-            </select>
-          </div>
-
-          <div>
-            <label class="label">발송 방식 | Delivery Method</label>
-            <select class="edit-input">
-              <option>이메일 | Email</option>
-              <option>문자 | SMS</option>
-              <option>앱 알림 | App Notification</option>
-            </select>
-          </div>
-
-          <div class="full">
-            <label class="label">알림 내용 | Notice Message</label>
-            <textarea class="edit-input" placeholder="고등 알림 내용 초안 / Draft HS notice message"></textarea>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div id="tab-recovery-ms" class="tab-panel">
-      <div class="card">
-        <div class="card-title">중등 회복교육 | MS Restorative Education</div>
-        <div class="notice">
-          <div>중등 회복교육용 기초 화면입니다.</div>
-          <div>This is the basic screen for middle school restorative education.</div>
-        </div>
-
-        <div class="tbl-wrap">
+        <div class="tbl-wrap" style="margin-top:10px;">
           <table>
             <thead>
               <tr>
-                <th>학생<span class="th-en">Student</span></th>
-                <th>학반<span class="th-en">Class</span></th>
-                <th>회복 활동<span class="th-en">Recovery Activity</span></th>
-                <th>회복 포인트<span class="th-en">Recovery Points</span></th>
-                <th>담당<span class="th-en">Staff</span></th>
-                <th>상태<span class="th-en">Status</span></th>
+                <th class="nowrap">학생<span class="th-en">Student</span></th>
+                <th class="nowrap">영문 이름<span class="th-en">English Name</span></th>
+                <th class="nowrap">학반<span class="th-en">Class</span></th>
+                <th>사유<span class="th-en">Reasons</span></th>
+                <th class="nowrap">현재 누적점수<span class="th-en">Current Total</span></th>
+                <th class="nowrap">전체 누적점수<span class="th-en">Overall Total</span></th>
+                <th class="nowrap">학부모 메일<span class="th-en">Parent Mail</span></th>
+                <th class="nowrap">학생/교사 메일<span class="th-en">Student/Teacher Mail</span></th>
+                <th class="nowrap">완료<span class="th-en">Complete</span></th>
               </tr>
             </thead>
-            <tbody id="recovery-ms-tbody"></tbody>
+            <tbody id="notify-ms-tbody"></tbody>
           </table>
         </div>
       </div>
     </div>
 
-    <div id="tab-recovery-hs" class="tab-panel">
+    <!-- HS NOTICE -->
+    <div id="tab-notify-hs" class="tab-panel">
       <div class="card">
-        <div class="card-title">고등 회복교육 | HS Restorative Education</div>
+        <div class="card-title">고등 디텐션 알림 | HS Detention Notice</div>
         <div class="notice">
-          <div>고등 회복교육용 기초 화면입니다.</div>
-          <div>This is the basic screen for high school restorative education.</div>
+          <div>현재 누적점수가 3점 이상인 고등 학생 목록입니다.</div>
+          <div>This list shows high school students whose current total is 3 points or more.</div>
         </div>
 
+        <div class="tbl-wrap" style="margin-top:10px;">
+          <table>
+            <thead>
+              <tr>
+                <th class="nowrap">학생<span class="th-en">Student</span></th>
+                <th class="nowrap">영문 이름<span class="th-en">English Name</span></th>
+                <th class="nowrap">학반<span class="th-en">Class</span></th>
+                <th>사유<span class="th-en">Reasons</span></th>
+                <th class="nowrap">현재 누적점수<span class="th-en">Current Total</span></th>
+                <th class="nowrap">전체 누적점수<span class="th-en">Overall Total</span></th>
+                <th class="nowrap">학부모 메일<span class="th-en">Parent Mail</span></th>
+                <th class="nowrap">학생/교사 메일<span class="th-en">Student/Teacher Mail</span></th>
+                <th class="nowrap">완료<span class="th-en">Complete</span></th>
+              </tr>
+            </thead>
+            <tbody id="notify-hs-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- MS RESTORE -->
+    <div id="tab-recovery-ms" class="tab-panel">
+      <div class="card">
+        <div class="card-title">중등 회복교육 | MS Restorative Education</div>
+        <div class="notice">
+          <div>중등 디텐션 알림이 완료된 학생들의 회복교육 목록입니다.</div>
+          <div>This list shows middle school students whose detention notice has been completed.</div>
+        </div>
+
+        <div class="card-title" style="margin-top:14px;">진행 중 | Active</div>
         <div class="tbl-wrap">
           <table>
             <thead>
               <tr>
-                <th>학생<span class="th-en">Student</span></th>
-                <th>학반<span class="th-en">Class</span></th>
-                <th>회복 활동<span class="th-en">Recovery Activity</span></th>
-                <th>회복 포인트<span class="th-en">Recovery Points</span></th>
-                <th>담당<span class="th-en">Staff</span></th>
-                <th>상태<span class="th-en">Status</span></th>
+                <th class="nowrap">학생<span class="th-en">Student</span></th>
+                <th class="nowrap">영문 이름<span class="th-en">English Name</span></th>
+                <th class="nowrap">학반<span class="th-en">Class</span></th>
+                <th class="nowrap">현재 누적점수<span class="th-en">Current Total</span></th>
+                <th class="nowrap">전체 누적점수<span class="th-en">Overall Total</span></th>
+                <th>사유<span class="th-en">Reasons</span></th>
+                <th class="nowrap">회복 횟수<span class="th-en">Recovery Count</span></th>
+                <th class="nowrap">처리<span class="th-en">Action</span></th>
               </tr>
             </thead>
-            <tbody id="recovery-hs-tbody"></tbody>
+            <tbody id="recovery-ms-active-tbody"></tbody>
+          </table>
+        </div>
+
+        <div class="card-title" style="margin-top:16px;">완료 | Completed</div>
+        <div class="tbl-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th class="nowrap">학생<span class="th-en">Student</span></th>
+                <th class="nowrap">영문 이름<span class="th-en">English Name</span></th>
+                <th class="nowrap">학반<span class="th-en">Class</span></th>
+                <th class="nowrap">현재 누적점수<span class="th-en">Current Total</span></th>
+                <th class="nowrap">전체 누적점수<span class="th-en">Overall Total</span></th>
+                <th class="nowrap">회복 횟수<span class="th-en">Recovery Count</span></th>
+                <th class="nowrap">최근 완료<span class="th-en">Last Completed</span></th>
+              </tr>
+            </thead>
+            <tbody id="recovery-ms-done-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- HS RESTORE -->
+    <div id="tab-recovery-hs" class="tab-panel">
+      <div class="card">
+        <div class="card-title">고등 회복교육 | HS Restorative Education</div>
+        <div class="notice">
+          <div>고등 디텐션 알림이 완료된 학생들의 회복교육 목록입니다.</div>
+          <div>This list shows high school students whose detention notice has been completed.</div>
+        </div>
+
+        <div class="card-title" style="margin-top:14px;">진행 중 | Active</div>
+        <div class="tbl-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th class="nowrap">학생<span class="th-en">Student</span></th>
+                <th class="nowrap">영문 이름<span class="th-en">English Name</span></th>
+                <th class="nowrap">학반<span class="th-en">Class</span></th>
+                <th class="nowrap">현재 누적점수<span class="th-en">Current Total</span></th>
+                <th class="nowrap">전체 누적점수<span class="th-en">Overall Total</span></th>
+                <th>사유<span class="th-en">Reasons</span></th>
+                <th class="nowrap">회복 횟수<span class="th-en">Recovery Count</span></th>
+                <th class="nowrap">처리<span class="th-en">Action</span></th>
+              </tr>
+            </thead>
+            <tbody id="recovery-hs-active-tbody"></tbody>
+          </table>
+        </div>
+
+        <div class="card-title" style="margin-top:16px;">완료 | Completed</div>
+        <div class="tbl-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th class="nowrap">학생<span class="th-en">Student</span></th>
+                <th class="nowrap">영문 이름<span class="th-en">English Name</span></th>
+                <th class="nowrap">학반<span class="th-en">Class</span></th>
+                <th class="nowrap">현재 누적점수<span class="th-en">Current Total</span></th>
+                <th class="nowrap">전체 누적점수<span class="th-en">Overall Total</span></th>
+                <th class="nowrap">회복 횟수<span class="th-en">Recovery Count</span></th>
+                <th class="nowrap">최근 완료<span class="th-en">Last Completed</span></th>
+              </tr>
+            </thead>
+            <tbody id="recovery-hs-done-tbody"></tbody>
           </table>
         </div>
       </div>
@@ -740,6 +886,8 @@
     const DETENTION_DB_PATH = 'detentionEntries';
     const DETENTION_STANDARD_PATH = 'detentionStandards';
     const RECOVERY_DB_PATH = 'recoveryEntries';
+    const NOTICE_DB_PATH = 'detentionNotices';
+    const TEACHER_DB_PATH = 'teachers';
 
     let detentionStandards = [
       {
@@ -953,24 +1101,18 @@ In cases of two or more violations, the matter will be referred to the Disciplin
       }
     ];
 
-    const recoveryActivities = [
-      { activity: '회복활동 과제 수행', points: '3-12' },
-      { activity: '회복활동 훈련 수행', points: '3-12' },
-      { activity: '회복활동 학습 수행', points: '3-12' },
-      { activity: '모범적인 생활', points: '3-12' },
-      { activity: '사실관계 확인서 및 자아성찰문 작성', points: '3-12' },
-      { activity: '교내 캠페인 활동 3일 이상', points: '3-12' },
-      { activity: '교내 봉사', points: '3-12' }
-    ];
-
     let teacher = null;
     let teacherRoles = [];
+    let teachers = {};
     let students = {};
     let entries = {};
     let recoveryEntries = {};
+    let noticeEntries = {};
     let studentSearchMap = {};
     let selectedStudentKey = '';
     let allStudentFilterKey = '';
+    let expandedAllKeys = new Set();
+    let expandedConfirmKeys = new Set();
 
     function fmt(v){
       const d = new Date(v || '');
@@ -995,14 +1137,12 @@ In cases of two or more violations, the matter will be referred to the Disciplin
 
     function normalizeRoles(roles){
       if (Array.isArray(roles)) return roles.filter(Boolean);
-
       if (typeof roles === 'string') {
         return roles
           .split(/[|,]/)
           .map(v => String(v || '').trim().toLowerCase())
           .filter(Boolean);
       }
-
       return [];
     }
 
@@ -1021,7 +1161,7 @@ In cases of two or more violations, the matter will be referred to the Disciplin
     function statusBadge(status){
       if (status === '확정') return '<span class="status-confirmed">확정 | Confirmed</span>';
       if (status === '반려') return '<span class="status-rejected">반려 | Rejected</span>';
-      return '<span class="status-pending">임시저장 | Pending</span>';
+      return '<span class="status-pending">대기 | Pending</span>';
     }
 
     function confirmSortValue(status){
@@ -1082,6 +1222,154 @@ In cases of two or more violations, the matter will be referred to the Disciplin
       return getStudentOverallTotal(studentKey) - getStudentRecoveryTotal(studentKey);
     }
 
+    function getGradeNumber(className){
+      const m = String(className || '').match(/^(\d{1,2})/);
+      return m ? Number(m[1]) : 0;
+    }
+
+    function getSchoolLevel(className){
+      const g = getGradeNumber(className);
+      if (g >= 7 && g <= 9) return 'ms';
+      if (g >= 10 && g <= 12) return 'hs';
+      return '';
+    }
+
+    function noticeKey(studentKey, level){
+      return `${level}_${studentKey}`;
+    }
+
+    function getTeachersByRole(roleKey){
+      return Object.values(teachers || {}).filter(t => normalizeRoles(t.roles || t.role || []).includes(roleKey));
+    }
+
+    function getTeacherEmailsByRole(roleKey){
+      return getTeachersByRole(roleKey)
+        .map(t => String(t.email || '').trim())
+        .filter(Boolean);
+    }
+
+    function getFirstTeacherEmailByRole(roleKey){
+      return getTeacherEmailsByRole(roleKey)[0] || '';
+    }
+
+    function getHomeroomTeacherEmail(student){
+      return String(student?.homeroomTeacherEmail || '').trim();
+    }
+
+    function getConfirmedEntriesForStudent(studentKey){
+      return Object.entries(entries || {})
+        .map(([key, value]) => ({ key, ...value }))
+        .filter(r =>
+          String(r.studentKey || '') === String(studentKey || '') &&
+          String(r.status || '') === '확정'
+        )
+        .sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
+    }
+
+    function getReasonLines(studentKey){
+      const seen = new Set();
+      const lines = [];
+      getConfirmedEntriesForStudent(studentKey).forEach(r => {
+        const line = String(r.violation || '').trim();
+        if (line && !seen.has(line)) {
+          seen.add(line);
+          lines.push(line);
+        }
+      });
+      return lines;
+    }
+
+    function getNoticeCandidates(level){
+      return Object.entries(students || {})
+        .map(([key, value]) => ({ key, ...value }))
+        .filter(s => getSchoolLevel(s.className) === level)
+        .map(s => {
+          const currentTotal = getStudentCurrentTotal(s.key);
+          const overallTotal = getStudentOverallTotal(s.key);
+          const reasons = getReasonLines(s.key);
+          const latestEntry = getConfirmedEntriesForStudent(s.key)[0] || null;
+          const nKey = noticeKey(s.key, level);
+          const notice = noticeEntries[nKey] || {};
+
+          return {
+            ...s,
+            currentTotal,
+            overallTotal,
+            reasons,
+            latestEntry,
+            noticeKey: nKey,
+            notice
+          };
+        })
+        .filter(s => s.currentTotal >= 3 && s.latestEntry)
+        .sort((a, b) => {
+          const aDone = !!a.notice.completedAt;
+          const bDone = !!b.notice.completedAt;
+          if (aDone !== bDone) return aDone ? 1 : -1;
+          return String(b.latestEntry?.confirmedAt || b.latestEntry?.createdAt || '')
+            .localeCompare(String(a.latestEntry?.confirmedAt || a.latestEntry?.createdAt || ''));
+        });
+    }
+
+    function getRecoveryAfterNoticeCount(studentKey, level, noticeCompletedAt){
+      return Object.values(recoveryEntries || {})
+        .filter(r =>
+          String(r.studentKey || '') === String(studentKey || '') &&
+          String(r.level || '') === String(level || '') &&
+          String(r.completedAt || '') >= String(noticeCompletedAt || '')
+        )
+        .length;
+    }
+
+    function getLatestRecoveryAfterNotice(studentKey, level, noticeCompletedAt){
+      const list = Object.values(recoveryEntries || {})
+        .filter(r =>
+          String(r.studentKey || '') === String(studentKey || '') &&
+          String(r.level || '') === String(level || '') &&
+          String(r.completedAt || '') >= String(noticeCompletedAt || '')
+        )
+        .sort((a, b) => String(b.completedAt || '').localeCompare(String(a.completedAt || '')));
+      return list[0] || null;
+    }
+
+    function getRecoveryCandidates(level){
+      return Object.entries(students || {})
+        .map(([key, value]) => ({ key, ...value }))
+        .filter(s => getSchoolLevel(s.className) === level)
+        .map(s => {
+          const nKey = noticeKey(s.key, level);
+          const notice = noticeEntries[nKey] || {};
+          const noticeCompletedAt = String(notice.completedAt || '');
+          if (!noticeCompletedAt) return null;
+
+          const currentTotal = getStudentCurrentTotal(s.key);
+          const overallTotal = getStudentOverallTotal(s.key);
+          const reasons = getReasonLines(s.key);
+          const recoveryCount = getRecoveryAfterNoticeCount(s.key, level, noticeCompletedAt);
+          const latestRecovery = getLatestRecoveryAfterNotice(s.key, level, noticeCompletedAt);
+
+          const isActive = recoveryCount === 0 || currentTotal > 3;
+
+          return {
+            ...s,
+            currentTotal,
+            overallTotal,
+            reasons,
+            recoveryCount,
+            latestRecovery,
+            noticeCompletedAt,
+            isActive
+          };
+        })
+        .filter(Boolean)
+        .sort((a, b) => {
+          if (a.isActive !== b.isActive) return a.isActive ? -1 : 1;
+          const aTime = a.latestRecovery?.completedAt || a.noticeCompletedAt || '';
+          const bTime = b.latestRecovery?.completedAt || b.noticeCompletedAt || '';
+          return String(bTime).localeCompare(String(aTime));
+        });
+    }
+
     function updateManualPointsMode(){
       const manualInput = document.getElementById('manual-points');
       const studentKey = selectedStudentKey || syncStudentSelectionWithoutUpdate();
@@ -1098,10 +1386,7 @@ In cases of two or more violations, the matter will be referred to the Disciplin
       if (raw.includes('-')) {
         manualInput.disabled = false;
         manualInput.readOnly = false;
-
-        if (manualInput.value === '0') {
-          manualInput.value = '';
-        }
+        if (manualInput.value === '0') manualInput.value = '';
         return;
       }
 
@@ -1109,13 +1394,7 @@ In cases of two or more violations, the matter will be referred to the Disciplin
         const parts = raw.split(',').map(v => String(v).trim());
         const firstPoint = Number(parts[0] || 0);
         const repeatPoint = Number(parts[1] || 0);
-
-        const count = countSameDetention(
-          studentKey,
-          std.category || '',
-          std.violation || ''
-        );
-
+        const count = countSameDetention(studentKey, std.category || '', std.violation || '');
         manualInput.value = String(count === 0 ? firstPoint : repeatPoint);
         manualInput.disabled = true;
         manualInput.readOnly = true;
@@ -1154,7 +1433,6 @@ In cases of two or more violations, the matter will be referred to the Disciplin
       setupRoleVisibility();
       setupSelectors();
       setupEvents();
-      setupRecoveryTable();
       loadData();
     }
 
@@ -1173,25 +1451,6 @@ In cases of two or more violations, the matter will be referred to the Disciplin
 
       document.getElementById('standard-edit-note').textContent =
         isMaster ? '편집 가능 모드 | Editable Mode' : '기본 보기 모드 | View Mode';
-    }
-
-    function setupRecoveryTable(){
-      const msTb = document.getElementById('recovery-ms-tbody');
-      const hsTb = document.getElementById('recovery-hs-tbody');
-
-      const rows = recoveryActivities.map(r => `
-        <tr>
-          <td>-</td>
-          <td>-</td>
-          <td>${esc(r.activity)}</td>
-          <td>${esc(r.points)}</td>
-          <td>-</td>
-          <td>대기 | Pending</td>
-        </tr>
-      `).join('');
-
-      if (msTb) msTb.innerHTML = rows;
-      if (hsTb) hsTb.innerHTML = rows;
     }
 
     function renderCriteriaTable(){
@@ -1244,14 +1503,7 @@ In cases of two or more violations, the matter will be referred to the Disciplin
 
     function addCriteriaRow(){
       if (!canEditStandard()) return;
-
-      detentionStandards.push({
-        category: '',
-        violation: '',
-        autoPoints: '',
-        note: ''
-      });
-
+      detentionStandards.push({ category: '', violation: '', autoPoints: '', note: '' });
       renderCriteriaTable();
     }
 
@@ -1325,9 +1577,7 @@ In cases of two or more violations, the matter will be referred to the Disciplin
 
     function syncAutoPoints(){
       const std = getSelectedStandard();
-      document.getElementById('auto-points').textContent =
-        std ? String(std.autoPoints || '') : '-';
-
+      document.getElementById('auto-points').textContent = std ? String(std.autoPoints || '') : '-';
       updateManualPointsMode();
     }
 
@@ -1399,6 +1649,32 @@ In cases of two or more violations, the matter will be referred to the Disciplin
         classes.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
     }
 
+    function toggleAllRow(key){
+      if (expandedAllKeys.has(key)) expandedAllKeys.delete(key);
+      else expandedAllKeys.add(key);
+      renderAllEntries();
+    }
+
+    function setAllExpanded(expanded){
+      const list = Object.entries(entries || {})
+        .map(([key, value]) => ({ key, ...value }))
+        .filter(r => String(r.status || '') === '확정');
+      expandedAllKeys = expanded ? new Set(list.map(r => r.key)) : new Set();
+      renderAllEntries();
+    }
+
+    function toggleConfirmRow(key){
+      if (expandedConfirmKeys.has(key)) expandedConfirmKeys.delete(key);
+      else expandedConfirmKeys.add(key);
+      renderConfirmEntries();
+    }
+
+    function setConfirmExpanded(expanded){
+      const list = Object.entries(entries || {}).map(([key, value]) => ({ key, ...value }));
+      expandedConfirmKeys = expanded ? new Set(list.map(r => r.key)) : new Set();
+      renderConfirmEntries();
+    }
+
     function setupEvents(){
       document.getElementById('category-select').addEventListener('change', renderViolationOptions);
       document.getElementById('violation-select').addEventListener('change', syncAutoPoints);
@@ -1423,19 +1699,23 @@ In cases of two or more violations, the matter will be referred to the Disciplin
 
     async function loadData(){
       try{
-        const [sSnap, eSnap, stdSnap, metaSnap, recoverySnap] = await Promise.all([
+        const [teacherSnap, studentSnap, entrySnap, standardSnap, metaSnap, recoverySnap, noticeSnap] = await Promise.all([
+          db.ref(TEACHER_DB_PATH).once('value'),
           db.ref('students').once('value'),
           db.ref(DETENTION_DB_PATH).once('value'),
           db.ref(DETENTION_STANDARD_PATH).once('value'),
           db.ref(DETENTION_STANDARD_PATH + '_meta').once('value'),
-          db.ref(RECOVERY_DB_PATH).once('value')
+          db.ref(RECOVERY_DB_PATH).once('value'),
+          db.ref(NOTICE_DB_PATH).once('value')
         ]);
 
-        students = sSnap.val() || {};
-        entries = eSnap.val() || {};
+        teachers = teacherSnap.val() || {};
+        students = studentSnap.val() || {};
+        entries = entrySnap.val() || {};
         recoveryEntries = recoverySnap.val() || {};
+        noticeEntries = noticeSnap.val() || {};
 
-        const dbStandards = stdSnap.val();
+        const dbStandards = standardSnap.val();
         if (Array.isArray(dbStandards) && dbStandards.length) {
           detentionStandards = dbStandards;
         }
@@ -1454,7 +1734,10 @@ In cases of two or more violations, the matter will be referred to the Disciplin
         renderCriteriaTable();
         renderRecentEntries();
         renderAllEntries();
+        renderAllRecoveryEntries();
         renderConfirmEntries();
+        renderNotifyTables();
+        renderRecoveryTables();
         renderStats();
         setupSelectors();
         renderViolationOptions();
@@ -1474,11 +1757,7 @@ In cases of two or more violations, the matter will be referred to the Disciplin
         .slice(0, 10);
 
       if (!list.length){
-        box.innerHTML = `
-          <div class="recent-empty">
-            기록이 없습니다. | No records found.
-          </div>
-        `;
+        box.innerHTML = `<div class="recent-empty">기록이 없습니다. | No records found.</div>`;
         return;
       }
 
@@ -1487,15 +1766,12 @@ In cases of two or more violations, the matter will be referred to the Disciplin
           <div class="recent-entry-top">
             <div class="recent-entry-main">
               <div class="recent-entry-title">${esc(r.studentName || '')}</div>
-
               <div class="recent-entry-meta">
                 <span class="recent-chip">${esc(r.className || '-')}</span>
                 <span class="recent-chip">${esc(r.category || '')}</span>
               </div>
-
               <div class="recent-entry-violation">${esc(r.violation || '')}</div>
             </div>
-
             <div class="recent-entry-side">
               <div class="recent-entry-points">${esc(String(r.totalPoints || 0))}점</div>
               <div>${statusBadge(r.status || '임시저장')}</div>
@@ -1515,13 +1791,8 @@ In cases of two or more violations, the matter will be referred to the Disciplin
         .map(([key, value]) => ({ key, ...value }))
         .filter(r => String(r.status || '') === '확정');
 
-      if (classFilter) {
-        list = list.filter(r => String(r.className || '') === classFilter);
-      }
-
-      if (allStudentFilterKey) {
-        list = list.filter(r => String(r.studentKey || '') === String(allStudentFilterKey));
-      }
+      if (classFilter) list = list.filter(r => String(r.className || '') === classFilter);
+      if (allStudentFilterKey) list = list.filter(r => String(r.studentKey || '') === String(allStudentFilterKey));
 
       if (q){
         list = list.filter(r =>
@@ -1530,25 +1801,87 @@ In cases of two or more violations, the matter will be referred to the Disciplin
         );
       }
 
-      list = list.sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
+      list = list.sort((a, b) => String(b.confirmedAt || b.createdAt || '').localeCompare(String(a.confirmedAt || a.createdAt || '')));
 
       if (!list.length){
         tb.innerHTML = '<tr><td colspan="10" class="empty">기록이 없습니다. | No records found.</td></tr>';
         return;
       }
 
+      tb.innerHTML = list.map(r => {
+        const expanded = expandedAllKeys.has(r.key);
+        return `
+          <tr class="summary-row" onclick="toggleAllRow('${esc(r.key)}')">
+            <td class="nowrap">${esc(r.studentName || '')}</td>
+            <td class="nowrap">${esc(r.englishName || '')}</td>
+            <td class="nowrap">${esc(r.className || '-')}</td>
+            <td class="nowrap">${esc(r.category || '')}</td>
+            <td>${esc(String(r.violation || '').split('\n')[0])}</td>
+            <td class="nowrap">${esc(String(r.manualPoints || r.totalPoints || 0))}</td>
+            <td class="nowrap">${getStudentCurrentTotal(r.studentKey)}</td>
+            <td class="nowrap">${getStudentOverallTotal(r.studentKey)}</td>
+            <td class="nowrap">${esc(r.teacherName || '')}</td>
+            <td class="nowrap">${fmt(r.confirmedAt || r.createdAt)}</td>
+          </tr>
+          <tr class="detail-row ${expanded ? 'show' : ''}">
+            <td colspan="10">
+              <div class="detail-box">
+                <div class="detail-section">
+                  <div class="detail-title">위반행위 | Violation</div>
+                  <div class="detail-content">${esc(r.violation || '')}</div>
+                </div>
+                <div class="detail-section">
+                  <div class="detail-title">메모 | Memo</div>
+                  <div class="detail-content">${esc(r.memo || '-')}</div>
+                </div>
+                <div class="detail-section">
+                  <div class="detail-title">상세 | Detail</div>
+                  <div class="detail-content">확정 시간: ${fmt(r.confirmedAt || '')}
+작성 시간: ${fmt(r.createdAt || '')}
+자동점수: ${esc(String(r.autoPoints || '-'))}
+점수: ${esc(String(r.totalPoints || 0))}</div>
+                </div>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function renderAllRecoveryEntries(){
+      const tb = document.getElementById('all-recovery-tbody');
+      const classFilter = document.getElementById('all-class-filter').value;
+      const q = (document.getElementById('all-search').value || '').trim().toLowerCase();
+
+      let list = Object.entries(recoveryEntries || {}).map(([key, value]) => ({ key, ...value }));
+
+      if (classFilter) list = list.filter(r => String(r.className || '') === classFilter);
+      if (allStudentFilterKey) list = list.filter(r => String(r.studentKey || '') === String(allStudentFilterKey));
+
+      if (q){
+        list = list.filter(r =>
+          [r.studentName, r.englishName, r.className, r.staffName]
+            .some(v => String(v || '').toLowerCase().includes(q))
+        );
+      }
+
+      list = list.sort((a, b) => String(b.completedAt || '').localeCompare(String(a.completedAt || '')));
+
+      if (!list.length){
+        tb.innerHTML = '<tr><td colspan="8" class="empty">회복교육 기록이 없습니다. | No recovery records found.</td></tr>';
+        return;
+      }
+
       tb.innerHTML = list.map(r => `
         <tr>
-          <td>${esc(r.studentName || '')}</td>
-          <td>${esc(r.englishName || '')}</td>
-          <td>${esc(r.className || '-')}</td>
-          <td>${esc(r.category || '')}</td>
-          <td style="white-space:pre-wrap;">${esc(r.violation || '')}</td>
-          <td>${esc(String(r.manualPoints || r.totalPoints || 0))}</td>
-          <td>${getStudentCurrentTotal(r.studentKey)}</td>
-          <td>${getStudentOverallTotal(r.studentKey)}</td>
-          <td>${esc(r.teacherName || '')}</td>
-          <td>${fmt(r.createdAt)}</td>
+          <td class="nowrap">${esc(r.studentName || '')}</td>
+          <td class="nowrap">${esc(r.englishName || '')}</td>
+          <td class="nowrap">${esc(r.className || '')}</td>
+          <td class="nowrap">${esc(String(r.recoveryPoints || r.points || 0))}</td>
+          <td class="nowrap">${getStudentCurrentTotal(r.studentKey)}</td>
+          <td class="nowrap">${getStudentOverallTotal(r.studentKey)}</td>
+          <td class="nowrap">${esc(r.staffName || '')}</td>
+          <td class="nowrap">${fmt(r.completedAt)}</td>
         </tr>
       `).join('');
     }
@@ -1559,8 +1892,7 @@ In cases of two or more violations, the matter will be referred to the Disciplin
       const statusFilter = (document.getElementById('confirm-status-filter').value || '').trim();
       const q = (document.getElementById('confirm-search').value || '').trim().toLowerCase();
 
-      let list = Object.entries(entries)
-        .map(([key, value]) => ({ key, ...value }));
+      let list = Object.entries(entries).map(([key, value]) => ({ key, ...value }));
 
       if (statusFilter) {
         list = list.filter(r => String(r.status || '임시저장') === statusFilter);
@@ -1584,29 +1916,145 @@ In cases of two or more violations, the matter will be referred to the Disciplin
         return;
       }
 
-      tb.innerHTML = list.map(r => `
+      tb.innerHTML = list.map(r => {
+        const expanded = expandedConfirmKeys.has(r.key);
+        return `
+          <tr class="summary-row" onclick="toggleConfirmRow('${esc(r.key)}')">
+            <td class="nowrap">${esc(r.studentName || '')}</td>
+            <td class="nowrap">${esc(r.className || '-')}</td>
+            <td class="nowrap">${esc(r.category || '')}</td>
+            <td>${esc(String(r.violation || '').split('\n')[0])}</td>
+            <td class="nowrap">${esc(String(r.totalPoints || 0))}</td>
+            <td class="nowrap">${esc(r.teacherName || '')}</td>
+            <td class="nowrap">${statusBadge(r.status || '임시저장')}</td>
+            <td class="nowrap">
+              ${
+                canManage && String(r.status || '임시저장') === '임시저장'
+                  ? `
+                    <div class="mini-actions" style="margin-top:0;">
+                      <button class="btn btn-primary" onclick="event.stopPropagation(); confirmDetention('${esc(r.key)}')">확정 | Confirm</button>
+                      <button class="btn btn-danger" onclick="event.stopPropagation(); rejectDetention('${esc(r.key)}')">반려 | Reject</button>
+                    </div>
+                  `
+                  : '-'
+              }
+            </td>
+          </tr>
+          <tr class="detail-row ${expanded ? 'show' : ''}">
+            <td colspan="8">
+              <div class="detail-box">
+                <div class="detail-section">
+                  <div class="detail-title">위반행위 | Violation</div>
+                  <div class="detail-content">${esc(r.violation || '')}</div>
+                </div>
+                <div class="detail-section">
+                  <div class="detail-title">메모 | Memo</div>
+                  <div class="detail-content">${esc(r.memo || '-')}</div>
+                </div>
+                <div class="detail-section">
+                  <div class="detail-title">처리 정보 | Process Info</div>
+                  <div class="detail-content">작성 시간: ${fmt(r.createdAt)}
+확정 시간: ${fmt(r.confirmedAt)}
+반려 시간: ${fmt(r.rejectedAt)}</div>
+                </div>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function renderNotifyTables(){
+      renderNotifyTableByLevel('ms');
+      renderNotifyTableByLevel('hs');
+    }
+
+    function renderNotifyTableByLevel(level){
+      const tb = document.getElementById(level === 'ms' ? 'notify-ms-tbody' : 'notify-hs-tbody');
+      const list = getNoticeCandidates(level);
+
+      if (!list.length){
+        tb.innerHTML = `<tr><td colspan="9" class="empty">해당 학생이 없습니다. | No matching students.</td></tr>`;
+        return;
+      }
+
+      tb.innerHTML = list.map(s => `
         <tr>
-          <td>${esc(r.studentName || '')}</td>
-          <td>${esc(r.className || '-')}</td>
-          <td>${esc(r.category || '')}</td>
-          <td style="white-space:pre-wrap;">${esc(r.violation || '')}</td>
-          <td>${esc(String(r.totalPoints || 0))}</td>
-          <td>${esc(r.teacherName || '')}</td>
-          <td>${statusBadge(r.status || '임시저장')}</td>
+          <td class="nowrap">${esc(s.name || '')}</td>
+          <td class="nowrap">${esc(s.englishName || '')}</td>
+          <td class="nowrap">${esc(s.className || '')}</td>
+          <td style="white-space:pre-wrap;">${esc(s.reasons.join('\n') || '-')}</td>
+          <td class="nowrap">${s.currentTotal}</td>
+          <td class="nowrap">${s.overallTotal}</td>
           <td>
-            ${
-              canManage && String(r.status || '임시저장') === '임시저장'
-                ? `
-                  <div class="mini-actions" style="margin-top:0;">
-                    <button class="btn btn-primary" onclick="confirmDetention('${esc(r.key)}')">확정 | Confirm</button>
-                    <button class="btn btn-danger" onclick="rejectDetention('${esc(r.key)}')">반려 | Reject</button>
-                  </div>
-                `
-                : '-'
-            }
+            <div class="notice-actions">
+              <button class="btn btn-secondary" onclick="sendParentMail('${esc(s.key)}','${level}')">메일 보내기</button>
+            </div>
+            <div class="small-muted">${s.notice.parentMailAt ? fmt(s.notice.parentMailAt) : '-'}</div>
+          </td>
+          <td>
+            <div class="notice-actions">
+              <button class="btn btn-secondary" onclick="sendStudentTeacherMail('${esc(s.key)}','${level}')">메일 보내기</button>
+            </div>
+            <div class="small-muted">${s.notice.studentTeacherMailAt ? fmt(s.notice.studentTeacherMailAt) : '-'}</div>
+          </td>
+          <td>
+            <div class="notice-actions">
+              <button class="btn btn-primary" onclick="completeNotice('${esc(s.key)}','${level}')" ${s.notice.completedAt ? 'disabled' : ''}>완료</button>
+            </div>
+            <div class="small-muted">${s.notice.completedAt ? fmt(s.notice.completedAt) : '-'}</div>
           </td>
         </tr>
       `).join('');
+    }
+
+    function renderRecoveryTables(){
+      renderRecoveryTableByLevel('ms');
+      renderRecoveryTableByLevel('hs');
+    }
+
+    function renderRecoveryTableByLevel(level){
+      const activeTb = document.getElementById(level === 'ms' ? 'recovery-ms-active-tbody' : 'recovery-hs-active-tbody');
+      const doneTb = document.getElementById(level === 'ms' ? 'recovery-ms-done-tbody' : 'recovery-hs-done-tbody');
+      const list = getRecoveryCandidates(level);
+
+      const activeList = list.filter(x => x.isActive);
+      const doneList = list.filter(x => !x.isActive);
+
+      if (!activeList.length){
+        activeTb.innerHTML = '<tr><td colspan="8" class="empty">진행 중인 학생이 없습니다. | No active students.</td></tr>';
+      } else {
+        activeTb.innerHTML = activeList.map(s => `
+          <tr>
+            <td class="nowrap">${esc(s.name || '')}</td>
+            <td class="nowrap">${esc(s.englishName || '')}</td>
+            <td class="nowrap">${esc(s.className || '')}</td>
+            <td class="nowrap">${s.currentTotal}</td>
+            <td class="nowrap">${s.overallTotal}</td>
+            <td style="white-space:pre-wrap;">${esc(s.reasons.join('\n') || '-')}</td>
+            <td class="nowrap">${s.recoveryCount}</td>
+            <td class="nowrap">
+              <button class="btn btn-primary" onclick="completeRecovery('${esc(s.key)}','${level}')">회복교육 완료</button>
+            </td>
+          </tr>
+        `).join('');
+      }
+
+      if (!doneList.length){
+        doneTb.innerHTML = '<tr><td colspan="7" class="empty">완료된 학생이 없습니다. | No completed students.</td></tr>';
+      } else {
+        doneTb.innerHTML = doneList.map(s => `
+          <tr>
+            <td class="nowrap">${esc(s.name || '')}</td>
+            <td class="nowrap">${esc(s.englishName || '')}</td>
+            <td class="nowrap">${esc(s.className || '')}</td>
+            <td class="nowrap">${s.currentTotal}</td>
+            <td class="nowrap">${s.overallTotal}</td>
+            <td class="nowrap">${s.recoveryCount}</td>
+            <td class="nowrap">${fmt(s.latestRecovery?.completedAt || '')}</td>
+          </tr>
+        `).join('');
+      }
     }
 
     function renderStats(){
@@ -1702,6 +2150,164 @@ In cases of two or more violations, the matter will be referred to the Disciplin
       }catch(e){
         console.error(e);
         toast('디텐션 반려 실패\nFailed to reject detention entry', 'err');
+      }
+    }
+
+    function buildReasonText(studentKey){
+      return getReasonLines(studentKey).join('\n');
+    }
+
+    function buildParentMailBody(student, level){
+      const masterEmail = getFirstTeacherEmailByRole('master');
+      const msRestoreEmail = getFirstTeacherEmailByRole('ms_restore');
+      const hsRestoreEmail = getFirstTeacherEmailByRole('hs_restore');
+      const reasonText = buildReasonText(student.key);
+
+      return `${student.name} 학생 학부모님 안녕하세요.
+${student.name} 학생의 디텐션 포인트가 3점 이상이 되어서 학생부에서 회복교육을 받게 되었음을 안내드립니다.
+
+▶  이 름  (Name)   : ${student.name}
+▶  홈 룸  (HR)        :  ${student.className}
+▶  Detention point : ${getStudentCurrentTotal(student.key)}
+▶  사 유 (Reason)  :  ${reasonText}
+
+학생이 학교의 규정을 준수하며 바르게 성장할 수 있도록 지도하겠습니다.
+가정에서도 관심을 가지고 이야기를 나누어 주시기를 부탁드립니다.
+
+디텐션 포인트 관련 문의가 있으시면
+
+학생부장 : ${masterEmail || '-'}
+중등회복교육 담당 : ${msRestoreEmail || '-'}
+고등회복교육 담당 : ${hsRestoreEmail || '-'}`;
+    }
+
+    function buildStudentTeacherMailBody(student, level){
+      const restoreEmail = level === 'ms'
+        ? getFirstTeacherEmailByRole('ms_restore')
+        : getFirstTeacherEmailByRole('hs_restore');
+      const reasonText = buildReasonText(student.key);
+
+      return `▶  이 름  (Name)   : ${student.name}
+▶  홈 룸  (HR)        :  ${student.className}
+▶  Detention point : ${getStudentCurrentTotal(student.key)}
+▶  사 유 (Reason)  :  ${reasonText}
+
+To.회복교육 담당 선생님
+
+학생들의 회복교육 일시/장소를 학생들에게 공지해 주시기 바랍니다.
+
+To: Restorative Education Teacher
+
+Please inform the student about the schedule and location for their restorative education.
+
+Restore Teacher Email: ${restoreEmail || '-'}`;
+    }
+
+    async function sendParentMail(studentKey, level){
+      const student = { key: studentKey, ...(students[studentKey] || {}) };
+      const to = [student.fatherEmail, student.motherEmail].filter(Boolean).join(',');
+      if (!to) {
+        return toast('학부모 이메일이 없습니다.\nNo parent email address found.', 'err');
+      }
+
+      const subject = '[HIS - 학생부 : 디텐션 포인트 알림] [STL : Regarding detention point]';
+      const body = buildParentMailBody(student, level);
+
+      try{
+        await db.ref(`${NOTICE_DB_PATH}/${noticeKey(studentKey, level)}`).update({
+          studentKey,
+          level,
+          parentMailAt: new Date().toISOString()
+        });
+
+        window.location.href = `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+        loadData();
+      }catch(e){
+        console.error(e);
+        toast('메일 준비 중 오류가 발생했습니다.\nFailed to prepare email.', 'err');
+      }
+    }
+
+    async function sendStudentTeacherMail(studentKey, level){
+      const student = { key: studentKey, ...(students[studentKey] || {}) };
+      const restoreEmails = level === 'ms'
+        ? getTeacherEmailsByRole('ms_restore')
+        : getTeacherEmailsByRole('hs_restore');
+
+      const to = [student.selfEmail, student.homeroomTeacherEmail, ...restoreEmails]
+        .filter(Boolean)
+        .join(',');
+
+      if (!to) {
+        return toast('학생/교사 이메일이 없습니다.\nNo student/teacher email address found.', 'err');
+      }
+
+      const subject = '[HIS - 학생부 : 디텐션 포인트 알림] [STL : Regarding detention point]';
+      const body = buildStudentTeacherMailBody(student, level);
+
+      try{
+        await db.ref(`${NOTICE_DB_PATH}/${noticeKey(studentKey, level)}`).update({
+          studentKey,
+          level,
+          studentTeacherMailAt: new Date().toISOString()
+        });
+
+        window.location.href = `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+        loadData();
+      }catch(e){
+        console.error(e);
+        toast('메일 준비 중 오류가 발생했습니다.\nFailed to prepare email.', 'err');
+      }
+    }
+
+    async function completeNotice(studentKey, level){
+      try{
+        await db.ref(`${NOTICE_DB_PATH}/${noticeKey(studentKey, level)}`).update({
+          studentKey,
+          level,
+          completedAt: new Date().toISOString(),
+          completedBy: teacher.name || '',
+          completedByEmail: teacher.email || ''
+        });
+
+        toast('알림 완료가 저장되었습니다.\nNotice completion saved.', 'ok');
+        loadData();
+      }catch(e){
+        console.error(e);
+        toast('알림 완료 저장 실패\nFailed to save notice completion.', 'err');
+      }
+    }
+
+    async function completeRecovery(studentKey, level){
+      const student = students[studentKey];
+      if (!student) return;
+
+      const currentTotal = getStudentCurrentTotal(studentKey);
+      const recoveryPoints = Math.min(3, Math.max(currentTotal, 0));
+
+      if (recoveryPoints <= 0) {
+        return toast('회복할 점수가 없습니다.\nNo points left to recover.', 'err');
+      }
+
+      const payload = {
+        studentKey,
+        studentName: student.name || '',
+        englishName: student.englishName || '',
+        className: student.className || '',
+        level,
+        recoveryPoints,
+        staffName: teacher.name || '',
+        staffEmail: teacher.email || '',
+        completedAt: new Date().toISOString()
+      };
+
+      try{
+        await db.ref(RECOVERY_DB_PATH).push(payload);
+        toast('회복교육 완료가 저장되었습니다.\nRecovery completion saved.', 'ok');
+        loadData();
+      }catch(e){
+        console.error(e);
+        toast('회복교육 저장 실패\nFailed to save recovery.', 'err');
       }
     }
 
