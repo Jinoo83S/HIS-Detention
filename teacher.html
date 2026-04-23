@@ -24,6 +24,7 @@
     .table-actions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin:10px 0 8px}
     .role-only{display:none}
     .role-show{display:block}
+    .hidden{display:none !important}
 
     .stat-boxes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px}
     .stat-box{border:1px solid var(--bd);border-radius:10px;background:#f9fbff;padding:10px 12px}
@@ -81,6 +82,8 @@
     .small-muted{font-size:11px;color:var(--sb);line-height:1.4}
     .admin-note-input{min-width:140px}
     .reason-block{white-space:pre-wrap;word-break:keep-all}
+    .notice-divider{margin:14px 0 0}
+    .cell-reason-preview{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:320px;display:block}
 
     tbody tr:nth-child(odd){background:#ffffff}
     tbody tr:nth-child(even){background:#f7faff}
@@ -297,7 +300,7 @@
                 <th class="nowrap">영문 이름<span class="th-en">English Name</span></th>
                 <th class="nowrap">학반<span class="th-en">Class</span></th>
                 <th class="nowrap">구분<span class="th-en">Category</span></th>
-                <th>위반행위/사유<span class="th-en">Violation / Reasons</span></th>
+                <th>위반행위 / 사유<span class="th-en">Violation / Reasons</span></th>
                 <th class="nowrap">점수<span class="th-en">Points</span></th>
                 <th class="nowrap">현재 누적점수<span class="th-en">Current Total</span></th>
                 <th class="nowrap">전체 누적점수<span class="th-en">Overall Total</span></th>
@@ -411,7 +414,7 @@
           </table>
         </div>
 
-        <div class="card-title" style="margin-top:16px;">완료 | Completed</div>
+        <div class="card-title notice-divider">완료 | Completed</div>
         <div class="tbl-wrap">
           <table>
             <thead>
@@ -467,7 +470,7 @@
           </table>
         </div>
 
-        <div class="card-title" style="margin-top:16px;">완료 | Completed</div>
+        <div class="card-title notice-divider">완료 | Completed</div>
         <div class="tbl-wrap">
           <table>
             <thead>
@@ -514,7 +517,7 @@
                 <th class="nowrap">현재 누적점수<span class="th-en">Current Total</span></th>
                 <th class="nowrap">전체 누적점수<span class="th-en">Overall Total</span></th>
                 <th>위반 행위<span class="th-en">Violations</span></th>
-                <th class="nowrap">회복 횟수<span class="th-en">Recovery Count</span></th>
+                <th class="nowrap">누적 회복 완료<span class="th-en">Completed Recovery</span></th>
                 <th class="nowrap">처리<span class="th-en">Action</span></th>
               </tr>
             </thead>
@@ -522,7 +525,7 @@
           </table>
         </div>
 
-        <div class="card-title" style="margin-top:16px;">완료 | Completed</div>
+        <div class="card-title notice-divider">완료 기록 | Completed History</div>
         <div class="tbl-wrap">
           <table>
             <thead>
@@ -530,10 +533,11 @@
                 <th class="nowrap">학생<span class="th-en">Student</span></th>
                 <th class="nowrap">영문 이름<span class="th-en">English Name</span></th>
                 <th class="nowrap">학반<span class="th-en">Class</span></th>
-                <th class="nowrap">현재 누적점수<span class="th-en">Current Total</span></th>
-                <th class="nowrap">전체 누적점수<span class="th-en">Overall Total</span></th>
-                <th class="nowrap">회복 횟수<span class="th-en">Recovery Count</span></th>
-                <th class="nowrap">최근 완료<span class="th-en">Last Completed</span></th>
+                <th>위반 행위<span class="th-en">Violations</span></th>
+                <th class="nowrap">회복 점수<span class="th-en">Recovery Points</span></th>
+                <th class="nowrap">교육 후 현재 누적점수<span class="th-en">Current Total After</span></th>
+                <th class="nowrap">교육 시 전체 누적점수<span class="th-en">Overall Total At Time</span></th>
+                <th class="nowrap">최근 완료<span class="th-en">Completed At</span></th>
               </tr>
             </thead>
             <tbody id="recovery-ms-done-tbody"></tbody>
@@ -567,7 +571,7 @@
                 <th class="nowrap">현재 누적점수<span class="th-en">Current Total</span></th>
                 <th class="nowrap">전체 누적점수<span class="th-en">Overall Total</span></th>
                 <th>위반 행위<span class="th-en">Violations</span></th>
-                <th class="nowrap">회복 횟수<span class="th-en">Recovery Count</span></th>
+                <th class="nowrap">누적 회복 완료<span class="th-en">Completed Recovery</span></th>
                 <th class="nowrap">처리<span class="th-en">Action</span></th>
               </tr>
             </thead>
@@ -575,7 +579,7 @@
           </table>
         </div>
 
-        <div class="card-title" style="margin-top:16px;">완료 | Completed</div>
+        <div class="card-title notice-divider">완료 기록 | Completed History</div>
         <div class="tbl-wrap">
           <table>
             <thead>
@@ -583,10 +587,11 @@
                 <th class="nowrap">학생<span class="th-en">Student</span></th>
                 <th class="nowrap">영문 이름<span class="th-en">English Name</span></th>
                 <th class="nowrap">학반<span class="th-en">Class</span></th>
-                <th class="nowrap">현재 누적점수<span class="th-en">Current Total</span></th>
-                <th class="nowrap">전체 누적점수<span class="th-en">Overall Total</span></th>
-                <th class="nowrap">회복 횟수<span class="th-en">Recovery Count</span></th>
-                <th class="nowrap">최근 완료<span class="th-en">Last Completed</span></th>
+                <th>위반 행위<span class="th-en">Violations</span></th>
+                <th class="nowrap">회복 점수<span class="th-en">Recovery Points</span></th>
+                <th class="nowrap">교육 후 현재 누적점수<span class="th-en">Current Total After</span></th>
+                <th class="nowrap">교육 시 전체 누적점수<span class="th-en">Overall Total At Time</span></th>
+                <th class="nowrap">최근 완료<span class="th-en">Completed At</span></th>
               </tr>
             </thead>
             <tbody id="recovery-hs-done-tbody"></tbody>
@@ -666,7 +671,7 @@ When a student completes an entire assignment or translates it using AI, despite
       const d = new Date(v || '');
       if (isNaN(d)) return '-';
       const yyyy = d.getFullYear();
-      const mm = String(d.getMonth() + 1).padStart(2,'0');
+      const mm = String(d.getMonth()+1).padStart(2,'0');
       const dd = String(d.getDate()).padStart(2,'0');
       const hh = String(d.getHours()).padStart(2,'0');
       const mi = String(d.getMinutes()).padStart(2,'0');
@@ -680,9 +685,7 @@ When a student completes an entire assignment or translates it using AI, despite
 
     function normalizeRoles(roles){
       if (Array.isArray(roles)) return roles.filter(Boolean);
-      if (typeof roles === 'string'){
-        return roles.split(/[|,]/).map(v => String(v || '').trim().toLowerCase()).filter(Boolean);
-      }
+      if (typeof roles === 'string') return roles.split(/[|,]/).map(v => String(v || '').trim().toLowerCase()).filter(Boolean);
       return [];
     }
 
@@ -741,7 +744,7 @@ When a student completes an entire assignment or translates it using AI, despite
     function getStudentRecoveryTotal(studentKey){
       return Object.values(recoveryEntries || {})
         .filter(r => String(r.studentKey || '') === String(studentKey || ''))
-        .reduce((sum, r) => sum + Number(r.recoveryPoints || r.points || 0), 0);
+        .reduce((sum, r) => sum + Number(r.recoveryPoints || 0), 0);
     }
 
     function getStudentCurrentTotal(studentKey){
@@ -786,7 +789,7 @@ When a student completes an entire assignment or translates it using AI, despite
       const lines = [];
       getConfirmedEntriesForStudent(studentKey).forEach(r => {
         const line = String(r.violation || '').trim();
-        if (line && !seen.has(line)) {
+        if (line && !seen.has(line)){
           seen.add(line);
           lines.push(line);
         }
@@ -798,6 +801,12 @@ When a student completes an entire assignment or translates it using AI, despite
       const reasons = buildReasonLines(studentKey);
       if (!reasons.length) return '-';
       return reasons.map((reason, i) => `[${i+1}] ${reason}`).join('\n\n');
+    }
+
+    function buildReasonPreview(studentKey){
+      const reasons = buildReasonLines(studentKey);
+      if (!reasons.length) return '-';
+      return `[1] ${reasons[0]}`;
     }
 
     function getLatestConfirmedAt(studentKey){
@@ -834,20 +843,10 @@ When a student completes an entire assignment or translates it using AI, despite
           };
         })
         .filter(s => s.currentTotal >= 3 && s.latestEntry)
-        .sort((a, b) => {
+        .sort((a,b) => {
           if (a.isPendingCycle !== b.isPendingCycle) return a.isPendingCycle ? -1 : 1;
           return String(b.latestConfirmedAt || '').localeCompare(String(a.latestConfirmedAt || ''));
         });
-    }
-
-    function getRecoveryAfterNoticeList(studentKey, level, noticeCompletedAt){
-      return Object.values(recoveryEntries || {})
-        .filter(r =>
-          String(r.studentKey || '') === String(studentKey || '') &&
-          String(r.level || '') === String(level || '') &&
-          String(r.noticeCompletedAt || '') === String(noticeCompletedAt || '')
-        )
-        .sort((a,b) => String(b.completedAt || '').localeCompare(String(a.completedAt || '')));
     }
 
     function getRecoveryCandidates(level){
@@ -864,10 +863,10 @@ When a student completes an entire assignment or translates it using AI, despite
           const currentTotal = getStudentCurrentTotal(s.key);
           const overallTotal = getStudentOverallTotal(s.key);
           const reasons = buildReasonText(s.key);
-          const recoveryList = getRecoveryAfterNoticeList(s.key, level, notice.completedAt);
-          const latestRecovery = recoveryList[0] || null;
-          const recoveryCount = recoveryList.length;
-          const isActive = currentTotal > 3 || recoveryCount === 0;
+          const recoveryList = Object.entries(recoveryEntries || {})
+            .map(([key, value]) => ({ key, ...value }))
+            .filter(r => String(r.studentKey || '') === String(s.key) && String(r.level || '') === String(level))
+            .sort((a,b) => String(b.completedAt || '').localeCompare(String(a.completedAt || '')));
 
           return {
             ...s,
@@ -875,19 +874,25 @@ When a student completes an entire assignment or translates it using AI, despite
             overallTotal,
             reasons,
             recoveryList,
-            recoveryCount,
-            latestRecovery,
-            notice,
-            isActive
+            completedRecoveryCount: recoveryList.length
           };
         })
         .filter(Boolean)
         .sort((a,b) => {
-          if (a.isActive !== b.isActive) return a.isActive ? -1 : 1;
-          const aTime = a.latestRecovery?.completedAt || a.notice.completedAt || '';
-          const bTime = b.latestRecovery?.completedAt || b.notice.completedAt || '';
+          const aActive = a.currentTotal >= 3;
+          const bActive = b.currentTotal >= 3;
+          if (aActive !== bActive) return aActive ? -1 : 1;
+          const aTime = a.recoveryList[0]?.completedAt || a.notice?.completedAt || '';
+          const bTime = b.recoveryList[0]?.completedAt || b.notice?.completedAt || '';
           return String(bTime).localeCompare(String(aTime));
         });
+    }
+
+    function getRecoveryHistoryRows(level){
+      return Object.entries(recoveryEntries || {})
+        .map(([key, value]) => ({ key, ...value }))
+        .filter(r => String(r.level || '') === String(level))
+        .sort((a,b) => String(b.completedAt || '').localeCompare(String(a.completedAt || '')));
     }
 
     function updateManualPointsMode(){
@@ -957,6 +962,7 @@ When a student completes an entire assignment or translates it using AI, despite
         const visible = isMaster || roles.some(role => hasRole(role));
         el.classList.toggle('role-show', visible);
       });
+
       document.getElementById('standard-edit-note').textContent =
         isMaster ? '편집 가능 모드 | Editable Mode' : '기본 보기 모드 | View Mode';
     }
@@ -1313,7 +1319,7 @@ When a student completes an entire assignment or translates it using AI, despite
             <td class="nowrap">${esc(r.englishName || '')}</td>
             <td class="nowrap">${esc(r.className || '-')}</td>
             <td class="nowrap">${esc(r.category || '')}</td>
-            <td>${esc(String(r.violation || '').split('\n')[0])}</td>
+            <td><span class="cell-reason-preview">${esc(String(r.violation || '').split('\n')[0])}</span></td>
             <td class="nowrap">${esc(String(r.manualPoints || r.totalPoints || 0))}</td>
             <td class="nowrap">${getStudentCurrentTotal(r.studentKey)}</td>
             <td class="nowrap">${getStudentOverallTotal(r.studentKey)}</td>
@@ -1358,7 +1364,8 @@ When a student completes an entire assignment or translates it using AI, despite
 
       if (q){
         list = list.filter(r =>
-          [r.studentName, r.englishName, r.className, r.staffName, r.reasonsSnapshot].some(v => String(v || '').toLowerCase().includes(q))
+          [r.studentName, r.englishName, r.className, r.staffName, r.reasonsSnapshot, r.violationSnapshot]
+            .some(v => String(v || '').toLowerCase().includes(q))
         );
       }
 
@@ -1375,9 +1382,9 @@ When a student completes an entire assignment or translates it using AI, despite
           <td class="nowrap">${esc(r.englishName || '')}</td>
           <td class="nowrap">${esc(r.className || '')}</td>
           <td class="nowrap">회복교육 | Recovery</td>
-          <td class="reason-block">${esc(r.reasonsSnapshot || '-')}</td>
-          <td class="nowrap">-${esc(String(r.recoveryPoints || r.points || 0))}</td>
-          <td class="nowrap">${esc(String(r.currentTotalAtRecovery ?? getStudentCurrentTotal(r.studentKey)))}</td>
+          <td class="reason-block">${esc(r.violationSnapshot || r.reasonsSnapshot || '-')}</td>
+          <td class="nowrap">-${esc(String(r.recoveryPoints || 0))}</td>
+          <td class="nowrap">${esc(String(r.currentTotalAfter ?? r.currentTotalAtRecovery ?? getStudentCurrentTotal(r.studentKey)))}</td>
           <td class="nowrap">${esc(String(r.overallTotalAtRecovery ?? getStudentOverallTotal(r.studentKey)))}</td>
           <td class="nowrap">${esc(r.staffName || '')}</td>
           <td class="nowrap">${fmt(r.completedAt)}</td>
@@ -1411,9 +1418,7 @@ When a student completes an entire assignment or translates it using AI, despite
       const processedList = list.filter(r => String(r.status || '임시저장') !== '임시저장');
 
       function renderRows(arr){
-        if (!arr.length){
-          return '<tr><td colspan="9" class="empty">해당 기록이 없습니다. | No matching records.</td></tr>';
-        }
+        if (!arr.length) return '<tr><td colspan="9" class="empty">해당 기록이 없습니다. | No matching records.</td></tr>';
 
         return arr.map(r => {
           const expanded = expandedConfirmKeys.has(r.key);
@@ -1422,7 +1427,7 @@ When a student completes an entire assignment or translates it using AI, despite
               <td class="nowrap">${esc(r.studentName || '')}</td>
               <td class="nowrap">${esc(r.className || '-')}</td>
               <td class="nowrap">${esc(r.category || '')}</td>
-              <td>${esc(String(r.violation || '').split('\n')[0])}</td>
+              <td><span class="cell-reason-preview">${esc(String(r.violation || '').split('\n')[0])}</span></td>
               <td class="nowrap">${esc(String(r.totalPoints || 0))}</td>
               <td class="nowrap">${esc(r.teacherName || '')}</td>
               <td class="nowrap">${statusBadge(r.status || '임시저장')}</td>
@@ -1488,7 +1493,7 @@ When a student completes an entire assignment or translates it using AI, despite
               <td class="nowrap">${esc(s.name || '')}</td>
               <td class="nowrap">${esc(s.englishName || '')}</td>
               <td class="nowrap">${esc(s.className || '')}</td>
-              <td>${esc(String(s.reasons || '-').split('\n')[0])}</td>
+              <td><span class="cell-reason-preview">${esc(buildReasonPreview(s.key))}</span></td>
               <td class="nowrap">${s.currentTotal}</td>
               <td class="nowrap">${s.overallTotal}</td>
               <td onclick="event.stopPropagation()">
@@ -1544,15 +1549,14 @@ When a student completes an entire assignment or translates it using AI, despite
     function renderRecoveryTableByLevel(level){
       const activeTb = document.getElementById(level === 'ms' ? 'recovery-ms-active-tbody' : 'recovery-hs-active-tbody');
       const doneTb = document.getElementById(level === 'ms' ? 'recovery-ms-done-tbody' : 'recovery-hs-done-tbody');
-      const list = getRecoveryCandidates(level);
+      const candidates = getRecoveryCandidates(level);
+      const activeList = candidates.filter(s => s.currentTotal >= 3);
+      const historyList = getRecoveryHistoryRows(level);
 
-      const activeList = list.filter(x => x.isActive);
-      const doneList = list.filter(x => !x.isActive);
-
-      function renderActiveRows(arr){
-        if (!arr.length) return '<tr><td colspan="8" class="empty">진행 중인 학생이 없습니다. | No active students.</td></tr>';
-
-        return arr.map(s => {
+      if (!activeList.length){
+        activeTb.innerHTML = '<tr><td colspan="8" class="empty">진행 중인 학생이 없습니다. | No active students.</td></tr>';
+      } else {
+        activeTb.innerHTML = activeList.map(s => {
           const expanded = expandedRecoveryKeys[level].has(s.key);
           return `
             <tr class="summary-row" onclick="toggleRecoveryRow('${level}','${esc(s.key)}')">
@@ -1561,8 +1565,8 @@ When a student completes an entire assignment or translates it using AI, despite
               <td class="nowrap">${esc(s.className || '')}</td>
               <td class="nowrap">${s.currentTotal}</td>
               <td class="nowrap">${s.overallTotal}</td>
-              <td>${esc(String(s.reasons || '-').split('\n')[0])}</td>
-              <td class="nowrap">${s.recoveryCount}</td>
+              <td><span class="cell-reason-preview">${esc(buildReasonPreview(s.key))}</span></td>
+              <td class="nowrap">${s.completedRecoveryCount}회</td>
               <td class="nowrap" onclick="event.stopPropagation()">
                 <button class="btn btn-primary" onclick="completeRecovery('${esc(s.key)}','${level}')">회복교육 완료</button>
               </td>
@@ -1575,8 +1579,8 @@ When a student completes an entire assignment or translates it using AI, despite
                     <div class="detail-content">${esc(s.reasons || '-')}</div>
                   </div>
                   <div class="detail-section">
-                    <div class="detail-title">회복교육 이력 | Recovery History</div>
-                    <div class="detail-content">${s.recoveryList.length ? esc(s.recoveryList.map((r, i) => `[${i+1}] ${fmt(r.completedAt)} / -${r.recoveryPoints} / 현재누적 ${r.currentTotalAtRecovery}`).join('\n')) : '-'}</div>
+                    <div class="detail-title">회복교육 완료 이력 | Completed Recovery History</div>
+                    <div class="detail-content">${s.recoveryList.length ? esc(s.recoveryList.map((r, i) => `[${i+1}] ${fmt(r.completedAt)} / -${r.recoveryPoints} / 교육 후 현재누적 ${r.currentTotalAfter ?? r.currentTotalAtRecovery ?? '-'}`).join('\n')) : '-'}</div>
                   </div>
                 </div>
               </td>
@@ -1585,23 +1589,22 @@ When a student completes an entire assignment or translates it using AI, despite
         }).join('');
       }
 
-      if (!doneList.length){
-        doneTb.innerHTML = '<tr><td colspan="7" class="empty">완료된 학생이 없습니다. | No completed students.</td></tr>';
+      if (!historyList.length){
+        doneTb.innerHTML = '<tr><td colspan="8" class="empty">완료된 교육 기록이 없습니다. | No completed recovery history.</td></tr>';
       } else {
-        doneTb.innerHTML = doneList.map(s => `
+        doneTb.innerHTML = historyList.map(r => `
           <tr>
-            <td class="nowrap">${esc(s.name || '')}</td>
-            <td class="nowrap">${esc(s.englishName || '')}</td>
-            <td class="nowrap">${esc(s.className || '')}</td>
-            <td class="nowrap">${s.currentTotal}</td>
-            <td class="nowrap">${s.overallTotal}</td>
-            <td class="nowrap">${s.recoveryCount}</td>
-            <td class="nowrap">${fmt(s.latestRecovery?.completedAt || '')}</td>
+            <td class="nowrap">${esc(r.studentName || '')}</td>
+            <td class="nowrap">${esc(r.englishName || '')}</td>
+            <td class="nowrap">${esc(r.className || '')}</td>
+            <td class="reason-block">${esc(r.violationSnapshot || r.reasonsSnapshot || '-')}</td>
+            <td class="nowrap">-${esc(String(r.recoveryPoints || 0))}</td>
+            <td class="nowrap">${esc(String(r.currentTotalAfter ?? r.currentTotalAtRecovery ?? '-'))}</td>
+            <td class="nowrap">${esc(String(r.overallTotalAtRecovery ?? '-'))}</td>
+            <td class="nowrap">${fmt(r.completedAt)}</td>
           </tr>
         `).join('');
       }
-
-      activeTb.innerHTML = renderActiveRows(activeList);
     }
 
     function renderStats(){
@@ -1661,14 +1664,18 @@ When a student completes an entire assignment or translates it using AI, despite
         return toast('확정 권한이 없습니다.\nYou do not have permission to confirm.', 'err');
       }
 
+      const record = entries[key] || {};
+      if (String(record.status || '') === '반려'){
+        if (!confirm('이미 반려된 기록입니다. 다시 확정하시겠습니까?')) return;
+      }
+
       try{
-        const record = entries[key] || {};
         await db.ref(`${DETENTION_DB_PATH}/${key}`).update({
-          status: '확정',
-          adminNote: String(record.adminNote || ''),
-          confirmedAt: new Date().toISOString(),
-          confirmedBy: teacher.name || '',
-          confirmedByEmail: teacher.email || ''
+          status:'확정',
+          adminNote:String(record.adminNote || ''),
+          confirmedAt:new Date().toISOString(),
+          confirmedBy:teacher.name || '',
+          confirmedByEmail:teacher.email || ''
         });
         toast('디텐션이 확정되었습니다.\nDetention entry confirmed.', 'ok');
         loadData();
@@ -1683,14 +1690,18 @@ When a student completes an entire assignment or translates it using AI, despite
         return toast('반려 권한이 없습니다.\nYou do not have permission to reject.', 'err');
       }
 
+      const record = entries[key] || {};
+      if (String(record.status || '') === '확정'){
+        if (!confirm('이미 확정된 기록입니다. 다시 반려하시겠습니까?')) return;
+      }
+
       try{
-        const record = entries[key] || {};
         await db.ref(`${DETENTION_DB_PATH}/${key}`).update({
-          status: '반려',
-          adminNote: String(record.adminNote || ''),
-          rejectedAt: new Date().toISOString(),
-          rejectedBy: teacher.name || '',
-          rejectedByEmail: teacher.email || ''
+          status:'반려',
+          adminNote:String(record.adminNote || ''),
+          rejectedAt:new Date().toISOString(),
+          rejectedBy:teacher.name || '',
+          rejectedByEmail:teacher.email || ''
         });
         toast('디텐션이 반려되었습니다.\nDetention entry rejected.', 'ok');
         loadData();
@@ -1711,31 +1722,31 @@ When a student completes an entire assignment or translates it using AI, despite
 ${student.name} 학생의 디텐션 포인트가 3점 이상이 되어서
 학생부에서 회복교육을 받게 되었음을 안내드립니다.
 
-  ▶  이 름  (Name)           : ${student.name}
-  ▶  홈 룸  (HR)             : ${student.className}
-  ▶  Detention point         : ${getStudentCurrentTotal(student.key)}
-  ▶  사 유 (Reason)          :
-${reasonText.split('\n').map(line => `    ${line}`).join('\n')}
+    ▶ 이 름 (Name)            : ${student.name}
+    ▶ 홈 룸 (HR)              : ${student.className}
+    ▶ Detention point         : ${getStudentCurrentTotal(student.key)}
+    ▶ 사 유 (Reason)          :
+${reasonText.split('\n').map(line => `      ${line}`).join('\n')}
 
 학생이 학교의 규정을 준수하며 바르게 성장할 수 있도록 지도하겠습니다.
 가정에서도 관심을 가지고 이야기를 나누어 주시기를 부탁드립니다.
 
 디텐션 포인트 관련 문의가 있으시면
 
-  학생부장               : ${masterEmail || '-'}
-  중등회복교육 담당      : ${msRestoreEmail || '-'}
-  고등회복교육 담당      : ${hsRestoreEmail || '-'}`;
+    학생부장                  : ${masterEmail || '-'}
+    중등회복교육 담당         : ${msRestoreEmail || '-'}
+    고등회복교육 담당         : ${hsRestoreEmail || '-'}`;
     }
 
     function buildStudentTeacherMailBody(student, level){
       const restoreEmail = level === 'ms' ? getFirstTeacherEmailByRole('ms_restore') : getFirstTeacherEmailByRole('hs_restore');
       const reasonText = buildReasonText(student.key);
 
-      return `  ▶  이 름  (Name)           : ${student.name}
-  ▶  홈 룸  (HR)             : ${student.className}
-  ▶  Detention point         : ${getStudentCurrentTotal(student.key)}
-  ▶  사 유 (Reason)          :
-${reasonText.split('\n').map(line => `    ${line}`).join('\n')}
+      return `    ▶ 이 름 (Name)            : ${student.name}
+    ▶ 홈 룸 (HR)              : ${student.className}
+    ▶ Detention point         : ${getStudentCurrentTotal(student.key)}
+    ▶ 사 유 (Reason)          :
+${reasonText.split('\n').map(line => `      ${line}`).join('\n')}
 
 To. 회복교육 담당 선생님
 
@@ -1746,18 +1757,30 @@ To: Restorative Education Teacher
 Please inform the student about the schedule and location
 for their restorative education.
 
-  Restore Teacher Email     : ${restoreEmail || '-'}`;
+    Restore Teacher Email     : ${restoreEmail || '-'}`;
     }
 
-    function openMailWindow(to, subject, body){
-      const url = `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-      const a = document.createElement('a');
-      a.href = url;
-      a.target = '_blank';
-      a.rel = 'noopener noreferrer';
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
+    async function openMailAfterSave(url, savePromise){
+      let win = null;
+      try{
+        win = window.open('', '_blank');
+      }catch(e){
+        win = null;
+      }
+
+      await savePromise;
+
+      if (win){
+        win.location.href = url;
+      } else {
+        const a = document.createElement('a');
+        a.href = url;
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      }
     }
 
     async function sendParentMail(studentKey, level){
@@ -1770,15 +1793,17 @@ for their restorative education.
       const subject = '[HIS - 학생부 : 디텐션 포인트 알림] [STL : Regarding detention point]';
       const body = buildParentMailBody(student);
       const latestConfirmedAt = getLatestConfirmedAt(studentKey);
+      const savePromise = db.ref(`${NOTICE_DB_PATH}/${noticeKey(studentKey, level)}`).update({
+        studentKey,
+        level,
+        parentMailAt:new Date().toISOString(),
+        referenceAt:latestConfirmedAt
+      });
 
       try{
-        await db.ref(`${NOTICE_DB_PATH}/${noticeKey(studentKey, level)}`).update({
-          studentKey,
-          level,
-          parentMailAt: new Date().toISOString(),
-          referenceAt: latestConfirmedAt
-        });
-        openMailWindow(to, subject, body);
+        const url = `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+        await openMailAfterSave(url, savePromise);
+        toast('학부모 메일 시간이 기록되었습니다.\nParent mail time saved.', 'ok');
         loadData();
       }catch(e){
         console.error(e);
@@ -1789,7 +1814,6 @@ for their restorative education.
     async function sendStudentTeacherMail(studentKey, level){
       const student = { key: studentKey, ...(students[studentKey] || {}) };
       const restoreEmails = level === 'ms' ? getTeacherEmailsByRole('ms_restore') : getTeacherEmailsByRole('hs_restore');
-
       const to = [student.selfEmail, student.homeroomTeacherEmail, ...restoreEmails].filter(Boolean).join(',');
       if (!to){
         return toast('학생/교사 이메일이 없습니다.\nNo student/teacher email address found.', 'err');
@@ -1798,15 +1822,17 @@ for their restorative education.
       const subject = '[HIS - 학생부 : 디텐션 포인트 알림] [STL : Regarding detention point]';
       const body = buildStudentTeacherMailBody(student, level);
       const latestConfirmedAt = getLatestConfirmedAt(studentKey);
+      const savePromise = db.ref(`${NOTICE_DB_PATH}/${noticeKey(studentKey, level)}`).update({
+        studentKey,
+        level,
+        studentTeacherMailAt:new Date().toISOString(),
+        referenceAt:latestConfirmedAt
+      });
 
       try{
-        await db.ref(`${NOTICE_DB_PATH}/${noticeKey(studentKey, level)}`).update({
-          studentKey,
-          level,
-          studentTeacherMailAt: new Date().toISOString(),
-          referenceAt: latestConfirmedAt
-        });
-        openMailWindow(to, subject, body);
+        const url = `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+        await openMailAfterSave(url, savePromise);
+        toast('학생/교사 메일 시간이 기록되었습니다.\nStudent/teacher mail time saved.', 'ok');
         loadData();
       }catch(e){
         console.error(e);
@@ -1820,10 +1846,10 @@ for their restorative education.
         await db.ref(`${NOTICE_DB_PATH}/${noticeKey(studentKey, level)}`).update({
           studentKey,
           level,
-          completedAt: new Date().toISOString(),
-          completedBy: teacher.name || '',
-          completedByEmail: teacher.email || '',
-          referenceAt: latestConfirmedAt
+          completedAt:new Date().toISOString(),
+          completedBy:teacher.name || '',
+          completedByEmail:teacher.email || '',
+          referenceAt:latestConfirmedAt
         });
         toast('알림 완료가 저장되었습니다.\nNotice completion saved.', 'ok');
         loadData();
@@ -1854,8 +1880,10 @@ for their restorative education.
         level,
         recoveryPoints,
         reasonsSnapshot: buildReasonText(studentKey),
+        violationSnapshot: buildReasonText(studentKey),
         overallTotalAtRecovery: overallTotal,
-        currentTotalAtRecovery: currentTotalBefore - recoveryPoints,
+        currentTotalBefore,
+        currentTotalAfter: Math.max(0, currentTotalBefore - recoveryPoints),
         noticeCompletedAt: String(notice.completedAt || ''),
         staffName: teacher.name || '',
         staffEmail: teacher.email || '',
