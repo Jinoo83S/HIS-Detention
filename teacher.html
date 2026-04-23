@@ -1227,7 +1227,16 @@ When a student completes an entire assignment or translates it using AI, despite
         noticeEntries = noticeSnap.val() || {};
 
         const dbStandards = standardSnap.val();
-        if (Array.isArray(dbStandards) && dbStandards.length) detentionStandards = dbStandards;
+        // Firebase는 배열을 {0:{},1:{}} 형태로 저장할 수 있으므로 양쪽 처리
+        if (Array.isArray(dbStandards) && dbStandards.length) {
+          detentionStandards = dbStandards;
+        } else if (dbStandards && typeof dbStandards === 'object') {
+          const converted = Object.keys(dbStandards)
+            .sort((a, b) => Number(a) - Number(b))
+            .map(k => dbStandards[k])
+            .filter(Boolean);
+          if (converted.length) detentionStandards = converted;
+        }
 
         const meta = metaSnap.val() || {};
         if (meta.savedAt) setStandardSaveStatus(`마지막 저장: ${fmt(meta.savedAt)} | Last saved: ${fmt(meta.savedAt)}`);

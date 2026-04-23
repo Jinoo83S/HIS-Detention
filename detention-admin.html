@@ -358,6 +358,20 @@
     let noticeRows = [];
     let recoveryRows = [];
 
+    // 인증 확인: admin.html에서 로그인한 세션이 없으면 돌려보냄
+    function checkAdminSession() {
+      if (!sessionStorage.getItem('his_admin_session')) {
+        location.href = 'admin.html';
+        return false;
+      }
+      return true;
+    }
+
+    function logoutAdmin() {
+      sessionStorage.removeItem('his_admin_session');
+      location.href = 'admin.html';
+    }
+
     function badgeHtml(status){
       if (status === '확정') return '<span class="status-chip confirmed">확정</span>';
       if (status === '반려') return '<span class="status-chip rejected">반려</span>';
@@ -392,7 +406,17 @@
           db.ref('recoveryEntries').once('value')
         ]);
 
-        standardsRows = Array.isArray(standardsSnap.val()) ? standardsSnap.val() : [];
+        const rawStandards = standardsSnap.val();
+        if (Array.isArray(rawStandards)) {
+          standardsRows = rawStandards;
+        } else if (rawStandards && typeof rawStandards === 'object') {
+          standardsRows = Object.keys(rawStandards)
+            .sort((a, b) => Number(a) - Number(b))
+            .map(k => rawStandards[k])
+            .filter(Boolean);
+        } else {
+          standardsRows = [];
+        }
 
         entryRows = Object.entries(entriesSnap.val() || {}).map(([key, value]) => ({
           key,
@@ -673,7 +697,7 @@
       }
     }
 
-    loadAllData();
+    if (checkAdminSession()) loadAllData();
   </script>
 </body>
 </html>

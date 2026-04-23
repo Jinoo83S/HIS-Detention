@@ -139,7 +139,7 @@
         </div>
       </div>
 
-      <div id="tab-uploads" class="tab-panel">
+      <div id="tab-csv" class="tab-panel">
         <div class="card">
           <div class="card-title">학생 명단 CSV 업로드 | Student CSV Upload</div>
           <div class="notice">CSV 첫 줄 | Header: name,englishName,className,selfEmail,fatherEmail,motherEmail</div>
@@ -260,12 +260,14 @@
         document.getElementById('admin-pw').value = '';
         return toast('비밀번호가 올바르지 않습니다.\nInvalid password.', 'err');
       }
+      sessionStorage.setItem('his_admin_session', '1');
       document.getElementById('login-screen').classList.add('hidden');
       document.getElementById('admin-screen').classList.remove('hidden');
       refreshAll();
     }
 
     function adminLogout() {
+      sessionStorage.removeItem('his_admin_session');
       document.getElementById('login-screen').classList.remove('hidden');
       document.getElementById('admin-screen').classList.add('hidden');
       document.getElementById('admin-pw').value = '';
@@ -448,7 +450,7 @@
         const next = {};
         studentRows.forEach(r => {
           if (r._delete) return;
-          const key = studentKey(r.name);
+          const key = studentKey(r.name, r.className);
           if (!key || !String(r.name || '').trim()) {
             r._status = '오류';
             return;
@@ -565,6 +567,7 @@
     document.addEventListener('click', e => {
       const btn = e.target.closest('.tab-btn');
       if (!btn) return;
+      if (!btn.dataset.tab) return; // <a> 태그처럼 data-tab 없는 경우 무시
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
       btn.classList.add('active');

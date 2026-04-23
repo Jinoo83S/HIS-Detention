@@ -50,11 +50,15 @@ function teacherKey(email, name) {
 
 /**
  * 학생 key 생성
- * - 현재는 이름을 사용
+ * - className + name 조합으로 동명이인 충돌 방지
  * - Firebase 금지 문자는 _ 로 치환
+ * ⚠️ 기존 DB에 이름만으로 저장된 key가 있다면 마이그레이션 필요
  */
-function studentKey(name) {
-  return String(name || '').trim().replace(/[.#$/\[\]]/g, '_');
+function studentKey(name, className) {
+  const raw = [String(className || '').trim(), String(name || '').trim()]
+    .filter(Boolean)
+    .join('_');
+  return raw.replace(/[.#$/\[\]\s]/g, '_');
 }
 
 function requireTeacherSession() {
