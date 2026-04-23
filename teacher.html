@@ -116,6 +116,14 @@
       flex-wrap:wrap;
     }
 
+    .th-en{
+      display:block;
+      font-size:11px;
+      font-weight:600;
+      line-height:1.2;
+      margin-top:2px;
+    }
+
     .criteria-table{
       table-layout:fixed;
       width:100%;
@@ -502,11 +510,11 @@
           <table class="criteria-table">
             <thead>
               <tr>
-                <th>구분 | Category</th>
-                <th>위반행위 | Violation</th>
-                <th>자동 점수 | Auto Points</th>
-                <th>비고 | Notes</th>
-                <th id="criteria-action-head" class="hidden">삭제 | Delete</th>
+                <th>구분<span class="th-en">Category</span></th>
+                <th>위반행위<span class="th-en">Violation</span></th>
+                <th>자동 점수<span class="th-en">Auto Points</span></th>
+                <th>비고<span class="th-en">Notes</span></th>
+                <th id="criteria-action-head" class="hidden">삭제<span class="th-en">Delete</span></th>
               </tr>
             </thead>
             <tbody id="criteria-tbody"></tbody>
@@ -549,16 +557,16 @@
           <table>
             <thead>
               <tr>
-                <th>학생 | Student</th>
-                <th>영문 이름 | English Name</th>
-                <th>학반 | Class</th>
-                <th>구분 | Category</th>
-                <th>위반행위 | Violation</th>
-                <th>점수 | Points</th>
-                <th>현재 누적점수 | Current Total</th>
-                <th>전체 누적점수 | Overall Total</th>
-                <th>담당교사 | Teacher</th>
-                <th>일시 | Date/Time</th>
+                <th>학생<span class="th-en">Student</span></th>
+                <th>영문 이름<span class="th-en">English Name</span></th>
+                <th>학반<span class="th-en">Class</span></th>
+                <th>구분<span class="th-en">Category</span></th>
+                <th>위반행위<span class="th-en">Violation</span></th>
+                <th>점수<span class="th-en">Points</span></th>
+                <th>현재 누적점수<span class="th-en">Current Total</span></th>
+                <th>전체 누적점수<span class="th-en">Overall Total</span></th>
+                <th>담당교사<span class="th-en">Teacher</span></th>
+                <th>일시<span class="th-en">Date/Time</span></th>
               </tr>
             </thead>
             <tbody id="all-records-tbody"></tbody>
@@ -575,18 +583,28 @@
           <div>Users with Master role can confirm or reject pending detention records.</div>
         </div>
 
+        <div class="filter-bar" style="margin-top:10px;">
+          <select id="confirm-status-filter" class="edit-input">
+            <option value="">전체 상태 | All Statuses</option>
+            <option value="임시저장">대기 | Pending</option>
+            <option value="확정">확정 | Confirmed</option>
+            <option value="반려">반려 | Rejected</option>
+          </select>
+          <input id="confirm-search" class="edit-input flex1" placeholder="학생명/영문명/구분/위반행위 검색 | Search student/English/category/violation">
+        </div>
+
         <div class="tbl-wrap">
           <table>
             <thead>
               <tr>
-                <th>학생 | Student</th>
-                <th>학반 | Class</th>
-                <th>구분 | Category</th>
-                <th>위반행위 | Violation</th>
-                <th>합계 | Total</th>
-                <th>작성자 | Created By</th>
-                <th>상태 | Status</th>
-                <th>처리 | Action</th>
+                <th>학생<span class="th-en">Student</span></th>
+                <th>학반<span class="th-en">Class</span></th>
+                <th>구분<span class="th-en">Category</span></th>
+                <th>위반행위<span class="th-en">Violation</span></th>
+                <th>합계<span class="th-en">Total</span></th>
+                <th>작성자<span class="th-en">Created By</span></th>
+                <th>상태<span class="th-en">Status</span></th>
+                <th>처리<span class="th-en">Action</span></th>
               </tr>
             </thead>
             <tbody id="confirm-tbody"></tbody>
@@ -673,12 +691,12 @@
           <table>
             <thead>
               <tr>
-                <th>학생 | Student</th>
-                <th>학반 | Class</th>
-                <th>회복 활동 | Recovery Activity</th>
-                <th>회복 포인트 | Recovery Points</th>
-                <th>담당 | Staff</th>
-                <th>상태 | Status</th>
+                <th>학생<span class="th-en">Student</span></th>
+                <th>학반<span class="th-en">Class</span></th>
+                <th>회복 활동<span class="th-en">Recovery Activity</span></th>
+                <th>회복 포인트<span class="th-en">Recovery Points</span></th>
+                <th>담당<span class="th-en">Staff</span></th>
+                <th>상태<span class="th-en">Status</span></th>
               </tr>
             </thead>
             <tbody id="recovery-ms-tbody"></tbody>
@@ -699,12 +717,12 @@
           <table>
             <thead>
               <tr>
-                <th>학생 | Student</th>
-                <th>학반 | Class</th>
-                <th>회복 활동 | Recovery Activity</th>
-                <th>회복 포인트 | Recovery Points</th>
-                <th>담당 | Staff</th>
-                <th>상태 | Status</th>
+                <th>학생<span class="th-en">Student</span></th>
+                <th>학반<span class="th-en">Class</span></th>
+                <th>회복 활동<span class="th-en">Recovery Activity</span></th>
+                <th>회복 포인트<span class="th-en">Recovery Points</span></th>
+                <th>담당<span class="th-en">Staff</span></th>
+                <th>상태<span class="th-en">Status</span></th>
               </tr>
             </thead>
             <tbody id="recovery-hs-tbody"></tbody>
@@ -1006,6 +1024,13 @@ In cases of two or more violations, the matter will be referred to the Disciplin
       return '<span class="status-pending">임시저장 | Pending</span>';
     }
 
+    function confirmSortValue(status){
+      if (status === '임시저장') return 0;
+      if (status === '확정') return 1;
+      if (status === '반려') return 2;
+      return 9;
+    }
+
     function rolesLabel(roles){
       const list = normalizeRoles(roles);
       if (!list.length) return '권한 없음 | No Roles';
@@ -1032,8 +1057,8 @@ In cases of two or more violations, the matter will be referred to the Disciplin
 
       return Object.values(entries || {}).filter(r => {
         return String(r.studentKey || '') === String(studentKey) &&
-               String(r.category || '') === String(category || '') &&
-               String(r.violation || '') === String(violation || '') &&
+               String(r.category || '') === String(category) &&
+               String(r.violation || '') === String(violation) &&
                String(r.status || '') !== '반려';
       }).length;
     }
@@ -1142,10 +1167,7 @@ In cases of two or more violations, the matter will be referred to the Disciplin
           .map(v => v.trim())
           .filter(Boolean);
 
-        let visible = false;
-        if (isMaster) visible = true;
-        else visible = roles.some(role => hasRole(role));
-
+        const visible = isMaster || roles.some(role => hasRole(role));
         el.classList.toggle('role-show', visible);
       });
 
@@ -1384,6 +1406,9 @@ In cases of two or more violations, the matter will be referred to the Disciplin
       document.getElementById('all-class-filter').addEventListener('change', renderAllEntries);
       document.getElementById('all-search').addEventListener('input', renderAllEntries);
 
+      document.getElementById('confirm-status-filter').addEventListener('change', renderConfirmEntries);
+      document.getElementById('confirm-search').addEventListener('input', renderConfirmEntries);
+
       document.addEventListener('click', e => {
         const btn = e.target.closest('.tab-btn');
         if (!btn) return;
@@ -1531,14 +1556,31 @@ In cases of two or more violations, the matter will be referred to the Disciplin
     function renderConfirmEntries(){
       const tb = document.getElementById('confirm-tbody');
       const canManage = canConfirmDetention();
+      const statusFilter = (document.getElementById('confirm-status-filter').value || '').trim();
+      const q = (document.getElementById('confirm-search').value || '').trim().toLowerCase();
 
       let list = Object.entries(entries)
-        .map(([key, value]) => ({ key, ...value }))
-        .filter(r => String(r.status || '임시저장') === '임시저장')
-        .sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
+        .map(([key, value]) => ({ key, ...value }));
+
+      if (statusFilter) {
+        list = list.filter(r => String(r.status || '임시저장') === statusFilter);
+      }
+
+      if (q) {
+        list = list.filter(r =>
+          [r.studentName, r.englishName, r.category, r.violation, r.teacherName]
+            .some(v => String(v || '').toLowerCase().includes(q))
+        );
+      }
+
+      list = list.sort((a, b) => {
+        const statusDiff = confirmSortValue(String(a.status || '임시저장')) - confirmSortValue(String(b.status || '임시저장'));
+        if (statusDiff !== 0) return statusDiff;
+        return String(b.createdAt || '').localeCompare(String(a.createdAt || ''));
+      });
 
       if (!list.length){
-        tb.innerHTML = '<tr><td colspan="8" class="empty">확정 대기 항목이 없습니다. | No pending records.</td></tr>';
+        tb.innerHTML = '<tr><td colspan="8" class="empty">해당 기록이 없습니다. | No matching records.</td></tr>';
         return;
       }
 
@@ -1547,13 +1589,13 @@ In cases of two or more violations, the matter will be referred to the Disciplin
           <td>${esc(r.studentName || '')}</td>
           <td>${esc(r.className || '-')}</td>
           <td>${esc(r.category || '')}</td>
-          <td>${esc(r.violation || '')}</td>
+          <td style="white-space:pre-wrap;">${esc(r.violation || '')}</td>
           <td>${esc(String(r.totalPoints || 0))}</td>
           <td>${esc(r.teacherName || '')}</td>
           <td>${statusBadge(r.status || '임시저장')}</td>
           <td>
             ${
-              canManage
+              canManage && String(r.status || '임시저장') === '임시저장'
                 ? `
                   <div class="mini-actions" style="margin-top:0;">
                     <button class="btn btn-primary" onclick="confirmDetention('${esc(r.key)}')">확정 | Confirm</button>
