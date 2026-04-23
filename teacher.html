@@ -250,6 +250,97 @@
         grid-template-columns:1fr;
       }
     }
+
+    .recent-entry-list{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+
+    .recent-entry-item{
+      border:1px solid var(--bd);
+      border-radius:12px;
+      background:#fff;
+      padding:12px;
+    }
+
+    .recent-entry-top{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:12px;
+    }
+
+    .recent-entry-main{
+      min-width:0;
+      flex:1;
+    }
+
+    .recent-entry-title{
+      font-size:14px;
+      font-weight:700;
+      color:var(--nv);
+      margin-bottom:4px;
+      line-height:1.4;
+    }
+
+    .recent-entry-meta{
+      display:flex;
+      flex-wrap:wrap;
+      gap:6px;
+      margin-bottom:8px;
+    }
+
+    .recent-chip{
+      display:inline-flex;
+      align-items:center;
+      padding:4px 8px;
+      border-radius:999px;
+      background:#eef3ff;
+      color:var(--nv);
+      font-size:11px;
+      font-weight:600;
+    }
+
+    .recent-entry-violation{
+      font-size:13px;
+      line-height:1.5;
+      color:#1f2937;
+      white-space:pre-wrap;
+      word-break:keep-all;
+    }
+
+    .recent-entry-side{
+      min-width:110px;
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      align-items:flex-end;
+      text-align:right;
+    }
+
+    .recent-entry-points{
+      font-size:18px;
+      font-weight:800;
+      color:var(--nv);
+    }
+
+    .recent-entry-datetime{
+      font-size:12px;
+      color:var(--sb);
+      line-height:1.4;
+    }
+
+    .recent-empty{
+      border:1px dashed var(--bd);
+      border-radius:12px;
+      padding:18px 12px;
+      text-align:center;
+      font-size:13px;
+      color:var(--sb);
+      background:#fff;
+    }
+
   </style>
 </head>
 <body>
@@ -373,22 +464,7 @@
 
         <div class="card">
           <div class="card-title">최근 입력 내역 | Recent Entries</div>
-          <div class="tbl-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>학생 | Student</th>
-                  <th>학반 | Class</th>
-                  <th>구분 | Category</th>
-                  <th>위반행위 | Violation</th>
-                  <th>점수 | Points</th>
-                  <th>상태 | Status</th>
-                  <th>일시 | Date/Time</th>
-                </tr>
-              </thead>
-              <tbody id="recent-entry-tbody"></tbody>
-            </table>
-          </div>
+          <div id="recent-entry-list" class="recent-entry-list"></div>
         </div>
       </div>
     </div>
@@ -1316,7 +1392,7 @@ In cases of two or more violations, the matter will be referred to the Disciplin
     }
 
     function renderRecentEntries(){
-      const tb = document.getElementById('recent-entry-tbody');
+      const box = document.getElementById('recent-entry-list');
 
       const list = Object.values(entries)
         .filter(r => String(r.teacherEmail || '') === String(teacher.email || ''))
@@ -1324,22 +1400,40 @@ In cases of two or more violations, the matter will be referred to the Disciplin
         .slice(0, 10);
 
       if (!list.length){
-        tb.innerHTML = '<tr><td colspan="7" class="empty">기록이 없습니다. | No records found.</td></tr>';
+        box.innerHTML = `
+          <div class="recent-empty">
+            기록이 없습니다. | No records found.
+          </div>
+        `;
         return;
       }
 
-      tb.innerHTML = list.map(r => `
-        <tr>
-          <td>${esc(r.studentName || '')}</td>
-          <td>${esc(r.className || '-')}</td>
-          <td>${esc(r.category || '')}</td>
-          <td>${esc(r.violation || '')}</td>
-          <td>${esc(String(r.totalPoints || 0))}</td>
-          <td>${statusBadge(r.status || '임시저장')}</td>
-          <td>${fmt(r.createdAt)}</td>
-        </tr>
+      box.innerHTML = list.map(r => `
+        <div class="recent-entry-item">
+          <div class="recent-entry-top">
+            <div class="recent-entry-main">
+              <div class="recent-entry-title">
+                ${esc(r.studentName || '')}
+              </div>
+
+              <div class="recent-entry-meta">
+                <span class="recent-chip">${esc(r.className || '-')}</span>
+                <span class="recent-chip">${esc(r.category || '')}</span>
+              </div>
+
+              <div class="recent-entry-violation">${esc(r.violation || '')}</div>
+            </div>
+
+            <div class="recent-entry-side">
+              <div class="recent-entry-points">${esc(String(r.totalPoints || 0))}점</div>
+              <div>${statusBadge(r.status || '임시저장')}</div>
+              <div class="recent-entry-datetime">${fmt(r.createdAt)}</div>
+            </div>
+          </div>
+        </div>
       `).join('');
     }
+
 
     function renderAllEntries(){
       const classFilter = document.getElementById('all-class-filter').value;
