@@ -8,7 +8,6 @@
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=DM+Serif+Display&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="common.css">
 
-
   <style>
     .title-en{
       display:block;
@@ -111,42 +110,6 @@
       color:var(--nv);
     }
 
-    .info-badges{
-      display:flex;
-      gap:6px;
-      flex-wrap:wrap;
-    }
-
-    .status-confirmed{
-      background:#e8f8ee;
-      color:#15803D;
-      padding:3px 8px;
-      border-radius:999px;
-      font-size:11px;
-      font-weight:700;
-      display:inline-block;
-    }
-
-    .status-pending{
-      background:#eef3ff;
-      color:#1B2F7A;
-      padding:3px 8px;
-      border-radius:999px;
-      font-size:11px;
-      font-weight:700;
-      display:inline-block;
-    }
-
-    .status-rejected{
-      background:#fde8e8;
-      color:#DC2626;
-      padding:3px 8px;
-      border-radius:999px;
-      font-size:11px;
-      font-weight:700;
-      display:inline-block;
-    }
-
     .criteria-table{
       table-layout:fixed;
       width:100%;
@@ -211,6 +174,42 @@
       background:#edf3ff;
     }
 
+    .status-confirmed{
+      background:#e8f8ee;
+      color:#15803D;
+      padding:3px 8px;
+      border-radius:999px;
+      font-size:11px;
+      font-weight:700;
+      display:inline-block;
+    }
+
+    .status-pending{
+      background:#eef3ff;
+      color:#1B2F7A;
+      padding:3px 8px;
+      border-radius:999px;
+      font-size:11px;
+      font-weight:700;
+      display:inline-block;
+    }
+
+    .status-rejected{
+      background:#fde8e8;
+      color:#DC2626;
+      padding:3px 8px;
+      border-radius:999px;
+      font-size:11px;
+      font-weight:700;
+      display:inline-block;
+    }
+
+    .info-badges{
+      display:flex;
+      gap:6px;
+      flex-wrap:wrap;
+    }
+
     .criteria-textarea{
       width:100%;
       min-height:56px;
@@ -252,7 +251,6 @@
       }
     }
   </style>
-
 </head>
 <body>
   <div id="toast"></div>
@@ -432,10 +430,10 @@
 
         <div style="margin-top:12px;padding:10px 12px;border:1px solid #444;background:#fff;line-height:1.5;font-size:13px;">
           <div>
-              ※위반 행등의 정도가 심한 경우 및 상기 기준 외의 것은 생활교육위원회의 심의를 거쳐 결정할 수 있다.
+            ※위반 행동의 정도가 심한 경우 및 상기 기준 외의 것은 생활교육위원회의 심의를 거쳐 결정할 수 있다.
           </div>
           <div>
-              ※Regarding highly serious violations and matters not stipulated above, decisions can be separately made after deliberation by the Life Education Committee.
+            ※Regarding highly serious violations and matters not stipulated above, decisions can be separately made after deliberation by the Life Education Committee.
           </div>
         </div>
       </div>
@@ -638,17 +636,17 @@
       {
         category: '수업 Class',
         violation: `다음 사항에서 3회 이상 위반 시 디텐션 포인트 3점 발생
-                      - 과제 미제출
-                      - 수업 지각
-                      - 수업 중 자는 행위
-                      - 수업 방해
-                      - 수업 준비물 미지참
-                    3 or more violations of the following:
-                      - Not submitting assignments
-                      - Being late for class
-                      - Sleeping in class
-                      - Disrupting the class
-                      - Not preparing class materials`,
+- 과제 미제출
+- 수업 지각
+- 수업 중 자는 행위
+- 수업 방해
+- 수업 준비물 미지참
+3 or more violations of the following:
+- Not submitting assignments
+- Being late for class
+- Sleeping in class
+- Disrupting the class
+- Not preparing class materials`,
         autoPoints: '1-12',
         note: ''
       },
@@ -663,12 +661,12 @@
         violation: '부정행위 및 이에 대한 동조 또는 방조 Cheating, aligning with cheating, or related aiding and abetting',
         autoPoints: '12',
         note: `해당 시험 점수는 0점 처리
-              0 score given for the test`
+0 score given for the test`
       },
       {
         category: '표절 및 부정행위 Plagiarism & Cheating',
         violation: `수업 규정에 명시되어 있음에도 불구하고 이에 반하여 AI를 사용하여 전체 과제를 작성하거나 번역하고 이를 시인한 경우
-    When a student completes an entire assignment or translates it using AI, despite such use being explicitly prohibited in the class regulations, and admits to having done so`,
+When a student completes an entire assignment or translates it using AI, despite such use being explicitly prohibited in the class regulations, and admits to having done so`,
         autoPoints: '12',
         note: ''
       },
@@ -738,13 +736,13 @@
         autoPoints: '1,3',
         note: '첫 위반은 1점, 그 이후로는 3점을 부과함'
       },
-      {    
+      {
         category: '복장 Dress',
         violation: "색이 있는 안경 및 서클렌즈 착용 Wearing glasses with colored lenses or colored contact lenses ('circle lenses')",
         autoPoints: '1,3',
         note: '첫 위반은 1점, 그 이후로는 3점을 부과함'
       },
-      {    
+      {
         category: '복장 Dress',
         violation: '과도한 장신구 착용 Wearing excessive jewelry or accessories',
         autoPoints: '1,3',
@@ -833,16 +831,16 @@
         violation: '이성교제 규정 1회 위반 1st violation of dating regulation',
         autoPoints: '12-15',
         note: `2회 이상 적발된 경우 선도위원회 회부
-        In cases of two or more violations, the matter will be referred to the Disciplinary Committee.`
+In cases of two or more violations, the matter will be referred to the Disciplinary Committee.`
       },
       {
         category: '흡연 Smoking',
         violation: '담배 소지 또는 흡연 1차 적발 1st detection of possession or smoking of cigarettes',
         autoPoints: '12-15',
         note: `- 금연 및 이에 준한 교육에 의무적으로 참여하여야 함
-            Mandatory participation in anti-smoking or equivalent education
-            - 2회 이상 적발된 경우 선도위원회 회부
-            In cases of two or more violations, the matter will be referred to the Disciplinary Committee.`
+Mandatory participation in anti-smoking or equivalent education
+- 2회 이상 적발된 경우 선도위원회 회부
+In cases of two or more violations, the matter will be referred to the Disciplinary Committee.`
       }
     ];
 
@@ -878,12 +876,14 @@
 
     function normalizeRoles(roles){
       if (Array.isArray(roles)) return roles.filter(Boolean);
+
       if (typeof roles === 'string') {
         return roles
           .split(/[|,]/)
           .map(v => String(v || '').trim().toLowerCase())
           .filter(Boolean);
       }
+
       return [];
     }
 
@@ -914,6 +914,78 @@
     function setStandardSaveStatus(text){
       const el = document.getElementById('standard-save-status');
       if (el) el.textContent = text;
+    }
+
+    function getSelectedStandard(){
+      const category = document.getElementById('category-select').value;
+      const violation = document.getElementById('violation-select').value;
+
+      return detentionStandards.find(x =>
+        String(x.category || '') === String(category || '') &&
+        String(x.violation || '') === String(violation || '')
+      ) || null;
+    }
+
+    function countSameDetention(studentKey, category, violation){
+      if (!studentKey) return 0;
+
+      return Object.values(entries || {}).filter(r => {
+        return String(r.studentKey || '') === String(studentKey) &&
+               String(r.category || '') === String(category || '') &&
+               String(r.violation || '') === String(violation || '') &&
+               String(r.status || '') !== '반려';
+      }).length;
+    }
+
+    function updateManualPointsMode(){
+      const manualInput = document.getElementById('manual-points');
+      const studentKey = selectedStudentKey || syncStudentSelectionWithoutUpdate();
+      const std = getSelectedStandard();
+
+      if (!manualInput || !std) {
+        manualInput.disabled = false;
+        manualInput.readOnly = false;
+        return;
+      }
+
+      const raw = String(std.autoPoints || '').trim();
+
+      if (raw.includes('-')) {
+        manualInput.disabled = false;
+        manualInput.readOnly = false;
+
+        if (manualInput.value === '0') {
+          manualInput.value = '';
+        }
+        return;
+      }
+
+      if (raw.includes(',')) {
+        const parts = raw.split(',').map(v => String(v).trim());
+        const firstPoint = Number(parts[0] || 0);
+        const repeatPoint = Number(parts[1] || 0);
+
+        const count = countSameDetention(
+          studentKey,
+          std.category || '',
+          std.violation || ''
+        );
+
+        manualInput.value = String(count === 0 ? firstPoint : repeatPoint);
+        manualInput.disabled = true;
+        manualInput.readOnly = true;
+        return;
+      }
+
+      if (!isNaN(Number(raw)) && raw !== '') {
+        manualInput.value = String(Number(raw));
+        manualInput.disabled = true;
+        manualInput.readOnly = true;
+        return;
+      }
+
+      manualInput.disabled = false;
+      manualInput.readOnly = false;
     }
 
     function init(){
@@ -951,6 +1023,7 @@
           .filter(Boolean);
 
         let visible = false;
+
         if (isMaster) visible = true;
         else visible = roles.some(role => hasRole(role));
 
@@ -1125,10 +1198,11 @@
     }
 
     function syncAutoPoints(){
-      const category = document.getElementById('category-select').value;
-      const violation = document.getElementById('violation-select').value;
-      const found = detentionStandards.find(x => x.category === category && x.violation === violation);
-      document.getElementById('auto-points').textContent = found ? String(found.autoPoints || '') : '-';
+      const std = getSelectedStandard();
+      document.getElementById('auto-points').textContent =
+        std ? String(std.autoPoints || '') : '-';
+
+      updateManualPointsMode();
     }
 
     function renderStudentOptions(){
@@ -1156,9 +1230,16 @@
         `).join('');
     }
 
+    function syncStudentSelectionWithoutUpdate(){
+      const inputValue = (document.getElementById('student-search-input').value || '').trim();
+      selectedStudentKey = studentSearchMap[inputValue] || '';
+      return selectedStudentKey;
+    }
+
     function syncStudentSelection(){
       const inputValue = (document.getElementById('student-search-input').value || '').trim();
       selectedStudentKey = studentSearchMap[inputValue] || '';
+      updateManualPointsMode();
       return selectedStudentKey;
     }
 
@@ -1227,6 +1308,7 @@
         renderStats();
         setupSelectors();
         renderViolationOptions();
+        updateManualPointsMode();
       }catch(e){
         console.error(e);
         toast('데이터를 불러오지 못했습니다.\nFailed to load data.', 'err');
@@ -1364,10 +1446,6 @@
       }
 
       const s = students[studentKey];
-      const totalPoints = autoPointsRaw && !isNaN(Number(autoPointsRaw))
-        ? Number(autoPointsRaw) + manualPoints
-        : manualPoints;
-
       const payload = {
         studentKey,
         studentName: s.name || '',
@@ -1377,7 +1455,7 @@
         violation,
         autoPoints: autoPointsRaw,
         manualPoints,
-        totalPoints,
+        totalPoints: manualPoints,
         memo,
         teacherName: teacher.name || '',
         teacherEmail: teacher.email || '',
@@ -1445,6 +1523,8 @@
       document.getElementById('category-select').selectedIndex = 0;
       renderViolationOptions();
       document.getElementById('manual-points').value = 0;
+      document.getElementById('manual-points').disabled = false;
+      document.getElementById('manual-points').readOnly = false;
       document.getElementById('memo').value = '';
     }
 
