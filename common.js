@@ -8,3 +8,7 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
+
+function uid(){
+  return db.ref().push().key;
+}

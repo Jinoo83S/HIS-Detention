@@ -1,21 +1,16 @@
 
-# HIS Detention v3
+HIS COMPLETE VERSION
 
-## NEW DB STRUCTURE
+기능:
+- 교사/학생 관리
+- 디텐션 입력
+- 상태 관리 (pending/confirmed)
+- 알림 기록
+- 회복교육 기록
 
+DB:
 teachers/{id}
 students/{id}
 entries/{id}
-
-## CSV FORMAT
-
-Teachers:
-name,email,password
-
-Students:
-name
-
-## 특징
-- overwrite 없음
-- ID 기반 구조
-- 안정적
+notices/{studentId}
+recovery/{id}

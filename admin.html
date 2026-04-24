@@ -1,39 +1,42 @@
 
 <!DOCTYPE html>
 <html>
-<head>
-<meta charset="UTF-8">
-<title>Admin</title>
-</head>
+<head><meta charset="UTF-8"><title>Admin</title></head>
 <body>
 
-<h2>CSV Upload</h2>
+<h2>관리자 페이지</h2>
 
-<input type="file" id="file">
-<button onclick="upload()">Upload</button>
+<h3>교사 추가</h3>
+<input id="t_name" placeholder="name">
+<input id="t_email" placeholder="email">
+<input id="t_pw" placeholder="password">
+<button onclick="addTeacher()">추가</button>
+
+<h3>학생 추가</h3>
+<input id="s_name" placeholder="name">
+<button onclick="addStudent()">추가</button>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+
 <script src="common.js"></script>
+<script src="admin.js"></script>
 
 <script>
-async function upload(){
-  const f = file.files[0];
-  const text = await f.text();
+async function addTeacher(){
+  await saveTeacher({
+    name:t_name.value,
+    email:t_email.value,
+    password:t_pw.value
+  });
+  alert("완료");
+}
 
-  const rows = text.split("\n").slice(1);
-
-  for(const r of rows){
-    const [name,email,password] = r.split(",");
-
-    const id = db.ref().child("teachers").push().key;
-
-    await db.ref("teachers/"+id).set({
-      id,name,email,password
-    });
-  }
-
-  alert("done");
+async function addStudent(){
+  await saveStudent({
+    name:s_name.value
+  });
+  alert("완료");
 }
 </script>
 
