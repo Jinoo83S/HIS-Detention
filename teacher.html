@@ -1,30 +1,43 @@
 
 <!DOCTYPE html>
 <html>
-<head><meta charset="UTF-8"><title>Teacher</title></head>
+<head>
+<meta charset="UTF-8">
+<title>Teacher</title>
+<style>
+body{font-family:sans-serif;background:#f5f7fb;padding:20px;}
+.card{background:#fff;padding:15px;border-radius:10px;margin-bottom:15px;}
+</style>
+</head>
 <body>
 
-<h2>디텐션 입력</h2>
-
+<div class="card">
+<h3>디텐션 입력</h3>
 <select id="student"></select>
-<input id="points" type="number">
+<input id="points" type="number" placeholder="점수">
 <button onclick="save()">저장</button>
+</div>
 
-<hr>
+<div class="card">
+<h3>기록</h3>
 <div id="list"></div>
+</div>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 
 <script src="common.js"></script>
+<script src="db.js"></script>
 <script src="teacher.js"></script>
 
 <script>
-let students={}, entries={};
+let students = {};
+let entries = {};
+const teacher = {name:"teacher"};
 
 async function load(){
-  students = (await db.ref("students").once("value")).val()||{};
-  entries = (await db.ref("entries").once("value")).val()||{};
+  students = (await DB.students().once("value")).val()||{};
+  entries = (await DB.entries().once("value")).val()||{};
   render();
 }
 
@@ -41,12 +54,7 @@ async function save(){
   const pts = Number(points.value);
   const s = students[sid];
 
-  await addEntry({
-    studentId:sid,
-    studentName:s.name,
-    points:pts
-  });
-
+  await createEntry(s, pts, teacher);
   load();
 }
 

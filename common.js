@@ -12,3 +12,7 @@ const db = firebase.database();
 function uid(){
   return db.ref().push().key;
 }
+
+function now(){
+  return new Date().toISOString();
+}

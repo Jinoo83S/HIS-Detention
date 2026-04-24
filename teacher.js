@@ -1,32 +1,39 @@
 
-async function addEntry(data){
+async function createEntry(student, points, teacher){
   const id = uid();
-  await db.ref("entries/"+id).set({
+
+  await DB.entries().child(id).set({
     id,
-    ...data,
-    status:"pending",
-    createdAt:new Date().toISOString()
+    studentId: student.id,
+    studentName: student.name,
+    className: student.className,
+    points,
+    teacherName: teacher.name,
+    status: "pending",
+    createdAt: now()
   });
 }
 
 async function confirmEntry(id){
-  await db.ref("entries/"+id).update({
-    status:"confirmed",
-    confirmedAt:new Date().toISOString()
+  await DB.entries().child(id).update({
+    status: "confirmed",
+    confirmedAt: now()
   });
 }
 
 async function sendNotice(studentId){
-  await db.ref("notices/"+studentId).update({
-    lastSent:new Date().toISOString()
+  await DB.notices().child(studentId).update({
+    lastSentAt: now()
   });
 }
 
 async function completeRecovery(studentId, points){
   const id = uid();
-  await db.ref("recovery/"+id).set({
+
+  await DB.recovery().child(id).set({
+    id,
     studentId,
     points,
-    createdAt:new Date().toISOString()
+    createdAt: now()
   });
 }

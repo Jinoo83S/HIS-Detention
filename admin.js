@@ -1,10 +1,18 @@
 
-async function saveTeacher(t){
-  const id = t.id || uid();
-  await db.ref("teachers/"+id).update(t);
+async function saveTeacher(data){
+  const id = data.id || uid();
+
+  await DB.teachers().child(id).update({
+    ...data,
+    updatedAt: now()
+  });
 }
 
-async function saveStudent(s){
-  const id = s.id || uid();
-  await db.ref("students/"+id).update(s);
+async function saveStudent(data){
+  const id = data.id || uid();
+
+  await DB.students().child(id).update({
+    ...data,
+    updatedAt: now()
+  });
 }
