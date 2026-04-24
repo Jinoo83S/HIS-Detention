@@ -279,14 +279,14 @@
         document.getElementById('admin-pw').value = '';
         return toast('비밀번호가 올바르지 않습니다.\nInvalid password.', 'err');
       }
-      sessionStorage.setItem('his_admin_session', '1');
+      localStorage.setItem('his_admin_session', '1');
       document.getElementById('login-screen').classList.add('hidden');
       document.getElementById('admin-screen').classList.remove('hidden');
       refreshAll();
     }
 
     function adminLogout() {
-      sessionStorage.removeItem('his_admin_session');
+      localStorage.removeItem('his_admin_session');
       document.getElementById('login-screen').classList.remove('hidden');
       document.getElementById('admin-screen').classList.add('hidden');
       document.getElementById('admin-pw').value = '';
@@ -642,6 +642,19 @@
       toast('교사 데이터 붙여넣기 완료', 'ok');
       renderTeachers();
     }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const isLoggedIn = localStorag.getItem('his_admin_session');
+
+      if (isLoggedIn === '1') {
+        document.getElementById('login-screen').classList.add('hidden');
+        document.getElementById('admin-screen').classList.remove('hidden');
+        refreshAll(); // 데이터 다시 불러오기
+      } else {
+        document.getElementById('login-screen').classList.remove('hidden');
+        document.getElementById('admin-screen').classList.add('hidden');
+      }
+    });
 
   </script>
 </body>
