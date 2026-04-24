@@ -140,6 +140,25 @@
       </div>
 
       <div id="tab-csv" class="tab-panel">
+
+        <div class="card">
+          <div class="card-title">엑셀 붙여넣기 | Paste from Excel</div>
+
+          <div class="notice">
+            엑셀에서 복사 후 아래에 붙여넣고 버튼을 눌러주세요.<br>
+            Paste data copied from Excel below.
+          </div>
+
+          <textarea id="excel-paste" class="edit-input" style="min-height:120px"
+            placeholder="name,englishName,className,selfEmail,fatherEmail,motherEmail"></textarea>
+
+          <div class="inline-actions" style="margin-top:10px">
+            <button class="btn btn-primary" onclick="pasteStudents()">학생 붙여넣기</button>
+            <button class="btn btn-secondary" onclick="pasteTeachers()">교사 붙여넣기</button>
+          </div>
+        </div> 
+
+
         <div class="card">
           <div class="card-title">학생 명단 CSV 업로드 | Student CSV Upload</div>
           <div class="notice">CSV 첫 줄 | Header: name,englishName,className,selfEmail,fatherEmail,motherEmail</div>
@@ -573,6 +592,57 @@
       btn.classList.add('active');
       document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
     });
+
+    function parseExcelText(text) {
+      return text.trim().split('\n').map(line =>
+        line.split('\t').map(v => v.trim())
+      );
+    }
+
+    function pasteStudents() {
+      const text = document.getElementById('excel-paste').value;
+      if (!text) return toast('붙여넣기 데이터가 없습니다.', 'err');
+
+      const rows = parseExcelText(text);
+
+      studentRows = rows.map(cols => ({
+        oldKey: '',
+        name: cols[0] || '',
+        englishName: cols[1] || '',
+        className: cols[2] || '',
+        selfEmail: cols[3] || '',
+        fatherEmail: cols[4] || '',
+        motherEmail: cols[5] || '',
+        homeroomTeacherEmail: getHomeroomTeacherEmail(cols[2] || ''),
+        _delete: false,
+        _status: '업로드됨'
+      }));
+
+      toast('학생 데이터 붙여넣기 완료', 'ok');
+      renderStudents();
+    }
+
+    function pasteTeachers() {
+      const text = document.getElementById('excel-paste').value;
+      if (!text) return toast('붙여넣기 데이터가 없습니다.', 'err');
+
+      const rows = parseExcelText(text);
+
+      teacherRows = rows.map(cols => ({
+        oldKey: '',
+        name: cols[0] || '',
+        email: (cols[1] || '').toLowerCase(),
+        password: cols[2] || '',
+        homeroom: cols[3] || '',
+        roles: normalizeRoles(cols[4] || ''),
+        _delete: false,
+        _status: '업로드됨'
+      }));
+
+      toast('교사 데이터 붙여넣기 완료', 'ok');
+      renderTeachers();
+    }
+
   </script>
 </body>
 </html>
