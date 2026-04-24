@@ -1,83 +1,79 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>디텐션 관리</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>디텐션 관리 (Teacher)</title>
 
-  <link rel="stylesheet" href="common.css">
+<link rel="stylesheet" href="common.css">
+
+<style>
+body{font-family:Arial;padding:20px}
+table{width:100%;border-collapse:collapse;margin-top:10px}
+th,td{border:1px solid #ccc;padding:8px;text-align:left}
+th{background:#f5f5f5}
+</style>
 </head>
 
 <body>
 
-<div id="toast"></div>
-
 <h2>디텐션 관리 (Teacher)</h2>
 
-<div>
-  <button onclick="loadData()">새로고침</button>
-  <button onclick="logoutTeacher()">로그아웃</button>
-</div>
+<button onclick="loadData()">새로고침</button>
+<button onclick="logoutTeacher()">로그아웃</button>
 
 <hr>
 
 <!-- 학생 선택 -->
-<div>
-  <input id="student-search-input" list="student-list" placeholder="학생 검색">
-  <datalist id="student-list"></datalist>
-</div>
+<input id="student-search-input" list="student-list" placeholder="학생 검색">
+<datalist id="student-list"></datalist>
 
 <!-- 카테고리 -->
-<div>
-  <select id="category-select"></select>
-  <select id="violation-select"></select>
-</div>
+<select id="category-select"></select>
+<select id="violation-select"></select>
 
-<!-- 점수 -->
-<div>
-  자동점수: <span id="auto-points">-</span>
-</div>
+<br><br>
 
-<div>
-  수동점수: <input id="manual-points" type="number" value="0">
-</div>
+자동점수: <span id="auto-points">-</span><br>
+수동점수: <input id="manual-points" type="number" value="0">
+
+<br><br>
+
+<textarea id="memo" placeholder="메모"></textarea>
+
+<br><br>
 
 <button onclick="saveDetention()">저장</button>
 
 <hr>
 
 <h3>전체 기록</h3>
-
-<table border="1">
-  <thead>
-    <tr>
-      <th>학생</th>
-      <th>위반</th>
-      <th>점수</th>
-      <th>상태</th>
-      <th>회복</th>
-    </tr>
-  </thead>
-  <tbody id="all-records-tbody"></tbody>
+<table>
+<thead>
+<tr>
+<th>학생</th>
+<th>위반</th>
+<th>점수</th>
+<th>상태</th>
+<th>회복</th>
+</tr>
+</thead>
+<tbody id="all-records-tbody"></tbody>
 </table>
 
 <hr>
 
-<h3>
-  디텐션 알림 
-  <button onclick="toggleCompleted()" id="toggle-btn">완료 숨기기</button>
-</h3>
-
-<table border="1">
-  <thead>
-    <tr>
-      <th>학생</th>
-      <th>점수</th>
-      <th>잔류</th>
-      <th>상태</th>
-    </tr>
-  </thead>
-  <tbody id="notice-tbody"></tbody>
+<h3>디텐션 알림</h3>
+<table>
+<thead>
+<tr>
+<th>학생</th>
+<th>점수</th>
+<th>잔류</th>
+<th>상태</th>
+</tr>
+</thead>
+<tbody id="notice-tbody"></tbody>
 </table>
 
 <!-- Firebase -->
@@ -89,232 +85,170 @@
 
 <script type="module">
 
-import { addDetention, checkCommittee } from './js/services/detentionEngine.js';
+import { addDetention } from './js/services/detentionEngine.js';
 import { completeRecovery } from './js/services/recoveryManager.js';
 
 const DETENTION_DB_PATH = 'detentionEntries';
-const DETENTION_STANDARD_PATH = 'detentionStandards';
+const STANDARD_PATH = 'detentionStandards';
+const NOTICE_PATH = 'detentionNotices';
 
-let detentionStandards = {};
 let students = {};
+let standards = {};
 let entries = {};
-let states = {};
 let notices = {};
-let studentSearchMap = {};
+let studentMap = {};
 let currentUser = null;
-let hideCompleted = false;
 
 // 초기화
 function init(){
   currentUser = requireTeacherSession();
-  if (!currentUser) return;
-
+  if(!currentUser) return;
   loadData();
 }
 
 // 데이터 로드
 async function loadData(){
 
-  const [studentSnap, entrySnap, standardSnap, stateSnap, noticeSnap] = await Promise.all([
+  const [sSnap,eSnap,stdSnap,nSnap] = await Promise.all([
     db.ref('students').once('value'),
     db.ref(DETENTION_DB_PATH).once('value'),
-    db.ref(DETENTION_STANDARD_PATH).once('value'),
-    db.ref('studentStates').once('value'),
-    db.ref('detentionNotices').once('value')
+    db.ref(STANDARD_PATH).once('value'),
+    db.ref(NOTICE_PATH).once('value')
   ]);
 
-  students = studentSnap.val() || {};
-  entries = entrySnap.val() || {};
-  detentionStandards = standardSnap.val() || {};
-  states = stateSnap.val() || {};
-  notices = noticeSnap.val() || {};
+  students = sSnap.val() || {};
+  entries = eSnap.val() || {};
+  notices = nSnap.val() || {};
 
-  renderStudentOptions();
-  renderCategoryOptions();
-  renderAllEntries();
-  renderNotices();
+  const raw = stdSnap.val() || {};
+  standards = raw;
+
+  renderStudentList();
+  renderCategory();
+  renderAll();
+  renderNotice();
 }
 
 // 학생 목록
-function renderStudentOptions(){
-  const dataList = document.getElementById('student-list');
-  studentSearchMap = {};
+function renderStudentList(){
+  const list = document.getElementById('student-list');
+  studentMap = {};
 
-  dataList.innerHTML = Object.entries(students).map(([key, s])=>{
+  list.innerHTML = Object.entries(students).map(([k,s])=>{
     const label = `${s.name}`;
-    studentSearchMap[label] = key;
+    studentMap[label] = k;
     return `<option value="${label}">`;
   }).join('');
 }
 
 // 카테고리
-function renderCategoryOptions(){
-  const categorySelect = document.getElementById('category-select');
+function renderCategory(){
+  const sel = document.getElementById('category-select');
+  const categories = [...new Set(Object.values(standards).map(s=>s.category))];
 
-  const categories = [...new Set(Object.values(detentionStandards).map(s => s.category))];
+  sel.innerHTML = categories.map(c=>`<option>${c}</option>`).join('');
 
-  categorySelect.innerHTML = categories.map(c=>`<option value="${c}">${c}</option>`).join('');
-
-  categorySelect.onchange = renderViolationOptions;
-  renderViolationOptions();
+  sel.onchange = renderViolation;
+  renderViolation();
 }
 
-// 위반 선택
-function renderViolationOptions(){
-  const category = document.getElementById('category-select').value;
-  const violationSelect = document.getElementById('violation-select');
+// 위반
+function renderViolation(){
+  const cat = document.getElementById('category-select').value;
+  const sel = document.getElementById('violation-select');
 
-  const filtered = Object.entries(detentionStandards)
-    .filter(([_, s]) => s.category === category);
+  const list = Object.entries(standards)
+    .filter(([k,v])=>v.category===cat);
 
-  violationSelect.innerHTML = filtered.map(([key, s]) =>
-    `<option value="${key}">${s.violation}</option>`
+  sel.innerHTML = list.map(([k,v])=>
+    `<option value="${k}">${v.violation}</option>`
   ).join('');
 
-  violationSelect.onchange = updateAutoPoints;
-  updateAutoPoints();
+  sel.onchange = updateAuto;
+  updateAuto();
 }
 
-// 자동 점수 표시
-function updateAutoPoints(){
-  const standardId = document.getElementById('violation-select').value;
-  const s = detentionStandards[standardId];
+// 자동점수
+function updateAuto(){
+  const id = document.getElementById('violation-select').value;
+  const s = standards[id];
+  if(!s) return;
 
   let text = "-";
 
-  if (!s) return;
-
-  if (s.type === "fixed") text = s.fixedPoints;
-  if (s.type === "range") text = `${s.range.min}~${s.range.max}`;
-  if (s.type === "progressive") text = `${s.progressive.first}/${s.progressive.repeat}`;
+  if(s.type==="fixed") text = s.fixedPoints;
+  if(s.type==="range") text = `${s.range.min}~${s.range.max}`;
+  if(s.type==="progressive") text = `${s.progressive.first}/${s.progressive.repeat}`;
 
   document.getElementById('auto-points').innerText = text;
-}
-
-// 전체 기록
-function renderAllEntries(){
-  const tb = document.getElementById('all-records-tbody');
-
-  tb.innerHTML = Object.values(entries).map(e=>{
-
-    const student = students[e.studentKey];
-    const standard = detentionStandards[e.standardId];
-    const state = states[e.studentKey] || {};
-
-    const studentName = student?.name || e.studentKey;
-    const violation = standard?.violation || e.standardId;
-
-    const committee = checkCommittee(state);
-
-    let status = "정상";
-
-    if (committee) status = committee;
-    else if ((state.cyclePoints || 0) >= 3) status = "디텐션";
-
-    return `
-      <tr>
-        <td>${studentName}</td>
-        <td>${violation}</td>
-        <td>${e.points}</td>
-        <td>${status}</td>
-        <td>
-          <button onclick="handleRecovery('${e.studentKey}')">
-            회복교육
-          </button>
-        </td>
-      </tr>
-    `;
-  }).join('');
-}
-
-// 🔥 알림 표시 (최종 UX)
-function renderNotices(){
-
-  const tb = document.getElementById('notice-tbody');
-
-  let list = Object.values(notices);
-
-  if (hideCompleted) {
-    list = list.filter(n => n.status !== 'completed');
-  }
-
-  list = list.sort((a, b) => a.status === 'active' ? -1 : 1);
-
-  tb.innerHTML = list.map(n=>{
-
-    const student = students[n.studentKey];
-    const name = student?.name || n.studentKey;
-
-    return `
-      <tr>
-        <td>${name}</td>
-        <td>${n.totalPoints}</td>
-        <td>${n.carryOverAfter}</td>
-
-        <td style="
-          color:${n.status === 'active' ? '#e53935' : '#757575'};
-          font-weight:bold;
-        ">
-          ${n.status === 'active' ? '🔴 진행중' : '⚪ 완료'}
-        </td>
-
-      </tr>
-    `;
-  }).join('');
-}
-
-// 🔥 완료 숨기기 토글
-function toggleCompleted(){
-  hideCompleted = !hideCompleted;
-  document.getElementById('toggle-btn').innerText = hideCompleted ? "전체 보기" : "완료 숨기기";
-  renderNotices();
 }
 
 // 저장
 async function saveDetention(){
 
   const name = document.getElementById('student-search-input').value;
-  const studentKey = studentSearchMap[name];
+  const studentKey = studentMap[name];
 
   if(!studentKey){
-    return alert('학생 선택');
+    return alert("학생 선택");
   }
 
   const standardId = document.getElementById('violation-select').value;
   const manualPoints = Number(document.getElementById('manual-points').value || 0);
 
-  try {
+  await addDetention({
+    studentKey,
+    standardId,
+    manualPoints,
+    teacher: currentUser.name
+  });
 
-    await addDetention({
-      studentKey,
-      standardId,
-      manualPoints,
-      teacher: currentUser.name
-    });
-
-    alert('저장 완료');
-
-    loadData();
-
-  } catch (e) {
-    console.error(e);
-    alert('저장 오류');
-  }
+  alert("저장 완료");
+  loadData();
 }
 
-// 회복교육
+// 전체 기록
+function renderAll(){
+  const tb = document.getElementById('all-records-tbody');
+
+  tb.innerHTML = Object.values(entries).map(e=>`
+    <tr>
+      <td>${e.studentKey}</td>
+      <td>${e.standardId}</td>
+      <td>${e.points}</td>
+      <td style="color:${e.status==='active'?'red':'gray'}">
+        ${e.status || '-'}
+      </td>
+      <td>
+        <button onclick="handleRecovery('${e.studentKey}')">
+          회복
+        </button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+// 알림
+function renderNotice(){
+  const tb = document.getElementById('notice-tbody');
+
+  tb.innerHTML = Object.values(notices).map(n=>`
+    <tr>
+      <td>${n.studentKey}</td>
+      <td>${n.totalPoints}</td>
+      <td>${n.carryOverAfter}</td>
+      <td style="color:${n.status==='active'?'red':'gray'}">
+        ${n.status}
+      </td>
+    </tr>
+  `).join('');
+}
+
+// 회복
 async function handleRecovery(studentKey){
-
-  try {
-    const result = await completeRecovery(studentKey);
-
-    alert(`회복교육 완료\n${result.before} → ${result.after}`);
-
-    loadData();
-
-  } catch(e){
-    alert(e.message);
-  }
+  const res = await completeRecovery(studentKey);
+  alert(`${res.before} → ${res.after}`);
+  loadData();
 }
 
 init();
