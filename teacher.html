@@ -42,11 +42,6 @@
   수동점수: <input id="manual-points" type="number" value="0">
 </div>
 
-<!-- 메모 -->
-<div>
-  <textarea id="memo" placeholder="메모"></textarea>
-</div>
-
 <button onclick="saveDetention()">저장</button>
 
 <hr>
@@ -59,6 +54,7 @@
       <th>학생</th>
       <th>위반</th>
       <th>점수</th>
+      <th>상태</th>
       <th>회복</th>
     </tr>
   </thead>
@@ -74,7 +70,7 @@
 
 <script type="module">
 
-import { addDetention } from './js/services/detentionEngine.js';
+import { addDetention, checkCommittee } from './js/services/detentionEngine.js';
 import { completeRecovery } from './js/services/recoveryManager.js';
 
 const DETENTION_DB_PATH = 'detentionEntries';
@@ -83,6 +79,7 @@ const DETENTION_STANDARD_PATH = 'detentionStandards';
 let detentionStandards = {};
 let students = {};
 let entries = {};
+let states = {};
 let studentSearchMap = {};
 let currentUser = null;
 
@@ -96,15 +93,18 @@ function init(){
 
 // 데이터 로드
 async function loadData(){
-  const [studentSnap, entrySnap, standardSnap] = await Promise.all([
+
+  const [studentSnap, entrySnap, standardSnap, stateSnap] = await Promise.all([
     db.ref('students').once('value'),
     db.ref(DETENTION_DB_PATH).once('value'),
-    db.ref(DETENTION_STANDARD_PATH).once('value')
+    db.ref(DETENTION_STANDARD_PATH).once('value'),
+    db.ref('studentStates').once('value')
   ]);
 
   students = studentSnap.val() || {};
   entries = entrySnap.val() || {};
   detentionStandards = standardSnap.val() || {};
+  states = stateSnap.val() || {};
 
   renderStudentOptions();
   renderCategoryOptions();
@@ -167,22 +167,43 @@ function updateAutoPoints(){
   document.getElementById('auto-points').innerText = text;
 }
 
-// 전체 기록
+// 🔥 핵심: 상태 표시 + 이름 표시 + 위원회 표시
 function renderAllEntries(){
   const tb = document.getElementById('all-records-tbody');
 
-  tb.innerHTML = Object.values(entries).map(e=>`
-    <tr>
-      <td>${e.studentKey}</td>
-      <td>${e.standardId}</td>
-      <td>${e.points}</td>
-      <td>
-        <button onclick="handleRecovery('${e.studentKey}')">
-          회복교육
-        </button>
-      </td>
-    </tr>
-  `).join('');
+  tb.innerHTML = Object.values(entries).map(e=>{
+
+    const student = students[e.studentKey];
+    const standard = detentionStandards[e.standardId];
+    const state = states[e.studentKey] || {};
+
+    const studentName = student ? student.name : e.studentKey;
+    const violation = standard ? standard.violation : e.standardId;
+
+    const committee = checkCommittee(state);
+
+    let status = "정상";
+
+    if (committee) {
+      status = committee;
+    } else if ((state.cyclePoints || 0) >= 3) {
+      status = "디텐션";
+    }
+
+    return `
+      <tr>
+        <td>${studentName}</td>
+        <td>${violation}</td>
+        <td>${e.points}</td>
+        <td>${status}</td>
+        <td>
+          <button onclick="handleRecovery('${e.studentKey}')">
+            회복교육
+          </button>
+        </td>
+      </tr>
+    `;
+  }).join('');
 }
 
 // 저장

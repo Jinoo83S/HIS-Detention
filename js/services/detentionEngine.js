@@ -1,9 +1,12 @@
 // =============================
-// 디텐션 엔진 (핵심 로직)
+// 디텐션 엔진 (최종 완성)
 // =============================
 
-// 점수 계산
-function calculatePoints(standard, studentKey, manualPoints) {
+// =============================
+// 점수 계산 (🔥 progressive 포함)
+// =============================
+async function calculatePoints(standard, studentKey, standardId, manualPoints) {
+
   if (!standard) return 0;
 
   // fixed
@@ -16,18 +19,39 @@ function calculatePoints(standard, studentKey, manualPoints) {
     return Number(manualPoints || 0);
   }
 
-  // progressive (첫 위반 vs 반복)
+  // =============================
+  // progressive (🔥 핵심)
+  // =============================
   if (standard.type === "progressive") {
-    // TODO: 실제로는 과거 기록 조회해야 정확함
-    // 지금은 단순화 (첫 위반 기준)
-    return Number(standard.progressive?.first || 1);
+
+    const snap = await db.ref('detentionEntries')
+      .orderByChild('studentKey')
+      .equalTo(studentKey)
+      .once('value');
+
+    let count = 0;
+
+    snap.forEach(child => {
+      const e = child.val();
+      if (e.standardId === standardId) {
+        count++;
+      }
+    });
+
+    // 첫 위반 vs 반복 위반
+    if (count === 0) {
+      return Number(standard.progressive?.first || 1);
+    } else {
+      return Number(standard.progressive?.repeat || 3);
+    }
   }
 
   return 0;
 }
 
+
 // =============================
-// 디텐션 추가
+// 디텐션 추가 (핵심)
 // =============================
 export async function addDetention({
   studentKey,
@@ -54,8 +78,13 @@ export async function addDetention({
     totalAccumulated: 0
   };
 
-  // 점수 계산
-  const points = calculatePoints(standard, studentKey, manualPoints);
+  // 🔥 점수 계산 (await 필수)
+  const points = await calculatePoints(
+    standard,
+    studentKey,
+    standardId,
+    manualPoints
+  );
 
   // 상태 반영
   state.cyclePoints += points;
@@ -104,6 +133,7 @@ export async function addDetention({
   return { state, cycle };
 }
 
+
 // =============================
 // 위원회 판단
 // =============================
@@ -111,11 +141,13 @@ export function checkCommittee(state) {
 
   if (!state) return null;
 
-  if (state.cyclePoints >= 12) {
+  // 🔥 현재 진행 점수 기준
+  if ((state.cyclePoints || 0) >= 12) {
     return "생활교육위원회";
   }
 
-  if (state.totalAccumulated >= 30) {
+  // 🔥 전체 누적 기준
+  if ((state.totalAccumulated || 0) >= 30) {
     return "선도위원회";
   }
 
