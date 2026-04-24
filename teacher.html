@@ -51,61 +51,45 @@
 
 <hr>
 
-<h3>최근 기록</h3>
-<div id="recent-entry-list"></div>
-
-<hr>
-
-<h3>기준표</h3>
-<table border="1">
-  <thead>
-    <tr>
-      <th>구분</th>
-      <th>위반</th>
-      <th>점수</th>
-    </tr>
-  </thead>
-  <tbody id="criteria-tbody"></tbody>
-</table>
-
-<hr>
-
 <h3>전체 기록</h3>
+
 <table border="1">
   <thead>
     <tr>
       <th>학생</th>
       <th>위반</th>
       <th>점수</th>
-      <th>상태</th>
+      <th>회복</th>
     </tr>
   </thead>
   <tbody id="all-records-tbody"></tbody>
 </table>
 
-<!-- 🔥 Firebase -->
+<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 
-<!-- 🔥 반드시 이 순서 -->
 <script src="js/firebase.js"></script>
 <script src="js/common.js"></script>
 
-<script>
+<script type="module">
+
+import { addDetention } from './js/services/detentionEngine.js';
+import { completeRecovery } from './js/services/recoveryManager.js';
 
 const DETENTION_DB_PATH = 'detentionEntries';
 const DETENTION_STANDARD_PATH = 'detentionStandards';
 
-let detentionStandards = [];
+let detentionStandards = {};
 let students = {};
 let entries = {};
-let selectedStudentKey = '';
 let studentSearchMap = {};
+let currentUser = null;
 
 // 초기화
 function init(){
-  const teacher = requireTeacherSession();
-  if (!teacher) return;
+  currentUser = requireTeacherSession();
+  if (!currentUser) return;
 
   loadData();
 }
@@ -120,10 +104,10 @@ async function loadData(){
 
   students = studentSnap.val() || {};
   entries = entrySnap.val() || {};
-  detentionStandards = standardSnap.val() || [];
+  detentionStandards = standardSnap.val() || {};
 
   renderStudentOptions();
-  renderCriteriaTable();
+  renderCategoryOptions();
   renderAllEntries();
 }
 
@@ -139,17 +123,48 @@ function renderStudentOptions(){
   }).join('');
 }
 
-// 기준표
-function renderCriteriaTable(){
-  const tb = document.getElementById('criteria-tbody');
+// 카테고리
+function renderCategoryOptions(){
+  const categorySelect = document.getElementById('category-select');
 
-  tb.innerHTML = detentionStandards.map(s=>`
-    <tr>
-      <td>${s.category}</td>
-      <td>${s.violation}</td>
-      <td>${s.autoPoints}</td>
-    </tr>
-  `).join('');
+  const categories = [...new Set(Object.values(detentionStandards).map(s => s.category))];
+
+  categorySelect.innerHTML = categories.map(c=>`<option value="${c}">${c}</option>`).join('');
+
+  categorySelect.onchange = renderViolationOptions;
+  renderViolationOptions();
+}
+
+// 위반 선택
+function renderViolationOptions(){
+  const category = document.getElementById('category-select').value;
+  const violationSelect = document.getElementById('violation-select');
+
+  const filtered = Object.entries(detentionStandards)
+    .filter(([_, s]) => s.category === category);
+
+  violationSelect.innerHTML = filtered.map(([key, s]) =>
+    `<option value="${key}">${s.violation}</option>`
+  ).join('');
+
+  violationSelect.onchange = updateAutoPoints;
+  updateAutoPoints();
+}
+
+// 자동 점수 표시
+function updateAutoPoints(){
+  const standardId = document.getElementById('violation-select').value;
+  const s = detentionStandards[standardId];
+
+  let text = "-";
+
+  if (!s) return;
+
+  if (s.type === "fixed") text = s.fixedPoints;
+  if (s.type === "range") text = `${s.range.min}~${s.range.max}`;
+  if (s.type === "progressive") text = `${s.progressive.first}/${s.progressive.repeat}`;
+
+  document.getElementById('auto-points').innerText = text;
 }
 
 // 전체 기록
@@ -158,16 +173,21 @@ function renderAllEntries(){
 
   tb.innerHTML = Object.values(entries).map(e=>`
     <tr>
-      <td>${e.studentName}</td>
-      <td>${e.violation}</td>
-      <td>${e.totalPoints}</td>
-      <td>${e.status}</td>
+      <td>${e.studentKey}</td>
+      <td>${e.standardId}</td>
+      <td>${e.points}</td>
+      <td>
+        <button onclick="handleRecovery('${e.studentKey}')">
+          회복교육
+        </button>
+      </td>
     </tr>
   `).join('');
 }
 
 // 저장
 async function saveDetention(){
+
   const name = document.getElementById('student-search-input').value;
   const studentKey = studentSearchMap[name];
 
@@ -175,20 +195,41 @@ async function saveDetention(){
     return alert('학생 선택');
   }
 
-  const payload = {
-    studentKey,
-    studentName: name,
-    violation: document.getElementById('violation-select').value,
-    totalPoints: Number(document.getElementById('manual-points').value),
-    memo: document.getElementById('memo').value,
-    status: '임시저장',
-    createdAt: new Date().toISOString()
-  };
+  const standardId = document.getElementById('violation-select').value;
+  const manualPoints = Number(document.getElementById('manual-points').value || 0);
 
-  await db.ref(DETENTION_DB_PATH).push(payload);
+  try {
 
-  alert('저장 완료');
-  loadData();
+    await addDetention({
+      studentKey,
+      standardId,
+      manualPoints,
+      teacher: currentUser.name
+    });
+
+    alert('저장 완료');
+
+    loadData();
+
+  } catch (e) {
+    console.error(e);
+    alert('저장 오류');
+  }
+}
+
+// 회복교육
+async function handleRecovery(studentKey){
+
+  try {
+    const result = await completeRecovery(studentKey);
+
+    alert(`회복교육 완료\n${result.before} → ${result.after}`);
+
+    loadData();
+
+  } catch(e){
+    alert(e.message);
+  }
 }
 
 init();
