@@ -517,7 +517,7 @@
                 <th class="nowrap">현재 누적점수<span class="th-en">Current Total</span></th>
                 <th class="nowrap">전체 누적점수<span class="th-en">Overall Total</span></th>
                 <th>위반 행위<span class="th-en">Violations</span></th>
-                <th class="nowrap">누적 회복 완료<span class="th-en">Completed Recovery</span></th>
+                <th class="nowrap">필요 교육 횟수<span class="th-en">Required Sessions</span></th>
                 <th class="nowrap">처리<span class="th-en">Action</span></th>
               </tr>
             </thead>
@@ -571,7 +571,7 @@
                 <th class="nowrap">현재 누적점수<span class="th-en">Current Total</span></th>
                 <th class="nowrap">전체 누적점수<span class="th-en">Overall Total</span></th>
                 <th>위반 행위<span class="th-en">Violations</span></th>
-                <th class="nowrap">누적 회복 완료<span class="th-en">Completed Recovery</span></th>
+                <th class="nowrap">필요 교육 횟수<span class="th-en">Required Sessions</span></th>
                 <th class="nowrap">처리<span class="th-en">Action</span></th>
               </tr>
             </thead>
@@ -1509,13 +1509,13 @@ When a student completes an entire assignment or translates it using AI, despite
                 <div class="notice-actions">
                   <button class="btn btn-secondary" onclick="sendParentMail('${esc(s.key)}','${level}')">메일 보내기</button>
                 </div>
-                <div class="small-muted">${(s.isPendingCycle ? '-' : fmt(s.notice.parentMailAt))}</div>
+                <div class="small-muted">${s.notice.parentMailAt ? fmt(s.notice.parentMailAt) : '-'}</div>
               </td>
               <td onclick="event.stopPropagation()">
                 <div class="notice-actions">
                   <button class="btn btn-secondary" onclick="sendStudentTeacherMail('${esc(s.key)}','${level}')">메일 보내기</button>
                 </div>
-                <div class="small-muted">${(s.isPendingCycle ? '-' : fmt(s.notice.studentTeacherMailAt))}</div>
+                <div class="small-muted">${s.notice.studentTeacherMailAt ? fmt(s.notice.studentTeacherMailAt) : '-'}</div>
               </td>
               <td onclick="event.stopPropagation()">
                 <div class="notice-actions">
@@ -1534,8 +1534,8 @@ When a student completes an entire assignment or translates it using AI, despite
                   <div class="detail-section">
                     <div class="detail-title">알림 상태 | Notice Status</div>
                     <div class="detail-content">최신 확정 시간: ${fmt(s.latestConfirmedAt)}
-학부모 메일: ${s.isPendingCycle ? '-' : fmt(s.notice.parentMailAt)}
-학생/교사 메일: ${s.isPendingCycle ? '-' : fmt(s.notice.studentTeacherMailAt)}
+학부모 메일: ${s.notice.parentMailAt ? fmt(s.notice.parentMailAt) : '-'}
+학생/교사 메일: ${s.notice.studentTeacherMailAt ? fmt(s.notice.studentTeacherMailAt) : '-'}
 완료 시간: ${s.cycleCompleted ? fmt(s.notice.completedAt) : '-'}
 이 사이클 완료 여부: ${s.cycleCompleted ? '완료' : '미완료'}</div>
                   </div>
@@ -1575,7 +1575,7 @@ When a student completes an entire assignment or translates it using AI, despite
               <td class="nowrap">${s.currentTotal}</td>
               <td class="nowrap">${s.overallTotal}</td>
               <td><span class="cell-reason-preview">${esc(buildReasonPreview(s.key))}</span></td>
-              <td class="nowrap">${s.completedRecoveryCount}회</td>
+              <td class="nowrap">${Math.ceil(s.currentTotal / 3)}회</td>
               <td class="nowrap" onclick="event.stopPropagation()">
                 <button class="btn btn-primary" onclick="completeRecovery('${esc(s.key)}','${level}')">회복교육 완료</button>
               </td>
@@ -1802,12 +1802,26 @@ for their restorative education.
       const subject = '[HIS - 학생부 : 디텐션 포인트 알림] [STL : Regarding detention point]';
       const body = buildParentMailBody(student);
       const latestConfirmedAt = getLatestConfirmedAt(studentKey);
-      const savePromise = db.ref(`${NOTICE_DB_PATH}/${noticeKey(studentKey, level)}`).update({
+      const nKey = noticeKey(studentKey, level);
+      const existing = noticeEntries[nKey] || {};
+
+      // 새 사이클 감지: referenceAt이 달라지면 이전 사이클 완료 데이터를 초기화
+      const isNewCycle = !!latestConfirmedAt && existing.referenceAt !== latestConfirmedAt;
+      const updates = {
         studentKey,
         level,
-        parentMailAt:new Date().toISOString(),
-        referenceAt:latestConfirmedAt
-      });
+        parentMailAt: new Date().toISOString(),
+        referenceAt: latestConfirmedAt
+      };
+      if (isNewCycle) {
+        // Firebase RTDB에서 null 값은 해당 필드 삭제
+        updates.completedAt = null;
+        updates.completedBy = null;
+        updates.completedByEmail = null;
+        updates.studentTeacherMailAt = null;
+      }
+
+      const savePromise = db.ref(`${NOTICE_DB_PATH}/${nKey}`).update(updates);
 
       try{
         const url = `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
@@ -1831,12 +1845,24 @@ for their restorative education.
       const subject = '[HIS - 학생부 : 디텐션 포인트 알림] [STL : Regarding detention point]';
       const body = buildStudentTeacherMailBody(student, level);
       const latestConfirmedAt = getLatestConfirmedAt(studentKey);
-      const savePromise = db.ref(`${NOTICE_DB_PATH}/${noticeKey(studentKey, level)}`).update({
+      const nKey = noticeKey(studentKey, level);
+      const existing = noticeEntries[nKey] || {};
+
+      const isNewCycle = !!latestConfirmedAt && existing.referenceAt !== latestConfirmedAt;
+      const updates = {
         studentKey,
         level,
-        studentTeacherMailAt:new Date().toISOString(),
-        referenceAt:latestConfirmedAt
-      });
+        studentTeacherMailAt: new Date().toISOString(),
+        referenceAt: latestConfirmedAt
+      };
+      if (isNewCycle) {
+        updates.completedAt = null;
+        updates.completedBy = null;
+        updates.completedByEmail = null;
+        updates.parentMailAt = null;
+      }
+
+      const savePromise = db.ref(`${NOTICE_DB_PATH}/${nKey}`).update(updates);
 
       try{
         const url = `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
