@@ -61,6 +61,22 @@
   <tbody id="all-records-tbody"></tbody>
 </table>
 
+<hr>
+
+<h3>디텐션 알림</h3>
+
+<table border="1">
+  <thead>
+    <tr>
+      <th>학생</th>
+      <th>점수</th>
+      <th>잔류</th>
+      <th>상태</th>
+    </tr>
+  </thead>
+  <tbody id="notice-tbody"></tbody>
+</table>
+
 <!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
@@ -80,6 +96,7 @@ let detentionStandards = {};
 let students = {};
 let entries = {};
 let states = {};
+let notices = {};
 let studentSearchMap = {};
 let currentUser = null;
 
@@ -94,21 +111,24 @@ function init(){
 // 데이터 로드
 async function loadData(){
 
-  const [studentSnap, entrySnap, standardSnap, stateSnap] = await Promise.all([
+  const [studentSnap, entrySnap, standardSnap, stateSnap, noticeSnap] = await Promise.all([
     db.ref('students').once('value'),
     db.ref(DETENTION_DB_PATH).once('value'),
     db.ref(DETENTION_STANDARD_PATH).once('value'),
-    db.ref('studentStates').once('value')
+    db.ref('studentStates').once('value'),
+    db.ref('detentionNotices').once('value')
   ]);
 
   students = studentSnap.val() || {};
   entries = entrySnap.val() || {};
   detentionStandards = standardSnap.val() || {};
   states = stateSnap.val() || {};
+  notices = noticeSnap.val() || {};
 
   renderStudentOptions();
   renderCategoryOptions();
   renderAllEntries();
+  renderNotices();
 }
 
 // 학생 목록
@@ -167,7 +187,7 @@ function updateAutoPoints(){
   document.getElementById('auto-points').innerText = text;
 }
 
-// 🔥 핵심: 상태 표시 + 이름 표시 + 위원회 표시
+// 전체 기록
 function renderAllEntries(){
   const tb = document.getElementById('all-records-tbody');
 
@@ -177,18 +197,15 @@ function renderAllEntries(){
     const standard = detentionStandards[e.standardId];
     const state = states[e.studentKey] || {};
 
-    const studentName = student ? student.name : e.studentKey;
-    const violation = standard ? standard.violation : e.standardId;
+    const studentName = student?.name || e.studentKey;
+    const violation = standard?.violation || e.standardId;
 
     const committee = checkCommittee(state);
 
     let status = "정상";
 
-    if (committee) {
-      status = committee;
-    } else if ((state.cyclePoints || 0) >= 3) {
-      status = "디텐션";
-    }
+    if (committee) status = committee;
+    else if ((state.cyclePoints || 0) >= 3) status = "디텐션";
 
     return `
       <tr>
@@ -201,6 +218,27 @@ function renderAllEntries(){
             회복교육
           </button>
         </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+// 🔥 알림 표시
+function renderNotices(){
+
+  const tb = document.getElementById('notice-tbody');
+
+  tb.innerHTML = Object.values(notices).map(n=>{
+
+    const student = students[n.studentKey];
+    const name = student?.name || n.studentKey;
+
+    return `
+      <tr>
+        <td>${name}</td>
+        <td>${n.totalPoints}</td>
+        <td>${n.carryOverAfter}</td>
+        <td>${n.status}</td>
       </tr>
     `;
   }).join('');
