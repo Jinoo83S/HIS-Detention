@@ -63,7 +63,10 @@
 
 <hr>
 
-<h3>디텐션 알림</h3>
+<h3>
+  디텐션 알림 
+  <button onclick="toggleCompleted()" id="toggle-btn">완료 숨기기</button>
+</h3>
 
 <table border="1">
   <thead>
@@ -99,6 +102,7 @@ let states = {};
 let notices = {};
 let studentSearchMap = {};
 let currentUser = null;
+let hideCompleted = false;
 
 // 초기화
 function init(){
@@ -223,12 +227,20 @@ function renderAllEntries(){
   }).join('');
 }
 
-// 🔥 알림 표시
+// 🔥 알림 표시 (최종 UX)
 function renderNotices(){
 
   const tb = document.getElementById('notice-tbody');
 
-  tb.innerHTML = Object.values(notices).map(n=>{
+  let list = Object.values(notices);
+
+  if (hideCompleted) {
+    list = list.filter(n => n.status !== 'completed');
+  }
+
+  list = list.sort((a, b) => a.status === 'active' ? -1 : 1);
+
+  tb.innerHTML = list.map(n=>{
 
     const student = students[n.studentKey];
     const name = student?.name || n.studentKey;
@@ -238,10 +250,24 @@ function renderNotices(){
         <td>${name}</td>
         <td>${n.totalPoints}</td>
         <td>${n.carryOverAfter}</td>
-        <td>${n.status}</td>
+
+        <td style="
+          color:${n.status === 'active' ? '#e53935' : '#757575'};
+          font-weight:bold;
+        ">
+          ${n.status === 'active' ? '🔴 진행중' : '⚪ 완료'}
+        </td>
+
       </tr>
     `;
   }).join('');
+}
+
+// 🔥 완료 숨기기 토글
+function toggleCompleted(){
+  hideCompleted = !hideCompleted;
+  document.getElementById('toggle-btn').innerText = hideCompleted ? "전체 보기" : "완료 숨기기";
+  renderNotices();
 }
 
 // 저장
