@@ -140,6 +140,7 @@
       </div>
 
       <div id="tab-csv" class="tab-panel">
+        <!-- 학생 CSV 업로드 -->
         <div class="card">
           <div class="card-title">학생 명단 CSV 업로드 | Student CSV Upload</div>
           <div class="notice">CSV 첫 줄 | Header: name,englishName,className,selfEmail,fatherEmail,motherEmail</div>
@@ -158,6 +159,29 @@
           <div id="student-upload-msg" class="small"></div>
         </div>
 
+        <!-- 학생 엑셀 붙여넣기 -->
+        <div class="card">
+          <div class="card-title">학생 명단 엑셀 붙여넣기 | Student Excel Paste</div>
+          <div class="notice">
+            엑셀에서 복사(Ctrl+C) 후 아래에 붙여넣기(Ctrl+V) 하세요.<br>
+            열 순서 | Column order: <strong>이름 · 영문명 · 학반 · 본인이메일 · 부이메일 · 모이메일</strong><br>
+            Copy from Excel (Ctrl+C) and paste below (Ctrl+V).<br>
+            Columns: name · englishName · className · selfEmail · fatherEmail · motherEmail
+          </div>
+          <textarea id="student-paste-area" class="edit-input" rows="6"
+            placeholder="여기에 엑셀 데이터를 붙여넣으세요. (헤더 행 포함 가능)&#10;Paste Excel data here. (Header row optional)"
+            style="font-family:monospace;font-size:12px;resize:vertical;"></textarea>
+          <div class="filter-bar" style="margin-top:8px;">
+            <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+              <input type="checkbox" id="student-paste-has-header" checked> 첫 행을 헤더로 처리 | First row is header
+            </label>
+            <button class="btn btn-primary" onclick="pasteStudents()">붙여넣기 적용 | Apply Paste</button>
+            <button class="btn btn-secondary" onclick="document.getElementById('student-paste-area').value=''">지우기 | Clear</button>
+          </div>
+          <div id="student-paste-msg" class="small"></div>
+        </div>
+
+        <!-- 교사 CSV 업로드 -->
         <div class="card">
           <div class="card-title">교사 계정 CSV 업로드 | Teacher CSV Upload</div>
           <div class="notice">CSV 첫 줄 | Header: name,email,password,homeroom,roles</div>
@@ -171,6 +195,27 @@
             <button class="btn btn-primary" onclick="uploadTeachersCsv()">업로드 | Upload</button>
           </div>
           <div id="teacher-upload-msg" class="small"></div>
+        </div>
+
+        <!-- 교사 엑셀 붙여넣기 -->
+        <div class="card">
+          <div class="card-title">교사 계정 엑셀 붙여넣기 | Teacher Excel Paste</div>
+          <div class="notice">
+            엑셀에서 복사(Ctrl+C) 후 아래에 붙여넣기(Ctrl+V) 하세요.<br>
+            열 순서 | Column order: <strong>이름 · 이메일 · 비밀번호 · 담당학반 · 권한</strong><br>
+            Columns: name · email · password · homeroom · roles
+          </div>
+          <textarea id="teacher-paste-area" class="edit-input" rows="6"
+            placeholder="여기에 엑셀 데이터를 붙여넣으세요. (헤더 행 포함 가능)&#10;Paste Excel data here. (Header row optional)"
+            style="font-family:monospace;font-size:12px;resize:vertical;"></textarea>
+          <div class="filter-bar" style="margin-top:8px;">
+            <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+              <input type="checkbox" id="teacher-paste-has-header" checked> 첫 행을 헤더로 처리 | First row is header
+            </label>
+            <button class="btn btn-primary" onclick="pasteTeachers()">붙여넣기 적용 | Apply Paste</button>
+            <button class="btn btn-secondary" onclick="document.getElementById('teacher-paste-area').value=''">지우기 | Clear</button>
+          </div>
+          <div id="teacher-paste-msg" class="small"></div>
         </div>
       </div>
     </div>
@@ -573,6 +618,123 @@
       btn.classList.add('active');
       document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
     });
+
+    /**
+     * 엑셀 붙여넣기 파싱 (TSV: 탭 구분)
+     * 엑셀 복사 데이터는 탭(\t)으로 열, 줄바꿈(\n)으로 행 구분
+     */
+    function parseTsv(text) {
+      return text
+        .replace(/\r\n/g, '\n').replace(/\r/g, '\n')
+        .split('\n')
+        .map(line => line.split('\t').map(v => v.trim()))
+        .filter(cols => cols.some(v => v !== ''));
+    }
+
+    function switchToTab(tabName) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      const btn = document.querySelector(`.tab-btn[data-tab="${tabName}"]`);
+      if (btn) btn.classList.add('active');
+      const panel = document.getElementById('tab-' + tabName);
+      if (panel) panel.classList.add('active');
+    }
+
+    function pasteStudents() {
+      const raw = (document.getElementById('student-paste-area').value || '').trim();
+      const msg = document.getElementById('student-paste-msg');
+      if (!raw) { msg.textContent = '붙여넣기 데이터가 없습니다. | No paste data.'; return; }
+
+      const rows = parseTsv(raw);
+      const hasHeader = document.getElementById('student-paste-has-header').checked;
+      const dataRows = hasHeader ? rows.slice(1) : rows;
+
+      // 열 순서: name, englishName, className, selfEmail, fatherEmail, motherEmail
+      const COLS = ['name', 'englishName', 'className', 'selfEmail', 'fatherEmail', 'motherEmail'];
+
+      const loaded = dataRows
+        .map(cols => {
+          const obj = {};
+          COLS.forEach((key, i) => { obj[key] = cols[i] || ''; });
+          return obj;
+        })
+        .filter(r => r.name); // 이름 없는 행 제외
+
+      if (!loaded.length) {
+        msg.textContent = '유효한 데이터가 없습니다. | No valid data found.';
+        return;
+      }
+
+      studentRows = loaded.map(r => ({
+        oldKey: '',
+        name: r.name,
+        englishName: r.englishName,
+        className: r.className,
+        selfEmail: r.selfEmail,
+        fatherEmail: r.fatherEmail,
+        motherEmail: r.motherEmail,
+        homeroomTeacherEmail: getHomeroomTeacherEmail(r.className),
+        _delete: false,
+        _status: '업로드됨'
+      }));
+
+      msg.textContent = `✅ ${studentRows.length}명의 학생 데이터를 불러왔습니다. | Loaded ${studentRows.length} student rows.`;
+      toast('붙여넣기 완료\nPaste applied.', 'ok');
+      switchToTab('students');
+      renderStudents();
+    }
+
+    function pasteTeachers() {
+      const raw = (document.getElementById('teacher-paste-area').value || '').trim();
+      const msg = document.getElementById('teacher-paste-msg');
+      if (!raw) { msg.textContent = '붙여넣기 데이터가 없습니다. | No paste data.'; return; }
+
+      const rows = parseTsv(raw);
+      const hasHeader = document.getElementById('teacher-paste-has-header').checked;
+      const dataRows = hasHeader ? rows.slice(1) : rows;
+
+      // 열 순서: name, email, password, homeroom, roles
+      const COLS = ['name', 'email', 'password', 'homeroom', 'roles'];
+
+      const loaded = dataRows
+        .map(cols => {
+          const obj = {};
+          COLS.forEach((key, i) => { obj[key] = cols[i] || ''; });
+          return obj;
+        })
+        .filter(r => r.name);
+
+      if (!loaded.length) {
+        msg.textContent = '유효한 데이터가 없습니다. | No valid data found.';
+        return;
+      }
+
+      teacherRows = loaded.map(r => ({
+        oldKey: '',
+        name: r.name,
+        email: String(r.email).toLowerCase(),
+        password: r.password,
+        homeroom: r.homeroom,
+        roles: normalizeRoles(r.roles),
+        _delete: false,
+        _status: '업로드됨'
+      }));
+
+      msg.textContent = `✅ ${teacherRows.length}명의 교사 데이터를 불러왔습니다. | Loaded ${teacherRows.length} teacher rows.`;
+      toast('붙여넣기 완료\nPaste applied.', 'ok');
+      switchToTab('teachers');
+      renderTeachers();
+      renderStudents();
+    }
+
+    // 페이지 로드 시 세션 자동 복원 (새로고침해도 로그아웃 안됨)
+    (function initAdminSession() {
+      if (sessionStorage.getItem('his_admin_session')) {
+        document.getElementById('login-screen').classList.add('hidden');
+        document.getElementById('admin-screen').classList.remove('hidden');
+        refreshAll();
+      }
+    })();
   </script>
 </body>
 </html>
