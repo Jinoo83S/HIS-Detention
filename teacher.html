@@ -829,6 +829,16 @@ When a student completes an entire assignment or translates it using AI, despite
           const cycleCompleted = !!notice.completedAt && String(notice.referenceAt || '') === String(latestConfirmedAt || '');
           const isPendingCycle = !!latestConfirmedAt && !cycleCompleted;
 
+          // 현재 사이클(referenceAt 일치)에서만 타임스탬프 표시
+          // 새 사이클이 시작됐는데 아직 메일을 보내지 않은 경우 이전 타임스탬프 숨김
+          const isCurrentCycleNotice = String(notice.referenceAt || '') === String(latestConfirmedAt || '');
+          const displayNotice = isCurrentCycleNotice ? notice : {
+            ...notice,
+            parentMailAt: null,
+            studentTeacherMailAt: null,
+            completedAt: null
+          };
+
           return {
             ...s,
             currentTotal,
@@ -837,7 +847,7 @@ When a student completes an entire assignment or translates it using AI, despite
             latestEntry,
             latestConfirmedAt,
             noticeKey: nKey,
-            notice,
+            notice: displayNotice,
             cycleCompleted,
             isPendingCycle
           };
@@ -879,8 +889,8 @@ When a student completes an entire assignment or translates it using AI, despite
         })
         .filter(Boolean)
         .sort((a,b) => {
-          const aActive = a.currentTotal >= 3;
-          const bActive = b.currentTotal >= 3;
+          const aActive = a.currentTotal > 0;
+          const bActive = b.currentTotal > 0;
           if (aActive !== bActive) return aActive ? -1 : 1;
           const aTime = a.recoveryList[0]?.completedAt || a.notice?.completedAt || '';
           const bTime = b.recoveryList[0]?.completedAt || b.notice?.completedAt || '';
@@ -1559,7 +1569,7 @@ When a student completes an entire assignment or translates it using AI, despite
       const activeTb = document.getElementById(level === 'ms' ? 'recovery-ms-active-tbody' : 'recovery-hs-active-tbody');
       const doneTb = document.getElementById(level === 'ms' ? 'recovery-ms-done-tbody' : 'recovery-hs-done-tbody');
       const candidates = getRecoveryCandidates(level);
-      const activeList = candidates.filter(s => s.currentTotal >= 3);
+      const activeList = candidates.filter(s => s.currentTotal > 0);
       const historyList = getRecoveryHistoryRows(level);
 
       if (!activeList.length){
