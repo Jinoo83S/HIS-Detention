@@ -140,25 +140,6 @@
       </div>
 
       <div id="tab-csv" class="tab-panel">
-
-        <div class="card">
-          <div class="card-title">엑셀 붙여넣기 | Paste from Excel</div>
-
-          <div class="notice">
-            엑셀에서 복사 후 아래에 붙여넣고 버튼을 눌러주세요.<br>
-            Paste data copied from Excel below.
-          </div>
-
-          <textarea id="excel-paste" class="edit-input" style="min-height:120px"
-            placeholder="name,englishName,className,selfEmail,fatherEmail,motherEmail"></textarea>
-
-          <div class="inline-actions" style="margin-top:10px">
-            <button class="btn btn-primary" onclick="pasteStudents()">학생 붙여넣기</button>
-            <button class="btn btn-secondary" onclick="pasteTeachers()">교사 붙여넣기</button>
-          </div>
-        </div> 
-
-
         <div class="card">
           <div class="card-title">학생 명단 CSV 업로드 | Student CSV Upload</div>
           <div class="notice">CSV 첫 줄 | Header: name,englishName,className,selfEmail,fatherEmail,motherEmail</div>
@@ -279,14 +260,14 @@
         document.getElementById('admin-pw').value = '';
         return toast('비밀번호가 올바르지 않습니다.\nInvalid password.', 'err');
       }
-      localStorage.setItem('his_admin_session', '1');
+      sessionStorage.setItem('his_admin_session', '1');
       document.getElementById('login-screen').classList.add('hidden');
       document.getElementById('admin-screen').classList.remove('hidden');
       refreshAll();
     }
 
     function adminLogout() {
-      localStorage.removeItem('his_admin_session');
+      sessionStorage.removeItem('his_admin_session');
       document.getElementById('login-screen').classList.remove('hidden');
       document.getElementById('admin-screen').classList.add('hidden');
       document.getElementById('admin-pw').value = '';
@@ -592,70 +573,6 @@
       btn.classList.add('active');
       document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
     });
-
-    function parseExcelText(text) {
-      return text.trim().split('\n').map(line =>
-        line.split('\t').map(v => v.trim())
-      );
-    }
-
-    function pasteStudents() {
-      const text = document.getElementById('excel-paste').value;
-      if (!text) return toast('붙여넣기 데이터가 없습니다.', 'err');
-
-      const rows = parseExcelText(text);
-
-      studentRows = rows.map(cols => ({
-        oldKey: '',
-        name: cols[0] || '',
-        englishName: cols[1] || '',
-        className: cols[2] || '',
-        selfEmail: cols[3] || '',
-        fatherEmail: cols[4] || '',
-        motherEmail: cols[5] || '',
-        homeroomTeacherEmail: getHomeroomTeacherEmail(cols[2] || ''),
-        _delete: false,
-        _status: '업로드됨'
-      }));
-
-      toast('학생 데이터 붙여넣기 완료', 'ok');
-      renderStudents();
-    }
-
-    function pasteTeachers() {
-      const text = document.getElementById('excel-paste').value;
-      if (!text) return toast('붙여넣기 데이터가 없습니다.', 'err');
-
-      const rows = parseExcelText(text);
-
-      teacherRows = rows.map(cols => ({
-        oldKey: '',
-        name: cols[0] || '',
-        email: (cols[1] || '').toLowerCase(),
-        password: cols[2] || '',
-        homeroom: cols[3] || '',
-        roles: normalizeRoles(cols[4] || ''),
-        _delete: false,
-        _status: '업로드됨'
-      }));
-
-      toast('교사 데이터 붙여넣기 완료', 'ok');
-      renderTeachers();
-    }
-
-    window.addEventListener('DOMContentLoaded', () => {
-      const isLoggedIn = localStorag.getItem('his_admin_session');
-
-      if (isLoggedIn === '1') {
-        document.getElementById('login-screen').classList.add('hidden');
-        document.getElementById('admin-screen').classList.remove('hidden');
-        refreshAll(); // 데이터 다시 불러오기
-      } else {
-        document.getElementById('login-screen').classList.remove('hidden');
-        document.getElementById('admin-screen').classList.add('hidden');
-      }
-    });
-
   </script>
 </body>
 </html>
