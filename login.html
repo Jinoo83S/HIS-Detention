@@ -1,0 +1,41 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Teacher Login</title>
+</head>
+<body>
+
+<h2>Teacher Login</h2>
+
+<input id="email" placeholder="email">
+<input id="pw" type="password" placeholder="password">
+<button onclick="login()">Login</button>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="common.js"></script>
+
+<script>
+async function login(){
+  const email = emailInput.value.trim().toLowerCase();
+  const pw = pwInput.value.trim();
+
+  const snap = await db.ref("teachers").orderByChild("email").equalTo(email).once("value");
+
+  let found = null;
+  snap.forEach(s => found = s.val());
+
+  if(!found || found.password !== pw){
+    alert("login fail");
+    return;
+  }
+
+  sessionStorage.setItem("teacher", JSON.stringify(found));
+  location.href = "teacher.html";
+}
+</script>
+
+</body>
+</html>

@@ -1,5 +1,10 @@
 
-// 공통 개선
-function generateId(){
-  return Date.now().toString(36) + Math.random().toString(36).substr(2);
-}
+const firebaseConfig = {
+  apiKey: "YOUR_KEY",
+  authDomain: "YOUR_DOMAIN",
+  databaseURL: "YOUR_DB",
+  projectId: "YOUR_ID"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
