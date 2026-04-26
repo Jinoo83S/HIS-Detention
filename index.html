@@ -10,6 +10,53 @@
     rel="stylesheet"
   />
   <link rel="stylesheet" href="common.css" />
+
+  <style>
+    .admin-link {
+      position: fixed;
+      top: 14px;
+      right: 14px;
+      background: rgba(255, 255, 255, 0.2);
+      color: #fff;
+      padding: 8px 14px;
+      border-radius: 10px;
+      text-decoration: none;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .login-box {
+      max-width: 460px;
+    }
+
+    .login-box .btn {
+      width: 100%;
+    }
+
+    .title-en {
+      display:block;
+      margin-top:2px;
+      font-size:.9em;
+    }
+
+    .desc-ko,
+    .desc-en {
+      display:block;
+      text-align:center;
+    }
+
+    .desc-en {
+      margin-top:2px;
+    }
+
+    .label-en {
+      display:block;
+      font-size:11px;
+      color:var(--sb);
+      margin-top:2px;
+      font-weight:500;
+    }
+  </style>
 </head>
 
 <body>
@@ -33,13 +80,17 @@
 
       <div class="grid">
         <div>
-          <label class="label">교사 선택 | Teacher</label>
+          <label class="label">
+            교사 선택 | Teacher
+            <span class="label-en">이름으로 검색할 수 있습니다.</span>
+            <span class="label-en">You can search by teacher name.</span>
+          </label>
 
           <input
             id="teacher-search"
             class="edit-input"
             list="teacher-list"
-            placeholder="교사 이름 검색"
+            placeholder="교사 이름 검색 / Search teacher name"
             oninput="syncTeacherSelection()"
             onkeydown="if(event.key === 'Enter') login()"
           />
@@ -48,28 +99,26 @@
         </div>
 
         <div>
-          <label class="label">비밀번호 | Password</label>
+          <label class="label">
+            비밀번호 | Password
+          </label>
           <input
             id="pw"
             type="password"
             class="edit-input"
-            placeholder="비밀번호"
+            placeholder="비밀번호 / Password"
             onkeydown="if(event.key === 'Enter') login()"
           />
         </div>
 
-        <button class="btn btn-primary" onclick="login()">로그인</button>
+        <button class="btn btn-primary" onclick="login()">로그인 | Login</button>
       </div>
     </div>
   </div>
 
-  <!-- 🔥 Firebase -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
-
-  <!-- 🔥 반드시 추가 -->
-  <script src="js/firebase.js"></script>
-  <script src="js/common.js"></script>
+  <script src="common.js"></script>
 
   <script>
     let teachers = {};
@@ -82,71 +131,91 @@
         renderTeachers();
       } catch (e) {
         console.error(e);
-        toast('교사 목록 로드 실패', 'err');
+        toast('교사 목록을 불러오지 못했습니다.\nFailed to load teacher list.', 'err');
       }
     }
 
     function renderTeachers() {
       const list = Object.values(teachers)
         .filter(t => t && t.active !== false)
-        .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'ko'));
+        .sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'ko'));
 
       const dataList = document.getElementById('teacher-list');
       teacherSearchMap = {};
 
       dataList.innerHTML = list.map(t => {
-        const label = `${t.name} | ${t.email}`;
-        teacherSearchMap[label] = t.email.toLowerCase();
-        return `<option value="${label}"></option>`;
+        const label = `${String(t.name || '').trim()} | ${String(t.email || '').trim()}`;
+        teacherSearchMap[label] = String(t.email || '').trim().toLowerCase();
+        return `<option value="${esc(label)}"></option>`;
       }).join('');
     }
 
     function syncTeacherSelection() {
-      const inputValue = document.getElementById('teacher-search').value.trim();
+      const inputValue = (document.getElementById('teacher-search').value || '').trim();
       return teacherSearchMap[inputValue] || '';
     }
 
+    function normalizeRoles(roles) {
+      if (Array.isArray(roles)) return roles.filter(Boolean);
+
+      if (typeof roles === 'string') {
+        return roles
+          .split(/[|,]/)
+          .map(v => String(v || '').trim().toLowerCase())
+          .filter(Boolean);
+      }
+
+      return [];
+    }
+
     async function login() {
-      const email = syncTeacherSelection();
-      const pw = document.getElementById('pw').value.trim();
+      const selectedEmail = syncTeacherSelection();
+      const pw = (document.getElementById('pw').value || '').trim();
 
-      if (!email || !pw) {
-        return toast('교사와 비밀번호 입력', 'err');
+      if (!selectedEmail || !pw) {
+        return toast('교사와 비밀번호를 입력해 주세요.\nPlease select a teacher and enter the password.', 'err');
       }
 
-      const snap = await db.ref('teachers').once('value');
+      try {
+        const snap = await db.ref('teachers').once('value');
 
-      let found = null;
-      let key = '';
+        let found = null;
+        let key = '';
 
-      snap.forEach(child => {
-        const t = child.val();
-        if (
-          t.email.toLowerCase() === email &&
-          t.password === pw
-        ) {
-          found = t;
-          key = child.key;
+        snap.forEach(child => {
+          const t = child.val() || {};
+          if (
+            String(t.email || '').trim().toLowerCase() === selectedEmail &&
+            String(t.password || '') === pw
+          ) {
+            found = t;
+            key = child.key;
+          }
+        });
+
+        if (!found) {
+          document.getElementById('pw').value = '';
+          return toast('아이디 또는 비밀번호가 올바르지 않습니다.\nInvalid teacher or password.', 'err');
         }
-      });
 
-      if (!found) {
-        document.getElementById('pw').value = '';
-        return toast('로그인 실패', 'err');
+        const roles = normalizeRoles(found.roles || found.role || []);
+
+        sessionStorage.setItem(
+          'his_teacher',
+          JSON.stringify({
+            key,
+            name: found.name || '',
+            email: found.email || '',
+            roles: roles,
+            homeroom: found.homeroom || ''
+          })
+        );
+
+        location.href = 'teacher.html';
+      } catch (e) {
+        console.error(e);
+        toast('로그인 중 오류가 발생했습니다.\nAn error occurred during login.', 'err');
       }
-
-      // 🔥 핵심 수정 (session → local)
-      localStorage.setItem(
-        'his_teacher',
-        JSON.stringify({
-          key,
-          name: found.name,
-          email: found.email,
-          roles: found.roles || []
-        })
-      );
-
-      location.href = 'teacher.html';
     }
 
     init();

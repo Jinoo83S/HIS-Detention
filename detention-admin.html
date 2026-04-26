@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>디텐션 DB 관리 | Detention DB Admin</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="common.css">
+
+  <style>
+    .title-en{
+      display:block;
+      margin-top:2px;
+      font-size:.9em;
+    }
+
+    .sub-en{
+      display:block;
+      margin-top:2px;
+      font-size:12px;
+      color:#dbe5ff;
+    }
+
+    .content{
+      max-width:1500px;
+      margin:0 auto;
+      padding:18px;
+    }
+
+    .tabs,
+    .subtabs{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      margin-bottom:14px;
+    }
+
+    .tab-btn,
+    .subtab-btn{
+      border:none;
+      background:#d8deea;
+      color:#0f276a;
+      padding:10px 16px;
+      border-radius:12px;
+      font-weight:800;
+      font-size:14px;
+      cursor:pointer;
+    }
+
+    .tab-btn.active,
+    .subtab-btn.active{
+      background:#12286f;
+      color:#fff;
+    }
+
+    .panel{
+      display:none;
+    }
+
+    .panel.active{
+      display:block;
+    }
+
+    .card{
+      background:#fff;
+      border:1px solid #d8dfec;
+      border-radius:16px;
+      padding:16px;
+      margin-bottom:16px;
+    }
+
+    .card-title{
+      font-size:16px;
+      font-weight:800;
+      color:#10296f;
+      margin-bottom:12px;
+    }
+
+    .toolbar{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      margin-bottom:12px;
+    }
+
+    .toolbar .edit-input{
+      min-width:220px;
+      flex:1 1 220px;
+    }
+
+    .tbl-wrap{
+      overflow:auto;
+      border:1px solid #d8dfec;
+      border-radius:14px;
+      background:#fff;
+    }
+
+    table{
+      width:100%;
+      border-collapse:separate;
+      border-spacing:0;
+      min-width:1100px;
+    }
+
+    th, td{
+      font-size:12px;
+      padding:8px 8px;
+      vertical-align:top;
+      border-bottom:1px solid #e6ebf5;
+    }
+
+    th{
+      position:sticky;
+      top:0;
+      background:#cfd9ec;
+      color:#10296f;
+      font-weight:800;
+      z-index:1;
+      white-space:nowrap;
+    }
+
+    tbody tr:nth-child(odd){background:#fff;}
+    tbody tr:nth-child(even){background:#f7faff;}
+    tbody tr:hover{background:#eef4ff;}
+
+    .th-en{
+      display:block;
+      font-size:11px;
+      margin-top:2px;
+    }
+
+    .edit-input,
+    .edit-textarea{
+      width:100%;
+      box-sizing:border-box;
+      border:1px solid #c9d3e6;
+      border-radius:10px;
+      padding:8px 10px;
+      font-size:13px;
+      font-family:inherit;
+      background:#fff;
+    }
+
+    .edit-textarea{
+      min-height:58px;
+      resize:vertical;
+      line-height:1.4;
+    }
+
+    .btn{
+      border:none;
+      border-radius:10px;
+      padding:10px 14px;
+      font-size:13px;
+      font-weight:800;
+      cursor:pointer;
+    }
+
+    .btn-primary{
+      background:#12286f;
+      color:#fff;
+    }
+
+    .btn-secondary{
+      background:#e3e8f2;
+      color:#10296f;
+    }
+
+    .btn-danger{
+      background:#fde7e7;
+      color:#d93025;
+    }
+
+    .small-btn{
+      padding:6px 10px;
+      font-size:12px;
+    }
+
+    .status-chip{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-width:88px;
+      padding:4px 8px;
+      border-radius:999px;
+      font-size:11px;
+      font-weight:800;
+      white-space:nowrap;
+    }
+
+    .pending{background:#eef3ff;color:#1b2f7a;}
+    .confirmed{background:#e8f8ee;color:#15803d;}
+    .rejected{background:#fde8e8;color:#dc2626;}
+
+    .notice{
+      font-size:12px;
+      line-height:1.5;
+      color:#5b6785;
+      margin-bottom:10px;
+    }
+  </style>
+</head>
+<body>
+  <div id="toast"></div>
+
+  <div class="topbar">
+    <div>
+      <h1>
+        디텐션 DB 관리
+        <span class="title-en" style="color:#fff;">Detention DB Admin</span>
+      </h1>
+      <div class="sub-en">기준표, 디텐션 기록, 알림, 회복교육 데이터를 관리합니다.</div>
+    </div>
+
+    <div class="inline-actions">
+      <button class="btn btn-secondary" onclick="loadAllData()">새로고침 | Refresh</button>
+      <a href="admin.html" class="btn btn-secondary" style="text-decoration:none;display:inline-flex;align-items:center;">관리자 메인 | Admin</a>
+      <button class="btn btn-danger" onclick="logoutAdmin()">로그아웃 | Logout</button>
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="subtabs">
+      <button class="subtab-btn active" data-panel="standards">기준표 | Standards</button>
+      <button class="subtab-btn" data-panel="entries">디텐션 기록 | Entries</button>
+      <button class="subtab-btn" data-panel="notices">알림 기록 | Notices</button>
+      <button class="subtab-btn" data-panel="recovery">회복교육 기록 | Recovery</button>
+    </div>
+
+    <!-- Standards -->
+    <div id="panel-standards" class="panel active">
+      <div class="card">
+        <div class="card-title">디텐션 기준표 | Standards</div>
+        <div class="toolbar">
+          <button class="btn btn-secondary" onclick="addStandardRow()">행 추가 | Add Row</button>
+          <button class="btn btn-primary" onclick="saveStandards()">저장 | Save</button>
+        </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>구분<span class="th-en">Category</span></th>
+                <th>위반행위<span class="th-en">Violation</span></th>
+                <th>자동점수<span class="th-en">Auto Points</span></th>
+                <th>비고<span class="th-en">Notes</span></th>
+                <th>삭제<span class="th-en">Delete</span></th>
+              </tr>
+            </thead>
+            <tbody id="standards-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Entries -->
+    <div id="panel-entries" class="panel">
+      <div class="card">
+        <div class="card-title">디텐션 기록 | Detention Entries</div>
+        <div class="toolbar">
+          <input id="entry-search" class="edit-input" placeholder="학생/영문명/구분/위반행위 검색 | Search">
+          <select id="entry-status-filter" class="edit-input" onchange="renderEntriesTable()">
+            <option value="">전체 상태 | All Statuses</option>
+            <option value="임시저장">대기 | Pending</option>
+            <option value="확정">확정 | Confirmed</option>
+            <option value="반려">반려 | Rejected</option>
+          </select>
+          <button class="btn btn-primary" onclick="saveEntries()">저장 | Save</button>
+        </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>학생<span class="th-en">Student</span></th>
+                <th>영문명<span class="th-en">English</span></th>
+                <th>학반<span class="th-en">Class</span></th>
+                <th>구분<span class="th-en">Category</span></th>
+                <th>위반행위<span class="th-en">Violation</span></th>
+                <th>자동점수<span class="th-en">Auto</span></th>
+                <th>수동점수<span class="th-en">Manual</span></th>
+                <th>총점<span class="th-en">Total</span></th>
+                <th>상태<span class="th-en">Status</span></th>
+                <th>교사<span class="th-en">Teacher</span></th>
+                <th>작성시간<span class="th-en">Created At</span></th>
+                <th>확정시간<span class="th-en">Confirmed At</span></th>
+                <th>삭제<span class="th-en">Delete</span></th>
+              </tr>
+            </thead>
+            <tbody id="entries-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Notices -->
+    <div id="panel-notices" class="panel">
+      <div class="card">
+        <div class="card-title">알림 기록 | Notice Records</div>
+        <div class="toolbar">
+          <input id="notice-search" class="edit-input" placeholder="studentKey / level 검색 | Search">
+          <button class="btn btn-primary" onclick="saveNotices()">저장 | Save</button>
+        </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>학생키<span class="th-en">Student Key</span></th>
+                <th>구분<span class="th-en">Level</span></th>
+                <th>학부모 메일<span class="th-en">Parent Mail At</span></th>
+                <th>학생/교사 메일<span class="th-en">Student/Teacher Mail At</span></th>
+                <th>완료시간<span class="th-en">Completed At</span></th>
+                <th>완료자<span class="th-en">Completed By</span></th>
+                <th>삭제<span class="th-en">Delete</span></th>
+              </tr>
+            </thead>
+            <tbody id="notices-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recovery -->
+    <div id="panel-recovery" class="panel">
+      <div class="card">
+        <div class="card-title">회복교육 기록 | Recovery Records</div>
+        <div class="toolbar">
+          <input id="recovery-search" class="edit-input" placeholder="학생/영문명/학반 검색 | Search">
+          <button class="btn btn-primary" onclick="saveRecovery()">저장 | Save</button>
+        </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>학생<span class="th-en">Student</span></th>
+                <th>영문명<span class="th-en">English</span></th>
+                <th>학반<span class="th-en">Class</span></th>
+                <th>구분<span class="th-en">Level</span></th>
+                <th>회복점수<span class="th-en">Recovery Points</span></th>
+                <th>담당자<span class="th-en">Staff</span></th>
+                <th>완료시간<span class="th-en">Completed At</span></th>
+                <th>삭제<span class="th-en">Delete</span></th>
+              </tr>
+            </thead>
+            <tbody id="recovery-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+  <script src="common.js"></script>
+
+  <script>
+    let standardsRows = [];
+    let entryRows = [];
+    let noticeRows = [];
+    let recoveryRows = [];
+
+    // 인증 확인: admin.html에서 로그인한 세션이 없으면 돌려보냄
+    function checkAdminSession() {
+      if (!sessionStorage.getItem('his_admin_session')) {
+        location.href = 'admin.html';
+        return false;
+      }
+      return true;
+    }
+
+    function logoutAdmin() {
+      sessionStorage.removeItem('his_admin_session');
+      location.href = 'admin.html';
+    }
+
+    function badgeHtml(status){
+      if (status === '확정') return '<span class="status-chip confirmed">확정</span>';
+      if (status === '반려') return '<span class="status-chip rejected">반려</span>';
+      return '<span class="status-chip pending">대기</span>';
+    }
+
+    function openPanel(name){
+      document.querySelectorAll('.subtab-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.panel === name);
+      });
+      document.querySelectorAll('.panel').forEach(panel => {
+        panel.classList.toggle('active', panel.id === 'panel-' + name);
+      });
+    }
+
+    document.addEventListener('click', (e) => {
+      const btn = e.target.closest('.subtab-btn');
+      if (!btn) return;
+      openPanel(btn.dataset.panel);
+    });
+
+    document.getElementById('entry-search')?.addEventListener('input', renderEntriesTable);
+    document.getElementById('notice-search')?.addEventListener('input', renderNoticesTable);
+    document.getElementById('recovery-search')?.addEventListener('input', renderRecoveryTable);
+
+    async function loadAllData(){
+      try{
+        const [standardsSnap, entriesSnap, noticesSnap, recoverySnap] = await Promise.all([
+          db.ref('detentionStandards').once('value'),
+          db.ref('detentionEntries').once('value'),
+          db.ref('detentionNotices').once('value'),
+          db.ref('recoveryEntries').once('value')
+        ]);
+
+        const rawStandards = standardsSnap.val();
+        if (Array.isArray(rawStandards)) {
+          standardsRows = rawStandards;
+        } else if (rawStandards && typeof rawStandards === 'object') {
+          standardsRows = Object.keys(rawStandards)
+            .sort((a, b) => Number(a) - Number(b))
+            .map(k => rawStandards[k])
+            .filter(Boolean);
+        } else {
+          standardsRows = [];
+        }
+
+        entryRows = Object.entries(entriesSnap.val() || {}).map(([key, value]) => ({
+          key,
+          ...value,
+          _deleted:false
+        }));
+
+        noticeRows = Object.entries(noticesSnap.val() || {}).map(([key, value]) => ({
+          key,
+          ...value,
+          _deleted:false
+        }));
+
+        recoveryRows = Object.entries(recoverySnap.val() || {}).map(([key, value]) => ({
+          key,
+          ...value,
+          _deleted:false
+        }));
+
+        renderStandardsTable();
+        renderEntriesTable();
+        renderNoticesTable();
+        renderRecoveryTable();
+        toast('데이터를 불러왔습니다. | Data loaded.', 'ok');
+      }catch(err){
+        console.error(err);
+        toast('데이터를 불러오지 못했습니다. | Failed to load data.', 'err');
+      }
+    }
+
+    function renderStandardsTable(){
+      const tbody = document.getElementById('standards-tbody');
+
+      if (!standardsRows.length){
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="5">기준표 데이터가 없습니다. | No standards found.</td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = standardsRows.map((row, i) => `
+        <tr>
+          <td><textarea class="edit-textarea" oninput="standardsRows[${i}].category=this.value">${esc(row.category || '')}</textarea></td>
+          <td><textarea class="edit-textarea" oninput="standardsRows[${i}].violation=this.value">${esc(row.violation || '')}</textarea></td>
+          <td><input class="edit-input" value="${esc(row.autoPoints || '')}" oninput="standardsRows[${i}].autoPoints=this.value"></td>
+          <td><textarea class="edit-textarea" oninput="standardsRows[${i}].note=this.value">${esc(row.note || '')}</textarea></td>
+          <td><button class="btn btn-danger small-btn" onclick="deleteStandardRow(${i})">삭제</button></td>
+        </tr>
+      `).join('');
+    }
+
+    function addStandardRow(){
+      standardsRows.push({
+        category:'',
+        violation:'',
+        autoPoints:'',
+        note:''
+      });
+      renderStandardsTable();
+    }
+
+    function deleteStandardRow(index){
+      standardsRows.splice(index, 1);
+      renderStandardsTable();
+    }
+
+    async function saveStandards(){
+      try{
+        const cleaned = standardsRows.filter(r =>
+          String(r.category || '').trim() && String(r.violation || '').trim()
+        );
+        await db.ref('detentionStandards').set(cleaned);
+        toast('기준표가 저장되었습니다. | Standards saved.', 'ok');
+        loadAllData();
+      }catch(err){
+        console.error(err);
+        toast('기준표 저장 실패 | Failed to save standards.', 'err');
+      }
+    }
+
+    function renderEntriesTable(){
+      const tbody = document.getElementById('entries-tbody');
+      const q = (document.getElementById('entry-search').value || '').trim().toLowerCase();
+      const status = document.getElementById('entry-status-filter').value || '';
+
+      const filtered = entryRows.filter(row => {
+        if (row._deleted) return false;
+        if (status && String(row.status || '') !== status) return false;
+        if (!q) return true;
+        return [
+          row.studentName,
+          row.englishName,
+          row.className,
+          row.category,
+          row.violation,
+          row.teacherName
+        ].some(v => String(v || '').toLowerCase().includes(q));
+      });
+
+      if (!filtered.length){
+        tbody.innerHTML = `<tr><td colspan="13">기록이 없습니다. | No records found.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(row => {
+        const idx = entryRows.findIndex(r => r.key === row.key);
+        return `
+          <tr>
+            <td><input class="edit-input" value="${esc(row.studentName || '')}" oninput="entryRows[${idx}].studentName=this.value"></td>
+            <td><input class="edit-input" value="${esc(row.englishName || '')}" oninput="entryRows[${idx}].englishName=this.value"></td>
+            <td><input class="edit-input" value="${esc(row.className || '')}" oninput="entryRows[${idx}].className=this.value"></td>
+            <td><input class="edit-input" value="${esc(row.category || '')}" oninput="entryRows[${idx}].category=this.value"></td>
+            <td><textarea class="edit-textarea" oninput="entryRows[${idx}].violation=this.value">${esc(row.violation || '')}</textarea></td>
+            <td><input class="edit-input" value="${esc(String(row.autoPoints || ''))}" oninput="entryRows[${idx}].autoPoints=this.value"></td>
+            <td><input class="edit-input" value="${esc(String(row.manualPoints || ''))}" oninput="entryRows[${idx}].manualPoints=Number(this.value||0)"></td>
+            <td><input class="edit-input" value="${esc(String(row.totalPoints || ''))}" oninput="entryRows[${idx}].totalPoints=Number(this.value||0)"></td>
+            <td>
+              <select class="edit-input" onchange="entryRows[${idx}].status=this.value">
+                <option value="임시저장" ${row.status==='임시저장'?'selected':''}>대기</option>
+                <option value="확정" ${row.status==='확정'?'selected':''}>확정</option>
+                <option value="반려" ${row.status==='반려'?'selected':''}>반려</option>
+              </select>
+            </td>
+            <td><input class="edit-input" value="${esc(row.teacherName || '')}" oninput="entryRows[${idx}].teacherName=this.value"></td>
+            <td><input class="edit-input" value="${esc(row.createdAt || '')}" oninput="entryRows[${idx}].createdAt=this.value"></td>
+            <td><input class="edit-input" value="${esc(row.confirmedAt || '')}" oninput="entryRows[${idx}].confirmedAt=this.value"></td>
+            <td><button class="btn btn-danger small-btn" onclick="markEntryDeleted('${row.key}')">삭제</button></td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function markEntryDeleted(key){
+      const row = entryRows.find(r => r.key === key);
+      if (row) row._deleted = true;
+      renderEntriesTable();
+    }
+
+    async function saveEntries(){
+      try{
+        for (const row of entryRows){
+          if (row._deleted){
+            await db.ref('detentionEntries/' + row.key).remove();
+            continue;
+          }
+          const payload = {...row};
+          delete payload.key;
+          delete payload._deleted;
+          await db.ref('detentionEntries/' + row.key).set(payload);
+        }
+        toast('디텐션 기록이 저장되었습니다. | Entries saved.', 'ok');
+        loadAllData();
+      }catch(err){
+        console.error(err);
+        toast('디텐션 기록 저장 실패 | Failed to save entries.', 'err');
+      }
+    }
+
+    function renderNoticesTable(){
+      const tbody = document.getElementById('notices-tbody');
+      const q = (document.getElementById('notice-search').value || '').trim().toLowerCase();
+
+      const filtered = noticeRows.filter(row => {
+        if (row._deleted) return false;
+        if (!q) return true;
+        return [row.key, row.studentKey, row.level].some(v => String(v || '').toLowerCase().includes(q));
+      });
+
+      if (!filtered.length){
+        tbody.innerHTML = `<tr><td colspan="7">기록이 없습니다. | No notice records found.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(row => {
+        const idx = noticeRows.findIndex(r => r.key === row.key);
+        return `
+          <tr>
+            <td><input class="edit-input" value="${esc(row.studentKey || '')}" oninput="noticeRows[${idx}].studentKey=this.value"></td>
+            <td><input class="edit-input" value="${esc(row.level || '')}" oninput="noticeRows[${idx}].level=this.value"></td>
+            <td><input class="edit-input" value="${esc(row.parentMailAt || '')}" oninput="noticeRows[${idx}].parentMailAt=this.value"></td>
+            <td><input class="edit-input" value="${esc(row.studentTeacherMailAt || '')}" oninput="noticeRows[${idx}].studentTeacherMailAt=this.value"></td>
+            <td><input class="edit-input" value="${esc(row.completedAt || '')}" oninput="noticeRows[${idx}].completedAt=this.value"></td>
+            <td><input class="edit-input" value="${esc(row.completedBy || '')}" oninput="noticeRows[${idx}].completedBy=this.value"></td>
+            <td><button class="btn btn-danger small-btn" onclick="markNoticeDeleted('${row.key}')">삭제</button></td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function markNoticeDeleted(key){
+      const row = noticeRows.find(r => r.key === key);
+      if (row) row._deleted = true;
+      renderNoticesTable();
+    }
+
+    async function saveNotices(){
+      try{
+        for (const row of noticeRows){
+          if (row._deleted){
+            await db.ref('detentionNotices/' + row.key).remove();
+            continue;
+          }
+          const payload = {...row};
+          delete payload.key;
+          delete payload._deleted;
+          await db.ref('detentionNotices/' + row.key).set(payload);
+        }
+        toast('알림 기록이 저장되었습니다. | Notices saved.', 'ok');
+        loadAllData();
+      }catch(err){
+        console.error(err);
+        toast('알림 기록 저장 실패 | Failed to save notices.', 'err');
+      }
+    }
+
+    function renderRecoveryTable(){
+      const tbody = document.getElementById('recovery-tbody');
+      const q = (document.getElementById('recovery-search').value || '').trim().toLowerCase();
+
+      const filtered = recoveryRows.filter(row => {
+        if (row._deleted) return false;
+        if (!q) return true;
+        return [
+          row.studentName,
+          row.englishName,
+          row.className,
+          row.staffName
+        ].some(v => String(v || '').toLowerCase().includes(q));
+      });
+
+      if (!filtered.length){
+        tbody.innerHTML = `<tr><td colspan="8">기록이 없습니다. | No recovery records found.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(row => {
+        const idx = recoveryRows.findIndex(r => r.key === row.key);
+        return `
+          <tr>
+            <td><input class="edit-input" value="${esc(row.studentName || '')}" oninput="recoveryRows[${idx}].studentName=this.value"></td>
+            <td><input class="edit-input" value="${esc(row.englishName || '')}" oninput="recoveryRows[${idx}].englishName=this.value"></td>
+            <td><input class="edit-input" value="${esc(row.className || '')}" oninput="recoveryRows[${idx}].className=this.value"></td>
+            <td><input class="edit-input" value="${esc(row.level || '')}" oninput="recoveryRows[${idx}].level=this.value"></td>
+            <td><input class="edit-input" value="${esc(String(row.recoveryPoints || row.points || ''))}" oninput="recoveryRows[${idx}].recoveryPoints=Number(this.value||0)"></td>
+            <td><input class="edit-input" value="${esc(row.staffName || '')}" oninput="recoveryRows[${idx}].staffName=this.value"></td>
+            <td><input class="edit-input" value="${esc(row.completedAt || '')}" oninput="recoveryRows[${idx}].completedAt=this.value"></td>
+            <td><button class="btn btn-danger small-btn" onclick="markRecoveryDeleted('${row.key}')">삭제</button></td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function markRecoveryDeleted(key){
+      const row = recoveryRows.find(r => r.key === key);
+      if (row) row._deleted = true;
+      renderRecoveryTable();
+    }
+
+    async function saveRecovery(){
+      try{
+        for (const row of recoveryRows){
+          if (row._deleted){
+            await db.ref('recoveryEntries/' + row.key).remove();
+            continue;
+          }
+          const payload = {...row};
+          delete payload.key;
+          delete payload._deleted;
+          await db.ref('recoveryEntries/' + row.key).set(payload);
+        }
+        toast('회복교육 기록이 저장되었습니다. | Recovery saved.', 'ok');
+        loadAllData();
+      }catch(err){
+        console.error(err);
+        toast('회복교육 기록 저장 실패 | Failed to save recovery.', 'err');
+      }
+    }
+
+    if (checkAdminSession()) loadAllData();
+  </script>
+</body>
+</html>
