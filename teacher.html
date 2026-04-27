@@ -658,6 +658,7 @@
     ];
 
     let teacher = null;
+    let _noticeInProgress = {}; // race condition 방지
     let teacherRoles = [];
     let teachers = {};
     let students = {};
@@ -773,7 +774,7 @@
     function findActiveNotice(sKey,lvl){const hit=Object.entries(noticeEntries||{}).filter(([,v])=>String(v.studentKey||'')===String(sKey)&&String(v.level||'')===String(lvl)&&!v.completedAt).sort((a,b)=>String(b[1].createdAt||'').localeCompare(String(a[1].createdAt||'')));return hit.length?{key:hit[0][0],notice:hit[0][1]}:null;}
     function findLatestCompletedNotice(sKey,lvl){const hit=Object.entries(noticeEntries||{}).filter(([,v])=>String(v.studentKey||'')===String(sKey)&&String(v.level||'')===String(lvl)&&!!v.completedAt).sort((a,b)=>String(b[1].completedAt||'').localeCompare(String(a[1].completedAt||'')));return hit.length?{key:hit[0][0],notice:hit[0][1]}:null;}
     function getViolationCount(sKey,vId){return Object.values(entries||{}).filter(r=>String(r.studentKey||'')===String(sKey)&&String(r.violationId||'')===String(vId)&&String(r.status||'')==='확정').length;}
-    function getCurrentCycleEntries(sKey){const conf=getConfirmedEntriesForStudent(sKey);const lr=Object.values(recoveryEntries||{}).filter(r=>String(r.studentKey||'')===String(sKey)).sort((a,b)=>String(b.completedAt||'').localeCompare(String(a.completedAt||'')))[0];const since=lr?String(lr.completedAt||''):'';return since?conf.filter(r=>String(r.confirmedAt||r.createdAt||'')>since):conf;}
+    function getCurrentCycleEntries(sKey){const conf=getConfirmedEntriesForStudent(sKey);const lr=Object.values(recoveryEntries||{}).filter(r=>String(r.studentKey||'')===String(sKey)).sort((a,b)=>String(b.completedAt||'').localeCompare(String(a.completedAt||'')))[0];const since=lr?String(lr.completedAt||''):'';return since?conf.filter(r=>String(r.confirmedAt||'')>since):conf;}
     function buildCycleReasonText(sKey){const seen=new Set(),lines=[];getCurrentCycleEntries(sKey).forEach(r=>{const l=String(r.violation||'').trim();if(l&&!seen.has(l)){seen.add(l);lines.push(l);}});return lines.length?lines.map((v,i)=>'['+String(i+1)+'] '+v).join('\n\n'):'-';}
 
     function getTeachersByRole(roleKey){
@@ -1004,7 +1005,10 @@
           .filter(row => row.category.trim() && row.violation.trim());
 
         const savedAt = new Date().toISOString();
-        await db.ref(DETENTION_STANDARD_PATH).set(cleaned);
+        // 배열 대신 인덱스 키 객체로 저장 → Firebase에서 순서 보장
+        const stdObj = {};
+        cleaned.forEach((item, i) => { stdObj[String(i)] = item; });
+        await db.ref(DETENTION_STANDARD_PATH).set(stdObj);
         await db.ref(DETENTION_STANDARD_PATH + '_meta').set({
           savedAt,
           savedBy:teacher.name || '',
@@ -1203,15 +1207,15 @@
         noticeEntries = noticeSnap.val() || {};
 
         const dbStandards = standardSnap.val();
-        // Firebase는 배열을 {0:{},1:{}} 형태로 저장할 수 있으므로 양쪽 처리
-        if (Array.isArray(dbStandards) && dbStandards.length) {
-          detentionStandards = dbStandards;
-        } else if (dbStandards && typeof dbStandards === 'object') {
+        // 저장 형식: {0:{...}, 1:{...}} 또는 배열 모두 처리
+        if (dbStandards && typeof dbStandards === 'object') {
           const converted = Object.keys(dbStandards)
+            .filter(k => !isNaN(Number(k)))
             .sort((a, b) => Number(a) - Number(b))
             .map(k => dbStandards[k])
             .filter(Boolean);
           if (converted.length) detentionStandards = converted;
+          else if (Array.isArray(dbStandards) && dbStandards.length) detentionStandards = dbStandards;
         }
 
         const meta = metaSnap.val() || {};
@@ -1367,7 +1371,7 @@
           <td class="nowrap">${esc(r.englishName || '')}</td>
           <td class="nowrap">${esc(r.className || '')}</td>
           <td class="nowrap">회복교육 | Recovery</td>
-          <td class="reason-block">${esc(r.violationSnapshot || r.reasonsSnapshot || '-')}</td>
+          <td class="reason-block">${esc(r.reasonsSnapshot || '-')}</td>
           <td class="nowrap">-${esc(String(r.recoveryPoints || 0))}</td>
           <td class="nowrap">${esc(String(r.currentTotalAfter ?? r.currentTotalAtRecovery ?? getStudentCurrentTotal(r.studentKey)))}</td>
           <td class="nowrap">${esc(String(r.overallTotalAtRecovery ?? getStudentOverallTotal(r.studentKey)))}</td>
@@ -1584,7 +1588,7 @@
             <td class="nowrap">${esc(r.studentName || '')}</td>
             <td class="nowrap">${esc(r.englishName || '')}</td>
             <td class="nowrap">${esc(r.className || '')}</td>
-            <td class="reason-block">${esc(r.violationSnapshot || r.reasonsSnapshot || '-')}</td>
+            <td class="reason-block">${esc(r.reasonsSnapshot || '-')}</td>
             <td class="nowrap">-${esc(String(r.recoveryPoints || 0))}</td>
             <td class="nowrap">${esc(String(r.currentTotalAfter ?? r.currentTotalAtRecovery ?? '-'))}</td>
             <td class="nowrap">${esc(String(r.overallTotalAtRecovery ?? '-'))}</td>
@@ -1818,6 +1822,9 @@
     }
 
     async function sendParentMail(studentKey,level){
+      const lockKey = studentKey + '_' + level;
+      if (_noticeInProgress[lockKey]) return toast('처리 중입니다. 잠시 후 다시 시도해 주세요.', 'warn');
+      _noticeInProgress[lockKey] = true;
       const student={key:studentKey,...(students[studentKey]||{})};
       const to=[student.fatherEmail,student.motherEmail].filter(Boolean).join(',');
       if(!to)return toast('학부모 이메일이 없습니다.','err');
@@ -1825,10 +1832,13 @@
       const body=buildParentMailBody(student);
       const ao=findActiveNotice(studentKey,level);
       const sp=ao?db.ref(NOTICE_DB_PATH+'/'+ao.key).update({parentMailAt:new Date().toISOString()}):db.ref(NOTICE_DB_PATH).push({studentKey,level,createdAt:new Date().toISOString(),parentMailAt:new Date().toISOString(),cycleViolationsSnapshot:buildCycleReasonText(studentKey)});
-      try{await openMailAfterSave('mailto:'+encodeURIComponent(to)+'?subject='+encodeURIComponent(subj)+'&body='+encodeURIComponent(body),sp);toast('학부모 메일 시간이 기록되었습니다.','ok');loadData();}catch(e){console.error(e);toast('메일 준비 중 오류.','err');}
+      try{await openMailAfterSave('mailto:'+encodeURIComponent(to)+'?subject='+encodeURIComponent(subj)+'&body='+encodeURIComponent(body),sp);toast('학부모 메일 시간이 기록되었습니다.','ok');loadData();}catch(e){console.error(e);toast('메일 준비 중 오류.','err');}finally{delete _noticeInProgress[lockKey];}
     }
 
     async function sendStudentTeacherMail(studentKey,level){
+      const lockKey = studentKey + '_' + level;
+      if (_noticeInProgress[lockKey]) return toast('처리 중입니다. 잠시 후 다시 시도해 주세요.', 'warn');
+      _noticeInProgress[lockKey] = true;
       const student={key:studentKey,...(students[studentKey]||{})};
       const re2=level==='ms'?getTeacherEmailsByRole('ms_restore'):getTeacherEmailsByRole('hs_restore');
       const to=[student.selfEmail,student.homeroomTeacherEmail,...re2].filter(Boolean).join(',');
@@ -1837,7 +1847,7 @@
       const body=buildStudentTeacherMailBody(student,level);
       const ao=findActiveNotice(studentKey,level);
       const sp=ao?db.ref(NOTICE_DB_PATH+'/'+ao.key).update({studentTeacherMailAt:new Date().toISOString()}):db.ref(NOTICE_DB_PATH).push({studentKey,level,createdAt:new Date().toISOString(),studentTeacherMailAt:new Date().toISOString(),cycleViolationsSnapshot:buildCycleReasonText(studentKey)});
-      try{await openMailAfterSave('mailto:'+encodeURIComponent(to)+'?subject='+encodeURIComponent(subj)+'&body='+encodeURIComponent(body),sp);toast('학생/교사 메일 시간이 기록되었습니다.','ok');loadData();}catch(e){console.error(e);toast('메일 준비 중 오류.','err');}
+      try{await openMailAfterSave('mailto:'+encodeURIComponent(to)+'?subject='+encodeURIComponent(subj)+'&body='+encodeURIComponent(body),sp);toast('학생/교사 메일 시간이 기록되었습니다.','ok');loadData();}catch(e){console.error(e);toast('메일 준비 중 오류.','err');}finally{delete _noticeInProgress[lockKey];}
     }
 
     async function completeNotice(studentKey,level){
@@ -1853,37 +1863,60 @@
       const student = students[studentKey];
       if (!student) return;
 
-      const currentTotalBefore = getStudentCurrentTotal(studentKey);
-      const overallTotal = getStudentOverallTotal(studentKey);
-      const recoveryPoints = Math.min(3, Math.max(currentTotalBefore, 0));
-            if (recoveryPoints <= 0){
-        return toast('회복할 점수가 없습니다.\nNo points left to recover.', 'err');
-      }
-
-      const payload = {
-        studentKey,
-        studentName: student.name || '',
-        englishName: student.englishName || '',
-        className: student.className || '',
-        level,
-        recoveryPoints,
-        reasonsSnapshot: buildReasonText(studentKey),
-        violationSnapshot: buildReasonText(studentKey),
-        overallTotalAtRecovery: overallTotal,
-        currentTotalBefore,
-        currentTotalAfter: Math.max(0, currentTotalBefore - recoveryPoints),
-        staffName: teacher.name || '',
-        staffEmail: teacher.email || '',
-        completedAt: new Date().toISOString()
-      };
+      // 중복 클릭 방지
+      const lockKey = 'recovery_' + studentKey;
+      if (_noticeInProgress[lockKey]) return toast('처리 중입니다. 잠시 후 다시 시도해 주세요.', 'warn');
+      _noticeInProgress[lockKey] = true;
 
       try{
+        // 레이스 컨디션 방지: DB에서 최신 데이터를 직접 읽어 점수 계산
+        const [freshEntrySnap, freshRecoverySnap] = await Promise.all([
+          db.ref(DETENTION_DB_PATH).once('value'),
+          db.ref(RECOVERY_DB_PATH).once('value')
+        ]);
+
+        const freshEntries = freshEntrySnap.val() || {};
+        const freshRecovery = freshRecoverySnap.val() || {};
+
+        const overallTotal = Object.values(freshEntries)
+          .filter(r => String(r.studentKey||'') === String(studentKey) && String(r.status||'') === '확정')
+          .reduce((s, r) => s + Number(r.totalPoints || 0), 0);
+
+        const recoveryTotal = Object.values(freshRecovery)
+          .filter(r => String(r.studentKey||'') === String(studentKey))
+          .reduce((s, r) => s + Number(r.recoveryPoints || 0), 0);
+
+        const currentTotalBefore = overallTotal - recoveryTotal;
+        const recoveryPoints = Math.min(3, Math.max(currentTotalBefore, 0));
+
+        if (recoveryPoints <= 0){
+          return toast('회복할 점수가 없습니다.\nNo points left to recover.', 'err');
+        }
+
+        const payload = {
+          studentKey,
+          studentName: student.name || '',
+          englishName: student.englishName || '',
+          className: student.className || '',
+          level,
+          recoveryPoints,
+          reasonsSnapshot: buildCycleReasonText(studentKey),
+          overallTotalAtRecovery: overallTotal,
+          currentTotalBefore,
+          currentTotalAfter: Math.max(0, currentTotalBefore - recoveryPoints),
+          staffName: teacher.name || '',
+          staffEmail: teacher.email || '',
+          completedAt: new Date().toISOString()
+        };
+
         await db.ref(RECOVERY_DB_PATH).push(payload);
         toast('회복교육 완료가 저장되었습니다.\nRecovery completion saved.', 'ok');
         loadData();
       }catch(e){
         console.error(e);
         toast('회복교육 저장 실패\nFailed to save recovery.', 'err');
+      }finally{
+        delete _noticeInProgress[lockKey];
       }
     }
 

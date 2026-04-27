@@ -322,7 +322,6 @@
         return toast('비밀번호가 올바르지 않습니다.\nInvalid password.', 'err');
       }
       sessionStorage.setItem('his_admin_session', '1');
-      sessionStorage.setItem('his_admin_session', '1');
       document.getElementById('login-screen').classList.add('hidden');
       document.getElementById('admin-screen').classList.remove('hidden');
       refreshAll();
@@ -517,16 +516,16 @@
     async function saveStudents() {
       try {
         const next = {};
+        // 신규 학생: Firebase push()로 불변 key 생성
+        // 기존 학생: oldKey 그대로 유지 (className 변경해도 key 불변)
+        const pushPromises = [];
+
         studentRows.forEach(r => {
           if (r._delete) return;
-          const key = studentKey(r.name, r.className);
-          if (!key || !String(r.name || '').trim()) {
-            r._status = '오류';
-            return;
-          }
+          if (!String(r.name || '').trim()) { r._status = '오류'; return; }
 
           const homeroomTeacherEmail = getHomeroomTeacherEmail(r.className);
-          next[key] = {
+          const data = {
             name: String(r.name || '').trim(),
             englishName: String(r.englishName || '').trim(),
             className: String(r.className || '').trim(),
@@ -536,10 +535,23 @@
             homeroomTeacherEmail: String(homeroomTeacherEmail || '').trim(),
             updatedAt: new Date().toISOString()
           };
-          r._status = '저장됨';
-          r.oldKey = key;
-          r.homeroomTeacherEmail = homeroomTeacherEmail;
+
+          if (r.oldKey) {
+            // 기존 학생: oldKey 유지 (불변 ID)
+            next[r.oldKey] = data;
+            r._status = '저장됨';
+            r.homeroomTeacherEmail = homeroomTeacherEmail;
+          } else {
+            // 신규 학생: Firebase push key 생성
+            const newRef = db.ref('students').push();
+            const newKey = newRef.key;
+            next[newKey] = data;
+            r.oldKey = newKey;
+            r._status = '저장됨';
+            r.homeroomTeacherEmail = homeroomTeacherEmail;
+          }
         });
+
         await db.ref('students').set(next);
         toast('학생 데이터가 저장되었습니다.\nStudent data has been saved.', 'ok');
         refreshAll();
