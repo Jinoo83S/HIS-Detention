@@ -519,7 +519,7 @@
                 <th class="nowrap">현재 누적점수<span class="th-en">Current Total</span></th>
                 <th class="nowrap">전체 누적점수<span class="th-en">Overall Total</span></th>
                 <th>위반 행위<span class="th-en">Violations</span></th>
-                <th class="nowrap">누적 회복 완료<span class="th-en">Completed Recovery</span></th>
+                <th class="nowrap">필요 교육 횟수<span class="th-en">Required Sessions</span></th>
                 <th class="nowrap">처리<span class="th-en">Action</span></th>
               </tr>
             </thead>
@@ -527,8 +527,11 @@
           </table>
         </div>
 
-        <div class="card-title notice-divider">완료 기록 | Completed History</div>
-        <div class="tbl-wrap">
+        <div class="card-title notice-divider" style="cursor:pointer;" onclick="toggleRecoveryHistory('ms')">
+          완료 기록 | Completed History
+          <span id="recovery-ms-hist-toggle" style="font-size:12px;font-weight:400;margin-left:8px;">▲ 접기</span>
+        </div>
+        <div id="recovery-ms-hist-wrap" class="tbl-wrap">
           <table>
             <thead>
               <tr>
@@ -573,7 +576,7 @@
                 <th class="nowrap">현재 누적점수<span class="th-en">Current Total</span></th>
                 <th class="nowrap">전체 누적점수<span class="th-en">Overall Total</span></th>
                 <th>위반 행위<span class="th-en">Violations</span></th>
-                <th class="nowrap">누적 회복 완료<span class="th-en">Completed Recovery</span></th>
+                <th class="nowrap">필요 교육 횟수<span class="th-en">Required Sessions</span></th>
                 <th class="nowrap">처리<span class="th-en">Action</span></th>
               </tr>
             </thead>
@@ -581,8 +584,11 @@
           </table>
         </div>
 
-        <div class="card-title notice-divider">완료 기록 | Completed History</div>
-        <div class="tbl-wrap">
+        <div class="card-title notice-divider" style="cursor:pointer;" onclick="toggleRecoveryHistory('hs')">
+          완료 기록 | Completed History
+          <span id="recovery-hs-hist-toggle" style="font-size:12px;font-weight:400;margin-left:8px;">▲ 접기</span>
+        </div>
+        <div id="recovery-hs-hist-wrap" class="tbl-wrap">
           <table>
             <thead>
               <tr>
@@ -887,6 +893,24 @@
 
       manualInput.disabled = false;
       manualInput.readOnly = false;
+    }
+
+
+    function toggleRecoveryHistory(level){
+      const wrap = document.getElementById('recovery-'+level+'-hist-wrap');
+      const btn = document.getElementById('recovery-'+level+'-hist-toggle');
+      if (!wrap) return;
+      const hidden = wrap.style.display === 'none';
+      wrap.style.display = hidden ? '' : 'none';
+      if (btn) btn.textContent = hidden ? '▲ 접기' : '▼ 펼치기';
+    }
+    function toggleAllRecovery(){
+      const wrap = document.getElementById('all-recovery-wrap');
+      const btn = document.getElementById('all-recovery-toggle');
+      if (!wrap) return;
+      const hidden = wrap.style.display === 'none';
+      wrap.style.display = hidden ? '' : 'none';
+      if (btn) btn.textContent = hidden ? '▲ 접기' : '▼ 펼치기';
     }
 
     function init(){
@@ -1397,8 +1421,10 @@
               </td>
               <td class="nowrap" onclick="event.stopPropagation()">
                 <div class="mini-actions" style="margin-top:0;">
-                  ${(canManage && (String(r.status || '임시저장') === '임시저장' || String(r.status || '') === '반려')) ? `<button class="btn btn-primary" onclick="confirmDetention('${esc(r.key)}')">확정</button>` : ''}
-                  ${(canManage && (String(r.status || '임시저장') === '임시저장' || String(r.status || '') === '확정')) ? `<button class="btn btn-danger" onclick="rejectDetention('${esc(r.key)}')">반려</button>` : ''}
+                  <div style="display:flex;gap:6px;justify-content:flex-start;">
+                    ${(canManage && (String(r.status || '임시저장') === '임시저장' || String(r.status || '') === '반려')) ? `<button class="btn btn-primary" onclick="confirmDetention('${esc(r.key)}')">확정</button>` : ''}
+                    ${(canManage && (String(r.status || '임시저장') === '임시저장' || String(r.status || '') === '확정')) ? `<button class="btn btn-danger" onclick="rejectDetention('${esc(r.key)}')">반려</button>` : ''}
+                  </div>
                   ${(!canManage) ? '-' : ''}
                 </div>
               </td>
@@ -1441,8 +1467,8 @@
       const activeTb = document.getElementById(level === 'ms' ? 'notify-ms-active-tbody' : 'notify-hs-active-tbody');
       const doneTb = document.getElementById(level === 'ms' ? 'notify-ms-done-tbody' : 'notify-hs-done-tbody');
       const list = getNoticeCandidates(level);
-      const activeList = list.filter(s => s.isPendingCycle);
-      const doneList = list.filter(s => !s.isPendingCycle);
+      const activeList = list.filter(s => !s.notice.completedAt);
+      const doneList = list.filter(s => !!s.notice.completedAt);
 
       function renderRows(arr){
         if (!arr.length) return `<tr><td colspan="9" class="empty">해당 학생이 없습니다. | No matching students.</td></tr>`;
@@ -1461,19 +1487,19 @@
                 <div class="notice-actions">
                   <button class="btn btn-secondary" onclick="sendParentMail('${esc(s.key)}','${level}')">메일 보내기</button>
                 </div>
-                <div class="small-muted">${(s.isPendingCycle ? '-' : fmt(s.notice.parentMailAt))}</div>
+                <div class="small-muted">${s.notice.parentMailAt ? fmt(s.notice.parentMailAt) : '-'}</div>
               </td>
               <td onclick="event.stopPropagation()">
                 <div class="notice-actions">
                   <button class="btn btn-secondary" onclick="sendStudentTeacherMail('${esc(s.key)}','${level}')">메일 보내기</button>
                 </div>
-                <div class="small-muted">${(s.isPendingCycle ? '-' : fmt(s.notice.studentTeacherMailAt))}</div>
+                <div class="small-muted">${s.notice.studentTeacherMailAt ? fmt(s.notice.studentTeacherMailAt) : '-'}</div>
               </td>
               <td onclick="event.stopPropagation()">
                 <div class="notice-actions">
                   <button class="btn btn-primary" onclick="completeNotice('${esc(s.key)}','${level}')" ${s.cycleCompleted ? 'disabled' : ''}>완료</button>
                 </div>
-                <div class="small-muted">${s.cycleCompleted ? fmt(s.notice.completedAt) : '-'}</div>
+                <div class="small-muted">${s.notice.completedAt ? fmt(s.notice.completedAt) : '-'}</div>
               </td>
             </tr>
             <tr class="detail-row ${expanded ? 'show' : ''}">
@@ -1486,9 +1512,9 @@
                   <div class="detail-section">
                     <div class="detail-title">알림 상태 | Notice Status</div>
                     <div class="detail-content">최신 확정 시간: ${fmt(s.latestConfirmedAt)}
-학부모 메일: ${s.isPendingCycle ? '-' : fmt(s.notice.parentMailAt)}
-학생/교사 메일: ${s.isPendingCycle ? '-' : fmt(s.notice.studentTeacherMailAt)}
-완료 시간: ${s.cycleCompleted ? fmt(s.notice.completedAt) : '-'}
+학부모 메일: ${s.notice.parentMailAt ? fmt(s.notice.parentMailAt) : '-'}
+학생/교사 메일: ${s.notice.studentTeacherMailAt ? fmt(s.notice.studentTeacherMailAt) : '-'}
+완료 시간: ${s.notice.completedAt ? fmt(s.notice.completedAt) : '-'}
 이 사이클 완료 여부: ${s.cycleCompleted ? '완료' : '미완료'}</div>
                   </div>
                 </div>
@@ -1527,7 +1553,7 @@
               <td class="nowrap">${s.currentTotal}</td>
               <td class="nowrap">${s.overallTotal}</td>
               <td><span class="cell-reason-preview">${esc(buildReasonPreview(s.key))}</span></td>
-              <td class="nowrap">${s.completedRecoveryCount}회</td>
+              <td class="nowrap">${Math.ceil(s.currentTotal / 3)}회 필요</td>
               <td class="nowrap" onclick="event.stopPropagation()">
                 <button class="btn btn-primary" onclick="completeRecovery('${esc(s.key)}','${level}')">회복교육 완료</button>
               </td>
@@ -1573,7 +1599,8 @@
       document.getElementById('today-count').textContent=String(el.filter(r=>String(r.createdAt||'').slice(0,10)===td).length);
       document.getElementById('pending-count').textContent=String(el.filter(r=>String(r.status||'임시저장')==='임시저장').length);
       document.getElementById('total-count').textContent=String(el.length);
-      const o30=Object.keys(students||{}).filter(k=>getSchoolLevel((students[k]||{}).className||'')&&getStudentOverallTotal(k)>=30);
+      const isDefaultOnly = teacherRoles.length===0||(teacherRoles.length===1&&teacherRoles[0]==='default');
+      const o30=isDefaultOnly?[]:Object.keys(students||{}).filter(k=>getSchoolLevel((students[k]||{}).className||'')&&getStudentOverallTotal(k)>=30);
       let wb=document.getElementById('disc-warn');if(!wb){wb=document.createElement('div');wb.id='disc-warn';wb.style.cssText='margin:8px 0;padding:10px 14px;border-radius:10px;background:#fde8e8;border:1px solid #fca5a5;color:#7f1d1d;font-size:13px;font-weight:700;';const sc=document.getElementById('today-count');if(sc&&sc.closest('.card'))sc.closest('.card').after(wb);}
       if(o30.length){wb.style.display='';wb.innerHTML='<b>생활교육위원회 대상 (누적 30점 이상):</b> '+o30.map(k=>{const s=students[k]||{};return esc(s.name||'')+' '+esc(s.englishName||'')+' '+esc(s.className||'')+' ('+getStudentOverallTotal(k)+'점)';}).join(' / ');}else{wb.style.display='none';}
     }
@@ -1590,8 +1617,41 @@
         return toast('학생을 선택해 주세요.\nPlease select a student.', 'err');
       }
 
+      // 범위형 자동벌점 검증 (예: 1-12, 1,3)
+      if (manualPoints <= 0){
+        return toast('수동벌점을 입력해 주세요.\nPlease enter manual points.', 'err');
+      }
+      const apRaw = autoPointsRaw.trim();
+      if (apRaw && apRaw !== '-'){
+        // 범위형: "1-12"
+        const rangeMatch = apRaw.match(/^(\d+)-(\d+)$/);
+        // 선택형: "1,3"
+        const choiceMatch = apRaw.match(/^[\d]+(,[\d]+)+$/);
+        if (rangeMatch){
+          const [, minP, maxP] = rangeMatch.map(Number);
+          if (manualPoints < minP || manualPoints > maxP){
+            return toast(`벌점은 ${minP}~${maxP}점 사이여야 합니다.\nPoints must be between ${minP} and ${maxP}.`, 'err');
+          }
+        } else if (choiceMatch){
+          const choices = apRaw.split(',').map(Number);
+          if (!choices.includes(manualPoints)){
+            return toast(`벌점은 ${apRaw} 중 하나여야 합니다.\nPoints must be one of: ${apRaw}.`, 'err');
+          }
+        } else if (/^\d+$/.test(apRaw)){
+          if (manualPoints !== Number(apRaw)){
+            return toast(`벌점은 ${apRaw}점이어야 합니다.\nPoints must be ${apRaw}.`, 'err');
+          }
+        }
+      }
+
       const s = students[studentKey];
       const violationId=(category+'|||'+violation).replace(/\s+/g,' ').trim();
+      // 선도위원회/생활교육위원회 회부 체크 (2회차+, 비고에 "선도위원회" 포함)
+      const matchedStd = detentionStandards.find(d=>d.category===category&&d.violation===violation);
+      const noteText = String(matchedStd?.note||'');
+      const isReferral = noteText.includes('선도위원회') || noteText.includes('Disciplinary Committee');
+      const prevCount = getViolationCount(studentKey, (category+'|||'+violation).replace(/\s+/g,' ').trim());
+      const isSecondOrMore = prevCount >= 1; // 이미 1회 이상 있으면 2회차
       const violationCount=getViolationCount(studentKey,violationId)+1;
       const schoolLevel=getSchoolLevel(s.className||'');
       const payload = {
@@ -1606,7 +1666,8 @@
         violationCount,
         autoPoints: autoPointsRaw,
         manualPoints,
-        totalPoints: manualPoints,
+        totalPoints: (isReferral && isSecondOrMore) ? 0 : manualPoints,
+        isReferral: isReferral && isSecondOrMore,
         memo,
         teacherName: teacher.name || '',
         teacherEmail: teacher.email || '',
@@ -1683,48 +1744,54 @@
       const msRestoreEmail = getFirstTeacherEmailByRole('ms_restore');
       const hsRestoreEmail = getFirstTeacherEmailByRole('hs_restore');
       const reasonText = buildCycleReasonText(student.key);
-
-      return `${student.name} 학생 학부모님 안녕하세요.
-
-${student.name} 학생의 디텐션 포인트가 3점 이상이 되어서
-학생부에서 회복교육을 받게 되었음을 안내드립니다.
-
-    ▶ 이 름 (Name)            : ${student.name}
-    ▶ 홈 룸 (HR)              : ${student.className}
-    ▶ Detention point         : ${getStudentCurrentTotal(student.key)}
-    ▶ 사 유 (Reason)          :
-${reasonText.split('\n').map(line => `      ${line}`).join('\n')}
-
-학생이 학교의 규정을 준수하며 바르게 성장할 수 있도록 지도하겠습니다.
-가정에서도 관심을 가지고 이야기를 나누어 주시기를 부탁드립니다.
-
-디텐션 포인트 관련 문의가 있으시면
-
-    학생부장                  : ${masterEmail || '-'}
-    중등회복교육 담당         : ${msRestoreEmail || '-'}
-    고등회복교육 담당         : ${hsRestoreEmail || '-'}`;
+      const memoLines = getCurrentCycleEntries(student.key).map(r => String(r.memo || '').trim()).filter(Boolean);
+      const memoBlock = memoLines.length ? '\n    ▶ 메 모 (Memo)            :\n' + memoLines.map(m => '      ' + m).join('\n') : '';
+      return [
+        student.name + ' 학생 학부모님 안녕하세요.',
+        '',
+        student.name + ' 학생의 디텐션 포인트가 3점 이상이 되어서',
+        '학생부에서 회복교육을 받게 되었음을 안내드립니다.',
+        '',
+        '    ▶ 이 름 (Name)            : ' + student.name,
+        '    ▶ 홈 룸 (HR)              : ' + student.className,
+        '    ▶ Detention point         : ' + getStudentCurrentTotal(student.key),
+        '    ▶ 사 유 (Reason)          :',
+        reasonText.split('\n').map(l => '      ' + l).join('\n') + memoBlock,
+        '',
+        '학생이 학교의 규정을 준수하며 바르게 성장할 수 있도록 지도하겠습니다.',
+        '가정에서도 관심을 가지고 이야기를 나누어 주시기를 부탁드립니다.',
+        '',
+        '디텐션 포인트 관련 문의가 있으시면',
+        '',
+        '    학생부장                  : ' + (masterEmail || '-'),
+        '    중등회복교육 담당         : ' + (msRestoreEmail || '-'),
+        '    고등회복교육 담당         : ' + (hsRestoreEmail || '-')
+      ].join('\n');
     }
 
     function buildStudentTeacherMailBody(student, level){
       const restoreEmail = level === 'ms' ? getFirstTeacherEmailByRole('ms_restore') : getFirstTeacherEmailByRole('hs_restore');
       const reasonText = buildCycleReasonText(student.key);
-
-      return `    ▶ 이 름 (Name)            : ${student.name}
-    ▶ 홈 룸 (HR)              : ${student.className}
-    ▶ Detention point         : ${getStudentCurrentTotal(student.key)}
-    ▶ 사 유 (Reason)          :
-${reasonText.split('\n').map(line => `      ${line}`).join('\n')}
-
-To. 회복교육 담당 선생님
-
-학생들의 회복교육 일시/장소를 학생들에게 공지해 주시기 바랍니다.
-
-To: Restorative Education Teacher
-
-Please inform the student about the schedule and location
-for their restorative education.
-
-    Restore Teacher Email     : ${restoreEmail || '-'}`;
+      const memoLines = getCurrentCycleEntries(student.key).map(r => String(r.memo || '').trim()).filter(Boolean);
+      const memoBlock = memoLines.length ? '\n    ▶ 메 모 (Memo)            :\n' + memoLines.map(m => '      ' + m).join('\n') : '';
+      return [
+        '    ▶ 이 름 (Name)            : ' + student.name,
+        '    ▶ 홈 룸 (HR)              : ' + student.className,
+        '    ▶ Detention point         : ' + getStudentCurrentTotal(student.key),
+        '    ▶ 사 유 (Reason)          :',
+        reasonText.split('\n').map(l => '      ' + l).join('\n') + memoBlock,
+        '',
+        'To. 회복교육 담당 선생님',
+        '',
+        '학생들의 회복교육 일시/장소를 학생들에게 공지해 주시기 바랍니다.',
+        '',
+        'To: Restorative Education Teacher',
+        '',
+        'Please inform the student about the schedule and location',
+        'for their restorative education.',
+        '',
+        '    Restore Teacher Email     : ' + (restoreEmail || '-')
+      ].join('\n');
     }
 
     async function openMailAfterSave(url, savePromise){
