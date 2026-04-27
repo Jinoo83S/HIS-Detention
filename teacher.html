@@ -227,8 +227,10 @@
         </div>
 
         <div id="standard-actions" class="mini-actions role-only" data-role="master" style="margin-top:10px;">
-          <button class="btn btn-secondary" onclick="addCriteriaRow()">행 추가 | Add Row</button>
-          <button class="btn btn-primary" onclick="saveCriteriaTable()">기준표 저장 | Save Standards</button>
+          <button id="btn-enable-edit" class="btn btn-secondary" onclick="enableStandardEdit()">편집 활성화 | Enable Edit</button>
+          <button id="btn-add-criteria" class="btn btn-secondary hidden" onclick="addCriteriaRow()">행 추가 | Add Row</button>
+          <button id="btn-save-criteria" class="btn btn-primary hidden" onclick="saveCriteriaTable()" disabled style="opacity:.4;cursor:not-allowed;">저장할 내용 없음 | No Changes</button>
+          <button id="btn-cancel-edit" class="btn btn-danger hidden" onclick="cancelStandardEdit()">편집 취소 | Cancel</button>
         </div>
 
         <div class="tbl-wrap" style="margin-top:10px;">
@@ -1006,13 +1008,45 @@
         el.classList.toggle('role-show', visible);
       });
 
-      document.getElementById('standard-edit-note').textContent =
-        isMaster ? '편집 가능 모드 | Editable Mode' : '기본 보기 모드 | View Mode';
+      document.getElementById('standard-edit-note').textContent = '기본 보기 모드 | View Mode';
+    }
+
+    let _standardSnapshot = '';
+    function _getStandardSig(){
+      return JSON.stringify(detentionStandards.map(d=>d.category+'|'+d.violation+'|'+d.autoPoints+'|'+d.note));
+    }
+    function enableStandardEdit(){
+      window._standardEditMode = true;
+      _standardSnapshot = _getStandardSig();
+      document.getElementById('btn-enable-edit').classList.add('hidden');
+      document.getElementById('btn-add-criteria').classList.remove('hidden');
+      document.getElementById('btn-save-criteria').classList.remove('hidden');
+      document.getElementById('btn-cancel-edit').classList.remove('hidden');
+      document.getElementById('standard-edit-note').textContent = '편집 중 | Editing...';
+      renderCriteriaTable();
+    }
+    function cancelStandardEdit(){
+      window._standardEditMode = false;
+      document.getElementById('btn-enable-edit').classList.remove('hidden');
+      document.getElementById('btn-add-criteria').classList.add('hidden');
+      document.getElementById('btn-save-criteria').classList.add('hidden');
+      document.getElementById('btn-cancel-edit').classList.add('hidden');
+      document.getElementById('standard-edit-note').textContent = '기본 보기 모드 | View Mode';
+      renderCriteriaTable();
+    }
+    function checkCriteriaDirty(){
+      const btn = document.getElementById('btn-save-criteria');
+      if (!btn) return;
+      const dirty = _getStandardSig() !== _standardSnapshot;
+      btn.disabled = !dirty;
+      btn.style.opacity = dirty ? '1' : '0.4';
+      btn.style.cursor = dirty ? 'pointer' : 'not-allowed';
+      btn.textContent = dirty ? '기준표 저장 | Save Standards' : '저장할 내용 없음 | No Changes';
     }
 
     function renderCriteriaTable(){
       const tb = document.getElementById('criteria-tbody');
-      const editable = canEditStandard();
+      const editable = window._standardEditMode === true && canEditStandard();
       document.getElementById('criteria-action-head').classList.toggle('hidden', !editable);
 
       if (!detentionStandards.length){
@@ -1034,10 +1068,10 @@
 
       tb.innerHTML = detentionStandards.map((row, idx) => `
         <tr>
-          <td><textarea class="criteria-textarea" oninput="detentionStandards[${idx}].category=this.value">${esc(row.category || '')}</textarea></td>
-          <td><textarea class="criteria-textarea" oninput="detentionStandards[${idx}].violation=this.value">${esc(row.violation || '')}</textarea></td>
-          <td><input class="edit-input criteria-points-input" value="${esc(String(row.autoPoints ?? ''))}" oninput="detentionStandards[${idx}].autoPoints=this.value"></td>
-          <td><textarea class="criteria-textarea" oninput="detentionStandards[${idx}].note=this.value">${esc(row.note || '')}</textarea></td>
+          <td><textarea class="criteria-textarea" oninput="detentionStandards[${idx}].category=this.value;checkCriteriaDirty()">${esc(row.category || '')}</textarea></td>
+          <td><textarea class="criteria-textarea" oninput="detentionStandards[${idx}].violation=this.value;checkCriteriaDirty()">${esc(row.violation || '')}</textarea></td>
+          <td><input class="edit-input criteria-points-input" value="${esc(String(row.autoPoints ?? ''))}" oninput="detentionStandards[${idx}].autoPoints=this.value;checkCriteriaDirty()"></td>
+          <td><textarea class="criteria-textarea" oninput="detentionStandards[${idx}].note=this.value;checkCriteriaDirty()">${esc(row.note || '')}</textarea></td>
           <td style="text-align:center; vertical-align:top;"><button class="btn btn-danger" onclick="deleteCriteriaRow(${idx})">삭제 | Delete</button></td>
         </tr>
       `).join('');
@@ -1047,12 +1081,14 @@
       if (!canEditStandard()) return;
       detentionStandards.push({ category:'', violation:'', autoPoints:'', note:'' });
       renderCriteriaTable();
+      checkCriteriaDirty();
     }
 
     function deleteCriteriaRow(idx){
       if (!canEditStandard()) return;
       detentionStandards.splice(idx, 1);
       renderCriteriaTable();
+      checkCriteriaDirty();
     }
 
     async function saveCriteriaTable(){
@@ -1545,7 +1581,12 @@
     function renderNotifyTableByLevel(level){
       const activeTb = document.getElementById(level === 'ms' ? 'notify-ms-active-tbody' : 'notify-hs-active-tbody');
       const doneTb = document.getElementById(level === 'ms' ? 'notify-ms-done-tbody' : 'notify-hs-done-tbody');
-      const activeList = getNoticeCandidates(level).filter(s => !s.notice.completedAt);
+      // active: findActiveNotice가 존재(미완료 notice)하고 currentTotal>=3
+      // done: completedAt 있는 notice 전체 목록
+      const activeList = getNoticeCandidates(level).filter(s => !!s.noticeDocKey && !s.notice.completedAt);
+      // currentTotal>=3 인데 아직 notice 없는 경우도 active에 포함
+      const pendingNewList = getNoticeCandidates(level).filter(s => !s.noticeDocKey);
+      const finalActiveList = [...activeList, ...pendingNewList];
       const doneList = getCompletedNoticeList(level);
 
       function renderRows(arr){
@@ -1602,7 +1643,7 @@
         }).join('');
       }
 
-      activeTb.innerHTML = renderRows(activeList);
+      activeTb.innerHTML = renderRows(finalActiveList);
       // 완료된 목록: 완료 버튼 없음, 메일도 재발송 불필요
       if (!doneList.length){
         doneTb.innerHTML = '<tr><td colspan="9" class="empty">해당 학생이 없습니다. | No matching students.</td></tr>';
@@ -1726,6 +1767,12 @@
       const referralTb = document.getElementById('discipline-referral-tbody');
       const eduTb = document.getElementById('discipline-education-tbody');
       if (!referralTb || !eduTb) return;
+      // 데이터 로드 확인
+      if (!Object.keys(entries||{}).length && !Object.keys(students||{}).length) {
+        referralTb.innerHTML = '<tr><td colspan="8" class="empty">데이터 로딩 중... | Loading...</td></tr>';
+        eduTb.innerHTML = '<tr><td colspan="6" class="empty">데이터 로딩 중... | Loading...</td></tr>';
+        return;
+      }
 
       // 선도위원회 회부 항목 (확정된 것만)
       const referralList = Object.entries(entries||{})
@@ -1827,12 +1874,6 @@
 
       const s = students[studentKey];
       const violationId=(category+'|||'+violation).replace(/\s+/g,' ').trim();
-      // 선도위원회/생활교육위원회 회부 체크 (2회차+, 비고에 "선도위원회" 포함)
-      const matchedStd = detentionStandards.find(d=>d.category===category&&d.violation===violation);
-      const noteText = String(matchedStd?.note||'');
-      const isReferral = noteText.includes('선도위원회') || noteText.includes('Disciplinary Committee');
-      const prevCount = getViolationCount(studentKey, (category+'|||'+violation).replace(/\s+/g,' ').trim());
-      const isSecondOrMore = prevCount >= 1; // 이미 1회 이상 있으면 2회차
       const violationCount=getViolationCount(studentKey,violationId)+1;
       const schoolLevel=getSchoolLevel(s.className||'');
       const payload = {
@@ -1847,8 +1888,7 @@
         violationCount,
         autoPoints: autoPointsRaw,
         manualPoints,
-        totalPoints: (isReferral && isSecondOrMore) ? 0 : manualPoints,
-        isReferral: isReferral && isSecondOrMore,
+        totalPoints: manualPoints,
         memo,
         teacherName: teacher.name || '',
         teacherEmail: teacher.email || '',
@@ -1879,12 +1919,27 @@
       }
 
       try{
+        // 선도위원회 회부 판별: 2회차+ AND 비고에 "선도위원회" 포함
+        const std = detentionStandards.find(d=>
+          d.category===(record.category||'') && d.violation===(record.violation||'')
+        );
+        const noteText = String(std?.note||'');
+        const hasCommitteeNote = noteText.includes('선도위원회') || noteText.includes('Disciplinary Committee');
+        const prevConfirmedCount = Object.values(entries||{}).filter(r=>
+          String(r.studentKey||'')===String(record.studentKey||'') &&
+          String(r.violationId||'')===String(record.violationId||'') &&
+          String(r.status||'')==='확정' &&
+          r.key !== key
+        ).length;
+        const isReferral = hasCommitteeNote && prevConfirmedCount >= 1;
+
         await db.ref(`${DETENTION_DB_PATH}/${key}`).update({
           status:'확정',
           adminNote:String(record.adminNote || ''),
           confirmedAt:new Date().toISOString(),
           confirmedBy:teacher.name || '',
-          confirmedByEmail:teacher.email || ''
+          confirmedByEmail:teacher.email || '',
+          isReferral: isReferral
         });
         toast('디텐션이 확정되었습니다.\nDetention entry confirmed.', 'ok');
         loadData();
