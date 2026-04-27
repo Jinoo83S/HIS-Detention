@@ -391,6 +391,25 @@
           db.ref('recoveryEntries').once('value')
         ]);
 
+        entryRows = Object.entries(entriesSnap.val() || {}).map(([key, value]) => ({
+          key, _deleted: false, ...value
+        })).sort((a,b) => String(b.createdAt||'').localeCompare(String(a.createdAt||'')));
+
+        noticeRows = Object.entries(noticesSnap.val() || {}).map(([key, value]) => ({
+          key, _deleted: false, ...value
+        })).sort((a,b) => String(b.createdAt||'').localeCompare(String(a.createdAt||'')));
+
+        recoveryRows = Object.entries(recoverySnap.val() || {}).map(([key, value]) => ({
+          key, _deleted: false, ...value
+        })).sort((a,b) => String(b.completedAt||'').localeCompare(String(a.completedAt||'')));
+
+        _entrySnap=_sig(entryRows);
+        _noticeSnap=_sig(noticeRows);
+        _recoverySnap=_sig(recoveryRows);
+        _setBtnState('btn-save-entries',false);
+        _setBtnState('btn-save-notices',false);
+        _setBtnState('btn-save-recovery',false);
+
         renderEntriesTable();
         renderNoticesTable();
         renderRecoveryTable();
