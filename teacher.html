@@ -1304,7 +1304,12 @@
 
         teachers = teacherSnap.val() || {};
         students = studentSnap.val() || {};
-        entries = entrySnap.val() || {};
+        // entries에 각 record의 key 포함 (renderDisciplineTab 등에서 활용)
+        const rawEntries = entrySnap.val() || {};
+        entries = {};
+        Object.entries(rawEntries).forEach(([k, v]) => {
+          entries[k] = { ...v, key: k };
+        });
         recoveryEntries = recoverySnap.val() || {};
         noticeEntries = noticeSnap.val() || {};
 
@@ -1528,7 +1533,7 @@
               <td class="nowrap">${esc(r.className || '-')}</td>
               <td class="nowrap">${esc(r.category || '')}</td>
               <td><span class="cell-reason-preview">${esc(String(r.violation || '').split('\n')[0])}</span></td>
-              <td class="nowrap">${esc(String(r.totalPoints || 0))}</td>
+              <td class="nowrap">${esc(String(r.totalPoints || 0))}${(r.isReferral===true||r.isReferral==='true')?'<br><span style="color:var(--rd);font-size:10px;font-weight:700;">선도위원회</span>':''}</td>
               <td class="nowrap">${esc(r.teacherName || '')}</td>
               <td class="nowrap">${statusBadge(r.status || '임시저장')}</td>
               <td onclick="event.stopPropagation()">
@@ -1784,7 +1789,7 @@
       // 선도위원회 회부 항목 (확정된 것만)
       const referralList = Object.entries(entries||{})
         .map(([key,v])=>({key,...v}))
-        .filter(r=>r.isReferral===true && String(r.status||'')==='확정')
+        .filter(r=>(r.isReferral===true || r.isReferral==='true') && String(r.status||'')==='확정')
         .sort((a,b)=>String(b.confirmedAt||b.createdAt||'').localeCompare(String(a.confirmedAt||a.createdAt||'')));
 
       if (!referralList.length){
@@ -1932,26 +1937,54 @@
       try{
         // 선도위원회 회부 판별: 2회차+ AND 비고에 "선도위원회" 포함
         const std = detentionStandards.find(d=>
-          d.category===(record.category||'') && d.violation===(record.violation||'')
+          String(d.category||'')===String(record.category||'') &&
+          String(d.violation||'')===String(record.violation||'')
         );
-        const noteText = String(std?.note||'');
+        const noteText = String(std ? std.note : '');
         const hasCommitteeNote = noteText.includes('선도위원회') || noteText.includes('Disciplinary Committee');
-        const prevConfirmedCount = Object.values(entries||{}).filter(r=>
+
+        // violationId 없는 구버전 entries도 category+violation으로 매칭
+        const computedViolationId = (String(record.category||'')+'|||'+String(record.violation||'')).replace(/\s+/g,' ').trim();
+        const prevConfirmedCount = Object.entries(entries||{}).filter(([entryKey, r])=>
+          entryKey !== key &&
           String(r.studentKey||'')===String(record.studentKey||'') &&
-          String(r.violationId||'')===String(record.violationId||'') &&
           String(r.status||'')==='확정' &&
-          r.key !== key
+          (
+            (r.violationId && String(r.violationId||'')===computedViolationId) ||
+            (!r.violationId &&
+              String(r.category||'')===String(record.category||'') &&
+              String(r.violation||'')===String(record.violation||''))
+          )
         ).length;
         const isReferral = hasCommitteeNote && prevConfirmedCount >= 1;
 
-        await db.ref(`${DETENTION_DB_PATH}/${key}`).update({
+        // isReferral이면 점수 0으로 처리 (선도위원회 회부)
+        const updatePayload = {
           status:'확정',
           adminNote:String(record.adminNote || ''),
           confirmedAt:new Date().toISOString(),
           confirmedBy:teacher.name || '',
           confirmedByEmail:teacher.email || '',
-          isReferral: isReferral
-        });
+          isReferral: isReferral,
+          violationId: computedViolationId
+        };
+        if (isReferral) {
+          updatePayload.totalPoints = 0;
+          updatePayload.manualPoints = 0;
+        } else {
+          // comma형 점수 재계산 (적립형: 1회=낮은점수, 2회+=높은점수)
+          const rawAp = String(record.autoPoints || '').trim();
+          if (rawAp.includes(',') && !rawAp.includes('-')) {
+            const parts = rawAp.split(',').map(v => Number(v.trim())).filter(n => !isNaN(n));
+            if (parts.length >= 2) {
+              const correctPts = prevConfirmedCount === 0 ? parts[0] : parts[1];
+              updatePayload.totalPoints = correctPts;
+              updatePayload.manualPoints = correctPts;
+            }
+          }
+        }
+
+        await db.ref(`${DETENTION_DB_PATH}/${key}`).update(updatePayload);
         toast('디텐션이 확정되었습니다.\nDetention entry confirmed.', 'ok');
         loadData();
       }catch(e){
