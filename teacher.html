@@ -24,6 +24,8 @@
     .table-actions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin:10px 0 8px}
     .role-only{display:none}
     .role-show{display:block}
+    .info-badges{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
+    .info-badges .badge{background:#dce6f7;color:var(--nv);font-size:12px;padding:4px 10px;border-radius:20px;font-weight:700;}
     .hidden{display:none !important}
 
     .stat-boxes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px}
@@ -613,23 +615,10 @@
     const TEACHER_DB_PATH = 'teachers';
 
         let detentionStandards = [
-      { category:'수업 Class', violation:`다음 사항에서 3회 이상 위반 시 디텐션 포인트 발생
-- 과제 미제출
-- 수업 지각
-- 수업 중 자는 행위
-- 수업 방해
-- 수업 준비물 미지참
-3 or more violations of the following:
-- Not submitting assignments
-- Being late for class
-- Sleeping in class
-- Disrupting the class
-- Not preparing class materials`, autoPoints:'1-12', note:'' },
+      { category:'수업 Class', violation:'다음 사항에서 3회 이상 위반 시 디텐션 포인트 발생\n- 과제 미제출\n- 수업 지각\n- 수업 중 자는 행위\n- 수업 방해\n- 수업 준비물 미지참\n3 or more violations of the following:\n- Not submitting assignments\n- Being late for class\n- Sleeping in class\n- Disrupting the class\n- Not preparing class materials', autoPoints:'1-12', note:'' },
       { category:'표절 및 부정행위 Plagiarism & Cheating', violation:'표절 Plagiarism', autoPoints:'9', note:'' },
-      { category:'표절 및 부정행위 Plagiarism & Cheating', violation:'부정행위 및 이에 대한 동조 또는 방조 Cheating, aligning with cheating, or related aiding and abetting', autoPoints:'12', note:'해당 시험 점수는 0점 처리
-0 score given for the test' },
-      { category:'표절 및 부정행위 Plagiarism & Cheating', violation:'수업 규정에 명시되어 있음에도 불구하고 이에 반하여 AI를 사용하여 전체 과제를 작성하거나 번역하고 이를 시인한 경우
-When a student completes an entire assignment or translates it using AI, despite such use being explicitly prohibited in the class regulations, and admits to having done so', autoPoints:'12', note:'' },
+      { category:'표절 및 부정행위 Plagiarism & Cheating', violation:'부정행위 및 이에 대한 동조 또는 방조 Cheating, aligning with cheating, or related aiding and abetting', autoPoints:'12', note:'해당 시험 점수는 0점 처리\n0 score given for the test' },
+      { category:'표절 및 부정행위 Plagiarism & Cheating', violation:'수업 규정에 명시되어 있음에도 불구하고 이에 반하여 AI를 사용하여 전체 과제를 작성하거나 번역하고 이를 시인한 경우\nWhen a student completes an entire assignment or translates it using AI, despite such use being explicitly prohibited in the class regulations, and admits to having done so', autoPoints:'12', note:'' },
       { category:'언어 및 품행 Language & Behavior', violation:'욕설 Foul language', autoPoints:'3', note:'' },
       { category:'언어 및 품행 Language & Behavior', violation:'거짓말 Lying', autoPoints:'3', note:'' },
       { category:'언어 및 품행 Language & Behavior', violation:'회복교육 무단 불참 Unexcused absence from Restorative Education', autoPoints:'3', note:'' },
@@ -656,12 +645,8 @@ When a student completes an entire assignment or translates it using AI, despite
       { category:'시설 및 기물 Facility & Property', violation:'한동대학교에서 출입 제한한 건물 및 시설 사용으로 신고가 접수된 경우 If the student is reported for using buildings and facilities that Handong University has restricted access to', autoPoints:'3', note:'' },
       { category:'시설 및 기물 Facility & Property', violation:'교내의 출입금지 시간 무단 위반 Violation of school no-entry time', autoPoints:'9-12', note:'' },
       { category:'시설 및 기물 Facility & Property', violation:'일과 중 무단 이탈 Unauthorized departure during the school day', autoPoints:'9-18', note:'' },
-      { category:'이성교제 Dating', violation:'이성교제 규정 1회 위반 1st violation of dating regulation', autoPoints:'12-15', note:'2회 이상 적발된 경우 선도위원회 회부
-In cases of two or more violations, the matter will be referred to the Disciplinary Committee.' },
-      { category:'흡연 Smoking', violation:'담배 소지 또는 흡연 1차 적발 1st detection of possession or smoking of cigarettes', autoPoints:'12-15', note:'금연 및 이에 준한 교육에 의무적으로 참여하여야 함
-Mandatory participation in anti-smoking or equivalent education
-2회 이상 적발된 경우 선도위원회 회부
-In cases of two or more violations, the matter will be referred to the Disciplinary Committee.' },
+      { category:'이성교제 Dating', violation:'이성교제 규정 1회 위반 1st violation of dating regulation', autoPoints:'12-15', note:'2회 이상 적발된 경우 선도위원회 회부\nIn cases of two or more violations, the matter will be referred to the Disciplinary Committee.' },
+      { category:'흡연 Smoking', violation:'담배 소지 또는 흡연 1차 적발 1st detection of possession or smoking of cigarettes', autoPoints:'12-15', note:'금연 및 이에 준한 교육에 의무적으로 참여하여야 함\nMandatory participation in anti-smoking or equivalent education\n2회 이상 적발된 경우 선도위원회 회부\nIn cases of two or more violations, the matter will be referred to the Disciplinary Committee.' },
       { category:'교외 생활 Off-campus Life', violation:'전동 킥보드 탑승 Riding an electric scooter', autoPoints:'12-15', note:'' },
       { category:'그 외 Others', violation:"상기 항목에 속하지 않으나 학생 본분에 어긋나는 위반 사항 Violations that do not fall under the aforementioned categories but are deemed inappropriate for a student's conduct", autoPoints:'1-15', note:'' }
     ];
@@ -698,8 +683,9 @@ In cases of two or more violations, the matter will be referred to the Disciplin
     }
 
     function normalizeRoles(roles){
-      if (Array.isArray(roles)) return roles.filter(Boolean);
-      if (typeof roles === 'string') return roles.split(/[|,]/).map(v => String(v || '').trim().toLowerCase()).filter(Boolean);
+      if (Array.isArray(roles)) return roles.map(v=>String(v||'').trim().toLowerCase()).filter(Boolean);
+      if (typeof roles === 'string') return roles.split(/[|,]/).map(v=>String(v||'').trim().toLowerCase()).filter(Boolean);
+      if (roles && typeof roles === 'object') return Object.keys(roles).sort((a,b)=>Number(a)-Number(b)).map(k=>String(roles[k]||'').trim().toLowerCase()).filter(Boolean);
       return [];
     }
 
@@ -765,8 +751,6 @@ In cases of two or more violations, the matter will be referred to the Disciplin
       return getStudentOverallTotal(studentKey) - getStudentRecoveryTotal(studentKey);
     }
 
-    function sName(k, e) { k=String(k||"").trim(); e=String(e||"").trim(); return e?`${k} ${e}`:k; }
-
     function getGradeNumber(className){
       const m = String(className || '').match(/^(\d{1,2})/);
       return m ? Number(m[1]) : 0;
@@ -779,33 +763,12 @@ In cases of two or more violations, the matter will be referred to the Disciplin
       return '';
     }
 
-    /* ─── Notice 헬퍼 (pushKey 구조) ─── */
-    function findActiveNotice(sKey, level){
-      const hit = Object.entries(noticeEntries||{})
-        .filter(([,v])=>String(v.studentKey||'')===String(sKey)&&String(v.level||'')===String(level)&&!v.completedAt)
-        .sort((a,b)=>String(b[1].createdAt||'').localeCompare(String(a[1].createdAt||'')));
-      return hit.length?{key:hit[0][0],notice:hit[0][1]}:null;
-    }
-    function findLatestCompletedNotice(sKey, level){
-      const hit = Object.entries(noticeEntries||{})
-        .filter(([,v])=>String(v.studentKey||'')===String(sKey)&&String(v.level||'')===String(level)&&!!v.completedAt)
-        .sort((a,b)=>String(b[1].completedAt||'').localeCompare(String(a[1].completedAt||'')));
-      return hit.length?{key:hit[0][0],notice:hit[0][1]}:null;
-    }
-    function getViolationCount(sKey, vId){
-      return Object.values(entries||{}).filter(r=>String(r.studentKey||'')===String(sKey)&&String(r.violationId||'')===String(vId)&&String(r.status||'')==='확정').length;
-    }
-    function getCurrentCycleEntries(sKey){
-      const conf=getConfirmedEntriesForStudent(sKey);
-      const lr=Object.values(recoveryEntries||{}).filter(r=>String(r.studentKey||'')===String(sKey)).sort((a,b)=>String(b.completedAt||'').localeCompare(String(a.completedAt||'')))[0];
-      const since=lr?String(lr.completedAt||''):'';
-      return since?conf.filter(r=>String(r.confirmedAt||r.createdAt||'')>since):conf;
-    }
-    function buildCycleReasonText(sKey){
-      const seen=new Set(),lines=[];
-      getCurrentCycleEntries(sKey).forEach(r=>{const l=String(r.violation||'').trim();if(l&&!seen.has(l)){seen.add(l);lines.push(l);}});
-      return lines.length?lines.map((v,i)=>`[${i+1}] ${v}`).join('\n\n'):'-';
-    }
+    function sName(k,e){k=String(k||'').trim();e=String(e||'').trim();return e?k+' '+e:k;}
+    function findActiveNotice(sKey,lvl){const hit=Object.entries(noticeEntries||{}).filter(([,v])=>String(v.studentKey||'')===String(sKey)&&String(v.level||'')===String(lvl)&&!v.completedAt).sort((a,b)=>String(b[1].createdAt||'').localeCompare(String(a[1].createdAt||'')));return hit.length?{key:hit[0][0],notice:hit[0][1]}:null;}
+    function findLatestCompletedNotice(sKey,lvl){const hit=Object.entries(noticeEntries||{}).filter(([,v])=>String(v.studentKey||'')===String(sKey)&&String(v.level||'')===String(lvl)&&!!v.completedAt).sort((a,b)=>String(b[1].completedAt||'').localeCompare(String(a[1].completedAt||'')));return hit.length?{key:hit[0][0],notice:hit[0][1]}:null;}
+    function getViolationCount(sKey,vId){return Object.values(entries||{}).filter(r=>String(r.studentKey||'')===String(sKey)&&String(r.violationId||'')===String(vId)&&String(r.status||'')==='확정').length;}
+    function getCurrentCycleEntries(sKey){const conf=getConfirmedEntriesForStudent(sKey);const lr=Object.values(recoveryEntries||{}).filter(r=>String(r.studentKey||'')===String(sKey)).sort((a,b)=>String(b.completedAt||'').localeCompare(String(a.completedAt||'')))[0];const since=lr?String(lr.completedAt||''):'';return since?conf.filter(r=>String(r.confirmedAt||r.createdAt||'')>since):conf;}
+    function buildCycleReasonText(sKey){const seen=new Set(),lines=[];getCurrentCycleEntries(sKey).forEach(r=>{const l=String(r.violation||'').trim();if(l&&!seen.has(l)){seen.add(l);lines.push(l);}});return lines.length?lines.map((v,i)=>'['+String(i+1)+'] '+v).join('\n\n'):'-';}
 
     function getTeachersByRole(roleKey){
       return Object.values(teachers || {}).filter(t => normalizeRoles(t.roles || t.role || []).includes(roleKey));
@@ -857,49 +820,24 @@ In cases of two or more violations, the matter will be referred to the Disciplin
     }
 
     function getNoticeCandidates(level){
-      return Object.entries(students||{}).map(([key,value])=>({key,...value}))
-        .filter(s=>getSchoolLevel(s.className)===level)
-        .map(s=>{
-          const currentTotal=getStudentCurrentTotal(s.key);
-          const overallTotal=getStudentOverallTotal(s.key);
-          const reasons=buildReasonText(s.key);
-          const latestEntry=getConfirmedEntriesForStudent(s.key)[0]||null;
-          const latestConfirmedAt=getLatestConfirmedAt(s.key);
-          const activeNoticeObj=findActiveNotice(s.key,level);
-          const notice=activeNoticeObj?.notice||{};
-          const noticeDocKey=activeNoticeObj?.key||null;
-          const isPendingCycle=!!latestConfirmedAt&&(!!activeNoticeObj||currentTotal>=3);
-          return{...s,currentTotal,overallTotal,reasons,latestEntry,latestConfirmedAt,noticeDocKey,notice,cycleCompleted:false,isPendingCycle};
-        })
-        .filter(s=>s.currentTotal>=3&&s.latestEntry)
-        .sort((a,b)=>{
-          if(a.isPendingCycle!==b.isPendingCycle)return a.isPendingCycle?-1:1;
-          return String(b.latestConfirmedAt||'').localeCompare(String(a.latestConfirmedAt||''));
-        });
+      return Object.entries(students||{}).map(([key,value])=>({key,...value})).filter(s=>getSchoolLevel(s.className)===level).map(s=>{
+        const currentTotal=getStudentCurrentTotal(s.key),overallTotal=getStudentOverallTotal(s.key),reasons=buildReasonText(s.key);
+        const latestEntry=getConfirmedEntriesForStudent(s.key)[0]||null,latestConfirmedAt=getLatestConfirmedAt(s.key);
+        const activeNoticeObj=findActiveNotice(s.key,level);
+        const notice=activeNoticeObj?activeNoticeObj.notice:{},noticeDocKey=activeNoticeObj?activeNoticeObj.key:null;
+        const isPendingCycle=!!latestConfirmedAt&&(!!activeNoticeObj||currentTotal>=3);
+        return{...s,currentTotal,overallTotal,reasons,latestEntry,latestConfirmedAt,noticeDocKey,notice,cycleCompleted:false,isPendingCycle};
+      }).filter(s=>s.currentTotal>=3&&s.latestEntry).sort((a,b)=>{if(a.isPendingCycle!==b.isPendingCycle)return a.isPendingCycle?-1:1;return String(b.latestConfirmedAt||'').localeCompare(String(a.latestConfirmedAt||''));});
     }
 
     function getRecoveryCandidates(level){
-      return Object.entries(students||{}).map(([key,value])=>({key,...value}))
-        .filter(s=>getSchoolLevel(s.className)===level)
-        .map(s=>{
-          const completedNoticeObj=findLatestCompletedNotice(s.key,level);
-          const activeNoticeObj=findActiveNotice(s.key,level);
-          if(!completedNoticeObj||activeNoticeObj)return null;
-          const currentTotal=getStudentCurrentTotal(s.key);
-          const overallTotal=getStudentOverallTotal(s.key);
-          const reasons=buildReasonText(s.key);
-          const recoveryList=Object.entries(recoveryEntries||{})
-            .map(([key,value])=>({key,...value}))
-            .filter(r=>String(r.studentKey||'')===String(s.key)&&String(r.level||'')===String(level))
-            .sort((a,b)=>String(b.completedAt||'').localeCompare(String(a.completedAt||'')));
-          return{...s,currentTotal,overallTotal,reasons,recoveryList,completedRecoveryCount:recoveryList.length,completedNotice:completedNoticeObj.notice};
-        })
-        .filter(Boolean)
-        .sort((a,b)=>{
-          const aA=a.currentTotal>0,bA=b.currentTotal>0;
-          if(aA!==bA)return aA?-1:1;
-          return String(b.recoveryList[0]?.completedAt||b.completedNotice?.completedAt||'').localeCompare(String(a.recoveryList[0]?.completedAt||a.completedNotice?.completedAt||''));
-        });
+      return Object.entries(students||{}).map(([key,value])=>({key,...value})).filter(s=>getSchoolLevel(s.className)===level).map(s=>{
+        const completedNoticeObj=findLatestCompletedNotice(s.key,level),activeNoticeObj=findActiveNotice(s.key,level);
+        if(!completedNoticeObj||activeNoticeObj)return null;
+        const currentTotal=getStudentCurrentTotal(s.key),overallTotal=getStudentOverallTotal(s.key),reasons=buildReasonText(s.key);
+        const recoveryList=Object.entries(recoveryEntries||{}).map(([key,value])=>({key,...value})).filter(r=>String(r.studentKey||'')===String(s.key)&&String(r.level||'')===String(level)).sort((a,b)=>String(b.completedAt||'').localeCompare(String(a.completedAt||'')));
+        return{...s,currentTotal,overallTotal,reasons,recoveryList,completedRecoveryCount:recoveryList.length,completedNotice:completedNoticeObj.notice};
+      }).filter(Boolean).sort((a,b)=>{const aA=a.currentTotal>0,bA=b.currentTotal>0;if(aA!==bA)return aA?-1:1;return String((b.recoveryList[0]||{}).completedAt||'').localeCompare(String((a.recoveryList[0]||{}).completedAt||''));});
     }
 
     function getRecoveryHistoryRows(level){
@@ -1338,7 +1276,8 @@ In cases of two or more violations, the matter will be referred to the Disciplin
         const expanded = expandedAllKeys.has(r.key);
         return `
           <tr class="summary-row" onclick="toggleAllRow('${esc(r.key)}')">
-            <td class="nowrap">${esc(sName(r.studentName, r.englishName))}</td>
+            <td class="nowrap">${esc(r.studentName || '')}</td>
+            <td class="nowrap">${esc(r.englishName || '')}</td>
             <td class="nowrap">${esc(r.className || '-')}</td>
             <td class="nowrap">${esc(r.category || '')}</td>
             <td><span class="cell-reason-preview">${esc(String(r.violation || '').split('\n')[0])}</span></td>
@@ -1512,7 +1451,8 @@ In cases of two or more violations, the matter will be referred to the Disciplin
           const expanded = expandedNoticeKeys[level].has(s.key);
           return `
             <tr class="summary-row" onclick="toggleNoticeRow('${level}','${esc(s.key)}')">
-              <td class="nowrap">${esc(sName(s.name, s.englishName))}</td>
+              <td class="nowrap">${esc(s.name || '')}</td>
+              <td class="nowrap">${esc(s.englishName || '')}</td>
               <td class="nowrap">${esc(s.className || '')}</td>
               <td><span class="cell-reason-preview">${esc(buildReasonPreview(s.key))}</span></td>
               <td class="nowrap">${s.currentTotal}</td>
@@ -1581,7 +1521,8 @@ In cases of two or more violations, the matter will be referred to the Disciplin
           const expanded = expandedRecoveryKeys[level].has(s.key);
           return `
             <tr class="summary-row" onclick="toggleRecoveryRow('${level}','${esc(s.key)}')">
-              <td class="nowrap">${esc(sName(s.name, s.englishName))}</td>
+              <td class="nowrap">${esc(s.name || '')}</td>
+              <td class="nowrap">${esc(s.englishName || '')}</td>
               <td class="nowrap">${esc(s.className || '')}</td>
               <td class="nowrap">${s.currentTotal}</td>
               <td class="nowrap">${s.overallTotal}</td>
@@ -1614,7 +1555,8 @@ In cases of two or more violations, the matter will be referred to the Disciplin
       } else {
         doneTb.innerHTML = historyList.map(r => `
           <tr>
-            <td class="nowrap">${esc(sName(r.studentName, r.englishName))}</td>
+            <td class="nowrap">${esc(r.studentName || '')}</td>
+            <td class="nowrap">${esc(r.englishName || '')}</td>
             <td class="nowrap">${esc(r.className || '')}</td>
             <td class="reason-block">${esc(r.violationSnapshot || r.reasonsSnapshot || '-')}</td>
             <td class="nowrap">-${esc(String(r.recoveryPoints || 0))}</td>
@@ -1627,28 +1569,13 @@ In cases of two or more violations, the matter will be referred to the Disciplin
     }
 
     function renderStats(){
-      const entryList = Object.values(entries || {});
-      const today = todayKey();
-      const todayCount = entryList.filter(r => String(r.createdAt || '').slice(0,10) === today).length;
-      const pendingCount = entryList.filter(r => String(r.status || '임시저장') === '임시저장').length;
-      document.getElementById('today-count').textContent = String(todayCount);
-      document.getElementById('pending-count').textContent = String(pendingCount);
-      document.getElementById('total-count').textContent = String(entryList.length);
-
-      const DISCIPLINE_THRESHOLD = 30;
-      const over30 = Object.keys(students||{}).filter(key=>getSchoolLevel((students[key]||{}).className||'')&&getStudentOverallTotal(key)>=DISCIPLINE_THRESHOLD);
-      let warnBox = document.getElementById('discipline-warning');
-      if(!warnBox){
-        warnBox=document.createElement('div');
-        warnBox.id='discipline-warning';
-        warnBox.style.cssText='margin:8px 0;padding:10px 14px;border-radius:10px;background:#fde8e8;border:1px solid #fca5a5;color:#7f1d1d;font-size:13px;font-weight:700;';
-        const sc=document.getElementById('today-count')?.closest('.card');
-        if(sc)sc.after(warnBox);
-      }
-      if(over30.length){
-        warnBox.style.display='';
-        warnBox.innerHTML='⚠️ 생활교육위원회 대상 (누적 30점 이상):<br>'+over30.map(key=>{const s=students[key]||{};return`<span style="margin-right:12px;">${esc(s.name||'')} ${esc(s.englishName||'')} ${esc(s.className||'')} — ${getStudentOverallTotal(key)}점</span>`;}).join('');
-      }else{warnBox.style.display='none';}
+      const el=Object.values(entries||{});const td=todayKey();
+      document.getElementById('today-count').textContent=String(el.filter(r=>String(r.createdAt||'').slice(0,10)===td).length);
+      document.getElementById('pending-count').textContent=String(el.filter(r=>String(r.status||'임시저장')==='임시저장').length);
+      document.getElementById('total-count').textContent=String(el.length);
+      const o30=Object.keys(students||{}).filter(k=>getSchoolLevel((students[k]||{}).className||'')&&getStudentOverallTotal(k)>=30);
+      let wb=document.getElementById('disc-warn');if(!wb){wb=document.createElement('div');wb.id='disc-warn';wb.style.cssText='margin:8px 0;padding:10px 14px;border-radius:10px;background:#fde8e8;border:1px solid #fca5a5;color:#7f1d1d;font-size:13px;font-weight:700;';const sc=document.getElementById('today-count');if(sc&&sc.closest('.card'))sc.closest('.card').after(wb);}
+      if(o30.length){wb.style.display='';wb.innerHTML='<b>생활교육위원회 대상 (누적 30점 이상):</b> '+o30.map(k=>{const s=students[k]||{};return esc(s.name||'')+' '+esc(s.englishName||'')+' '+esc(s.className||'')+' ('+getStudentOverallTotal(k)+'점)';}).join(' / ');}else{wb.style.display='none';}
     }
 
     async function saveDetention(){
@@ -1664,13 +1591,19 @@ In cases of two or more violations, the matter will be referred to the Disciplin
       }
 
       const s = students[studentKey];
+      const violationId=(category+'|||'+violation).replace(/\s+/g,' ').trim();
+      const violationCount=getViolationCount(studentKey,violationId)+1;
+      const schoolLevel=getSchoolLevel(s.className||'');
       const payload = {
         studentKey,
         studentName: s.name || '',
         englishName: s.englishName || '',
         className: s.className || '',
+        schoolLevel,
         category,
         violation,
+        violationId,
+        violationCount,
         autoPoints: autoPointsRaw,
         manualPoints,
         totalPoints: manualPoints,
@@ -1817,47 +1750,34 @@ for their restorative education.
       }
     }
 
-    async function sendParentMail(studentKey, level){
+    async function sendParentMail(studentKey,level){
       const student={key:studentKey,...(students[studentKey]||{})};
       const to=[student.fatherEmail,student.motherEmail].filter(Boolean).join(',');
       if(!to)return toast('학부모 이메일이 없습니다.','err');
-      const subject='[HIS - 학생부 : 디텐션 포인트 알림] [STL : Regarding detention point]';
+      const subj='[HIS - 학생부 : 디텐션 포인트 알림] [STL : Regarding detention point]';
       const body=buildParentMailBody(student);
-      const activeObj=findActiveNotice(studentKey,level);
-      const savePromise=activeObj
-        ?db.ref(`${NOTICE_DB_PATH}/${activeObj.key}`).update({parentMailAt:new Date().toISOString()})
-        :db.ref(NOTICE_DB_PATH).push({studentKey,level,createdAt:new Date().toISOString(),parentMailAt:new Date().toISOString(),cycleViolationsSnapshot:buildCycleReasonText(studentKey)});
-      try{
-        await openMailAfterSave(`mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`,savePromise);
-        toast('학부모 메일 시간이 기록되었습니다.','ok');loadData();
-      }catch(e){console.error(e);toast('메일 준비 중 오류.','err');}
+      const ao=findActiveNotice(studentKey,level);
+      const sp=ao?db.ref(NOTICE_DB_PATH+'/'+ao.key).update({parentMailAt:new Date().toISOString()}):db.ref(NOTICE_DB_PATH).push({studentKey,level,createdAt:new Date().toISOString(),parentMailAt:new Date().toISOString(),cycleViolationsSnapshot:buildCycleReasonText(studentKey)});
+      try{await openMailAfterSave('mailto:'+encodeURIComponent(to)+'?subject='+encodeURIComponent(subj)+'&body='+encodeURIComponent(body),sp);toast('학부모 메일 시간이 기록되었습니다.','ok');loadData();}catch(e){console.error(e);toast('메일 준비 중 오류.','err');}
     }
 
-    async function sendStudentTeacherMail(studentKey, level){
+    async function sendStudentTeacherMail(studentKey,level){
       const student={key:studentKey,...(students[studentKey]||{})};
-      const restoreEmails=level==='ms'?getTeacherEmailsByRole('ms_restore'):getTeacherEmailsByRole('hs_restore');
-      const to=[student.selfEmail,student.homeroomTeacherEmail,...restoreEmails].filter(Boolean).join(',');
+      const re2=level==='ms'?getTeacherEmailsByRole('ms_restore'):getTeacherEmailsByRole('hs_restore');
+      const to=[student.selfEmail,student.homeroomTeacherEmail,...re2].filter(Boolean).join(',');
       if(!to)return toast('학생/교사 이메일이 없습니다.','err');
-      const subject='[HIS - 학생부 : 디텐션 포인트 알림] [STL : Regarding detention point]';
+      const subj='[HIS - 학생부 : 디텐션 포인트 알림] [STL : Regarding detention point]';
       const body=buildStudentTeacherMailBody(student,level);
-      const activeObj=findActiveNotice(studentKey,level);
-      const savePromise=activeObj
-        ?db.ref(`${NOTICE_DB_PATH}/${activeObj.key}`).update({studentTeacherMailAt:new Date().toISOString()})
-        :db.ref(NOTICE_DB_PATH).push({studentKey,level,createdAt:new Date().toISOString(),studentTeacherMailAt:new Date().toISOString(),cycleViolationsSnapshot:buildCycleReasonText(studentKey)});
-      try{
-        await openMailAfterSave(`mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`,savePromise);
-        toast('학생/교사 메일 시간이 기록되었습니다.','ok');loadData();
-      }catch(e){console.error(e);toast('메일 준비 중 오류.','err');}
+      const ao=findActiveNotice(studentKey,level);
+      const sp=ao?db.ref(NOTICE_DB_PATH+'/'+ao.key).update({studentTeacherMailAt:new Date().toISOString()}):db.ref(NOTICE_DB_PATH).push({studentKey,level,createdAt:new Date().toISOString(),studentTeacherMailAt:new Date().toISOString(),cycleViolationsSnapshot:buildCycleReasonText(studentKey)});
+      try{await openMailAfterSave('mailto:'+encodeURIComponent(to)+'?subject='+encodeURIComponent(subj)+'&body='+encodeURIComponent(body),sp);toast('학생/교사 메일 시간이 기록되었습니다.','ok');loadData();}catch(e){console.error(e);toast('메일 준비 중 오류.','err');}
     }
 
-    async function completeNotice(studentKey, level){
+    async function completeNotice(studentKey,level){
       try{
-        const activeObj=findActiveNotice(studentKey,level);
-        if(!activeObj){
-          await db.ref(NOTICE_DB_PATH).push({studentKey,level,createdAt:new Date().toISOString(),completedAt:new Date().toISOString(),completedBy:teacher.name||'',completedByEmail:teacher.email||'',cycleViolationsSnapshot:buildCycleReasonText(studentKey)});
-        }else{
-          await db.ref(`${NOTICE_DB_PATH}/${activeObj.key}`).update({completedAt:new Date().toISOString(),completedBy:teacher.name||'',completedByEmail:teacher.email||''});
-        }
+        const ao=findActiveNotice(studentKey,level);
+        if(!ao){await db.ref(NOTICE_DB_PATH).push({studentKey,level,createdAt:new Date().toISOString(),completedAt:new Date().toISOString(),completedBy:teacher.name||'',completedByEmail:teacher.email||'',cycleViolationsSnapshot:buildCycleReasonText(studentKey)});}
+        else{await db.ref(NOTICE_DB_PATH+'/'+ao.key).update({completedAt:new Date().toISOString(),completedBy:teacher.name||'',completedByEmail:teacher.email||''});}
         toast('알림 완료가 저장되었습니다.','ok');loadData();
       }catch(e){console.error(e);toast('알림 완료 저장 실패','err');}
     }
