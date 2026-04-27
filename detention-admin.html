@@ -222,16 +222,12 @@
 
   <div class="content">
     <div class="subtabs">
-      <button class="subtab-btn active" data-panel="standards">기준표 | Standards</button>
-      <button class="subtab-btn" data-panel="entries">디텐션 기록 | Entries</button>
+      
+      <button class="subtab-btn active" data-panel="entries">디텐션 기록 | Entries</button>
       <button class="subtab-btn" data-panel="notices">알림 기록 | Notices</button>
       <button class="subtab-btn" data-panel="recovery">회복교육 기록 | Recovery</button>
     </div>
 
-    <!-- Standards -->
-    <div id="panel-standards" class="panel active">
-      <div class="card">
-        <div class="card-title">디텐션 기준표 | Standards</div>
         <div class="toolbar">
           <button class="btn btn-secondary" onclick="addStandardRow()">행 추가 | Add Row</button>
           <button class="btn btn-primary" onclick="saveStandards()">저장 | Save</button>
@@ -557,16 +553,24 @@
             <td><input class="edit-input" value="${esc(row.teacherName || '')}" oninput="entryRows[${idx}].teacherName=this.value"></td>
             <td><input class="edit-input" value="${esc(row.createdAt || '')}" oninput="entryRows[${idx}].createdAt=this.value"></td>
             <td><input class="edit-input" value="${esc(row.confirmedAt || '')}" oninput="entryRows[${idx}].confirmedAt=this.value"></td>
-            <td><button class="btn btn-danger small-btn" onclick="markEntryDeleted('${row.key}')">삭제</button></td>
+            <td><button class="btn btn-danger small-btn" onclick="toggleEntryDeleted('${row.key}')">${row._deleted ? "복구" : "삭제"}</button></td>
           </tr>
         `;
       }).join('');
     }
 
-    function markEntryDeleted(key){
+    function toggleEntryDeleted(key){
       const row = entryRows.find(r => r.key === key);
-      if (row) row._deleted = true;
+      if (row) row._deleted = !row._deleted;
       renderEntriesTable();
+      checkEntryDirty();
+    }
+    function markEntryDeleted(key){
+      if (!confirm('정말 삭제하시겠습니까?\nAre you sure you want to delete this entry?')) return;
+      const row = entryRows.find(r => r.key === key);
+      if (row) { row._deleted = true; }
+      renderEntriesTable();
+      checkEntryDirty();
     }
 
     async function saveEntries(){
@@ -614,16 +618,18 @@
             <td><input class="edit-input" value="${esc(row.studentTeacherMailAt || '')}" oninput="noticeRows[${idx}].studentTeacherMailAt=this.value;checkNoticeDirty()"></td>
             <td><input class="edit-input" value="${esc(row.completedAt || '')}" oninput="noticeRows[${idx}].completedAt=this.value;checkNoticeDirty()"></td>
             <td><input class="edit-input" value="${esc(row.completedBy || '')}" oninput="noticeRows[${idx}].completedBy=this.value"></td>
-            <td><button class="btn btn-danger small-btn" onclick="markNoticeDeleted('${row.key}')">삭제</button></td>
+            <td><button class="btn btn-danger small-btn" onclick="(function(k){const r=noticeRows.find(x=>x.key===k);if(r){r._deleted=!r._deleted;renderNoticesTable();checkNoticeDirty();}})('${row.key}')">${row._deleted ? "복구" : "삭제"}</button></td>
           </tr>
         `;
       }).join('');
     }
 
     function markNoticeDeleted(key){
+      if (!confirm('정말 삭제하시겠습니까?\nAre you sure?')) return;
       const row = noticeRows.find(r => r.key === key);
-      if (row) row._deleted = true;
+      if (row) { row._deleted = true; }
       renderNoticesTable();
+      checkNoticeDirty();
     }
 
     async function saveNotices(){
@@ -677,16 +683,18 @@
             <td><input class="edit-input" value="${esc(String(row.recoveryPoints || row.points || ''))}" oninput="recoveryRows[${idx}].recoveryPoints=Number(this.value||0);checkRecoveryDirty()"></td>
             <td><input class="edit-input" value="${esc(row.staffName || '')}" oninput="recoveryRows[${idx}].staffName=this.value;checkRecoveryDirty()"></td>
             <td><input class="edit-input" value="${esc(row.completedAt || '')}" oninput="recoveryRows[${idx}].completedAt=this.value"></td>
-            <td><button class="btn btn-danger small-btn" onclick="markRecoveryDeleted('${row.key}')">삭제</button></td>
+            <td><button class="btn btn-danger small-btn" onclick="(function(k){const r=recoveryRows.find(x=>x.key===k);if(r){r._deleted=!r._deleted;renderRecoveryTable();checkRecoveryDirty();}})('${row.key}')">${row._deleted ? "복구" : "삭제"}</button></td>
           </tr>
         `;
       }).join('');
     }
 
     function markRecoveryDeleted(key){
+      if (!confirm('정말 삭제하시겠습니까?\nAre you sure?')) return;
       const row = recoveryRows.find(r => r.key === key);
-      if (row) row._deleted = true;
+      if (row) { row._deleted = true; }
       renderRecoveryTable();
+      checkRecoveryDirty();
     }
 
     async function saveRecovery(){
