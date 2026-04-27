@@ -228,27 +228,6 @@
       <button class="subtab-btn" data-panel="recovery">회복교육 기록 | Recovery</button>
     </div>
 
-        <div class="toolbar">
-          <button class="btn btn-secondary" onclick="addStandardRow()">행 추가 | Add Row</button>
-          <button class="btn btn-primary" onclick="saveStandards()">저장 | Save</button>
-        </div>
-        <div class="tbl-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>구분<span class="th-en">Category</span></th>
-                <th>위반행위<span class="th-en">Violation</span></th>
-                <th>자동점수<span class="th-en">Auto Points</span></th>
-                <th>비고<span class="th-en">Notes</span></th>
-                <th>삭제<span class="th-en">Delete</span></th>
-              </tr>
-            </thead>
-            <tbody id="standards-tbody"></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
     <!-- Entries -->
     <div id="panel-entries" class="panel">
       <div class="card">
@@ -349,7 +328,6 @@
   <script src="common.js"></script>
 
   <script>
-    let standardsRows = [];
     let entryRows = [];
     let noticeRows = [];
     let recoveryRows = [];
@@ -407,44 +385,12 @@
 
     async function loadAllData(){
       try{
-        const [standardsSnap, entriesSnap, noticesSnap, recoverySnap] = await Promise.all([
-          db.ref('detentionStandards').once('value'),
+        const [entriesSnap, noticesSnap, recoverySnap] = await Promise.all([
           db.ref('detentionEntries').once('value'),
           db.ref('detentionNotices').once('value'),
           db.ref('recoveryEntries').once('value')
         ]);
 
-        const rawStandards = standardsSnap.val();
-        if (Array.isArray(rawStandards)) {
-          standardsRows = rawStandards;
-        } else if (rawStandards && typeof rawStandards === 'object') {
-          standardsRows = Object.keys(rawStandards)
-            .sort((a, b) => Number(a) - Number(b))
-            .map(k => rawStandards[k])
-            .filter(Boolean);
-        } else {
-          standardsRows = [];
-        }
-
-        entryRows = Object.entries(entriesSnap.val() || {}).map(([key, value]) => ({
-          key,
-          ...value,
-          _deleted:false
-        }));
-
-        noticeRows = Object.entries(noticesSnap.val() || {}).map(([key, value]) => ({
-          key,
-          ...value,
-          _deleted:false
-        }));
-
-        recoveryRows = Object.entries(recoverySnap.val() || {}).map(([key, value]) => ({
-          key,
-          ...value,
-          _deleted:false
-        }));
-
-        renderStandardsTable();
         renderEntriesTable();
         renderNoticesTable();
         renderRecoveryTable();
@@ -455,57 +401,9 @@
       }
     }
 
-    function renderStandardsTable(){
-      const tbody = document.getElementById('standards-tbody');
 
-      if (!standardsRows.length){
-        tbody.innerHTML = `
-          <tr>
-            <td colspan="5">기준표 데이터가 없습니다. | No standards found.</td>
-          </tr>
-        `;
-        return;
-      }
 
-      tbody.innerHTML = standardsRows.map((row, i) => `
-        <tr>
-          <td><textarea class="edit-textarea" oninput="standardsRows[${i}].category=this.value">${esc(row.category || '')}</textarea></td>
-          <td><textarea class="edit-textarea" oninput="standardsRows[${i}].violation=this.value">${esc(row.violation || '')}</textarea></td>
-          <td><input class="edit-input" value="${esc(row.autoPoints || '')}" oninput="standardsRows[${i}].autoPoints=this.value"></td>
-          <td><textarea class="edit-textarea" oninput="standardsRows[${i}].note=this.value">${esc(row.note || '')}</textarea></td>
-          <td><button class="btn btn-danger small-btn" onclick="deleteStandardRow(${i})">삭제</button></td>
-        </tr>
-      `).join('');
-    }
 
-    function addStandardRow(){
-      standardsRows.push({
-        category:'',
-        violation:'',
-        autoPoints:'',
-        note:''
-      });
-      renderStandardsTable();
-    }
-
-    function deleteStandardRow(index){
-      standardsRows.splice(index, 1);
-      renderStandardsTable();
-    }
-
-    async function saveStandards(){
-      try{
-        const cleaned = standardsRows.filter(r =>
-          String(r.category || '').trim() && String(r.violation || '').trim()
-        );
-        await db.ref('detentionStandards').set(cleaned);
-        toast('기준표가 저장되었습니다. | Standards saved.', 'ok');
-        loadAllData();
-      }catch(err){
-        console.error(err);
-        toast('기준표 저장 실패 | Failed to save standards.', 'err');
-      }
-    }
 
     function renderEntriesTable(){
       const tbody = document.getElementById('entries-tbody');
