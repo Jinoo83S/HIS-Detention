@@ -815,7 +815,14 @@
     function findLatestCompletedNotice(sKey,lvl){const hit=Object.entries(noticeEntries||{}).filter(([,v])=>String(v.studentKey||'')===String(sKey)&&String(v.level||'')===String(lvl)&&!!v.completedAt).sort((a,b)=>String(b[1].completedAt||'').localeCompare(String(a[1].completedAt||'')));return hit.length?{key:hit[0][0],notice:hit[0][1]}:null;}
     function getViolationCount(sKey,vId){return Object.values(entries||{}).filter(r=>String(r.studentKey||'')===String(sKey)&&String(r.violationId||'')===String(vId)&&String(r.status||'')==='확정').length;}
     function getCurrentCycleEntries(sKey){const conf=getConfirmedEntriesForStudent(sKey);const lr=Object.values(recoveryEntries||{}).filter(r=>String(r.studentKey||'')===String(sKey)).sort((a,b)=>String(b.completedAt||'').localeCompare(String(a.completedAt||'')))[0];const since=lr?String(lr.completedAt||''):'';return since?conf.filter(r=>String(r.confirmedAt||'')>since):conf;}
-    function buildCycleReasonText(sKey){const seen=new Set(),lines=[];getCurrentCycleEntries(sKey).forEach(r=>{const l=String(r.violation||'').trim();if(l&&!seen.has(l)){seen.add(l);lines.push(l);}});return lines.length?lines.map((v,i)=>'['+String(i+1)+'] '+v).join('\n\n'):'-';}
+    function buildCycleReasonText(sKey){
+      const entries=getCurrentCycleEntries(sKey);
+      if(!entries.length)return '-';
+      return entries.map((r,i)=>{
+        const pts=Number(r.totalPoints||0);
+        return '['+String(i+1)+'] '+String(r.violation||'').trim()+(pts?' ('+pts+'점)':'');
+      }).join('\n\n');
+    }
 
     function getTeachersByRole(roleKey){
       return Object.values(teachers || {}).filter(t => normalizeRoles(t.roles || t.role || []).includes(roleKey));
@@ -847,6 +854,26 @@
         }
       });
       return lines;
+    }
+
+    /** 모든 확정 위반 항목을 점수와 함께 표시 (중복 허용) */
+    function buildReasonTextWithPoints(studentKey){
+      const entries = getConfirmedEntriesForStudent(studentKey);
+      if (!entries.length) return '-';
+      return entries.map((r, i) => {
+        const pts = Number(r.totalPoints || 0);
+        return '['+String(i+1)+'] '+String(r.violation||'').trim()+(pts?' ('+pts+'점)':'');
+      }).join('\n\n');
+    }
+
+    /** 현재 사이클 위반 항목을 점수와 함께 표시 */
+    function buildCycleReasonTextWithPoints(studentKey){
+      const entries = getCurrentCycleEntries(studentKey);
+      if (!entries.length) return '-';
+      return entries.map((r, i) => {
+        const pts = Number(r.totalPoints || 0);
+        return '['+String(i+1)+'] '+String(r.violation||'').trim()+(pts?' ('+pts+'점)':'');
+      }).join('\n\n');
     }
 
     function buildReasonText(studentKey){
@@ -1608,7 +1635,7 @@
               <td class="nowrap">${esc(s.name || '')}</td>
               <td class="nowrap">${esc(s.englishName || '')}</td>
               <td class="nowrap">${esc(s.className || '')}</td>
-              <td><span class="cell-reason-preview">${esc(buildReasonPreview(s.key))}</span></td>
+              <td><span class="cell-reason-preview">${esc(buildCycleReasonText(s.key).split('\n')[0])}</span></td>
               <td class="nowrap">${s.currentTotal}</td>
               <td class="nowrap">${s.overallTotal}</td>
               <td onclick="event.stopPropagation()">
@@ -1703,7 +1730,7 @@
               <td class="nowrap">${esc(s.className || '')}</td>
               <td class="nowrap">${s.currentTotal}</td>
               <td class="nowrap">${s.overallTotal}</td>
-              <td><span class="cell-reason-preview">${esc(buildReasonPreview(s.key))}</span></td>
+              <td style="white-space:pre-wrap;font-size:12px;line-height:1.5;">${esc(buildReasonTextWithPoints(s.key))}</td>
               <td class="nowrap">${Math.ceil(s.currentTotal / 3)}회 필요</td>
               <td class="nowrap" onclick="event.stopPropagation()">
                 <button class="btn btn-primary" onclick="completeRecovery('${esc(s.key)}','${level}')">회복교육 완료</button>
@@ -2023,7 +2050,7 @@
       const masterEmail = getFirstTeacherEmailByRole('master');
       const msRestoreEmail = getFirstTeacherEmailByRole('ms_restore');
       const hsRestoreEmail = getFirstTeacherEmailByRole('hs_restore');
-      const reasonText = buildCycleReasonText(student.key);
+      const reasonText = buildCycleReasonTextWithPoints(student.key);
       const memoLines = getCurrentCycleEntries(student.key).map(r => String(r.memo || '').trim()).filter(Boolean);
       const memoBlock = memoLines.length ? '\n    ▶ 메 모 (Memo)            :\n' + memoLines.map(m => '      ' + m).join('\n') : '';
       return [
@@ -2051,7 +2078,7 @@
 
     function buildStudentTeacherMailBody(student, level){
       const restoreEmail = level === 'ms' ? getFirstTeacherEmailByRole('ms_restore') : getFirstTeacherEmailByRole('hs_restore');
-      const reasonText = buildCycleReasonText(student.key);
+      const reasonText = buildCycleReasonTextWithPoints(student.key);
       const memoLines = getCurrentCycleEntries(student.key).map(r => String(r.memo || '').trim()).filter(Boolean);
       const memoBlock = memoLines.length ? '\n    ▶ 메 모 (Memo)            :\n' + memoLines.map(m => '      ' + m).join('\n') : '';
       return [
