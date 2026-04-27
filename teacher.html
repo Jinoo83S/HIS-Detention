@@ -527,22 +527,18 @@
           </table>
         </div>
 
-        <div class="card-title notice-divider" style="cursor:pointer;" onclick="toggleRecoveryHistory('ms')">
-          완료 기록 | Completed History
-          <span id="recovery-ms-hist-toggle" style="font-size:12px;font-weight:400;margin-left:8px;">▲ 접기</span>
-        </div>
-        <div id="recovery-ms-hist-wrap" class="tbl-wrap">
+        <div class="card-title notice-divider">완료 기록 | Completed History</div>
+        <div class="tbl-wrap">
           <table>
             <thead>
               <tr>
                 <th class="nowrap">학생<span class="th-en">Student</span></th>
-                <th class="nowrap">영문 이름<span class="th-en">English Name</span></th>
                 <th class="nowrap">학반<span class="th-en">Class</span></th>
                 <th>위반 행위<span class="th-en">Violations</span></th>
                 <th class="nowrap">회복 점수<span class="th-en">Recovery Points</span></th>
                 <th class="nowrap">잔여 누적점수<span class="th-en">Remaining Total</span></th>
                 <th class="nowrap">교육 시 전체 누적점수<span class="th-en">Overall Total At Time</span></th>
-                <th class="nowrap">최근 완료<span class="th-en">Completed At</span></th>
+                <th class="nowrap">완료 시간<span class="th-en">Completed At</span></th>
               </tr>
             </thead>
             <tbody id="recovery-ms-done-tbody"></tbody>
@@ -584,22 +580,18 @@
           </table>
         </div>
 
-        <div class="card-title notice-divider" style="cursor:pointer;" onclick="toggleRecoveryHistory('hs')">
-          완료 기록 | Completed History
-          <span id="recovery-hs-hist-toggle" style="font-size:12px;font-weight:400;margin-left:8px;">▲ 접기</span>
-        </div>
-        <div id="recovery-hs-hist-wrap" class="tbl-wrap">
+        <div class="card-title notice-divider">완료 기록 | Completed History</div>
+        <div class="tbl-wrap">
           <table>
             <thead>
               <tr>
                 <th class="nowrap">학생<span class="th-en">Student</span></th>
-                <th class="nowrap">영문 이름<span class="th-en">English Name</span></th>
                 <th class="nowrap">학반<span class="th-en">Class</span></th>
                 <th>위반 행위<span class="th-en">Violations</span></th>
                 <th class="nowrap">회복 점수<span class="th-en">Recovery Points</span></th>
                 <th class="nowrap">잔여 누적점수<span class="th-en">Remaining Total</span></th>
                 <th class="nowrap">교육 시 전체 누적점수<span class="th-en">Overall Total At Time</span></th>
-                <th class="nowrap">최근 완료<span class="th-en">Completed At</span></th>
+                <th class="nowrap">완료 시간<span class="th-en">Completed At</span></th>
               </tr>
             </thead>
             <tbody id="recovery-hs-done-tbody"></tbody>
@@ -827,14 +819,42 @@
     }
 
     function getNoticeCandidates(level){
-      return Object.entries(students||{}).map(([key,value])=>({key,...value})).filter(s=>getSchoolLevel(s.className)===level).map(s=>{
-        const currentTotal=getStudentCurrentTotal(s.key),overallTotal=getStudentOverallTotal(s.key),reasons=buildReasonText(s.key);
-        const latestEntry=getConfirmedEntriesForStudent(s.key)[0]||null,latestConfirmedAt=getLatestConfirmedAt(s.key);
-        const activeNoticeObj=findActiveNotice(s.key,level);
-        const notice=activeNoticeObj?activeNoticeObj.notice:{},noticeDocKey=activeNoticeObj?activeNoticeObj.key:null;
-        const isPendingCycle=!!latestConfirmedAt&&(!!activeNoticeObj||currentTotal>=3);
-        return{...s,currentTotal,overallTotal,reasons,latestEntry,latestConfirmedAt,noticeDocKey,notice,cycleCompleted:false,isPendingCycle};
-      }).filter(s=>s.currentTotal>=3&&s.latestEntry).sort((a,b)=>{if(a.isPendingCycle!==b.isPendingCycle)return a.isPendingCycle?-1:1;return String(b.latestConfirmedAt||'').localeCompare(String(a.latestConfirmedAt||''));});
+      // active notice 대상: currentTotal >= 3인 학생
+      // done notice 대상: completedAt이 있는 notice 레코드 전체 (별도 조회)
+      const activeStudents = Object.entries(students||{}).map(([key,value])=>({key,...value}))
+        .filter(s=>getSchoolLevel(s.className)===level)
+        .map(s=>{
+          const currentTotal=getStudentCurrentTotal(s.key),overallTotal=getStudentOverallTotal(s.key),reasons=buildReasonText(s.key);
+          const latestEntry=getConfirmedEntriesForStudent(s.key)[0]||null,latestConfirmedAt=getLatestConfirmedAt(s.key);
+          const activeNoticeObj=findActiveNotice(s.key,level);
+          const notice=activeNoticeObj?activeNoticeObj.notice:{},noticeDocKey=activeNoticeObj?activeNoticeObj.key:null;
+          const isPendingCycle=!!latestConfirmedAt&&(!!activeNoticeObj||currentTotal>=3);
+          return{...s,currentTotal,overallTotal,reasons,latestEntry,latestConfirmedAt,noticeDocKey,notice,cycleCompleted:false,isPendingCycle};
+        }).filter(s=>s.currentTotal>=3&&s.latestEntry);
+
+      return activeStudents.sort((a,b)=>{if(a.isPendingCycle!==b.isPendingCycle)return a.isPendingCycle?-1:1;return String(b.latestConfirmedAt||'').localeCompare(String(a.latestConfirmedAt||''));});
+    }
+
+    /** 완료된 알림 전체 목록 (currentTotal 무관, 시간순) */
+    function getCompletedNoticeList(level){
+      return Object.entries(noticeEntries||{})
+        .map(([key,v])=>({noticeKey:key,...v}))
+        .filter(v=>String(v.level||'')===String(level)&&!!v.completedAt)
+        .sort((a,b)=>String(b.completedAt||'').localeCompare(String(a.completedAt||'')))
+        .map(v=>{
+          const s=students[v.studentKey]||{};
+          return{
+            key:v.studentKey,
+            noticeKey:v.noticeKey,
+            name:s.name||v.studentKey,
+            englishName:s.englishName||'',
+            className:s.className||'',
+            notice:v,
+            currentTotal:getStudentCurrentTotal(v.studentKey),
+            overallTotal:getStudentOverallTotal(v.studentKey),
+            reasons:buildReasonText(v.studentKey)
+          };
+        });
     }
 
     function getRecoveryCandidates(level){
@@ -1470,9 +1490,8 @@
     function renderNotifyTableByLevel(level){
       const activeTb = document.getElementById(level === 'ms' ? 'notify-ms-active-tbody' : 'notify-hs-active-tbody');
       const doneTb = document.getElementById(level === 'ms' ? 'notify-ms-done-tbody' : 'notify-hs-done-tbody');
-      const list = getNoticeCandidates(level);
-      const activeList = list.filter(s => !s.notice.completedAt);
-      const doneList = list.filter(s => !!s.notice.completedAt);
+      const activeList = getNoticeCandidates(level).filter(s => !s.notice.completedAt);
+      const doneList = getCompletedNoticeList(level);
 
       function renderRows(arr){
         if (!arr.length) return `<tr><td colspan="9" class="empty">해당 학생이 없습니다. | No matching students.</td></tr>`;
@@ -1580,21 +1599,47 @@
         }).join('');
       }
 
+      const _histExpandedKeys = new Set();
+
       if (!historyList.length){
-        doneTb.innerHTML = '<tr><td colspan="8" class="empty">완료된 교육 기록이 없습니다. | No completed recovery history.</td></tr>';
+        doneTb.innerHTML = '<tr><td colspan="7" class="empty">완료된 교육 기록이 없습니다. | No completed recovery history.</td></tr>';
       } else {
-        doneTb.innerHTML = historyList.map(r => `
-          <tr>
-            <td class="nowrap">${esc(r.studentName || '')}</td>
-            <td class="nowrap">${esc(r.englishName || '')}</td>
-            <td class="nowrap">${esc(r.className || '')}</td>
-            <td class="reason-block">${esc(r.reasonsSnapshot || '-')}</td>
-            <td class="nowrap">-${esc(String(r.recoveryPoints || 0))}</td>
-            <td class="nowrap">${esc(String(r.currentTotalAfter ?? r.currentTotalAtRecovery ?? '-'))}</td>
-            <td class="nowrap">${esc(String(r.overallTotalAtRecovery ?? '-'))}</td>
-            <td class="nowrap">${fmt(r.completedAt)}</td>
-          </tr>
-        `).join('');
+        const rows = [];
+        historyList.forEach((r, i) => {
+          const rowKey = String(r.studentKey || r.studentName || '') + '_' + i;
+          const expanded = _histExpandedKeys.has(rowKey);
+          const reasonText = String(r.reasonsSnapshot || '-');
+          const reasonPreview = reasonText.split('\n')[0];
+          rows.push(
+            '<tr class="summary-row" onclick="(function(k,el){' +
+              'if(el._histExpanded.has(k))el._histExpanded.delete(k);else el._histExpanded.add(k);' +
+              'el.nextElementSibling.classList.toggle(\'show\');' +
+            '})(\''+rowKey+'\',this.closest(\'tbody\')._histExpanded&&this.closest(\'tbody\'))" style="cursor:pointer;">'+
+            '<td class="nowrap">'+esc(sName(r.studentName,r.englishName))+'</td>'+
+            '<td class="nowrap">'+esc(r.className||'')+'</td>'+
+            '<td><span class="cell-reason-preview">'+esc(reasonPreview)+'</span></td>'+
+            '<td class="nowrap">-'+esc(String(r.recoveryPoints||0))+'</td>'+
+            '<td class="nowrap">'+esc(String(r.currentTotalAfter??r.currentTotalAtRecovery??'-'))+'</td>'+
+            '<td class="nowrap">'+esc(String(r.overallTotalAtRecovery??'-'))+'</td>'+
+            '<td class="nowrap">'+fmt(r.completedAt)+'</td>'+
+            '</tr>'+
+            '<tr class="detail-row">'+
+            '<td colspan="7"><div class="detail-box"><div class="detail-section">'+
+            '<div class="detail-title">위반 행위 | Violations</div>'+
+            '<div class="detail-content">'+esc(reasonText)+'</div>'+
+            '</div></div></td></tr>'
+          );
+        });
+        doneTb.innerHTML = rows.join('');
+        // 행 클릭 이벤트 - 직접 nextSibling 토글
+        doneTb.querySelectorAll('.summary-row').forEach(tr => {
+          tr.addEventListener('click', () => {
+            const detail = tr.nextElementSibling;
+            if (detail && detail.classList.contains('detail-row')) {
+              detail.classList.toggle('show');
+            }
+          });
+        });
       }
     }
 
@@ -1900,7 +1945,7 @@
           className: student.className || '',
           level,
           recoveryPoints,
-          reasonsSnapshot: buildCycleReasonText(studentKey),
+          reasonsSnapshot: buildReasonText(studentKey), // 전체 확정 위반 목록 저장
           overallTotalAtRecovery: overallTotal,
           currentTotalBefore,
           currentTotalAfter: Math.max(0, currentTotalBefore - recoveryPoints),
