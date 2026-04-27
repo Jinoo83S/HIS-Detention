@@ -151,6 +151,7 @@
       <button class="tab-btn role-only" data-role="hs_notice" data-tab="notify-hs">고등 디텐션 알림 | HS Notice</button>
       <button class="tab-btn role-only" data-role="ms_restore" data-tab="recovery-ms">중등 회복교육 | MS Restore</button>
       <button class="tab-btn role-only" data-role="hs_restore" data-tab="recovery-hs">고등 회복교육 | HS Restore</button>
+      <button class="tab-btn role-only" data-role="master" data-tab="discipline">위원회 | Committee</button>
     </div>
 
     <!-- ENTRY -->
@@ -299,7 +300,6 @@
             <thead>
               <tr>
                 <th class="nowrap">학생<span class="th-en">Student</span></th>
-                <th class="nowrap">영문 이름<span class="th-en">English Name</span></th>
                 <th class="nowrap">학반<span class="th-en">Class</span></th>
                 <th class="nowrap">구분<span class="th-en">Category</span></th>
                 <th>위반행위 / 사유<span class="th-en">Violation / Reasons</span></th>
@@ -598,6 +598,52 @@
           </table>
         </div>
       </div>
+
+    <div id="tab-discipline" class="tab-panel">
+      <div class="card">
+        <div class="card-title">위원회 관리 | Committee Management</div>
+
+        <!-- 선도위원회 -->
+        <div class="card-title notice-divider" style="margin-top:8px;">🔴 선도위원회 회부 | Disciplinary Committee</div>
+        <div class="notice">이성교제·흡연 2회차 이상 적발로 선도위원회 회부된 항목입니다.<br>Entries referred to the Disciplinary Committee (2nd+ violation of dating/smoking regulations).</div>
+        <div class="tbl-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th class="nowrap">학생<span class="th-en">Student</span></th>
+                <th class="nowrap">학반<span class="th-en">Class</span></th>
+                <th>위반행위<span class="th-en">Violation</span></th>
+                <th class="nowrap">위반 횟수<span class="th-en">Count</span></th>
+                <th class="nowrap">교사<span class="th-en">Teacher</span></th>
+                <th class="nowrap">일시<span class="th-en">Date</span></th>
+                <th class="nowrap">상태<span class="th-en">Status</span></th>
+                <th class="nowrap">처리<span class="th-en">Action</span></th>
+              </tr>
+            </thead>
+            <tbody id="discipline-referral-tbody"></tbody>
+          </table>
+        </div>
+
+        <!-- 생활교육위원회 -->
+        <div class="card-title notice-divider" style="margin-top:18px;">⚠️ 생활교육위원회 대상 | Education Committee</div>
+        <div class="notice">누적 벌점 30점 이상 학생 목록입니다.<br>Students with cumulative detention points of 30 or more.</div>
+        <div class="tbl-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th class="nowrap">학생<span class="th-en">Student</span></th>
+                <th class="nowrap">영문 이름<span class="th-en">English Name</span></th>
+                <th class="nowrap">학반<span class="th-en">Class</span></th>
+                <th class="nowrap">현재 누적점수<span class="th-en">Current Total</span></th>
+                <th class="nowrap">전체 누적점수<span class="th-en">Overall Total</span></th>
+                <th class="nowrap">처리<span class="th-en">Action</span></th>
+              </tr>
+            </thead>
+            <tbody id="discipline-education-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
     </div>
   </div>
 
@@ -1282,6 +1328,7 @@
               <div class="recent-entry-meta">
                 <span class="recent-chip">${esc(r.className || '-')}</span>
                 <span class="recent-chip">${esc(r.category || '')}</span>
+                ${r.isReferral ? '<span class="recent-chip" style="background:#fde8e8;color:#7f1d1d;font-weight:700;">선도위원회 회부</span>' : ''}
               </div>
               <div class="recent-entry-violation">${esc(r.violation || '')}</div>
             </div>
@@ -1385,20 +1432,28 @@
         return;
       }
 
-      tb.innerHTML = list.map(r => `
-        <tr>
-          <td class="nowrap">${esc(r.studentName || '')}</td>
-          <td class="nowrap">${esc(r.englishName || '')}</td>
-          <td class="nowrap">${esc(r.className || '')}</td>
+      // 행 클릭 시 위반행위 상세 펼치기
+      tb.innerHTML = list.map((r,idx) => {
+        const reasonPreview = esc(String(r.reasonsSnapshot||'-').split('\n')[0]);
+        const reasonFull = esc(r.reasonsSnapshot||'-');
+        return `<tr class="summary-row" onclick="this.nextElementSibling.classList.toggle('show')" style="cursor:pointer;">
+          <td class="nowrap">${esc(sName(r.studentName,r.englishName))}</td>
+          <td class="nowrap">${esc(r.className||'')}</td>
           <td class="nowrap">회복교육 | Recovery</td>
-          <td class="reason-block">${esc(r.reasonsSnapshot || '-')}</td>
-          <td class="nowrap">-${esc(String(r.recoveryPoints || 0))}</td>
-          <td class="nowrap">${esc(String(r.currentTotalAfter ?? r.currentTotalAtRecovery ?? getStudentCurrentTotal(r.studentKey)))}</td>
-          <td class="nowrap">${esc(String(r.overallTotalAtRecovery ?? getStudentOverallTotal(r.studentKey)))}</td>
-          <td class="nowrap">${esc(r.staffName || '')}</td>
+          <td><span class="cell-reason-preview">${reasonPreview}</span></td>
+          <td class="nowrap">-${esc(String(r.recoveryPoints||0))}</td>
+          <td class="nowrap">${esc(String(r.currentTotalAfter??r.currentTotalAtRecovery??getStudentCurrentTotal(r.studentKey)))}</td>
+          <td class="nowrap">${esc(String(r.overallTotalAtRecovery??getStudentOverallTotal(r.studentKey)))}</td>
+          <td class="nowrap">${esc(r.staffName||'')}</td>
           <td class="nowrap">${fmt(r.completedAt)}</td>
         </tr>
-      `).join('');
+        <tr class="detail-row">
+          <td colspan="9"><div class="detail-box"><div class="detail-section">
+          <div class="detail-title">위반 행위 | Violations</div>
+          <div class="detail-content">${reasonFull}</div>
+          </div></div></td>
+        </tr>`;
+      }).join('');
     }
 
     function renderConfirmEntries(){
@@ -1548,7 +1603,30 @@
       }
 
       activeTb.innerHTML = renderRows(activeList);
-      doneTb.innerHTML = renderRows(doneList);
+      // 완료된 목록: 완료 버튼 없음, 메일도 재발송 불필요
+      if (!doneList.length){
+        doneTb.innerHTML = '<tr><td colspan="9" class="empty">해당 학생이 없습니다. | No matching students.</td></tr>';
+      } else {
+        doneTb.innerHTML = doneList.map(s => {
+          const expanded = expandedNoticeKeys[level] && expandedNoticeKeys[level].has(s.key+'_done');
+          return `<tr class="summary-row" onclick="toggleNoticeRow('${level}','${esc(s.key)}_done')">
+            <td class="nowrap">${esc(s.name||'')}</td>
+            <td class="nowrap">${esc(s.englishName||'')}</td>
+            <td class="nowrap">${esc(s.className||'')}</td>
+            <td><span class="cell-reason-preview">${esc(buildReasonPreview(s.key))}</span></td>
+            <td class="nowrap">${s.currentTotal}</td>
+            <td class="nowrap">${s.overallTotal}</td>
+            <td class="nowrap" style="color:var(--sb);font-size:11px;">${s.notice.parentMailAt ? fmt(s.notice.parentMailAt) : '-'}</td>
+            <td class="nowrap" style="color:var(--sb);font-size:11px;">${s.notice.studentTeacherMailAt ? fmt(s.notice.studentTeacherMailAt) : '-'}</td>
+            <td class="nowrap" style="color:var(--gn);font-size:11px;font-weight:700;">${s.notice.completedAt ? '✓ '+fmt(s.notice.completedAt) : '-'}</td>
+          </tr>
+          <tr class="detail-row ${expanded ? 'show' : ''}">
+            <td colspan="9"><div class="detail-box">
+              <div class="detail-section"><div class="detail-title">사유 | Reasons</div><div class="detail-content">${esc(s.reasons||'-')}</div></div>
+            </div></td>
+          </tr>`;
+        }).join('');
+      }
     }
 
     function renderRecoveryTables(){
@@ -1640,6 +1718,60 @@
             }
           });
         });
+      }
+    }
+
+    function renderDisciplineTab(){
+      // 선도위원회: isReferral=true 항목
+      const referralTb = document.getElementById('discipline-referral-tbody');
+      const eduTb = document.getElementById('discipline-education-tbody');
+      if (!referralTb || !eduTb) return;
+
+      // 선도위원회 회부 항목 (확정된 것만)
+      const referralList = Object.entries(entries||{})
+        .map(([key,v])=>({key,...v}))
+        .filter(r=>r.isReferral===true && String(r.status||'')==='확정')
+        .sort((a,b)=>String(b.confirmedAt||b.createdAt||'').localeCompare(String(a.confirmedAt||a.createdAt||'')));
+
+      if (!referralList.length){
+        referralTb.innerHTML = '<tr><td colspan="8" class="empty">선도위원회 회부 내역이 없습니다. | No referrals.</td></tr>';
+      } else {
+        referralTb.innerHTML = referralList.map(r => {
+          const vCount = getViolationCount(r.studentKey, r.violationId||'') + (r.isReferral?0:1);
+          return '<tr>'+
+            '<td class="nowrap">'+esc(sName(r.studentName,r.englishName))+'</td>'+
+            '<td class="nowrap">'+esc(r.className||'')+'</td>'+
+            '<td>'+esc(String(r.violation||'').split('\n')[0])+'</td>'+
+            '<td class="nowrap">'+esc(String(r.violationCount||'-'))+'회차</td>'+
+            '<td class="nowrap">'+esc(r.teacherName||'')+'</td>'+
+            '<td class="nowrap">'+fmt(r.confirmedAt||r.createdAt)+'</td>'+
+            '<td>'+statusBadge(r.status)+'</td>'+
+            '<td class="nowrap"><span style="color:var(--rd);font-weight:700;font-size:12px;">선도위원회 회부</span></td>'+
+            '</tr>';
+        }).join('');
+      }
+
+      // 생활교육위원회: 누적 30점 이상
+      const eduStudents = Object.entries(students||{})
+        .map(([key,v])=>({key,...v}))
+        .filter(s=>getSchoolLevel(s.className||'')&&getStudentOverallTotal(s.key)>=30)
+        .sort((a,b)=>getStudentOverallTotal(b.key)-getStudentOverallTotal(a.key));
+
+      if (!eduStudents.length){
+        eduTb.innerHTML = '<tr><td colspan="6" class="empty">해당 학생이 없습니다. | No students.</td></tr>';
+      } else {
+        eduTb.innerHTML = eduStudents.map(s => {
+          const cur = getStudentCurrentTotal(s.key);
+          const ovr = getStudentOverallTotal(s.key);
+          return '<tr>'+
+            '<td class="nowrap">'+esc(sName(s.name,s.englishName))+'</td>'+
+            '<td class="nowrap">'+esc(s.englishName||'')+'</td>'+
+            '<td class="nowrap">'+esc(s.className||'')+'</td>'+
+            '<td class="nowrap" style="font-weight:700;">'+cur+'점</td>'+
+            '<td class="nowrap" style="font-weight:700;color:var(--rd);">'+ovr+'점</td>'+
+            '<td class="nowrap"><span style="color:var(--rd);font-weight:700;font-size:12px;">생활교육위원회 대상</span></td>'+
+            '</tr>';
+        }).join('');
       }
     }
 
