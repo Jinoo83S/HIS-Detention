@@ -540,12 +540,12 @@
         return `
           <tr>
             <td><input class="edit-input" value="${esc(row.studentName || '')}" oninput="entryRows[${idx}].studentName=this.value;checkEntryDirty()"></td>
-            <td><input class="edit-input" value="${esc(row.englishName || '')}" oninput="entryRows[${idx}].englishName=this.value"></td>
-            <td><input class="edit-input" value="${esc(row.className || '')}" oninput="entryRows[${idx}].className=this.value"></td>
-            <td><input class="edit-input" value="${esc(row.category || '')}" oninput="entryRows[${idx}].category=this.value"></td>
-            <td><textarea class="edit-textarea" oninput="entryRows[${idx}].violation=this.value">${esc(row.violation || '')}</textarea></td>
-            <td><input class="edit-input" value="${esc(String(row.autoPoints || ''))}" oninput="entryRows[${idx}].autoPoints=this.value"></td>
-            <td><input class="edit-input" value="${esc(String(row.manualPoints || ''))}" oninput="entryRows[${idx}].manualPoints=Number(this.value||0)"></td>
+            <td><input class="edit-input" value="${esc(row.englishName || '')}" oninput="entryRows[${idx}].englishName=this.value;checkEntryDirty()"></td>
+            <td><input class="edit-input" value="${esc(row.className || '')}" oninput="entryRows[${idx}].className=this.value;checkEntryDirty()"></td>
+            <td><input class="edit-input" value="${esc(row.category || '')}" oninput="entryRows[${idx}].category=this.value;checkEntryDirty()"></td>
+            <td><textarea class="edit-textarea" oninput="entryRows[${idx}].violation=this.value;checkEntryDirty()">${esc(row.violation || '')}</textarea></td>
+            <td><input class="edit-input" value="${esc(String(row.autoPoints || ''))}" oninput="entryRows[${idx}].autoPoints=this.value;checkEntryDirty()"></td>
+            <td><input class="edit-input" value="${esc(String(row.manualPoints || ''))}" oninput="entryRows[${idx}].manualPoints=Number(this.value||0);checkEntryDirty()"></td>
             <td><input class="edit-input" value="${esc(String(row.totalPoints || ''))}" oninput="entryRows[${idx}].totalPoints=Number(this.value||0);checkEntryDirty()"></td>
             <td>
               <select class="edit-input" onchange="entryRows[${idx}].status=this.value;checkEntryDirty()">
@@ -611,8 +611,8 @@
             <td><input class="edit-input" value="${esc(row.studentKey || '')}" oninput="noticeRows[${idx}].studentKey=this.value"></td>
             <td><input class="edit-input" value="${esc(row.level || '')}" oninput="noticeRows[${idx}].level=this.value"></td>
             <td><input class="edit-input" value="${esc(row.parentMailAt || '')}" oninput="noticeRows[${idx}].parentMailAt=this.value;checkNoticeDirty()"></td>
-            <td><input class="edit-input" value="${esc(row.studentTeacherMailAt || '')}" oninput="noticeRows[${idx}].studentTeacherMailAt=this.value"></td>
-            <td><input class="edit-input" value="${esc(row.completedAt || '')}" oninput="noticeRows[${idx}].completedAt=this.value"></td>
+            <td><input class="edit-input" value="${esc(row.studentTeacherMailAt || '')}" oninput="noticeRows[${idx}].studentTeacherMailAt=this.value;checkNoticeDirty()"></td>
+            <td><input class="edit-input" value="${esc(row.completedAt || '')}" oninput="noticeRows[${idx}].completedAt=this.value;checkNoticeDirty()"></td>
             <td><input class="edit-input" value="${esc(row.completedBy || '')}" oninput="noticeRows[${idx}].completedBy=this.value"></td>
             <td><button class="btn btn-danger small-btn" onclick="markNoticeDeleted('${row.key}')">삭제</button></td>
           </tr>
@@ -670,12 +670,12 @@
         const idx = recoveryRows.findIndex(r => r.key === row.key);
         return `
           <tr>
-            <td><input class="edit-input" value="${esc(row.studentName || '')}" oninput="recoveryRows[${idx}].studentName=this.value"></td>
+            <td><input class="edit-input" value="${esc(row.studentName || '')}" oninput="recoveryRows[${idx}].studentName=this.value;checkRecoveryDirty()"></td>
             <td><input class="edit-input" value="${esc(row.englishName || '')}" oninput="recoveryRows[${idx}].englishName=this.value"></td>
             <td><input class="edit-input" value="${esc(row.className || '')}" oninput="recoveryRows[${idx}].className=this.value"></td>
             <td><input class="edit-input" value="${esc(row.level || '')}" oninput="recoveryRows[${idx}].level=this.value"></td>
             <td><input class="edit-input" value="${esc(String(row.recoveryPoints || row.points || ''))}" oninput="recoveryRows[${idx}].recoveryPoints=Number(this.value||0);checkRecoveryDirty()"></td>
-            <td><input class="edit-input" value="${esc(row.staffName || '')}" oninput="recoveryRows[${idx}].staffName=this.value"></td>
+            <td><input class="edit-input" value="${esc(row.staffName || '')}" oninput="recoveryRows[${idx}].staffName=this.value;checkRecoveryDirty()"></td>
             <td><input class="edit-input" value="${esc(row.completedAt || '')}" oninput="recoveryRows[${idx}].completedAt=this.value"></td>
             <td><button class="btn btn-danger small-btn" onclick="markRecoveryDeleted('${row.key}')">삭제</button></td>
           </tr>

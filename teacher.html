@@ -601,11 +601,13 @@
         </div>
       </div>
 
+    </div>
+
+    <!-- COMMITTEE -->
     <div id="tab-discipline" class="tab-panel">
       <div class="card">
         <div class="card-title">위원회 관리 | Committee Management</div>
 
-        <!-- 선도위원회 -->
         <div class="card-title notice-divider" style="margin-top:8px;">🔴 선도위원회 회부 | Disciplinary Committee</div>
         <div class="notice">이성교제·흡연 2회차 이상 적발로 선도위원회 회부된 항목입니다.<br>Entries referred to the Disciplinary Committee (2nd+ violation of dating/smoking regulations).</div>
         <div class="tbl-wrap">
@@ -626,7 +628,6 @@
           </table>
         </div>
 
-        <!-- 생활교육위원회 -->
         <div class="card-title notice-divider" style="margin-top:18px;">⚠️ 생활교육위원회 대상 | Education Committee</div>
         <div class="notice">누적 벌점 30점 이상 학생 목록입니다.<br>Students with cumulative detention points of 30 or more.</div>
         <div class="tbl-wrap">
@@ -645,7 +646,6 @@
           </table>
         </div>
       </div>
-    </div>
     </div>
   </div>
 
@@ -1581,11 +1581,15 @@
     function renderNotifyTableByLevel(level){
       const activeTb = document.getElementById(level === 'ms' ? 'notify-ms-active-tbody' : 'notify-hs-active-tbody');
       const doneTb = document.getElementById(level === 'ms' ? 'notify-ms-done-tbody' : 'notify-hs-done-tbody');
-      // active: findActiveNotice가 존재(미완료 notice)하고 currentTotal>=3
-      // done: completedAt 있는 notice 전체 목록
-      const activeList = getNoticeCandidates(level).filter(s => !!s.noticeDocKey && !s.notice.completedAt);
-      // currentTotal>=3 인데 아직 notice 없는 경우도 active에 포함
-      const pendingNewList = getNoticeCandidates(level).filter(s => !s.noticeDocKey);
+      const candidates = getNoticeCandidates(level);
+      // active: 미완료 notice 있는 학생
+      const activeList = candidates.filter(s => !!s.noticeDocKey && !s.notice.completedAt);
+      // pending: notice 자체가 없는 신규 (완료된 notice도 없어야 함)
+      const pendingNewList = candidates.filter(s => {
+        if (s.noticeDocKey) return false;
+        const completedObj = findLatestCompletedNotice(s.key, level);
+        return !completedObj; // 완료된 notice도 없는 진짜 신규만
+      });
       const finalActiveList = [...activeList, ...pendingNewList];
       const doneList = getCompletedNoticeList(level);
 
@@ -1766,7 +1770,10 @@
       // 선도위원회: isReferral=true 항목
       const referralTb = document.getElementById('discipline-referral-tbody');
       const eduTb = document.getElementById('discipline-education-tbody');
-      if (!referralTb || !eduTb) return;
+      if (!referralTb || !eduTb) {
+        console.warn('discipline tbody not found - check tab HTML structure');
+        return;
+      }
       // 데이터 로드 확인
       if (!Object.keys(entries||{}).length && !Object.keys(students||{}).length) {
         referralTb.innerHTML = '<tr><td colspan="8" class="empty">데이터 로딩 중... | Loading...</td></tr>';
@@ -1842,7 +1849,8 @@
       const memo = (document.getElementById('memo').value || '').trim();
 
       if (!studentKey || !students[studentKey]){
-        return toast('학생을 선택해 주세요.\nPlease select a student.', 'err');
+        alert('학생을 선택해 주세요.\nPlease select a student.');
+        return toast('학생을 선택해 주세요.', 'err');
       }
 
       // 범위형 자동벌점 검증 (예: 1-12, 1,3)
@@ -1858,16 +1866,19 @@
         if (rangeMatch){
           const [, minP, maxP] = rangeMatch.map(Number);
           if (manualPoints < minP || manualPoints > maxP){
-            return toast(`벌점은 ${minP}~${maxP}점 사이여야 합니다.\nPoints must be between ${minP} and ${maxP}.`, 'err');
+            alert(`벌점은 ${minP}~${maxP}점 사이여야 합니다.\nPoints must be between ${minP} and ${maxP}.`);
+            return toast(`벌점 범위 오류\nPoints out of range`, 'err');
           }
         } else if (choiceMatch){
           const choices = apRaw.split(',').map(Number);
           if (!choices.includes(manualPoints)){
-            return toast(`벌점은 ${apRaw} 중 하나여야 합니다.\nPoints must be one of: ${apRaw}.`, 'err');
+            alert(`벌점은 ${apRaw} 중 하나여야 합니다.\nPoints must be one of: ${apRaw}.`);
+            return toast(`벌점 선택 오류\nInvalid points`, 'err');
           }
         } else if (/^\d+$/.test(apRaw)){
           if (manualPoints !== Number(apRaw)){
-            return toast(`벌점은 ${apRaw}점이어야 합니다.\nPoints must be ${apRaw}.`, 'err');
+            alert(`벌점은 ${apRaw}점이어야 합니다.\nPoints must be ${apRaw}.`);
+            return toast(`벌점 오류\nInvalid points`, 'err');
           }
         }
       }
