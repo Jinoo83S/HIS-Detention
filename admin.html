@@ -90,7 +90,7 @@
           <div class="filter-bar">
             <input id="teacher-search" class="edit-input flex1" placeholder="교사명/이메일/학반 검색 | Search by name/email/class">
             <button class="btn btn-secondary" onclick="addTeacherRow()">행 추가 | Add Row</button>
-            <button class="btn btn-primary" onclick="saveTeachers()">변경 저장 | Save Changes</button>
+            <button id="btn-save-teachers" class="btn btn-primary" onclick="saveTeachers()" disabled style="opacity:.4;cursor:not-allowed;">저장할 내용 없음 | No Changes</button>
           </div>
           <div class="tbl-wrap">
             <table>
@@ -116,7 +116,7 @@
           <div class="filter-bar">
             <input id="student-search" class="edit-input flex1" placeholder="학생명/영문명/학반 검색 | Search by name/English/class">
             <button class="btn btn-secondary" onclick="addStudentRow()">행 추가 | Add Row</button>
-            <button class="btn btn-primary" onclick="saveStudents()">변경 저장 | Save Changes</button>
+            <button id="btn-save-students" class="btn btn-primary" onclick="saveStudents()" disabled style="opacity:.4;cursor:not-allowed;">저장할 내용 없음 | No Changes</button>
           </div>
           <div class="tbl-wrap">
             <table>
@@ -140,22 +140,16 @@
       </div>
 
       <div id="tab-csv" class="tab-panel">
-        <!-- 학생 엑셀 붙여넣기 -->
         <div class="card">
           <div class="card-title">학생 명단 엑셀 붙여넣기 | Student Excel Paste</div>
-          <div class="notice">
-            엑셀에서 복사(Ctrl+C) 후 아래에 붙여넣기(Ctrl+V) 하세요.<br>
-            열 순서 | Columns: <strong>이름 · 영문명 · 학반 · 본인이메일 · 부이메일 · 모이메일</strong>
-          </div>
-          <textarea id="student-paste-area" class="edit-input" rows="6"
-            placeholder="여기에 엑셀 데이터를 붙여넣으세요."
-            style="font-family:monospace;font-size:12px;resize:vertical;margin-top:6px;"></textarea>
+          <div class="notice">열 순서 | Columns: <strong>이름 · 영문명 · 학반 · 본인이메일 · 부이메일 · 모이메일</strong></div>
+          <textarea id="student-paste-area" class="edit-input" rows="5" style="font-family:monospace;font-size:12px;resize:vertical;margin-top:6px;" placeholder="엑셀에서 복사(Ctrl+C) 후 붙여넣기(Ctrl+V)"></textarea>
           <div class="filter-bar" style="margin-top:8px;align-items:center;">
             <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;white-space:nowrap;">
               <input type="checkbox" id="student-paste-header" checked> 첫 행 = 헤더 | First row is header
             </label>
             <button class="btn btn-primary" onclick="pasteStudents()">붙여넣기 적용 | Apply</button>
-            <button class="btn btn-secondary" onclick="document.getElementById('student-paste-area').value=''">지우기 | Clear</button>
+            <button class="btn btn-secondary" onclick="document.getElementById('student-paste-area').value=''">지우기</button>
           </div>
           <div id="student-paste-msg" class="small" style="margin-top:6px;"></div>
         </div>
@@ -178,22 +172,16 @@
           <div id="student-upload-msg" class="small"></div>
         </div>
 
-        <!-- 교사 엑셀 붙여넣기 -->
         <div class="card">
           <div class="card-title">교사 계정 엑셀 붙여넣기 | Teacher Excel Paste</div>
-          <div class="notice">
-            엑셀에서 복사(Ctrl+C) 후 아래에 붙여넣기(Ctrl+V) 하세요.<br>
-            열 순서 | Columns: <strong>이름 · 이메일 · 비밀번호 · 담당학반 · 권한</strong>
-          </div>
-          <textarea id="teacher-paste-area" class="edit-input" rows="6"
-            placeholder="여기에 엑셀 데이터를 붙여넣으세요."
-            style="font-family:monospace;font-size:12px;resize:vertical;margin-top:6px;"></textarea>
+          <div class="notice">열 순서 | Columns: <strong>이름 · 이메일 · 비밀번호 · 담당학반 · 권한</strong></div>
+          <textarea id="teacher-paste-area" class="edit-input" rows="5" style="font-family:monospace;font-size:12px;resize:vertical;margin-top:6px;" placeholder="엑셀에서 복사(Ctrl+C) 후 붙여넣기(Ctrl+V)"></textarea>
           <div class="filter-bar" style="margin-top:8px;align-items:center;">
             <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;white-space:nowrap;">
               <input type="checkbox" id="teacher-paste-header" checked> 첫 행 = 헤더 | First row is header
             </label>
             <button class="btn btn-primary" onclick="pasteTeachers()">붙여넣기 적용 | Apply</button>
-            <button class="btn btn-secondary" onclick="document.getElementById('teacher-paste-area').value=''">지우기 | Clear</button>
+            <button class="btn btn-secondary" onclick="document.getElementById('teacher-paste-area').value=''">지우기</button>
           </div>
           <div id="teacher-paste-msg" class="small" style="margin-top:6px;"></div>
         </div>
@@ -235,6 +223,37 @@
     let studentsRaw = {};
     let teacherRows = [];
     let studentRows = [];
+    let teacherSnapshot = '';
+    let studentSnapshot = '';
+
+    /* ── Dirty-check ────────────────────────────────── */
+    function teacherRowSig(r) {
+      return [String(r.name||'').trim(), String(r.email||'').trim().toLowerCase(),
+              String(r.password||'').trim(), String(r.homeroom||'').trim(),
+              [...normalizeRoles(r.roles)].sort().join(','), !!r._delete].join('|');
+    }
+    function studentRowSig(r) {
+      return [String(r.name||'').trim(), String(r.englishName||'').trim(),
+              String(r.className||'').trim(), String(r.selfEmail||'').trim(),
+              String(r.fatherEmail||'').trim(), String(r.motherEmail||'').trim(),
+              !!r._delete].join('|');
+    }
+    function takeTeacherSnapshot() { teacherSnapshot = JSON.stringify([...teacherRows.map(teacherRowSig)].sort()); }
+    function takeStudentSnapshot() { studentSnapshot = JSON.stringify([...studentRows.map(studentRowSig)].sort()); }
+    function setButtonState(id, dirty) {
+      const btn = document.getElementById(id);
+      if (!btn) return;
+      btn.disabled       = !dirty;
+      btn.style.opacity  = dirty ? '1' : '0.4';
+      btn.style.cursor   = dirty ? 'pointer' : 'not-allowed';
+      btn.textContent    = dirty ? '변경 저장 | Save Changes' : '저장할 내용 없음 | No Changes';
+    }
+    function checkTeacherDirty() {
+      setButtonState('btn-save-teachers', JSON.stringify([...teacherRows.map(teacherRowSig)].sort()) !== teacherSnapshot);
+    }
+    function checkStudentDirty() {
+      setButtonState('btn-save-students', JSON.stringify([...studentRows.map(studentRowSig)].sort()) !== studentSnapshot);
+    }
 
     function statusPill(status) {
       if (status === '오류') return '<span class="pill err">오류 | Error</span>';
@@ -262,9 +281,11 @@
         if (!current.includes(roleKey)) current.push(roleKey);
       } else {
         teacherRows[idx].roles = current.filter(r => r !== roleKey);
+        checkTeacherDirty();
         return;
       }
       teacherRows[idx].roles = current;
+      checkTeacherDirty();
     }
 
     function rolesCellHtml(idx, row) {
@@ -300,6 +321,7 @@
         document.getElementById('admin-pw').value = '';
         return toast('비밀번호가 올바르지 않습니다.\nInvalid password.', 'err');
       }
+      sessionStorage.setItem('his_admin_session', '1');
       sessionStorage.setItem('his_admin_session', '1');
       document.getElementById('login-screen').classList.add('hidden');
       document.getElementById('admin-screen').classList.remove('hidden');
@@ -361,6 +383,10 @@
 
         renderTeachers();
         renderStudents();
+        takeTeacherSnapshot();
+        takeStudentSnapshot();
+        setButtonState('btn-save-teachers', false);
+        setButtonState('btn-save-students', false);
       } catch (e) {
         console.error(e);
         toast('데이터 로드 실패\nFailed to load data', 'err');
@@ -385,11 +411,11 @@
         const idx = teacherRows.indexOf(r);
         return `
           <tr>
-            <td><input class="edit-input" style="min-width:0" value="${esc(r.name || '')}" oninput="teacherRows[${idx}].name=this.value"></td>
-            <td><input class="edit-input" style="min-width:0" value="${esc(r.email || '')}" oninput="teacherRows[${idx}].email=this.value"></td>
-            <td><input class="edit-input" style="min-width:0" value="${esc(r.password || '')}" oninput="teacherRows[${idx}].password=this.value"></td>
+            <td><input class="edit-input" style="min-width:0" value="${esc(r.name || '')}" oninput="teacherRows[${idx}].name=this.value;checkTeacherDirty()"></td>
+            <td><input class="edit-input" style="min-width:0" value="${esc(r.email || '')}" oninput="teacherRows[${idx}].email=this.value;checkTeacherDirty()"></td>
+            <td><input class="edit-input" style="min-width:0" value="${esc(r.password || '')}" oninput="teacherRows[${idx}].password=this.value;checkTeacherDirty()"></td>
             <td>${rolesCellHtml(idx, r)}</td>
-            <td><input class="edit-input" style="min-width:0" value="${esc(r.homeroom || '')}" oninput="teacherRows[${idx}].homeroom=this.value; renderStudents();"></td>
+            <td><input class="edit-input" style="min-width:0" value="${esc(r.homeroom || '')}" oninput="teacherRows[${idx}].homeroom=this.value;renderStudents();checkTeacherDirty()"></td>
             <td style="text-align:center"><button class="btn btn-danger" onclick="deleteTeacherRow(${idx})">삭제 | Delete</button></td>
           </tr>`;
       }).join('');
@@ -403,6 +429,7 @@
       teacherRows[idx]._delete = true;
       renderTeachers();
       renderStudents();
+      checkTeacherDirty();
     }
 
     function renderStudents() {
@@ -432,15 +459,15 @@
 
         return `
           <tr>
-            <td><input class="edit-input" style="min-width:0" value="${esc(r.name || '')}" oninput="studentRows[${idx}].name=this.value"></td>
-            <td><input class="edit-input" style="min-width:0" value="${esc(r.englishName || '')}" oninput="studentRows[${idx}].englishName=this.value"></td>
-            <td><input class="edit-input" style="min-width:0" value="${esc(r.className || '')}" oninput="studentRows[${idx}].className=this.value; studentRows[${idx}].homeroomTeacherEmail=getHomeroomTeacherEmail(this.value); renderStudents();"></td>
-            <td><input class="edit-input" style="min-width:0" value="${esc(r.selfEmail || '')}" oninput="studentRows[${idx}].selfEmail=this.value"></td>
-            <td><input class="edit-input" style="min-width:0" value="${esc(r.fatherEmail || '')}" oninput="studentRows[${idx}].fatherEmail=this.value"></td>
-            <td><input class="edit-input" style="min-width:0" value="${esc(r.motherEmail || '')}" oninput="studentRows[${idx}].motherEmail=this.value"></td>
+            <td><input class="edit-input" style="min-width:0" value="${esc(r.name || '')}" oninput="studentRows[${idx}].name=this.value;checkStudentDirty()"></td>
+            <td><input class="edit-input" style="min-width:0" value="${esc(r.englishName || '')}" oninput="studentRows[${idx}].englishName=this.value;checkStudentDirty()"></td>
+            <td><input class="edit-input" style="min-width:0" value="${esc(r.className || '')}" oninput="studentRows[${idx}].className=this.value;studentRows[${idx}].homeroomTeacherEmail=getHomeroomTeacherEmail(this.value);renderStudents();checkStudentDirty()"></td>
+            <td><input class="edit-input" style="min-width:0" value="${esc(r.selfEmail || '')}" oninput="studentRows[${idx}].selfEmail=this.value;checkStudentDirty()"></td>
+            <td><input class="edit-input" style="min-width:0" value="${esc(r.fatherEmail || '')}" oninput="studentRows[${idx}].fatherEmail=this.value;checkStudentDirty()"></td>
+            <td><input class="edit-input" style="min-width:0" value="${esc(r.motherEmail || '')}" oninput="studentRows[${idx}].motherEmail=this.value;checkStudentDirty()"></td>
             <td><input class="readonly-input" readonly value="${esc(r.homeroomTeacherEmail || '')}"></td>
             <td>${statusPill(r._status)}</td>
-            <td style="text-align:center"><input type="checkbox" ${r._delete ? 'checked' : ''} onchange="studentRows[${idx}]._delete=this.checked"></td>
+            <td style="text-align:center"><input type="checkbox" ${r._delete ? 'checked' : ''} onchange="studentRows[${idx}]._delete=this.checked;checkStudentDirty()"></td>
           </tr>`;
       }).join('');
     }
@@ -448,11 +475,13 @@
     function addTeacherRow() {
       teacherRows.unshift({ oldKey:'', name:'', email:'', password:'', homeroom:'', roles:[], _delete:false, _status:'신규' });
       renderTeachers();
+      checkTeacherDirty();
     }
 
     function addStudentRow() {
       studentRows.unshift({ oldKey:'', name:'', englishName:'', className:'', selfEmail:'', fatherEmail:'', motherEmail:'', homeroomTeacherEmail:'', _delete:false, _status:'신규' });
       renderStudents();
+      checkStudentDirty();
     }
 
     async function saveTeachers() {
@@ -555,6 +584,7 @@
         document.querySelector('.tab-btn[data-tab="students"]').classList.add('active');
         document.getElementById('tab-students').classList.add('active');
         renderStudents();
+        checkStudentDirty();
       } catch (e) {
         console.error(e);
         toast('CSV 업로드 실패\nCSV upload failed', 'err');
@@ -595,6 +625,7 @@
         document.getElementById('tab-teachers').classList.add('active');
         renderTeachers();
         renderStudents();
+        checkTeacherDirty();
       } catch (e) {
         console.error(e);
         toast('교사 CSV 업로드 실패\nTeacher CSV upload failed', 'err');
@@ -614,14 +645,11 @@
       document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
     });
 
-    /* ── 엑셀 붙여넣기 (TSV) ────────────────────────────── */
     function parseTsv(text) {
       return text.replace(/\r\n/g,'\n').replace(/\r/g,'\n')
-        .split('\n')
-        .map(line => line.split('\t').map(v => v.trim()))
+        .split('\n').map(l => l.split('\t').map(v => v.trim()))
         .filter(cols => cols.some(v => v !== ''));
     }
-
     function switchToTab(name) {
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
@@ -630,58 +658,36 @@
       const panel = document.getElementById('tab-' + name);
       if (panel) panel.classList.add('active');
     }
-
     function pasteStudents() {
       const raw = (document.getElementById('student-paste-area').value || '').trim();
       const msg = document.getElementById('student-paste-msg');
-      if (!raw) { msg.textContent = '데이터가 없습니다. | No data.'; return; }
+      if (!raw) { msg.textContent = '데이터가 없습니다.'; return; }
       const rows = parseTsv(raw);
-      const hasHeader = document.getElementById('student-paste-header').checked;
-      const dataRows = hasHeader ? rows.slice(1) : rows;
+      const dataRows = document.getElementById('student-paste-header').checked ? rows.slice(1) : rows;
       const COLS = ['name','englishName','className','selfEmail','fatherEmail','motherEmail'];
-      const loaded = dataRows
-        .map(cols => { const o={}; COLS.forEach((k,i) => { o[k]=cols[i]||''; }); return o; })
-        .filter(r => r.name);
-      if (!loaded.length) { msg.textContent = '유효한 데이터가 없습니다. | No valid data.'; return; }
-      studentRows = loaded.map(r => ({
-        oldKey:'', name:r.name, englishName:r.englishName, className:r.className,
-        selfEmail:r.selfEmail, fatherEmail:r.fatherEmail, motherEmail:r.motherEmail,
-        homeroomTeacherEmail: getHomeroomTeacherEmail(r.className),
-        _delete:false, _status:'업로드됨'
-      }));
-      msg.textContent = `✅ ${studentRows.length}명 불러옴 | ${studentRows.length} rows loaded`;
-      toast('붙여넣기 완료 | Paste applied.', 'ok');
-      switchToTab('students');
-      renderStudents();
-      checkStudentDirty();
+      const loaded = dataRows.map(cols => { const o={}; COLS.forEach((k,i) => { o[k]=cols[i]||''; }); return o; }).filter(r => r.name);
+      if (!loaded.length) { msg.textContent = '유효한 데이터가 없습니다.'; return; }
+      studentRows = loaded.map(r => ({ oldKey:'', ...r, homeroomTeacherEmail:getHomeroomTeacherEmail(r.className), _delete:false, _status:'업로드됨' }));
+      msg.textContent = `✅ ${studentRows.length}명 불러옴`;
+      toast('붙여넣기 완료', 'ok');
+      switchToTab('students'); renderStudents(); checkStudentDirty();
     }
-
     function pasteTeachers() {
       const raw = (document.getElementById('teacher-paste-area').value || '').trim();
       const msg = document.getElementById('teacher-paste-msg');
-      if (!raw) { msg.textContent = '데이터가 없습니다. | No data.'; return; }
+      if (!raw) { msg.textContent = '데이터가 없습니다.'; return; }
       const rows = parseTsv(raw);
-      const hasHeader = document.getElementById('teacher-paste-header').checked;
-      const dataRows = hasHeader ? rows.slice(1) : rows;
+      const dataRows = document.getElementById('teacher-paste-header').checked ? rows.slice(1) : rows;
       const COLS = ['name','email','password','homeroom','roles'];
-      const loaded = dataRows
-        .map(cols => { const o={}; COLS.forEach((k,i) => { o[k]=cols[i]||''; }); return o; })
-        .filter(r => r.name);
-      if (!loaded.length) { msg.textContent = '유효한 데이터가 없습니다. | No valid data.'; return; }
-      teacherRows = loaded.map(r => ({
-        oldKey:'', name:r.name, email:String(r.email||'').toLowerCase(),
-        password:r.password, homeroom:r.homeroom,
-        roles:normalizeRoles(r.roles), _delete:false, _status:'업로드됨'
-      }));
-      msg.textContent = `✅ ${teacherRows.length}명 불러옴 | ${teacherRows.length} rows loaded`;
-      toast('붙여넣기 완료 | Paste applied.', 'ok');
-      switchToTab('teachers');
-      renderTeachers();
-      renderStudents();
-      checkTeacherDirty();
+      const loaded = dataRows.map(cols => { const o={}; COLS.forEach((k,i) => { o[k]=cols[i]||''; }); return o; }).filter(r => r.name);
+      if (!loaded.length) { msg.textContent = '유효한 데이터가 없습니다.'; return; }
+      teacherRows = loaded.map(r => ({ oldKey:'', name:r.name, email:String(r.email||'').toLowerCase(), password:r.password, homeroom:r.homeroom, roles:normalizeRoles(r.roles), _delete:false, _status:'업로드됨' }));
+      msg.textContent = `✅ ${teacherRows.length}명 불러옴`;
+      toast('붙여넣기 완료', 'ok');
+      switchToTab('teachers'); renderTeachers(); renderStudents(); checkTeacherDirty();
     }
 
-    /* ── 세션 자동복원 ──────────────────────────────────── */
+    /* ── 세션 자동복원 ── */
     (function initSession() {
       if (sessionStorage.getItem('his_admin_session') === '1') {
         document.getElementById('login-screen').classList.add('hidden');
