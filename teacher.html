@@ -596,12 +596,12 @@
           <th class="tc">교사</th><th class="tc">회부일시</th><th class="tc">상태</th><th class="tc">완료시간</th>
         </tr></thead><tbody id="discipline-referral-done-tbody"></tbody></table></div>
         <div class="card-title notice-divider" style="margin-top:18px;">⚠️ 생활교육위원회 진행 중</div>
-        <div class="notice">현재누적 12점 초과 또는 전체누적 30점 초과 (연간 1회 적용).</div>
+        <div class="notice">현재누적 12점 이상 또는 전체누적 30점 이상 (연간 1회 적용).</div>
         <div class="tbl-wrap"><table><thead><tr>
           <th>학생</th><th class="tc">학반</th><th class="tc">현재누적</th>
           <th class="tc">전체누적</th><th>사유</th><th class="tc">처리</th><th class="tc">완료</th>
         </tr></thead><tbody id="discipline-education-tbody"></tbody></table></div>
-        <div class="card-title notice-divider" style="margin-top:14px;">✅ 생활교육위원회 완료 (올해)</div>
+        <div class="card-title notice-divider" style="margin-top:14px;">✅ 생활교육위원회 완료</div>
         <div class="tbl-wrap"><table><thead><tr>
           <th>학생</th><th class="tc">학반</th><th class="tc">현재누적</th>
           <th class="tc">전체누적</th><th>사유</th><th class="tc">완료시간</th><th></th>
@@ -914,8 +914,9 @@
         .map(([key, value]) => ({ key, ...value }))
         .filter(r => String(r.level || '') === String(level))
         .sort((a,b)=>{
-          const aT=a.completedNotice?String(a.completedNotice.completedAt||''):'';
-          const bT=b.completedNotice?String(b.completedNotice.completedAt||''):'';
+          // 알림 완료 날짜 기준 오름차순 (먼저 완료된 알림이 위)
+          const aT=a.completedNotice?String(a.completedNotice.completedAt||''):'9999';
+          const bT=b.completedNotice?String(b.completedNotice.completedAt||''):'9999';
           const cmp=aT.localeCompare(bT);
           return cmp!==0?cmp:String(a.key||'').localeCompare(String(b.key||''));
         });
@@ -1590,23 +1591,27 @@
       const candidates = getNoticeCandidates(level);
       // active: 미완료 notice 있는 학생
       const activeList = candidates.filter(s => !!s.noticeDocKey && !s.notice.completedAt);
-      // pending: notice가 없는 학생
-      // - 진짜 신규 (notice 없음)
-      // - 이전 사이클 완료(notice+recovery 모두 완료) 후 새 사이클에서 3점 초과
+      // pending: active notice 없는데 새 notice가 필요한 학생
+      // 핵심 판별: 마지막 확정 entry의 시간이 마지막 notice완료 AND 마지막 recovery완료보다 이후
       const pendingNewList = candidates.filter(s => {
-        if (s.noticeDocKey) return false; // 이미 active notice 있음
+        if (s.noticeDocKey) return false; // active notice 이미 있음
         const completedObj = findLatestCompletedNotice(s.key, level);
-        if (!completedObj) return true; // 진짜 신규
-        // 이전 사이클 notice가 완료됐으면 → recovery도 완료됐는지 확인
-        const noticeCompletedAt = String(completedObj.notice.completedAt || '');
-        const latestRecovery = Object.values(recoveryEntries||{})
+        if (!completedObj) return true; // 처음 알림이 필요한 신규
+        
+        // 가장 최근 확정 entry 시간
+        const lastConfirmed = getConfirmedEntriesForStudent(s.key)[0];
+        if (!lastConfirmed) return false;
+        const lastConfirmedAt = String(lastConfirmed.confirmedAt || lastConfirmed.createdAt || '');
+        const lastNoticeAt = String(completedObj.notice.completedAt || '');
+        
+        // 마지막 recovery 시간
+        const allRecoveries = Object.values(recoveryEntries||{})
           .filter(r => String(r.studentKey||'') === String(s.key) && String(r.level||'') === level)
-          .sort((a,b) => String(b.completedAt||'').localeCompare(String(a.completedAt||'')))[0];
-        if (!latestRecovery) return false; // recovery 없으면 아직 회복교육 중
-        // recovery가 notice 이후에 완료됐으면 → 새 사이클 가능
-        const recoveryCompletedAt = String(latestRecovery.completedAt || '');
-        const isNewCycle = recoveryCompletedAt > noticeCompletedAt;
-        // 새 사이클이고 현재 점수가 0이 되었다가 다시 3점 초과인 경우
+          .sort((a,b) => String(b.completedAt||'').localeCompare(String(a.completedAt||'')));
+        const lastRecoveryAt = allRecoveries.length ? String(allRecoveries[0].completedAt||'') : '';
+        
+        // 신규 사이클: 마지막 확정 entry가 notice완료 이후에 생성됨 AND 현재 점수 >= 3
+        const isNewCycle = lastConfirmedAt > lastNoticeAt;
         return isNewCycle && s.currentTotal >= 3;
       });
       const finalActiveList = [...activeList, ...pendingNewList];
@@ -1805,7 +1810,7 @@
           '<td class="tc">'+esc(String(r.violationCount||'-'))+'회차</td>'+
           '<td class="tc">'+esc(r.teacherName||'')+'</td>'+
           '<td class="tc">'+fmt(r.confirmedAt||r.createdAt)+'</td>'+
-          '<td class="tc">'+statusBadge(r.status)+'</td>'+
+          '<td class="tc">'+(isDone ? statusBadge(r.status) : '<span style="background:#fde8e8;color:#7f1d1d;padding:4px 8px;border-radius:8px;font-size:11px;font-weight:700;">선도위원회 회부</span>')+'</td>'+
           (done
             ? '<td class="tc" style="color:var(--gn);font-weight:700;font-size:11px;">&#10003; '+fmt(r.committeeCompletedAt)+'</td>'
             : '<td class="tc"><button class="btn btn-primary" style="font-size:11px;padding:4px 8px;" onclick="event.stopPropagation();completeCommittee(\'referral\',\''+esc(r.key||'')+'\',\'\')">완료</button></td>')+
@@ -1825,12 +1830,12 @@
 
       const doneEduKeysYr=new Set(Object.values(committeeEntries||{}).filter(r=>r.type==='edu'&&r.completedAt&&String(r.year||'')===String(yr)).map(r=>r.studentKey));
       const allEdu=Object.entries(students||{}).map(([k,v])=>Object.assign({},v,{key:k}))
-        .filter(s=>{if(!getSchoolLevel(s.className||''))return false;return getStudentCurrentTotal(s.key)>12||getStudentOverallTotal(s.key)>30;})
+        .filter(s=>{if(!getSchoolLevel(s.className||''))return false;return getStudentCurrentTotal(s.key)>=12||getStudentOverallTotal(s.key)>=30;})
         .sort((a,b)=>getStudentOverallTotal(b.key)-getStudentOverallTotal(a.key));
       const mkEduRow=(s,done)=>{
         const cur=getStudentCurrentTotal(s.key),ovr=getStudentOverallTotal(s.key);
         const did='ed_'+String(s.key||'').replace(/\W/g,'_');
-        const trig=(cur>12?'현재'+cur+'점 초과':'')+(cur>12&&ovr>30?' / ':'')+(ovr>30?'전체'+ovr+'점 초과':'');
+        const trig=(cur>=12?'현재'+cur+'점 이상':'')+(cur>=12&&ovr>=30?' / ':'')+(ovr>=30?'전체'+ovr+'점 이상':'');
         return '<tr class="summary-row" onclick="toggleDetailDiv(\''+did+'\')" style="cursor:pointer;">'+
           '<td>'+esc(sName(s.name,s.englishName))+'</td>'+
           '<td class="tc">'+esc(s.className||'')+'</td>'+
@@ -1859,8 +1864,8 @@
     async function completeCommittee(type,entryKey,studentKey){
       const now=new Date().toISOString();
       const payload={type,completedAt:now,year:new Date().getFullYear()};
-      if(entryKey)payload.entryKey=entryKey;
-      if(studentKey)payload.studentKey=studentKey;
+      if(entryKey&&entryKey!=='')payload.entryKey=entryKey;
+      if(studentKey&&studentKey!=='')payload.studentKey=studentKey;
       try{
         await db.ref(COMMITTEE_DB_PATH).push(payload);
         toast('완료 처리되었습니다.','ok');
@@ -1882,7 +1887,7 @@
       const o30=isDefaultOnly?[]:Object.keys(students||{}).filter(k=>{
         if(!getSchoolLevel((students[k]||{}).className||''))return false;
         if(doneEduKeysYr30.has(k))return false; // 올해 위원회 완료
-        return getStudentCurrentTotal(k)>12||getStudentOverallTotal(k)>30;
+        return getStudentCurrentTotal(k)>=12||getStudentOverallTotal(k)>=30;
       });
       let wb=document.getElementById('disc-warn');if(!wb){wb=document.createElement('div');wb.id='disc-warn';wb.style.cssText='margin:8px 0;padding:10px 14px;border-radius:10px;background:#fde8e8;border:1px solid #fca5a5;color:#7f1d1d;font-size:13px;font-weight:700;';const sc=document.getElementById('today-count');if(sc&&sc.closest('.card'))sc.closest('.card').after(wb);}
       if(o30.length){wb.style.display='';wb.innerHTML='<b>생활교육위원회 대상 (누적 30점 이상):</b> '+o30.map(k=>{const s=students[k]||{};return esc(s.name||'')+' '+esc(s.englishName||'')+' '+esc(s.className||'')+' ('+getStudentOverallTotal(k)+'점)';}).join(' / ');}else{wb.style.display='none';}

@@ -226,6 +226,7 @@
       <button class="subtab-btn active" data-panel="entries">디텐션 기록 | Entries</button>
       <button class="subtab-btn" data-panel="notices">알림 기록 | Notices</button>
       <button class="subtab-btn" data-panel="recovery">회복교육 기록 | Recovery</button>
+      <button class="subtab-btn" data-panel="committee">위원회 기록 | Committee</button>
     </div>
 
     <!-- Entries -->
@@ -321,6 +322,31 @@
         </div>
       </div>
     </div>
+
+    <!-- Committee Panel -->
+    <div id="panel-committee" class="panel">
+      <div class="card">
+        <div class="card-title">위원회 기록 | Committee Records</div>
+        <div class="toolbar">
+          <button id="btn-save-committee" class="btn btn-primary" onclick="saveCommittee()" disabled style="opacity:.4;cursor:not-allowed;">저장할 내용 없음</button>
+        </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>종류<span class="th-en">Type</span></th>
+                <th>학생 Key<span class="th-en">Student Key</span></th>
+                <th>항목 Key<span class="th-en">Entry Key</span></th>
+                <th>완료 시간<span class="th-en">Completed At</span></th>
+                <th>연도<span class="th-en">Year</span></th>
+                <th>삭제<span class="th-en">Delete</span></th>
+              </tr>
+            </thead>
+            <tbody id="committee-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -329,6 +355,8 @@
 
   <script>
     let entryRows = [];
+    let committeeRows = [];
+    let _committeeSnap = '';
     let noticeRows = [];
     let recoveryRows = [];
     let _entrySnap = '', _noticeSnap = '', _recoverySnap = '';
@@ -385,10 +413,11 @@
 
     async function loadAllData(){
       try{
-        const [entriesSnap, noticesSnap, recoverySnap] = await Promise.all([
+        const [entriesSnap, noticesSnap, recoverySnap, committeeAdminSnap] = await Promise.all([
           db.ref('detentionEntries').once('value'),
           db.ref('detentionNotices').once('value'),
-          db.ref('recoveryEntries').once('value')
+          db.ref('recoveryEntries').once('value'),
+          db.ref('committeeRecords').once('value')
         ]);
 
         entryRows = Object.entries(entriesSnap.val() || {}).map(([key, value]) => ({
@@ -413,6 +442,7 @@
         renderEntriesTable();
         renderNoticesTable();
         renderRecoveryTable();
+        renderCommitteeTable();
         toast('데이터를 불러왔습니다. | Data loaded.', 'ok');
       }catch(err){
         console.error(err);
@@ -632,6 +662,57 @@
         console.error(err);
         toast('회복교육 기록 저장 실패 | Failed to save recovery.', 'err');
       }
+    }
+
+
+    function checkCommitteeDirty(){ _setBtnState('btn-save-committee',_sig(committeeRows)!==_committeeSnap); }
+
+    function renderCommitteeTable(){
+      const tbody=document.getElementById('committee-tbody');
+      if(!tbody)return;
+      const visible=committeeRows.filter(r=>!r._deleted);
+      if(!visible.length){tbody.innerHTML='<tr><td colspan="6" class="empty">기록이 없습니다.</td></tr>';return;}
+      const rows=[];
+      visible.forEach(function(r){
+        const idx=committeeRows.findIndex(function(x){return x.key===r.key;});
+        const tr=document.createElement('tr');
+        ['type','studentKey','entryKey','completedAt','year'].forEach(function(field){
+          const td=document.createElement('td');
+          const inp=document.createElement('input');
+          inp.className='edit-input';
+          inp.value=r[field]||'';
+          if(field==='year')inp.style.width='60px';
+          inp.oninput=function(){committeeRows[idx][field]=this.value;checkCommitteeDirty();};
+          td.appendChild(inp);tr.appendChild(td);
+        });
+        const td=document.createElement('td');
+        const btn=document.createElement('button');
+        btn.className='btn btn-danger small-btn';
+        btn.textContent='삭제';
+        btn.onclick=function(){
+          const key=r.key;
+          const rec=committeeRows.find(function(x){return x.key===key;});
+          if(rec){rec._deleted=!rec._deleted;renderCommitteeTable();checkCommitteeDirty();}
+        };
+        td.appendChild(btn);tr.appendChild(td);
+        rows.push(tr);
+      });
+      tbody.innerHTML='';
+      rows.forEach(function(row){tbody.appendChild(row);});
+    }
+
+    async function saveCommittee(){
+      try{
+        const updates={};
+        committeeRows.forEach(r=>{
+          if(r._deleted){updates['committeeRecords/'+r.key]=null;}
+          else{const {key,_deleted,...data}=r;updates['committeeRecords/'+r.key]=data;}
+        });
+        await db.ref('/').update(updates);
+        toast('저장되었습니다.','ok');
+        _committeeSnap=_sig(committeeRows);_setBtnState('btn-save-committee',false);
+        loadAllData();
+      }catch(e){console.error(e);toast('저장 실패','err');}
     }
 
     if (checkAdminSession()) loadAllData();
