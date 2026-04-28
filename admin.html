@@ -209,7 +209,7 @@
   <script src="common.js"></script>
 
   <script>
-    let ADMIN_PW = localStorage.getItem('his_admin_pw') || '1751';
+    let ADMIN_PW = '1751'; // RTDB에서 로드됨
     const ROLE_OPTIONS = [
       { key: 'master', label: 'Master' },
       { key: 'ms_notice', label: 'MS Notice' },
@@ -339,7 +339,7 @@
       document.getElementById('pw-change-box').classList.toggle('hidden');
     }
 
-    function changeAdminPassword() {
+    async function changeAdminPassword() {
       const currentPw = document.getElementById('current-admin-pw').value;
       const newPw = document.getElementById('new-admin-pw').value;
       const confirmPw = document.getElementById('new-admin-pw-confirm').value;
@@ -348,8 +348,8 @@
       if (!newPw) return toast('새 비밀번호를 입력해 주세요.\nPlease enter a new password.', 'err');
       if (newPw !== confirmPw) return toast('새 비밀번호가 일치하지 않습니다.\nNew passwords do not match.', 'err');
 
+      await db.ref('adminConfig/password').set(newPw);
       ADMIN_PW = newPw;
-      localStorage.setItem('his_admin_pw', newPw);
       document.getElementById('current-admin-pw').value = '';
       document.getElementById('new-admin-pw').value = '';
       document.getElementById('new-admin-pw-confirm').value = '';
@@ -700,7 +700,13 @@
     }
 
     /* ── 세션 자동복원 ── */
-    (function initSession() {
+    (async function initSession() {
+      // RTDB에서 관리자 비밀번호 로드
+      try{
+        const snap = await db.ref('adminConfig/password').once('value');
+        if(snap.val()) ADMIN_PW = snap.val();
+      }catch(e){ console.warn('adminConfig load failed, using default'); }
+      
       if (sessionStorage.getItem('his_admin_session') === '1') {
         document.getElementById('login-screen').classList.add('hidden');
         document.getElementById('admin-screen').classList.remove('hidden');
