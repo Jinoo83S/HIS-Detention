@@ -104,44 +104,22 @@
 <body>
   <div id="toast"></div>
 
-  <div class="topbar">
-    <div>
-      <h1>
-        디텐션 관리
-        <span class="title-en" style="color:#fff;">Detention Management</span>
-      </h1>
-      <div class="sub" id="teacher-sub">
-        교사 페이지
-        <span class="sub-en">Teacher Page</span>
-      </div>
+  <div class="topbar" style="flex-wrap:wrap;gap:8px;">
+    <div style="display:flex;align-items:center;gap:12px;flex:1;min-width:0;">
+      <h1 style="white-space:nowrap;">디텐션 관리</h1>
+      <div id="teacher-info" class="info-badges" style="margin-bottom:0;"></div>
     </div>
-
-    <div class="inline-actions">
-      <button class="btn btn-secondary" onclick="loadData()">새로고침 | Refresh</button>
-      <button class="btn btn-danger" onclick="logoutTeacher()">로그아웃 | Logout</button>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+      <span style="color:#dbe2ff;font-size:12px;">오늘: <b id="today-count" style="color:#fff;">0</b>건</span>
+      <span style="color:#dbe2ff;font-size:12px;">미확정: <b id="pending-count" style="color:#fff;">0</b>건</span>
+      <span style="color:#dbe2ff;font-size:12px;">전체: <b id="total-count" style="color:#fff;">0</b>건</span>
+      <button class="btn btn-secondary" onclick="loadData()" style="font-size:12px;padding:5px 10px;">새로고침</button>
+      <button class="btn btn-danger" onclick="logoutTeacher()" style="font-size:12px;padding:5px 10px;">로그아웃</button>
     </div>
   </div>
 
   <div class="content">
-    <div class="card">
-      <div class="card-title">교사 정보 | Teacher Information</div>
-      <div id="teacher-info" class="info-badges"></div>
 
-      <div class="stat-boxes">
-        <div class="stat-box">
-          <div class="k">오늘 등록 건수<span class="label-en">Entries Today</span></div>
-          <div class="v" id="today-count">0</div>
-        </div>
-        <div class="stat-box">
-          <div class="k">미확정 건수<span class="label-en">Pending Confirmations</span></div>
-          <div class="v" id="pending-count">0</div>
-        </div>
-        <div class="stat-box">
-          <div class="k">전체 기록<span class="label-en">Total Records</span></div>
-          <div class="v" id="total-count">0</div>
-        </div>
-      </div>
-    </div>
 
     <div class="tabs">
       <button class="tab-btn active" data-tab="entry">디텐션 입력 | Entry</button>
@@ -932,7 +910,12 @@
       return Object.entries(recoveryEntries || {})
         .map(([key, value]) => ({ key, ...value }))
         .filter(r => String(r.level || '') === String(level))
-        .sort((a,b) => String(b.completedAt || '').localeCompare(String(a.completedAt || '')));
+        .sort((a,b)=>{
+          const aT=a.completedNotice?String(a.completedNotice.completedAt||''):'';
+          const bT=b.completedNotice?String(b.completedNotice.completedAt||''):'';
+          const cmp=aT.localeCompare(bT);
+          return cmp!==0?cmp:String(a.key||'').localeCompare(String(b.key||''));
+        });
     }
 
     function updateManualPointsMode(){
@@ -1716,7 +1699,7 @@
               <td class="nowrap tc">${esc(s.className || '')}</td>
               <td class="nowrap tc">${s.currentTotal}</td>
               <td class="nowrap tc">${s.overallTotal}</td>
-              <td style="white-space:pre-wrap;font-size:12px;line-height:1.5;">${esc(buildReasonTextWithPoints(s.key))}</td>
+              <td><span class="cell-reason-preview">${esc(buildReasonTextWithPoints(s.key).split('\n')[0])}</span></td>
               <td class="nowrap tc">${Math.ceil(s.currentTotal / 3)}회 필요</td>
               <td class="nowrap" onclick="event.stopPropagation()">
                 <button class="btn btn-primary" onclick="completeRecovery('${esc(s.key)}','${level}')">회복교육 완료</button>
@@ -1865,8 +1848,7 @@
       try{
         await db.ref(COMMITTEE_DB_PATH).push(payload);
         toast('완료 처리되었습니다.','ok');
-        committeeEntries=(await db.ref(COMMITTEE_DB_PATH).once('value')).val()||{};
-        renderDisciplineTab();
+        await loadData(); // 전체 재로드로 경고배너 포함 갱신
       }catch(e){console.error(e);toast('저장 실패','err');}
     }
 
@@ -1879,7 +1861,13 @@
       document.getElementById('pending-count').textContent=String(el.filter(r=>String(r.status||'임시저장')==='임시저장').length);
       document.getElementById('total-count').textContent=String(el.length);
       const isDefaultOnly = teacherRoles.length===0||(teacherRoles.length===1&&teacherRoles[0]==='default');
-      const o30=isDefaultOnly?[]:Object.keys(students||{}).filter(k=>{if(!getSchoolLevel((students[k]||{}).className||''))return false;return getStudentCurrentTotal(k)>12||getStudentOverallTotal(k)>30;});
+      const yr30=new Date().getFullYear();
+      const doneEduKeysYr30=new Set(Object.values(committeeEntries||{}).filter(r=>r.type==='edu'&&r.completedAt&&String(r.year||'')===String(yr30)).map(r=>r.studentKey));
+      const o30=isDefaultOnly?[]:Object.keys(students||{}).filter(k=>{
+        if(!getSchoolLevel((students[k]||{}).className||''))return false;
+        if(doneEduKeysYr30.has(k))return false; // 올해 위원회 완료
+        return getStudentCurrentTotal(k)>12||getStudentOverallTotal(k)>30;
+      });
       let wb=document.getElementById('disc-warn');if(!wb){wb=document.createElement('div');wb.id='disc-warn';wb.style.cssText='margin:8px 0;padding:10px 14px;border-radius:10px;background:#fde8e8;border:1px solid #fca5a5;color:#7f1d1d;font-size:13px;font-weight:700;';const sc=document.getElementById('today-count');if(sc&&sc.closest('.card'))sc.closest('.card').after(wb);}
       if(o30.length){wb.style.display='';wb.innerHTML='<b>생활교육위원회 대상 (누적 30점 이상):</b> '+o30.map(k=>{const s=students[k]||{};return esc(s.name||'')+' '+esc(s.englishName||'')+' '+esc(s.className||'')+' ('+getStudentOverallTotal(k)+'점)';}).join(' / ');}else{wb.style.display='none';}
     }
