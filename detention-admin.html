@@ -433,9 +433,14 @@
           key, _deleted: false, ...value
         })).sort((a,b) => String(b.completedAt||'').localeCompare(String(a.completedAt||'')));
 
+        committeeRows = Object.entries((committeeAdminSnap && committeeAdminSnap.val()) || {}).map(([key, value]) => ({
+          key, _deleted: false, ...value
+        })).sort((a,b) => String(b.completedAt||b.createdAt||'').localeCompare(String(a.completedAt||a.createdAt||'')));
+
         _entrySnap=_sig(entryRows);
         _noticeSnap=_sig(noticeRows);
         _recoverySnap=_sig(recoveryRows);
+        _committeeSnap=_sig(committeeRows);
         _setBtnState('btn-save-entries',false);
         _setBtnState('btn-save-notices',false);
         _setBtnState('btn-save-recovery',false);

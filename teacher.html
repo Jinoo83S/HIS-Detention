@@ -724,7 +724,149 @@
     }
 
 
-    /* ══ STATE MACHINE ══════════════════════════════════════════════
+
+    /* ═══════════════════════════════════════════════════════════════
+     * recalculateStudentState(studentKey, level)
+     * ─ 모든 상태 변경 이벤트 후 반드시 이 함수를 호출
+     * ─ DB에서 최신 데이터를 직접 읽어 phase를 결정
+     * ─ stale 브라우저 메모리에 의존하지 않음
+     * ═══════════════════════════════════════════════════════════════ */
+    async function recalculateStudentState(studentKey, level, freshData){
+      // freshData가 없으면 DB에서 직접 읽음
+      let fEntries, fNotices, fRecovery, fCommittee;
+      if(freshData){
+        fEntries=freshData.entries; fNotices=freshData.notices;
+        fRecovery=freshData.recovery; fCommittee=freshData.committee;
+      } else {
+        const [es,ns,rs,cs] = await Promise.all([
+          db.ref(DETENTION_DB_PATH).once('value'),
+          db.ref(NOTICE_DB_PATH).once('value'),
+          db.ref(RECOVERY_DB_PATH).once('value'),
+          db.ref(COMMITTEE_DB_PATH).once('value')
+        ]);
+        fEntries=es.val()||{}; fNotices=ns.val()||{};
+        fRecovery=rs.val()||{}; fCommittee=cs.val()||{};
+      }
+
+      const sk = String(studentKey||'');
+      const curYear = String(new Date().getFullYear());
+
+      // 전체 누적점수 (회복 제외)
+      const overallTotal = Object.values(fEntries)
+        .filter(r=>String(r.studentKey||'')===sk&&String(r.status||'')==='확정')
+        .reduce((s,r)=>s+Number(r.totalPoints||0),0);
+
+      // 회복 차감
+      const recoveredTotal = Object.values(fRecovery)
+        .filter(r=>String(r.studentKey||'')===sk&&String(r.level||'')===level)
+        .reduce((s,r)=>s+Number(r.recoveryPoints||0),0);
+
+      const currentTotal = overallTotal - recoveredTotal;
+
+      // 현재 활성 notice
+      const activeNoticeArr = Object.entries(fNotices)
+        .filter(([,v])=>String(v.studentKey||'')===sk&&String(v.level||'')===level&&!v.completedAt)
+        .sort((a,b)=>String(b[1].createdAt||'').localeCompare(String(a[1].createdAt||'')));
+      const activeNotice = activeNoticeArr.length ? {key:activeNoticeArr[0][0],notice:activeNoticeArr[0][1]} : null;
+
+      // 마지막 완료 notice
+      const completedNoticeArr = Object.entries(fNotices)
+        .filter(([,v])=>String(v.studentKey||'')===sk&&String(v.level||'')===level&&!!v.completedAt)
+        .sort((a,b)=>String(b[1].completedAt||'').localeCompare(String(a[1].completedAt||'')));
+      const lastCompletedNotice = completedNoticeArr.length ? {key:completedNoticeArr[0][0],notice:completedNoticeArr[0][1]} : null;
+
+      // 선도위원회: isReferral=true 확정 항목 존재 + 아직 위원회 완료 안됨
+      const referralEntries = Object.entries(fEntries).filter(([,r])=>
+        String(r.studentKey||'')===sk&&r.isReferral===true&&String(r.status||'')==='확정'
+      );
+      const referralCompleted = referralEntries.length>0 && referralEntries.every(([refKey,])=>{
+        return Object.values(fCommittee).some(c=>
+          (c.type==='referral'||c.type==='manual_referral')&&
+          (c.entryKey===refKey||String(c.studentKey||'')===sk)&&!!c.completedAt
+        );
+      });
+      const hasActiveReferral = referralEntries.length>0 && !referralCompleted;
+
+      // 생활교육위원회: ≥12점 또는 >30점 + 올해 완료 안됨
+      const eduCompletedThisYear = Object.values(fCommittee).some(c=>
+        (c.type==='edu_points'||c.type==='edu_overall'||c.type==='manual_edu'||c.type==='edu')&&
+        String(c.studentKey||'')===sk&&!!c.completedAt&&String(c.year||'')===curYear
+      );
+      const needsEduCommittee = !eduCompletedThisYear && (currentTotal>=12||overallTotal>30);
+      // 수동 위원회 (pending, completedAt 없음)
+      const hasManualCommitteePending = Object.values(fCommittee).some(c=>
+        (c.type==='manual_referral'||c.type==='manual_edu')&&
+        String(c.studentKey||'')===sk&&!c.completedAt
+      );
+
+      // ── phase 결정 ──────────────────────────────────────────────
+      let phase = 'clean';
+
+      if(hasActiveReferral || hasManualCommitteePending&&!referralCompleted){
+        // 선도위원회 대기 중 → 알림/회복 중단
+        phase = 'referral';
+      } else if(needsEduCommittee){
+        // 생활교육위원회 대상 → 단, 회복교육은 동시 진행 가능
+        // 회복교육 상태도 같이 체크
+        if(activeNotice){
+          phase = activeNotice.notice.parentMailAt||activeNotice.notice.studentTeacherMailAt
+            ? 'edu_notice_active' : 'edu_notice_needed';
+        } else if(lastCompletedNotice && currentTotal>0){
+          phase = 'edu_in_recovery';
+        } else if(currentTotal>=3){
+          phase = 'edu_notice_needed';
+        } else {
+          phase = 'edu_committee'; // 점수 낮아도 위원회 대상
+        }
+      } else if(activeNotice){
+        phase = activeNotice.notice.parentMailAt||activeNotice.notice.studentTeacherMailAt
+          ? 'notice_active' : 'notice_needed';
+      } else if(lastCompletedNotice && !activeNotice){
+        // 완료된 notice 있음
+        if(currentTotal>=3){
+          // 마지막 확정 entry가 마지막 notice 이후? → 새 사이클
+          const lastConfirmed = Object.values(fEntries)
+            .filter(r=>String(r.studentKey||'')===sk&&String(r.status||'')==='확정')
+            .sort((a,b)=>String(b.confirmedAt||b.createdAt||'').localeCompare(String(a.confirmedAt||a.createdAt||'')))[0];
+          const lastConfirmedAt = lastConfirmed ? String(lastConfirmed.confirmedAt||lastConfirmed.createdAt||'') : '';
+          const lastNoticeAt = String(lastCompletedNotice.notice.completedAt||'');
+          phase = lastConfirmedAt>lastNoticeAt ? 'notice_needed' : 'in_recovery';
+        } else if(currentTotal>0){
+          phase = 'in_recovery'; // 1-2점 잔여
+        } else {
+          phase = 'clean';
+        }
+      } else if(currentTotal>=3){
+        phase = 'notice_needed';
+      } else {
+        phase = 'clean';
+      }
+
+      // DB 저장
+      const stateData = {phase, cyclePoints:currentTotal, overallPoints:overallTotal, updatedAt:new Date().toISOString(), updatedBy:teacher?teacher.email:''};
+      const key = getCycleStateKey(sk, level);
+      cycleStates[key] = stateData;
+      try{
+        await db.ref(CYCLE_STATE_PATH+'/'+key.replace(/[.#$[\]\/]/g,'_')).set(stateData);
+      }catch(e){
+        console.error('recalculateStudentState save failed:', e);
+        throw e; // 상태 저장 실패 시 에러 전파
+      }
+      return stateData;
+    }
+
+    /* 편의 함수: loadData 후 메모리 기반 빠른 재계산 (이미 최신 데이터 로드됨) */
+    async function recalcAfterLoad(studentKey, level){
+      const fEntries={}, fNotices={}, fRecovery={}, fCommittee={};
+      Object.entries(entries||{}).forEach(([k,v])=>fEntries[k]=v);
+      Object.entries(noticeEntries||{}).forEach(([k,v])=>fNotices[k]=v);
+      Object.entries(recoveryEntries||{}).forEach(([k,v])=>fRecovery[k]=v);
+      Object.entries(committeeEntries||{}).forEach(([k,v])=>fCommittee[k]=v);
+      return recalculateStudentState(studentKey, level, {entries:fEntries,notices:fNotices,recovery:fRecovery,committee:fCommittee});
+    }
+
+
+    /* ══ STATE MACHINE (legacy helpers) ══════════════════════════════
      * studentCycleState: 학생별 현재 단계 명시적 저장
      * phase 값:
      *   clean          - 누적점수 3점 미만, 정상
@@ -1002,8 +1144,9 @@
         .filter(s=>getSchoolLevel(s.className)===level)
         .map(s=>{
           const state = getCycleState(s.key, level);
-          // 선도위원회 회부 중이면 알림/회복교육 대기
-          if(state.phase!=='notice_needed'&&state.phase!=='notice_active') return null;
+          // 선도위원회 회부 중이면 알림/회복교육 대기 (referral phase만 제외)
+          const noticePhases=['notice_needed','notice_active','edu_notice_needed','edu_notice_active'];
+          if(!noticePhases.includes(state.phase)) return null;
           const currentTotal=getStudentCurrentTotal(s.key),overallTotal=getStudentOverallTotal(s.key),reasons=buildReasonText(s.key);
           const latestEntry=getConfirmedEntriesForStudent(s.key)[0]||null,latestConfirmedAt=getLatestConfirmedAt(s.key);
           const activeNoticeObj=findActiveNotice(s.key,level);
@@ -1043,8 +1186,8 @@
       // in_recovery 상태인 학생만 반환
       return Object.entries(students||{}).map(([key,value])=>({key,...value})).filter(s=>getSchoolLevel(s.className)===level).map(s=>{
         const state = getCycleState(s.key, level);
-        // 선도위원회 회부 중이면 회복교육 대기
-        if(state.phase !== 'in_recovery') return null;
+        const recoveryPhases=['in_recovery','edu_in_recovery','edu_committee'];
+        if(!recoveryPhases.includes(state.phase)) return null;
         const completedNoticeObj=findLatestCompletedNotice(s.key,level);
         if(!completedNoticeObj) return null;
         const currentTotal=getStudentCurrentTotal(s.key),overallTotal=getStudentOverallTotal(s.key),reasons=buildReasonText(s.key);
@@ -1946,7 +2089,11 @@
       }
       const yr=new Date().getFullYear();
       const completedRefKeys=new Set(Object.values(committeeEntries||{}).filter(r=>r.type==='referral'&&r.completedAt).map(r=>r.entryKey));
-      const allRef=Object.values(entries||{}).filter(r=>r.isReferral===true&&String(r.status||'')==='확정').sort((a,b)=>String(b.confirmedAt||b.createdAt||'').localeCompare(String(a.confirmedAt||a.createdAt||'')));
+      // 선도위원회: isReferral=true 항목 + manual_referral 항목 통합
+      const manualReferralStudents = new Set(
+        Object.values(committeeEntries||{}).filter(c=>c.type==='manual_referral'&&!c.completedAt).map(c=>c.studentKey)
+      );
+      const allRef=Object.values(entries||{}).filter(r=>(r.isReferral===true||manualReferralStudents.has(String(r.studentKey||'')))&&String(r.status||'')==='확정').sort((a,b)=>String(b.confirmedAt||b.createdAt||'').localeCompare(String(a.confirmedAt||a.createdAt||'')));
       const mkRefRow=(r,done)=>{
         const did='rd_'+String(r.key||'').replace(/\W/g,'_');
         return '<tr class="summary-row" onclick="toggleDetailDiv(\''+did+'\')" style="cursor:pointer;">'+
@@ -1975,8 +2122,12 @@
       if(referralDoneTb)referralDoneTb.innerHTML=doneRef.length?doneRef.map(r=>mkRefRow(r,true)).join(''):'<tr><td colspan="8" class="empty">완료된 내역이 없습니다.</td></tr>';
 
       const doneEduKeysYr=new Set(Object.values(committeeEntries||{}).filter(r=>r.type==='edu'&&r.completedAt&&String(r.year||'')===String(yr)).map(r=>r.studentKey));
+      // 생활교육위원회: 12점 이상 or >30 or manual_edu 회부 학생
+      const manualEduStudents = new Set(
+        Object.values(committeeEntries||{}).filter(c=>(c.type==='manual_edu'||c.type==='edu')&&!c.completedAt).map(c=>c.studentKey)
+      );
       const allEdu=Object.entries(students||{}).map(([k,v])=>Object.assign({},v,{key:k}))
-        .filter(s=>{if(!getSchoolLevel(s.className||''))return false;return getStudentCurrentTotal(s.key)>=12||getStudentOverallTotal(s.key)>30;})
+        .filter(s=>{if(!getSchoolLevel(s.className||''))return false;return getStudentCurrentTotal(s.key)>=12||getStudentOverallTotal(s.key)>30||manualEduStudents.has(s.key);})
         .sort((a,b)=>getStudentOverallTotal(b.key)-getStudentOverallTotal(a.key));
       const mkEduRow=(s,done)=>{
         const cur=getStudentCurrentTotal(s.key),ovr=getStudentOverallTotal(s.key);
@@ -2015,7 +2166,10 @@
       try{
         await db.ref(COMMITTEE_DB_PATH).push(payload);
         toast('완료 처리되었습니다.','ok');
-        await loadData(); // 전체 재로드로 경고배너 포함 갱신
+        // 위원회 완료 후 상태 재계산
+        const cLevel = getSchoolLevel((students[String(studentKey||'')] || {}).className||'');
+        if(studentKey && cLevel){ try{ await recalculateStudentState(String(studentKey||''), cLevel); }catch(e){} }
+        await loadData();
       }catch(e){console.error(e);toast('저장 실패','err');}
     }
 
@@ -2046,14 +2200,8 @@
           createdBy: teacher.name||'', createdByEmail: teacher.email||''
         };
         await db.ref(COMMITTEE_DB_PATH).push(payload);
-        // 상태 업데이트
         const sLevel4 = getSchoolLevel((students[studentKey]||{}).className||'');
-        if(sLevel4){
-          await setCycleState(studentKey, sLevel4, {
-            phase: type==='manual_referral' ? 'referral' : 'edu_committee',
-            committeeType: type
-          });
-        }
+        if(sLevel4){ try{ await recalculateStudentState(studentKey, sLevel4); }catch(e){} }
         closeManualCommittee();
         toast('위원회 수동 회부 완료', 'ok');
         await loadData();
@@ -2075,7 +2223,7 @@
         if(!getSchoolLevel((students[k]||{}).className||''))return false;
         const level3=getSchoolLevel((students[k]||{}).className||'');
         const st=getCycleState(k,level3);
-        return st.phase==='edu_committee';
+        return ['edu_committee','edu_notice_needed','edu_notice_active','edu_in_recovery'].includes(st.phase)||getStudentCurrentTotal(k)>=12||getStudentOverallTotal(k)>30;
       });
       let wb=document.getElementById('disc-warn');if(!wb){wb=document.createElement('div');wb.id='disc-warn';wb.style.cssText='margin:8px 0;padding:10px 14px;border-radius:10px;background:#fde8e8;border:1px solid #fca5a5;color:#7f1d1d;font-size:13px;font-weight:700;';const sc=document.getElementById('today-count');if(sc&&sc.closest('.card'))sc.closest('.card').after(wb);}
       if(o30.length){wb.style.display='';wb.innerHTML='<b>생활교육위원회 대상 (누적 30점 이상):</b> '+o30.map(k=>{const s=students[k]||{};return esc(s.name||'')+' '+esc(s.englishName||'')+' '+esc(s.className||'')+' ('+getStudentOverallTotal(k)+'점)';}).join(' / ');}else{wb.style.display='none';}
@@ -2229,29 +2377,17 @@
           }
         }
 
+        // 메모리 내 entries 즉시 업데이트 (stale data 방지)
+        if(entries[key]){ Object.assign(entries[key], updatePayload); }
+
         await db.ref(`${DETENTION_DB_PATH}/${key}`).update(updatePayload);
-        // ── STATE UPDATE ──────────────────────────────────────────
+
+        // 상태 재계산 (DB에서 최신 데이터 직접 읽음)
         const sLevel = getSchoolLevel((students[String(record.studentKey||'')] || {}).className||'');
         if(sLevel){
-          const newCur2 = getStudentCurrentTotal(String(record.studentKey||''));
-          const newOvr2 = getStudentOverallTotal(String(record.studentKey||''));
-          const yr3 = new Date().getFullYear();
-          const alreadyEdu = Object.values(committeeEntries||{}).some(c=>c.type==='edu'&&String(c.studentKey||'')===String(record.studentKey||'')&&String(c.year||'')===String(yr3));
-          let newPhase = getCycleState(String(record.studentKey||''),sLevel).phase;
-          if(isReferral){
-            newPhase = 'referral'; // 선도위원회: 알림/회복 대기
-          } else {
-            // 생활교육위원회는 회복교육과 동시 진행 → phase는 알림/회복 흐름 유지
-            if(!alreadyEdu && (newCur2 >= 12 || newOvr2 > 30)){
-              await setCycleState(String(record.studentKey||''), sLevel, {committeeType:'edu'});
-            }
-            if(newCur2 >= 3 && (newPhase==='clean'||newPhase==='accumulating')){
-              newPhase = 'notice_needed';
-            }
-          }
-          await setCycleState(String(record.studentKey||''), sLevel, {phase:newPhase, cyclePoints:newCur2});
+          try{ await recalculateStudentState(String(record.studentKey||''), sLevel); }
+          catch(e){ console.error('state recalc failed:', e); }
         }
-        // ─────────────────────────────────────────────────────────────
 
         if (isReferral) {
           toast('⚠️ 선도위원회 회부 처리됨 (0점) | Referred to Disciplinary Committee (0 pts)', 'warn');
@@ -2259,15 +2395,6 @@
           toast('디텐션이 확정되었습니다.\nDetention entry confirmed.', 'ok');
         }
         await loadData();
-        // 확정 후 현재누적 > 12 검사
-        const newCurTotal = getStudentCurrentTotal(String(record.studentKey||''));
-        const newOvrTotal = getStudentOverallTotal(String(record.studentKey||''));
-        const yr2 = new Date().getFullYear();
-        const alreadyCommittee = Object.values(committeeEntries||{}).some(r=>r.type==='edu'&&String(r.studentKey||'')===String(record.studentKey||'')&&String(r.year||'')===String(yr2));
-        if (!alreadyCommittee && (newCurTotal > 12 || newOvrTotal > 30)) {
-          const sName2 = String(record.studentName||'');
-          toast('⚠️ 생활교육위원회 대상: '+sName2+' (현재'+newCurTotal+'점 / 전체'+newOvrTotal+'점)', 'warn');
-        }
       }catch(e){
         console.error(e);
         toast('디텐션 확정 실패\nFailed to confirm detention entry', 'err');
@@ -2292,7 +2419,12 @@
           rejectedBy:teacher.name || '',
           rejectedByEmail:teacher.email || ''
         });
+        // 메모리 업데이트
+        if(entries[key]){ entries[key].status='반려'; }
         toast('디텐션이 반려되었습니다.\nDetention entry rejected.', 'ok');
+        // 반려 후 상태 재계산
+        const rejLevel = getSchoolLevel((students[String(record.studentKey||'')] || {}).className||'');
+        if(rejLevel){ try{ await recalculateStudentState(String(record.studentKey||''), rejLevel); }catch(e){} }
         loadData();
       }catch(e){
         console.error(e);
@@ -2412,13 +2544,10 @@
         const ao=findActiveNotice(studentKey,level);
         if(!ao){await db.ref(NOTICE_DB_PATH).push({studentKey,level,createdAt:new Date().toISOString(),completedAt:new Date().toISOString(),completedBy:teacher.name||'',completedByEmail:teacher.email||'',cycleViolationsSnapshot:buildCycleReasonText(studentKey)});}
         else{await db.ref(NOTICE_DB_PATH+'/'+ao.key).update({completedAt:new Date().toISOString(),completedBy:teacher.name||'',completedByEmail:teacher.email||''});}
-        // ── STATE: notice 완료 → in_recovery ─────────────────────
+        toast('알림 완료가 저장되었습니다.','ok');
         const sLevel2 = getSchoolLevel((students[String(studentKey||'')] || {}).className||'');
-        if(sLevel2){
-          const cur2 = getStudentCurrentTotal(String(studentKey||''));
-          await setCycleState(String(studentKey||''), sLevel2, {phase:'in_recovery', cyclePoints:cur2});
-        }
-        toast('알림 완료가 저장되었습니다.','ok');loadData();
+        if(sLevel2){ try{ await recalculateStudentState(String(studentKey||''), sLevel2); }catch(e){} }
+        loadData();
       }catch(e){console.error(e);toast('알림 완료 저장 실패','err');}
     }
 
