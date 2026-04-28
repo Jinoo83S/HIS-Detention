@@ -539,7 +539,7 @@
                 <th>위반 행위<span class="th-en">Violations</span></th>
                 <th class="nowrap">회복 점수<span class="th-en">Recovery Points</span></th>
                 <th class="nowrap">잔여 누적점수<span class="th-en">Remaining Total</span></th>
-                <th class="nowrap">교육 시 전체 누적점수<span class="th-en">Overall Total At Time</span></th>
+                <th class="nowrap">전체 누적점수<span class="th-en">Overall Total</span></th>
                 <th class="nowrap">완료 시간<span class="th-en">Completed At</span></th>
               </tr>
             </thead>
@@ -592,7 +592,7 @@
                 <th>위반 행위<span class="th-en">Violations</span></th>
                 <th class="nowrap">회복 점수<span class="th-en">Recovery Points</span></th>
                 <th class="nowrap">잔여 누적점수<span class="th-en">Remaining Total</span></th>
-                <th class="nowrap">교육 시 전체 누적점수<span class="th-en">Overall Total At Time</span></th>
+                <th class="nowrap">전체 누적점수<span class="th-en">Overall Total</span></th>
                 <th class="nowrap">완료 시간<span class="th-en">Completed At</span></th>
               </tr>
             </thead>
@@ -1367,6 +1367,7 @@
         renderNotifyTables();
         renderRecoveryTables();
         renderStats();
+        renderDisciplineTab();
         setupSelectors();
         renderViolationOptions();
         updateManualPointsMode();
@@ -1807,16 +1808,16 @@
         return;
       }
       // 데이터 로드 확인
-      if (!Object.keys(entries||{}).length && !Object.keys(students||{}).length) {
+      // 데이터 미로드 시 로딩 표시 (students가 있으면 진행)
+      if (!Object.keys(students||{}).length) {
         referralTb.innerHTML = '<tr><td colspan="8" class="empty">데이터 로딩 중... | Loading...</td></tr>';
         eduTb.innerHTML = '<tr><td colspan="6" class="empty">데이터 로딩 중... | Loading...</td></tr>';
         return;
       }
 
-      // 선도위원회 회부 항목 (확정된 것만)
-      const referralList = Object.entries(entries||{})
-        .map(([key,v])=>({key,...v}))
-        .filter(r=>(r.isReferral===true || r.isReferral==='true') && String(r.status||'')==='확정')
+      // 선도위원회 회부 항목 (확정된 것만) - entries는 이미 key 포함
+      const referralList = Object.values(entries||{})
+        .filter(r=>r.isReferral===true && String(r.status||'')==='확정')
         .sort((a,b)=>String(b.confirmedAt||b.createdAt||'').localeCompare(String(a.confirmedAt||a.createdAt||'')));
 
       if (!referralList.length){
@@ -1837,9 +1838,9 @@
         }).join('');
       }
 
-      // 생활교육위원회: 누적 30점 이상
+      // 생활교육위원회: 누적 30점 이상 - students에 key 추가
       const eduStudents = Object.entries(students||{})
-        .map(([key,v])=>({key,...v}))
+        .map(([k,v])=>({...v, key:k}))
         .filter(s=>getSchoolLevel(s.className||'')&&getStudentOverallTotal(s.key)>=30)
         .sort((a,b)=>getStudentOverallTotal(b.key)-getStudentOverallTotal(a.key));
 
@@ -2012,7 +2013,11 @@
         }
 
         await db.ref(`${DETENTION_DB_PATH}/${key}`).update(updatePayload);
-        toast('디텐션이 확정되었습니다.\nDetention entry confirmed.', 'ok');
+        if (isReferral) {
+          toast('⚠️ 선도위원회 회부 처리됨 (0점) | Referred to Disciplinary Committee (0 pts)', 'warn');
+        } else {
+          toast('디텐션이 확정되었습니다.\nDetention entry confirmed.', 'ok');
+        }
         loadData();
       }catch(e){
         console.error(e);
