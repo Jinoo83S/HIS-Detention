@@ -868,7 +868,10 @@
           const activeNoticeObj=findActiveNotice(s.key,level);
           const notice=activeNoticeObj?activeNoticeObj.notice:{},noticeDocKey=activeNoticeObj?activeNoticeObj.key:null;
           const isPendingCycle=!!latestConfirmedAt&&(!!activeNoticeObj||currentTotal>=3);
-          return{...s,currentTotal,overallTotal,reasons,latestEntry,latestConfirmedAt,noticeDocKey,notice,cycleCompleted:false,isPendingCycle};
+          // 현재 사이클에 위원회 회부 항목이 있는지 확인
+          const cycleEntries=getCurrentCycleEntries(s.key);
+          const hasReferralInCycle=cycleEntries.some(r=>r.isReferral===true);
+          return{...s,currentTotal,overallTotal,reasons,latestEntry,latestConfirmedAt,noticeDocKey,notice,cycleCompleted:false,isPendingCycle,hasReferralInCycle};
         }).filter(s=>s.currentTotal>=3&&s.latestEntry);
 
       return activeStudents.sort((a,b)=>{if(a.isPendingCycle!==b.isPendingCycle)return a.isPendingCycle?-1:1;return String(b.latestConfirmedAt||'').localeCompare(String(a.latestConfirmedAt||''));});
@@ -1587,11 +1590,24 @@
       const candidates = getNoticeCandidates(level);
       // active: 미완료 notice 있는 학생
       const activeList = candidates.filter(s => !!s.noticeDocKey && !s.notice.completedAt);
-      // pending: notice 자체가 없는 신규 (완료된 notice도 없어야 함)
+      // pending: notice가 없는 학생
+      // - 진짜 신규 (notice 없음)
+      // - 이전 사이클 완료(notice+recovery 모두 완료) 후 새 사이클에서 3점 초과
       const pendingNewList = candidates.filter(s => {
-        if (s.noticeDocKey) return false;
+        if (s.noticeDocKey) return false; // 이미 active notice 있음
         const completedObj = findLatestCompletedNotice(s.key, level);
-        return !completedObj; // 완료된 notice도 없는 진짜 신규만
+        if (!completedObj) return true; // 진짜 신규
+        // 이전 사이클 notice가 완료됐으면 → recovery도 완료됐는지 확인
+        const noticeCompletedAt = String(completedObj.notice.completedAt || '');
+        const latestRecovery = Object.values(recoveryEntries||{})
+          .filter(r => String(r.studentKey||'') === String(s.key) && String(r.level||'') === level)
+          .sort((a,b) => String(b.completedAt||'').localeCompare(String(a.completedAt||'')))[0];
+        if (!latestRecovery) return false; // recovery 없으면 아직 회복교육 중
+        // recovery가 notice 이후에 완료됐으면 → 새 사이클 가능
+        const recoveryCompletedAt = String(latestRecovery.completedAt || '');
+        const isNewCycle = recoveryCompletedAt > noticeCompletedAt;
+        // 새 사이클이고 현재 점수가 0이 되었다가 다시 3점 초과인 경우
+        return isNewCycle && s.currentTotal >= 3;
       });
       const finalActiveList = [...activeList, ...pendingNewList];
       const doneList = getCompletedNoticeList(level);
@@ -1610,13 +1626,13 @@
               <td class="nowrap tc">${s.overallTotal}</td>
               <td onclick="event.stopPropagation()">
                 <div class="notice-actions">
-                  <button class="btn btn-secondary" onclick="sendParentMail('${esc(s.key)}','${level}')">메일 보내기</button>
+                  ${s.hasReferralInCycle ? '<span style="color:var(--rd);font-weight:700;font-size:11px;padding:4px 8px;background:#fde8e8;border-radius:6px;">위원회 대기</span>' : '<button class="btn btn-secondary" onclick="sendParentMail(\''+esc(s.key)+'\',\''+level+'\')">메일 보내기</button>'}
                 </div>
                 <div class="small-muted">${s.notice.parentMailAt ? fmt(s.notice.parentMailAt) : '-'}</div>
               </td>
               <td onclick="event.stopPropagation()">
                 <div class="notice-actions">
-                  <button class="btn btn-secondary" onclick="sendStudentTeacherMail('${esc(s.key)}','${level}')">메일 보내기</button>
+                  ${s.hasReferralInCycle ? '<span style="color:var(--rd);font-weight:700;font-size:11px;padding:4px 8px;background:#fde8e8;border-radius:6px;">위원회 대기</span>' : '<button class="btn btn-secondary" onclick="sendStudentTeacherMail(\''+esc(s.key)+'\',\''+level+'\')">메일 보내기</button>'}
                 </div>
                 <div class="small-muted">${s.notice.studentTeacherMailAt ? fmt(s.notice.studentTeacherMailAt) : '-'}</div>
               </td>
@@ -1885,9 +1901,16 @@
         return toast('학생을 선택해 주세요.', 'err');
       }
 
-      // 범위형 자동벌점 검증 (예: 1-12, 1,3)
-      if (manualPoints <= 0){
-        return toast('수동벌점을 입력해 주세요.\nPlease enter manual points.', 'err');
+      // 범위형/선택형 자동벌점: 수동 입력 필수 검증
+      const needsManual = autoPointsRaw && autoPointsRaw !== '-' && (autoPointsRaw.includes('-') || autoPointsRaw.includes(','));
+      if (manualPoints <= 0 && needsManual){
+        alert('수동벌점을 입력해 주세요.\nPlease enter manual points (required for range/choice type).');
+        document.getElementById('manual-points').focus();
+        return;
+      }
+      if (manualPoints <= 0 && autoPointsRaw && autoPointsRaw !== '-' && /^\d+$/.test(autoPointsRaw.trim())){
+        // 고정형이면 자동으로 채우기
+        document.getElementById('manual-points').value = autoPointsRaw.trim();
       }
       const apRaw = autoPointsRaw.trim();
       if (apRaw && apRaw !== '-'){
@@ -2017,7 +2040,16 @@
         } else {
           toast('디텐션이 확정되었습니다.\nDetention entry confirmed.', 'ok');
         }
-        loadData();
+        await loadData();
+        // 확정 후 현재누적 > 12 검사
+        const newCurTotal = getStudentCurrentTotal(String(record.studentKey||''));
+        const newOvrTotal = getStudentOverallTotal(String(record.studentKey||''));
+        const yr2 = new Date().getFullYear();
+        const alreadyCommittee = Object.values(committeeEntries||{}).some(r=>r.type==='edu'&&String(r.studentKey||'')===String(record.studentKey||'')&&String(r.year||'')===String(yr2));
+        if (!alreadyCommittee && (newCurTotal > 12 || newOvrTotal > 30)) {
+          const sName2 = String(record.studentName||'');
+          toast('⚠️ 생활교육위원회 대상: '+sName2+' (현재'+newCurTotal+'점 / 전체'+newOvrTotal+'점)', 'warn');
+        }
       }catch(e){
         console.error(e);
         toast('디텐션 확정 실패\nFailed to confirm detention entry', 'err');
