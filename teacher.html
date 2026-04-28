@@ -596,7 +596,7 @@
           <th class="tc">교사</th><th class="tc">회부일시</th><th class="tc">상태</th><th class="tc">완료시간</th>
         </tr></thead><tbody id="discipline-referral-done-tbody"></tbody></table></div>
         <div class="card-title notice-divider" style="margin-top:18px;">⚠️ 생활교육위원회 진행 중</div>
-        <div class="notice">현재누적 12점 이상 또는 전체누적 30점 이상 (연간 1회 적용).</div>
+        <div class="notice">현재누적 12점 이상 또는 전체누적 30점 초과 (연간 1회 적용).</div>
         <div class="tbl-wrap"><table><thead><tr>
           <th>학생</th><th class="tc">학반</th><th class="tc">현재누적</th>
           <th class="tc">전체누적</th><th>사유</th><th class="tc">처리</th><th class="tc">완료</th>
@@ -1830,12 +1830,12 @@
 
       const doneEduKeysYr=new Set(Object.values(committeeEntries||{}).filter(r=>r.type==='edu'&&r.completedAt&&String(r.year||'')===String(yr)).map(r=>r.studentKey));
       const allEdu=Object.entries(students||{}).map(([k,v])=>Object.assign({},v,{key:k}))
-        .filter(s=>{if(!getSchoolLevel(s.className||''))return false;return getStudentCurrentTotal(s.key)>=12||getStudentOverallTotal(s.key)>=30;})
+        .filter(s=>{if(!getSchoolLevel(s.className||''))return false;return getStudentCurrentTotal(s.key)>=12||getStudentOverallTotal(s.key)>30;})
         .sort((a,b)=>getStudentOverallTotal(b.key)-getStudentOverallTotal(a.key));
       const mkEduRow=(s,done)=>{
         const cur=getStudentCurrentTotal(s.key),ovr=getStudentOverallTotal(s.key);
         const did='ed_'+String(s.key||'').replace(/\W/g,'_');
-        const trig=(cur>=12?'현재'+cur+'점 이상':'')+(cur>=12&&ovr>=30?' / ':'')+(ovr>=30?'전체'+ovr+'점 이상':'');
+        const trig=(cur>=12?'현재'+cur+'점 이상':'')+(cur>=12&&ovr>30?' / ':'')+(ovr>30?'전체'+ovr+'점 이상':'');
         return '<tr class="summary-row" onclick="toggleDetailDiv(\''+did+'\')" style="cursor:pointer;">'+
           '<td>'+esc(sName(s.name,s.englishName))+'</td>'+
           '<td class="tc">'+esc(s.className||'')+'</td>'+
@@ -1887,7 +1887,7 @@
       const o30=isDefaultOnly?[]:Object.keys(students||{}).filter(k=>{
         if(!getSchoolLevel((students[k]||{}).className||''))return false;
         if(doneEduKeysYr30.has(k))return false; // 올해 위원회 완료
-        return getStudentCurrentTotal(k)>=12||getStudentOverallTotal(k)>=30;
+        return getStudentCurrentTotal(k)>=12||getStudentOverallTotal(k)>30;
       });
       let wb=document.getElementById('disc-warn');if(!wb){wb=document.createElement('div');wb.id='disc-warn';wb.style.cssText='margin:8px 0;padding:10px 14px;border-radius:10px;background:#fde8e8;border:1px solid #fca5a5;color:#7f1d1d;font-size:13px;font-weight:700;';const sc=document.getElementById('today-count');if(sc&&sc.closest('.card'))sc.closest('.card').after(wb);}
       if(o30.length){wb.style.display='';wb.innerHTML='<b>생활교육위원회 대상 (누적 30점 이상):</b> '+o30.map(k=>{const s=students[k]||{};return esc(s.name||'')+' '+esc(s.englishName||'')+' '+esc(s.className||'')+' ('+getStudentOverallTotal(k)+'점)';}).join(' / ');}else{wb.style.display='none';}
