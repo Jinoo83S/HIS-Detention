@@ -2017,7 +2017,7 @@
         return;
       }
       const yr=new Date().getFullYear();
-      const completedRefKeys=new Set(Object.values(committeeEntries||{}).filter(r=>r.type==='referral'&&r.completedAt).map(r=>r.entryKey));
+      const completedRefKeys=new Set(Object.values(committeeEntries||{}).filter(r=>(r.type==='referral'||r.type==='manual_referral')&&r.completedAt).map(r=>r.entryKey));
       // 선도위원회: isReferral=true 항목 + manual_referral entryKey 기준
       const manualReferralEntryKeys = new Set(
         Object.values(committeeEntries||{}).filter(c=>c.type==='manual_referral'&&!c.completedAt).map(c=>c.entryKey)
@@ -2046,13 +2046,13 @@
       };
       const activeRef=allRef.filter(r=>!completedRefKeys.has(r.key));
       const doneRef=allRef.filter(r=>completedRefKeys.has(r.key)).map(r=>{
-        const rec=Object.values(committeeEntries||{}).find(c=>c.entryKey===r.key&&c.type==='referral');
+        const rec=Object.values(committeeEntries||{}).find(c=>c.entryKey===r.key&&(c.type==='referral'||c.type==='manual_referral'));
         return Object.assign({},r,{committeeCompletedAt:rec&&rec.completedAt});
       });
       referralTb.innerHTML=activeRef.length?activeRef.map(r=>mkRefRow(r,false)).join(''):'<tr><td colspan="8" class="empty">선도위원회 회부 내역이 없습니다.</td></tr>';
       if(referralDoneTb)referralDoneTb.innerHTML=doneRef.length?doneRef.map(r=>mkRefRow(r,true)).join(''):'<tr><td colspan="8" class="empty">완료된 내역이 없습니다.</td></tr>';
 
-      const doneEduKeysYr=new Set(Object.values(committeeEntries||{}).filter(r=>r.type==='edu'&&r.completedAt&&String(r.year||'')===String(yr)).map(r=>r.studentKey));
+      const doneEduKeysYr=new Set(Object.values(committeeEntries||{}).filter(r=>(r.type==='edu'||r.type==='manual_edu'||r.type==='edu_points'||r.type==='edu_overall')&&r.completedAt&&String(r.year||'')===String(yr)).map(r=>r.studentKey));
       // 생활교육위원회: 12점 이상 or >30 or manual_edu 회부 학생
       const manualEduStudents = new Set(
         Object.values(committeeEntries||{}).filter(c=>(c.type==='manual_edu'||c.type==='edu')&&!c.completedAt).map(c=>c.studentKey)
@@ -2086,7 +2086,7 @@
       };
       const activeEdu=allEdu.filter(s=>!doneEduKeysYr.has(s.key));
       const doneEdu=allEdu.filter(s=>doneEduKeysYr.has(s.key)).map(s=>{
-        const rec=Object.values(committeeEntries||{}).find(c=>c.type==='edu'&&c.studentKey===s.key&&String(c.year||'')===String(yr));
+        const rec=Object.values(committeeEntries||{}).find(c=>(r.type==='edu'||r.type==='manual_edu'||r.type==='edu_points'||r.type==='edu_overall')&&c.studentKey===s.key&&String(c.year||'')===String(yr));
         return Object.assign({},s,{committeeCompletedAt:rec&&rec.completedAt});
       });
       eduTb.innerHTML=activeEdu.length?activeEdu.map(s=>mkEduRow(s,false)).join(''):'<tr><td colspan="7" class="empty">해당 학생이 없습니다.</td></tr>';
@@ -2184,7 +2184,7 @@
       // entries isReferral 미완료
       Object.values(entries||{}).forEach(r=>{
         if(r.isReferral!==true||String(r.status||'')!=='확정') return;
-        const done=Object.values(committeeEntries||{}).some(c=>c.entryKey===r.key&&!!c.completedAt);
+        const done=Object.values(committeeEntries||{}).some(c=>c.entryKey===r.key&&!!c.completedAt&&(c.type==='referral'||c.type==='manual_referral'));
         if(!done){const sv=students[String(r.studentKey||'')]||{};addP((sv.name||r.studentName||'')+(sv.englishName?' '+sv.englishName:''),'선도위원회');}
       });
       // 점수 조건 직접 체크 (cycleState 미갱신 방어)
@@ -2192,7 +2192,7 @@
         const lv=getSchoolLevel(sv.className||'');if(!lv) return;
         const cur=getStudentCurrentTotal(sk),ovr=getStudentOverallTotal(sk);
         if(cur>=12||ovr>30){
-          const done=Object.values(committeeEntries||{}).some(c=>['edu','manual_edu','edu_points','edu_overall'].includes(c.type)&&String(c.studentKey||'')===sk&&!!c.completedAt&&String(c.year||'')===yr);
+          const done=Object.values(committeeEntries||{}).some(c=>(r.type==='edu'||r.type==='manual_edu'||r.type==='edu_points'||r.type==='edu_overall')&&String(c.studentKey||'')===sk&&!!c.completedAt&&String(c.year||'')===yr);
           if(!done) addP((sv.name||'')+(sv.englishName?' '+sv.englishName:''),'생활교육위원회');
         }
       });
@@ -2501,13 +2501,15 @@
       }
     }
 
-    function sendParentMailForDone(btn){
-      const sk=btn.dataset.sk,lv=btn.dataset.lv,nk=btn.dataset.nk||undefined;
-      sendParentMail(sk,lv,nk);
+    function sendParentMailForDone(studentKey, level, doneMapKey){
+      const noticeKey=(window._doneNoticeMap&&window._doneNoticeMap[doneMapKey])||undefined;
+      if(!noticeKey) return toast('알림 기록을 찾을 수 없습니다.','err');
+      sendParentMail(studentKey, level, noticeKey);
     }
-    function sendStudentTeacherMailForDone(btn){
-      const sk=btn.dataset.sk,lv=btn.dataset.lv,nk=btn.dataset.nk||undefined;
-      sendStudentTeacherMail(sk,lv,nk);
+    function sendStudentTeacherMailForDone(studentKey, level, doneMapKey){
+      const noticeKey=(window._doneNoticeMap&&window._doneNoticeMap[doneMapKey])||undefined;
+      if(!noticeKey) return toast('알림 기록을 찾을 수 없습니다.','err');
+      sendStudentTeacherMail(studentKey, level, noticeKey);
     }
     async function sendParentMail(studentKey,level,fixedNoticeKey){
       const lockKey = studentKey + '_' + level;
