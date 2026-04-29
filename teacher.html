@@ -809,44 +809,25 @@
         // 선도위원회 대기 중 → 알림/회복 중단
         phase = 'referral';
       } else if(needsEduCommittee || hasManualEduPending){
-        // 생활교육위원회 대상 → 단, 회복교육은 동시 진행 가능
-        // 회복교육 상태도 같이 체크
+        // 생활교육위원회: phase는 일반 알림/회복과 완전 독립 (committeeStatus만 별도)
         if(activeNotice){
-          phase = activeNotice.notice.parentMailAt||activeNotice.notice.studentTeacherMailAt
-            ? 'edu_notice_active' : 'edu_notice_needed';
-        } else if(lastCompletedNotice && currentTotal>0){
-          phase = 'edu_in_recovery';
-        } else if(currentTotal>=3){
-          phase = 'edu_notice_needed';
-        } else {
-          phase = 'edu_committee'; // 점수 낮아도 위원회 대상
-        }
-      } else if(activeNotice){
-        phase = activeNotice.notice.parentMailAt||activeNotice.notice.studentTeacherMailAt
-          ? 'notice_active' : 'notice_needed';
-      } else if(lastCompletedNotice && !activeNotice){
-        // 완료된 notice 있음
-        if(currentTotal>=3){
-          // 마지막 확정 entry가 마지막 notice 이후? → 새 사이클
-          const lastConfirmed = Object.values(fEntries)
-            .filter(r=>String(r.studentKey||'')===sk&&String(r.status||'')==='확정')
-            .sort((a,b)=>String(b.confirmedAt||b.createdAt||'').localeCompare(String(a.confirmedAt||a.createdAt||'')))[0];
-          const lastConfirmedAt = lastConfirmed ? String(lastConfirmed.confirmedAt||lastConfirmed.createdAt||'') : '';
-          const lastNoticeAt = String(lastCompletedNotice.notice.completedAt||'');
-          phase = lastConfirmedAt>lastNoticeAt ? 'notice_needed' : 'in_recovery';
-        } else if(currentTotal>0){
-          phase = 'in_recovery'; // 1-2점 잔여
-        } else {
-          phase = 'clean';
-        }
-      } else if(currentTotal>=3){
-        phase = 'notice_needed';
+          phase = activeNotice.notice.parentMailAt||activeNotice.notice.studentTeacherMailAt ? 'notice_active' : 'notice_needed';
+        } else if(lastCompletedNotice && currentTotal>=3){
+          const lc2=Object.values(fEntries).filter(r=>String(r.studentKey||'')===sk&&String(r.status||'')==='확정').sort((a,b)=>String(b.confirmedAt||b.createdAt||'').localeCompare(String(a.confirmedAt||a.createdAt||'')))[0];
+          phase = (lc2&&String(lc2.confirmedAt||lc2.createdAt||'')>String(lastCompletedNotice.notice.completedAt||'')) ? 'notice_needed' : 'in_recovery';
+        } else if(lastCompletedNotice && currentTotal>0){ phase = 'in_recovery';
+        } else if(currentTotal>=3){ phase = 'notice_needed';
+        } else { phase = 'clean'; }
       } else {
         phase = 'clean';
       }
 
+      // committeeStatus: 위원회 상태 (회복교육/알림과 독립)
+      let committeeStatus = 'none';
+      if(hasActiveReferral || hasManualReferralPending) committeeStatus = 'pending_referral';
+      else if(needsEduCommittee || hasManualEduPending) committeeStatus = 'pending_edu';
       // DB 저장
-      const stateData = {phase, cyclePoints:currentTotal, overallPoints:overallTotal, updatedAt:new Date().toISOString(), updatedBy:teacher?teacher.email:''};
+      const stateData = {phase, cyclePoints:currentTotal, overallPoints:overallTotal, committeeStatus, updatedAt:new Date().toISOString(), updatedBy:teacher?teacher.email:''};
       const key = getCycleStateKey(sk, level);
       cycleStates[key] = stateData;
       try{
@@ -1759,11 +1740,11 @@
               </td>
               <td class="nowrap" onclick="event.stopPropagation()">
                 <div class="mini-actions" style="margin-top:0;">
-                  <div style="display:flex;gap:6px;justify-content:flex-start;flex-wrap:wrap;">
-                    ${(canManage && (String(r.status || '임시저장') === '임시저장' || String(r.status || '') === '반려')) ? `<button class="btn btn-primary" onclick="confirmDetention('${esc(r.key)}')">확정</button>` : ''}
-                    ${(canManage && (String(r.status || '임시저장') === '임시저장' || String(r.status || '') === '확정')) ? `<button class="btn btn-danger" onclick="rejectDetention('${esc(r.key)}')">반려</button>` : ''}
-                    ${(canManage && String(r.status || '') === '확정') ? `<button class="btn btn-secondary" style="font-size:11px;padding:3px 8px;background:#fef9e8;color:#5a3e00;border-color:#f0c040;" onclick="openManualCommittee('${esc(r.key)}','${esc(r.studentKey||'')}','${esc(r.studentName||'')}')">위원회 수동 회부</button>` : ''}
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;">
+                    ${(canManage && (String(r.status || '임시저장') === '임시저장' || String(r.status || '') === '반려')) ? `<button class="btn btn-primary" style="width:100%;" onclick="confirmDetention('${esc(r.key)}')">확정</button>` : '<div></div>'}
+                    ${(canManage && (String(r.status || '임시저장') === '임시저장' || String(r.status || '') === '확정')) ? `<button class="btn btn-danger" style="width:100%;" onclick="rejectDetention('${esc(r.key)}')">반려</button>` : '<div></div>'}
                   </div>
+                  ${(canManage && String(r.status || '') === '확정') ? `<button class="btn btn-secondary" style="font-size:11px;padding:2px 6px;background:#fef9e8;color:#5a3e00;border-color:#f0c040;margin-top:3px;width:100%;" onclick="openManualCommittee('${esc(r.key)}','${esc(r.studentKey||'')}','${esc(r.studentName||'')}')">위원회 수동 회부</button>` : ''}
                   ${(!canManage) ? '-' : ''}
                 </div>
               </td>
@@ -1841,7 +1822,8 @@
           const expanded = expandedNoticeKeys[level].has(s.key);
           return `
             <tr class="summary-row" onclick="toggleNoticeRow('${level}','${esc(s.key)}')">
-              <td class="nowrap">${esc(sName(s.name,s.englishName))}</td>
+              <td class="nowrap">${esc(s.name||''  )}</td>
+              <td class="nowrap">${esc(s.englishName||''  )}</td>
               <td class="nowrap tc">${esc(s.className || '')}</td>
               <td><span class="cell-reason-preview">${esc(buildCycleReasonText(s.key).split('\n')[0])}</span></td>
               <td class="nowrap tc">${s.currentTotal}</td>
@@ -1901,8 +1883,8 @@
             <td><span class="cell-reason-preview">${esc(buildReasonPreview(s.key))}</span></td>
             <td class="nowrap">${s.currentTotal}</td>
             <td class="nowrap">${s.overallTotal}</td>
-            <td class="nowrap" style="color:var(--sb);font-size:11px;">${s.notice.parentMailAt ? fmt(s.notice.parentMailAt) : '-'}</td>
-            <td class="nowrap" style="color:var(--sb);font-size:11px;">${s.notice.studentTeacherMailAt ? fmt(s.notice.studentTeacherMailAt) : '-'}</td>
+            <td class="nowrap" style="font-size:11px;">${s.notice.parentMailAt ? '<span style="color:var(--sb)">'+fmt(s.notice.parentMailAt)+'</span>' : '<button class="btn btn-secondary" style="font-size:11px;padding:2px 6px;" onclick="event.stopPropagation();sendParentMail(\''+esc(s.key)+'\',\''+level+'\')" >메일 보내기</button>'}</td>
+            <td class="nowrap" style="font-size:11px;">${s.notice.studentTeacherMailAt ? '<span style="color:var(--sb)">'+fmt(s.notice.studentTeacherMailAt)+'</span>' : '<button class="btn btn-secondary" style="font-size:11px;padding:2px 6px;" onclick="event.stopPropagation();sendStudentTeacherMail(\''+esc(s.key)+'\',\''+level+'\')" >메일 보내기</button>'}</td>
             <td class="nowrap" style="color:var(--gn);font-size:11px;font-weight:700;">${s.notice.completedAt ? '✓ '+fmt(s.notice.completedAt) : '-'}</td>
           </tr>
           <tr class="detail-row ${expanded ? 'show' : ''}">
@@ -2057,7 +2039,11 @@
         Object.values(committeeEntries||{}).filter(c=>(c.type==='manual_edu'||c.type==='edu')&&!c.completedAt).map(c=>c.studentKey)
       );
       const allEdu=Object.entries(students||{}).map(([k,v])=>Object.assign({},v,{key:k}))
-        .filter(s=>{if(!getSchoolLevel(s.className||''))return false;return getStudentCurrentTotal(s.key)>=12||getStudentOverallTotal(s.key)>30||manualEduStudents.has(s.key);})
+        .filter(s=>{
+          if(!getSchoolLevel(s.className||'')) return false;
+          const cst2=getCycleState(s.key,getSchoolLevel(s.className||''));
+          return getStudentCurrentTotal(s.key)>=12||getStudentOverallTotal(s.key)>30||manualEduStudents.has(s.key)||cst2.committeeStatus==='pending_edu';
+        })
         .sort((a,b)=>getStudentOverallTotal(b.key)-getStudentOverallTotal(a.key));
       const mkEduRow=(s,done)=>{
         const cur=getStudentCurrentTotal(s.key),ovr=getStudentOverallTotal(s.key);
@@ -2162,6 +2148,41 @@
     function toggleDetailDiv(id){const el=document.getElementById(id);if(el)el.classList.toggle('show');}
 
 
+    function renderCommitteePendingBanner(){
+      const banner = document.getElementById('committee-pending-banner');
+      if(!banner) return;
+      const yr=String(new Date().getFullYear());
+      const seen=new Set(); const pending=[];
+      function addP(nm,type){const k=nm+'|'+type;if(!seen.has(k)){seen.add(k);pending.push({name:nm,type});}}
+      // committeeRecords 미완료
+      Object.values(committeeEntries||{}).forEach(c=>{
+        if(c.completedAt) return;
+        const sk=String(c.studentKey||'');const sv=students[sk]||{};
+        const nm=(sv.name||sk)+(sv.englishName?' '+sv.englishName:'');
+        if(c.type==='referral'||c.type==='manual_referral') addP(nm,'선도위원회');
+        else if(['edu','manual_edu','edu_points','edu_overall'].includes(c.type)) addP(nm,'생활교육위원회');
+      });
+      // entries isReferral 미완료
+      Object.values(entries||{}).forEach(r=>{
+        if(r.isReferral!==true||String(r.status||'')!=='확정') return;
+        const done=Object.values(committeeEntries||{}).some(c=>c.entryKey===r.key&&!!c.completedAt);
+        if(!done){const sv=students[String(r.studentKey||'')]||{};addP((sv.name||r.studentName||'')+(sv.englishName?' '+sv.englishName:''),'선도위원회');}
+      });
+      // 점수 조건 직접 체크 (cycleState 미갱신 방어)
+      Object.entries(students||{}).forEach(([sk,sv])=>{
+        const lv=getSchoolLevel(sv.className||'');if(!lv) return;
+        const cur=getStudentCurrentTotal(sk),ovr=getStudentOverallTotal(sk);
+        if(cur>=12||ovr>30){
+          const done=Object.values(committeeEntries||{}).some(c=>['edu','manual_edu','edu_points','edu_overall'].includes(c.type)&&String(c.studentKey||'')===sk&&!!c.completedAt&&String(c.year||'')===yr);
+          if(!done) addP((sv.name||'')+(sv.englishName?' '+sv.englishName:''),'생활교육위원회');
+        }
+      });
+      if(pending.length>0){
+        banner.style.display='block';
+        const items=pending.slice(0,6).map(p=>'<b>'+esc(p.name)+'</b><span style="margin-left:3px;padding:1px 5px;background:#fef3cd;border-radius:4px;font-size:10px;">'+esc(p.type)+'</span>').join('  ');
+        banner.innerHTML='⚠️ 위원회 처리 대기: '+items+(pending.length>6?' 외 '+(pending.length-6)+'명':'');
+      } else { banner.style.display='none'; }
+    }
     function renderStats(){
       const el=Object.values(entries||{});const td=todayKey();
       document.getElementById('today-count').textContent=String(el.filter(r=>String(r.createdAt||'').slice(0,10)===td).length);
