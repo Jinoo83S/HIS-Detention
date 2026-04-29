@@ -819,7 +819,22 @@
         } else if(currentTotal>=3){ phase = 'notice_needed';
         } else { phase = 'clean'; }
       } else {
-        phase = 'clean';
+        // 일반 학생: active notice → notice 흐름, 아니면 점수 기반 결정
+        if(activeNotice){
+          phase = activeNotice.notice.parentMailAt||activeNotice.notice.studentTeacherMailAt ? 'notice_active' : 'notice_needed';
+        } else if(lastCompletedNotice && currentTotal>=3){
+          // 마지막 확정 entry가 마지막 notice 완료 이후 → 새 사이클
+          const lc3=Object.values(fEntries).filter(r=>String(r.studentKey||'')===sk&&String(r.status||'')==='확정').sort((a,b)=>String(b.confirmedAt||b.createdAt||'').localeCompare(String(a.confirmedAt||a.createdAt||'')))[0];
+          const lcAt3=lc3?String(lc3.confirmedAt||lc3.createdAt||''):'';
+          const lnAt3=String(lastCompletedNotice.notice.completedAt||'');
+          phase = lcAt3>lnAt3 ? 'notice_needed' : 'in_recovery';
+        } else if(lastCompletedNotice && currentTotal>0){
+          phase = 'in_recovery'; // 잔여점수 유지
+        } else if(currentTotal>=3){
+          phase = 'notice_needed'; // 처음 3점 초과
+        } else {
+          phase = 'clean';
+        }
       }
 
       // committeeStatus: 위원회 상태 (회복교육/알림과 독립)
@@ -1874,8 +1889,12 @@
       if (!doneList.length){
         doneTb.innerHTML = '<tr><td colspan="9" class="empty">해당 학생이 없습니다. | No matching students.</td></tr>';
       } else {
-        doneTb.innerHTML = doneList.map(s => {
+      // done list noticeKey 맵 초기화 (단따옴표 이스케이프 충돌 방지)
+      window._doneNoticeMap = window._doneNoticeMap || {};
+        doneTb.innerHTML = doneList.map((s,doneIdx) => {
           const expanded = expandedNoticeKeys[level] && expandedNoticeKeys[level].has(s.key+'_done');
+          const doneMapKey = level+'_done_'+doneIdx;
+          window._doneNoticeMap[doneMapKey] = s.noticeKey||'';
           return `<tr class="summary-row" onclick="toggleNoticeRow('${level}','${esc(s.key)}_done')">
             <td class="nowrap">${esc(s.name||'')}</td>
             <td class="nowrap">${esc(s.englishName||'')}</td>
@@ -1883,8 +1902,8 @@
             <td><span class="cell-reason-preview">${esc(buildReasonPreview(s.key))}</span></td>
             <td class="nowrap">${s.currentTotal}</td>
             <td class="nowrap">${s.overallTotal}</td>
-            <td class="nowrap" style="font-size:11px;">${s.notice.parentMailAt ? '<span style="color:var(--sb)">' + fmt(s.notice.parentMailAt) + '</span>' : '<button class="btn btn-secondary" style="font-size:11px;padding:2px 6px;" onclick="event.stopPropagation();sendParentMailByKey(this)" data-sk="' + esc(s.key) + '" data-lv="' + level + '" >메일 보내기</button>'}</td>
-            <td class="nowrap" style="font-size:11px;">${s.notice.studentTeacherMailAt ? '<span style="color:var(--sb)">' + fmt(s.notice.studentTeacherMailAt) + '</span>' : '<button class="btn btn-secondary" style="font-size:11px;padding:2px 6px;" onclick="event.stopPropagation();sendStudentTeacherMailByKey(this)" data-sk="' + esc(s.key) + '" data-lv="' + level + '" >메일 보내기</button>'}</td>
+            <td class="nowrap" style="font-size:11px;">${s.notice.parentMailAt ? '<span style="color:var(--sb)">' + fmt(s.notice.parentMailAt) + '</span>' : '<button class="btn btn-secondary" style="font-size:11px;padding:2px 6px;" onclick="event.stopPropagation();sendParentMailForDone(\''+esc(s.key)+'\',\''+level+'\',\''+doneMapKey+'\')">메일 보내기</button>'}</td>
+            <td class="nowrap" style="font-size:11px;">${s.notice.studentTeacherMailAt ? '<span style="color:var(--sb)">' + fmt(s.notice.studentTeacherMailAt) + '</span>' : '<button class="btn btn-secondary" style="font-size:11px;padding:2px 6px;" onclick="event.stopPropagation();sendStudentTeacherMailForDone(\''+esc(s.key)+'\',\''+level+'\',\''+doneMapKey+'\')">메일 보내기</button>'}</td>
             <td class="nowrap" style="color:var(--gn);font-size:11px;font-weight:700;">${s.notice.completedAt ? '✓ '+fmt(s.notice.completedAt) : '-'}</td>
           </tr>
           <tr class="detail-row ${expanded ? 'show' : ''}">
@@ -2523,9 +2542,12 @@
       _noticeInProgress[lockKey] = true;
       const subj='[HIS - 학생부 : 디텐션 포인트 알림] [STL : Regarding detention point]';
       const body=buildStudentTeacherMailBody(student,level);
-      const ao=findActiveNotice(studentKey,level);
-      const sp=ao?db.ref(NOTICE_DB_PATH+'/'+ao.key).update({studentTeacherMailAt:new Date().toISOString()}):db.ref(NOTICE_DB_PATH).push({studentKey,level,createdAt:new Date().toISOString(),studentTeacherMailAt:new Date().toISOString(),cycleViolationsSnapshot:buildCycleReasonText(studentKey)});
-      try{await openMailAfterSave('mailto:'+encodeURIComponent(to)+'?subject='+encodeURIComponent(subj)+'&body='+encodeURIComponent(body),sp);toast('학생/교사 메일 시간이 기록되었습니다.','ok');loadData();}catch(e){console.error(e);toast('메일 준비 중 오류.','err');}finally{delete _noticeInProgress[lockKey];}
+      const ao2=findActiveNotice(studentKey,level);
+      const noticeRef3=fixedNoticeKey?db.ref(NOTICE_DB_PATH+'/'+fixedNoticeKey):ao2?db.ref(NOTICE_DB_PATH+'/'+ao2.key):db.ref(NOTICE_DB_PATH);
+      const sp=(fixedNoticeKey||ao2)?noticeRef3.update({studentTeacherMailAt:new Date().toISOString()}):noticeRef3.push({studentKey,level,createdAt:new Date().toISOString(),studentTeacherMailAt:new Date().toISOString(),cycleViolationsSnapshot:buildCycleReasonText(studentKey)});
+      try{await openMailAfterSave('mailto:'+encodeURIComponent(to)+'?subject='+encodeURIComponent(subj)+'&body='+encodeURIComponent(body),sp);
+        const slST=getSchoolLevel((students[String(studentKey||'')]||{}).className||'');if(slST)try{await recalculateStudentState(studentKey,slST);}catch(e){}
+        toast('학생/교사 메일 시간이 기록되었습니다.','ok');loadData();}catch(e){console.error(e);toast('메일 준비 중 오류.','err');}finally{delete _noticeInProgress[lockKey];}
     }
 
     async function completeNotice(studentKey,level){
