@@ -301,16 +301,15 @@
           <table style="table-layout:fixed;">
             <thead>
               <tr>
-                <th class="nowrap" style="width:8%;">학생<span class="th-en">Student</span></th>
+                <th class="nowrap" style="width:10%;">학생<span class="th-en">Student</span></th>
                 <th class="nowrap" style="width:6%;">학반<span class="th-en">Class</span></th>
                 <th class="nowrap" style="width:9%;">구분<span class="th-en">Category</span></th>
-                <th style="width:25%;">위반행위<span class="th-en">Violation</span></th>
+                <th style="width:26%;">위반행위<span class="th-en">Violation</span></th>
                 <th class="nowrap" style="width:5%;">점수<span class="th-en">Points</span></th>
-                <th class="nowrap" style="width:7%;">현재<span class="th-en">Current</span></th>
-                <th class="nowrap" style="width:7%;">전체<span class="th-en">Overall</span></th>
+                <th class="nowrap" style="width:8%;">현재<span class="th-en">Current</span></th>
+                <th class="nowrap" style="width:8%;">전체<span class="th-en">Overall</span></th>
                 <th class="nowrap" style="width:8%;">교사<span class="th-en">Teacher</span></th>
                 <th class="nowrap" style="width:10%;">일시<span class="th-en">Date/Time</span></th>
-                <th class="nowrap" style="width:10%;">위원회<span class="th-en">Committee</span></th>
               </tr>
             </thead>
             <tbody id="all-records-tbody"></tbody>
@@ -535,17 +534,17 @@
           </div>
         </div>
         <div class="tbl-wrap">
-          <table>
+          <table style="table-layout:fixed;">
             <thead>
               <tr>
-                <th class="nowrap">학생</th>
-                <th class="nowrap tc">학반</th>
-                <th class="nowrap tc">현재</th>
-                <th class="nowrap tc">전체</th>
-                <th>위반 행위</th>
-                <th class="nowrap tc">필요횟수</th>
-                <th class="nowrap tc">알림완료</th>
-                <th class="nowrap tc">처리</th>
+                <th class="nowrap" style="width:22%;">학생</th>
+                <th class="nowrap tc" style="width:7%;">학반</th>
+                <th class="nowrap tc" style="width:7%;">현재</th>
+                <th class="nowrap tc" style="width:7%;">전체</th>
+                <th style="width:26%;">위반 행위</th>
+                <th class="nowrap tc" style="width:9%;">필요횟수</th>
+                <th class="nowrap tc" style="width:12%;">알림완료</th>
+                <th class="nowrap tc" style="width:10%;">처리</th>
               </tr>
             </thead>
             <tbody id="recovery-ms-active-tbody"></tbody>
@@ -589,17 +588,17 @@
           </div>
         </div>
         <div class="tbl-wrap">
-          <table>
+          <table style="table-layout:fixed;">
             <thead>
               <tr>
-                <th class="nowrap">학생</th>
-                <th class="nowrap tc">학반</th>
-                <th class="nowrap tc">현재</th>
-                <th class="nowrap tc">전체</th>
-                <th>위반 행위</th>
-                <th class="nowrap tc">필요횟수</th>
-                <th class="nowrap tc">알림완료</th>
-                <th class="nowrap tc">처리</th>
+                <th class="nowrap" style="width:22%;">학생</th>
+                <th class="nowrap tc" style="width:7%;">학반</th>
+                <th class="nowrap tc" style="width:7%;">현재</th>
+                <th class="nowrap tc" style="width:7%;">전체</th>
+                <th style="width:26%;">위반 행위</th>
+                <th class="nowrap tc" style="width:9%;">필요횟수</th>
+                <th class="nowrap tc" style="width:12%;">알림완료</th>
+                <th class="nowrap tc" style="width:10%;">처리</th>
               </tr>
             </thead>
             <tbody id="recovery-hs-active-tbody"></tbody>
@@ -1641,42 +1640,26 @@
       list = list.sort((a,b) => String(b.confirmedAt || b.createdAt || '').localeCompare(String(a.confirmedAt || a.createdAt || '')));
 
       if (!list.length){
-        tb.innerHTML = '<tr><td colspan="10" class="empty">기록이 없습니다. | No records found.</td></tr>';
+        tb.innerHTML = '<tr><td colspan="9" class="empty">기록이 없습니다. | No records found.</td></tr>';
         return;
       }
 
-      const EDU_TYPES = ['edu', 'manual_edu', 'edu_points', 'edu_overall'];
-      const curYr = String(new Date().getFullYear());
-
       tb.innerHTML = list.map(r => {
         const expanded = expandedAllKeys.has(r.key);
-        // 위원회 완료 여부 확인
-        let committeeLabel = '';
-        const refDone = Object.values(committeeEntries||{}).some(c =>
-          (c.type==='referral'||c.type==='manual_referral') && c.entryKey===r.key && !!c.completedAt
-        );
-        const eduDone = Object.values(committeeEntries||{}).some(c =>
-            EDU_TYPES.includes(c.type) && String(c.studentKey||'')===String(r.studentKey||'') && !!c.completedAt && String(c.year||'')===curYr
-          );
-        const labels = [];
-        if (refDone) labels.push('<span style="font-size:10px;padding:2px 5px;border-radius:4px;background:#e8f8ee;color:#15803d;font-weight:700;display:inline-block;">선도✓</span>');
-        if (eduDone) labels.push('<span style="font-size:10px;padding:2px 5px;border-radius:4px;background:#e8f8ee;color:#15803d;font-weight:700;display:inline-block;">생활교육✓</span>');
-        committeeLabel = labels.join('<br>');
         return `
           <tr class="summary-row" onclick="toggleAllRow('${esc(r.key)}')">
             <td class="nowrap">${esc(sName(r.studentName||'',r.englishName||''))}</td>
             <td class="nowrap tc">${esc(r.className || '-')}</td>
             <td class="nowrap">${esc(r.category || '')}</td>
             <td><span class="cell-reason-preview">${esc(String(r.violation || '').split('\n')[0])}</span></td>
-            <td class="nowrap">${esc(String(r.manualPoints || r.totalPoints || 0))}</td>
-            <td class="nowrap">${getStudentCurrentTotal(r.studentKey)}</td>
-            <td class="nowrap">${getStudentOverallTotal(r.studentKey)}</td>
+            <td class="nowrap tc">${esc(String(r.manualPoints || r.totalPoints || 0))}${(r.isReferral===true||r.isReferral==='true')?'<br><span style="color:var(--rd);font-size:10px;font-weight:700;">선도위원회</span>':''}</td>
+            <td class="nowrap tc">${getStudentCurrentTotal(r.studentKey)}</td>
+            <td class="nowrap tc">${getStudentOverallTotal(r.studentKey)}</td>
             <td class="nowrap">${esc(r.teacherName || '')}</td>
             <td class="nowrap">${fmt(r.confirmedAt || r.createdAt)}</td>
-            <td class="nowrap">${committeeLabel || '-'}</td>
           </tr>
           <tr class="detail-row ${expanded ? 'show' : ''}">
-            <td colspan="10">
+            <td colspan="9">
               <div class="detail-box">
                 <div class="detail-section">
                   <div class="detail-title">위반행위 | Violation</div>
@@ -1734,9 +1717,9 @@
           <td class="nowrap">${esc(r.className||'')}</td>
           <td class="nowrap">회복교육 | Recovery</td>
           <td><span class="cell-reason-preview">${reasonPreview}</span></td>
-          <td class="nowrap">-${esc(String(r.recoveryPoints||0))}</td>
-          <td class="nowrap">${esc(String(r.currentTotalAfter??r.currentTotalAtRecovery??getStudentCurrentTotal(r.studentKey)))}</td>
-          <td class="nowrap">${esc(String(r.overallTotalAtRecovery??getStudentOverallTotal(r.studentKey)))}</td>
+          <td class="nowrap tc">-${esc(String(r.recoveryPoints||0))}</td>
+          <td class="nowrap tc">${esc(String(r.currentTotalAfter??r.currentTotalAtRecovery??getStudentCurrentTotal(r.studentKey)))}</td>
+          <td class="nowrap tc">${esc(String(r.overallTotalAtRecovery??getStudentOverallTotal(r.studentKey)))}</td>
           <td class="nowrap">${esc(r.staffName||'')}</td>
           <td class="nowrap">${fmt(r.completedAt)}</td>
         </tr>
@@ -1785,18 +1768,16 @@
               <td class="nowrap tc">${esc(r.className || '-')}</td>
               <td class="nowrap">${esc(r.category || '')}</td>
               <td><span class="cell-reason-preview">${esc(String(r.violation || '').split('\n')[0])}</span></td>
-              <td class="nowrap">${esc(String(r.totalPoints || 0))}${(r.isReferral===true||r.isReferral==='true')?'<br><span style="color:var(--rd);font-size:10px;font-weight:700;">선도위원회</span>':''}</td>
+              <td class="nowrap tc">${esc(String(r.totalPoints || 0))}${(r.isReferral===true||r.isReferral==='true')?'<br><span style="color:var(--rd);font-size:10px;font-weight:700;">선도위원회</span>':''}</td>
               <td class="nowrap">${esc(r.teacherName || '')}</td>
               <td class="nowrap">${statusBadge(r.status || '임시저장')}</td>
               <td onclick="event.stopPropagation()">
                 <input class="edit-input admin-note-input" value="${esc(r.adminNote || '')}" placeholder="관리자 노트" oninput="entries['${esc(r.key)}'].adminNote=this.value">
               </td>
-              <td class="nowrap" onclick="event.stopPropagation()">
-                <div class="mini-actions" style="margin-top:0;">
-                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;">
-                    ${(canManage && (String(r.status || '임시저장') === '임시저장' || String(r.status || '') === '반려')) ? `<button class="btn btn-primary" style="width:100%;" onclick="confirmDetention('${esc(r.key)}')">확정</button>` : '<div></div>'}
-                    ${(canManage && (String(r.status || '임시저장') === '임시저장' || String(r.status || '') === '확정')) ? `<button class="btn btn-danger" style="width:100%;" onclick="rejectDetention('${esc(r.key)}')">반려</button>` : '<div></div>'}
-                  </div>
+              <td class="nowrap tc" onclick="event.stopPropagation()">
+                <div class="mini-actions" style="margin-top:0;display:flex;flex-direction:column;gap:3px;align-items:stretch;">
+                    ${(canManage && (String(r.status || '임시저장') === '임시저장' || String(r.status || '') === '반려')) ? `<button class="btn btn-primary btn-xs" style="width:100%;" onclick="confirmDetention('${esc(r.key)}')">확정</button>` : ''}
+                    ${(canManage && (String(r.status || '임시저장') === '임시저장' || String(r.status || '') === '확정')) ? `<button class="btn btn-danger btn-xs" style="width:100%;" onclick="rejectDetention('${esc(r.key)}')">반려</button>` : ''}
                   ${(canManage && String(r.status || '') === '확정') ? `<button class="btn btn-xs" style="background:#fef9e8;color:#5a3e00;border:1px solid #f0c040;margin-top:3px;width:100%;" onclick="openManualCommittee('${esc(r.key)}','${esc(r.studentKey||'')}','${esc(r.studentName||'')}')">위원회 수동 회부</button>` : ''}
                   ${(!canManage) ? '-' : ''}
                 </div>
@@ -1870,7 +1851,7 @@
       const doneList = getCompletedNoticeList(level);
 
       function renderRows(arr){
-        if (!arr.length) return `<tr><td colspan="10" class="empty">해당 학생이 없습니다. | No matching students.</td></tr>`;
+        if (!arr.length) return `<tr><td colspan="9" class="empty">해당 학생이 없습니다. | No matching students.</td></tr>`;
 
         return arr.map(s => {
           const expanded = expandedNoticeKeys[level].has(s.key);
@@ -1889,11 +1870,11 @@
               <td class="nowrap tc">${s.currentTotal}</td>
               <td class="nowrap tc">${s.overallTotal}</td>
               <td onclick="event.stopPropagation()">
-                <button class="btn-mail" onclick="sendParentMail('"+esc(s.key)+"','"+level+"')">메일 보내기</button>
+                <button class="btn-mail" onclick="sendParentMail('${esc(s.key)}','${level}')">메일 보내기</button>
                 <div class="small-muted">${s.notice.parentMailAt ? fmt(s.notice.parentMailAt) : ''}</div>
               </td>
               <td onclick="event.stopPropagation()">
-                <button class="btn-mail" onclick="sendStudentTeacherMail('"+esc(s.key)+"','"+level+"')">메일 보내기</button>
+                <button class="btn-mail" onclick="sendStudentTeacherMail('${esc(s.key)}','${level}')">메일 보내기</button>
                 <div class="small-muted">${s.notice.studentTeacherMailAt ? fmt(s.notice.studentTeacherMailAt) : ''}</div>
               </td>
               <td class="tc">${committeeCell}</td>
@@ -1927,7 +1908,7 @@
       activeTb.innerHTML = renderRows(finalActiveList);
       // 완료된 목록: 완료 버튼 없음, 메일도 재발송 불필요
       if (!doneList.length){
-        doneTb.innerHTML = '<tr><td colspan="9" class="empty">해당 학생이 없습니다. | No matching students.</td></tr>';
+        doneTb.innerHTML = '<tr><td colspan="8" class="empty">해당 학생이 없습니다. | No matching students.</td></tr>';
       } else {
       // _doneNoticeMap은 renderNotifyTables()에서 일괄 초기화
         doneTb.innerHTML = doneList.map((s,doneIdx) => {
@@ -2017,9 +1998,9 @@
             '<td class="nowrap">'+esc(sName(r.studentName,r.englishName))+'</td>'+
             '<td class="nowrap">'+esc(r.className||'')+'</td>'+
             '<td><span class="cell-reason-preview">'+esc(reasonPreview)+'</span></td>'+
-            '<td class="nowrap">-'+esc(String(r.recoveryPoints||0))+'</td>'+
-            '<td class="nowrap">'+esc(String(r.currentTotalAfter??r.currentTotalAtRecovery??'-'))+'</td>'+
-            '<td class="nowrap">'+esc(String(r.overallTotalAtRecovery??'-'))+'</td>'+
+            '<td class="nowrap tc">-'+esc(String(r.recoveryPoints||0))+'</td>'+
+            '<td class="nowrap tc">'+esc(String(r.currentTotalAfter??r.currentTotalAtRecovery??'-'))+'</td>'+
+            '<td class="nowrap tc">'+esc(String(r.overallTotalAtRecovery??'-'))+'</td>'+
             '<td class="nowrap">'+fmt(r.completedAt)+'</td>'+
             '</tr>'+
             '<tr class="detail-row">'+
