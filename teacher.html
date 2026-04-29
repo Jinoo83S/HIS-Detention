@@ -869,7 +869,7 @@
       return updated;
     }
 
-    /* DB에 저장된 데이터를 기반으로 studentCycleState를 재계산하여 마이그레이션 */
+    /* studentCycleState 재계산 헬퍼 */
 
     function normalizeRoles(roles){
       if (Array.isArray(roles)) return roles.map(v=>String(v||'').trim().toLowerCase()).filter(Boolean);
@@ -1883,8 +1883,8 @@
             <td><span class="cell-reason-preview">${esc(buildReasonPreview(s.key))}</span></td>
             <td class="nowrap">${s.currentTotal}</td>
             <td class="nowrap">${s.overallTotal}</td>
-            <td class="nowrap" style="font-size:11px;">${s.notice.parentMailAt ? '<span style="color:var(--sb)">'+fmt(s.notice.parentMailAt)+'</span>' : '<button class="btn btn-secondary" style="font-size:11px;padding:2px 6px;" onclick="event.stopPropagation();sendParentMail(\''+esc(s.key)+'\',\''+level+'\')" >메일 보내기</button>'}</td>
-            <td class="nowrap" style="font-size:11px;">${s.notice.studentTeacherMailAt ? '<span style="color:var(--sb)">'+fmt(s.notice.studentTeacherMailAt)+'</span>' : '<button class="btn btn-secondary" style="font-size:11px;padding:2px 6px;" onclick="event.stopPropagation();sendStudentTeacherMail(\''+esc(s.key)+'\',\''+level+'\')" >메일 보내기</button>'}</td>
+            <td class="nowrap" style="font-size:11px;">${s.notice.parentMailAt ? '<span style="color:var(--sb)">' + fmt(s.notice.parentMailAt) + '</span>' : '<button class="btn btn-secondary" style="font-size:11px;padding:2px 6px;" onclick="event.stopPropagation();sendParentMailByKey(this)" data-sk="' + esc(s.key) + '" data-lv="' + level + '" >메일 보내기</button>'}</td>
+            <td class="nowrap" style="font-size:11px;">${s.notice.studentTeacherMailAt ? '<span style="color:var(--sb)">' + fmt(s.notice.studentTeacherMailAt) + '</span>' : '<button class="btn btn-secondary" style="font-size:11px;padding:2px 6px;" onclick="event.stopPropagation();sendStudentTeacherMailByKey(this)" data-sk="' + esc(s.key) + '" data-lv="' + level + '" >메일 보내기</button>'}</td>
             <td class="nowrap" style="color:var(--gn);font-size:11px;font-weight:700;">${s.notice.completedAt ? '✓ '+fmt(s.notice.completedAt) : '-'}</td>
           </tr>
           <tr class="detail-row ${expanded ? 'show' : ''}">
@@ -2482,26 +2482,43 @@
       }
     }
 
-    async function sendParentMail(studentKey,level){
+    function sendParentMailForDone(btn){
+      const sk=btn.dataset.sk,lv=btn.dataset.lv,nk=btn.dataset.nk||undefined;
+      sendParentMail(sk,lv,nk);
+    }
+    function sendStudentTeacherMailForDone(btn){
+      const sk=btn.dataset.sk,lv=btn.dataset.lv,nk=btn.dataset.nk||undefined;
+      sendStudentTeacherMail(sk,lv,nk);
+    }
+    async function sendParentMail(studentKey,level,fixedNoticeKey){
       const lockKey = studentKey + '_' + level;
       const student={key:studentKey,...(students[studentKey]||{})};
       const to=[student.fatherEmail,student.motherEmail].filter(Boolean).join(',');
-      if(!to) return toast('학부모 이메일이 없습니다.','err'); // lock 전에 체크
+      if(!to) return toast('학부모 이메일이 없습니다.','err');
       if (_noticeInProgress[lockKey]) return toast('처리 중입니다. 잠시 후 다시 시도해 주세요.', 'warn');
       _noticeInProgress[lockKey] = true;
       const subj='[HIS - 학생부 : 디텐션 포인트 알림] [STL : Regarding detention point]';
       const body=buildParentMailBody(student);
       const ao=findActiveNotice(studentKey,level);
-      const sp=ao?db.ref(NOTICE_DB_PATH+'/'+ao.key).update({parentMailAt:new Date().toISOString()}):db.ref(NOTICE_DB_PATH).push({studentKey,level,createdAt:new Date().toISOString(),parentMailAt:new Date().toISOString(),cycleViolationsSnapshot:buildCycleReasonText(studentKey)});
-      try{await openMailAfterSave('mailto:'+encodeURIComponent(to)+'?subject='+encodeURIComponent(subj)+'&body='+encodeURIComponent(body),sp);toast('학부모 메일 시간이 기록되었습니다.','ok');loadData();}catch(e){console.error(e);toast('메일 준비 중 오류.','err');}finally{delete _noticeInProgress[lockKey];}
+      // fixedNoticeKey: 완료 목록에서 특정 notice를 직접 업데이트
+      const noticeRef = fixedNoticeKey
+        ? db.ref(NOTICE_DB_PATH+'/'+fixedNoticeKey)
+        : ao ? db.ref(NOTICE_DB_PATH+'/'+ao.key)
+        : db.ref(NOTICE_DB_PATH);
+      const sp = fixedNoticeKey||ao
+        ? noticeRef.update({parentMailAt:new Date().toISOString()})
+        : noticeRef.push({studentKey,level,createdAt:new Date().toISOString(),parentMailAt:new Date().toISOString(),cycleViolationsSnapshot:buildCycleReasonText(studentKey)});
+      try{await openMailAfterSave('mailto:'+encodeURIComponent(to)+'?subject='+encodeURIComponent(subj)+'&body='+encodeURIComponent(body),sp);
+        const slM=getSchoolLevel((students[studentKey]||{}).className||'');if(slM)try{await recalculateStudentState(studentKey,slM);}catch(e){}
+        toast('학부모 메일 시간이 기록되었습니다.','ok');loadData();}catch(e){console.error(e);toast('메일 준비 중 오류.','err');}finally{delete _noticeInProgress[lockKey];}
     }
 
-    async function sendStudentTeacherMail(studentKey,level){
+    async function sendStudentTeacherMail(studentKey,level,fixedNoticeKey){
       const lockKey = studentKey + '_' + level;
       const student={key:studentKey,...(students[studentKey]||{})};
       const re2=level==='ms'?getTeacherEmailsByRole('ms_restore'):getTeacherEmailsByRole('hs_restore');
       const to=[student.selfEmail,student.homeroomTeacherEmail,...re2].filter(Boolean).join(',');
-      if(!to) return toast('학생/교사 이메일이 없습니다.','err'); // lock 전에 체크
+      if(!to) return toast('학생/교사 이메일이 없습니다.','err');
       if (_noticeInProgress[lockKey]) return toast('처리 중입니다. 잠시 후 다시 시도해 주세요.', 'warn');
       _noticeInProgress[lockKey] = true;
       const subj='[HIS - 학생부 : 디텐션 포인트 알림] [STL : Regarding detention point]';
