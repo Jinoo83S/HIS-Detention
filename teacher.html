@@ -1011,6 +1011,34 @@
       }).join('\n\n');
     }
 
+    /** 마지막 회복교육에서 남은 잔여 점수를 반환 */
+    function getResidualFromLastRecovery(sKey){
+      const last=Object.values(recoveryEntries||{})
+        .filter(r=>String(r.studentKey||'')===String(sKey))
+        .sort((a,b)=>String(b.completedAt||'').localeCompare(String(a.completedAt||'')))[0];
+      return last ? Number(last.currentTotalAfter??0) : 0;
+    }
+
+    /**
+     * 알림 탭용 사유 텍스트:
+     * 이전 사이클 잔여 점수 + 현재 사이클 신규 위반 항목 모두 표시
+     */
+    function buildNoticeReasonText(sKey){
+      const cycleEntries=getCurrentCycleEntries(sKey);
+      const residual=getResidualFromLastRecovery(sKey);
+      const parts=[];
+      let idx=1;
+      if(residual>0){
+        parts.push('[이전 잔여 '+residual+'점] 이전 사이클 회복교육 후 잔여 점수 ('+residual+'점)');
+      }
+      cycleEntries.forEach(r=>{
+        const pts=Number(r.totalPoints||0);
+        parts.push('['+idx+'] '+String(r.violation||'').trim()+(pts?' ('+pts+'점)':''));
+        idx++;
+      });
+      return parts.length ? parts.join('\n\n') : '-';
+    }
+
     function getTeachersByRole(roleKey){
       return Object.values(teachers || {}).filter(t => normalizeRoles(t.roles || t.role || []).includes(roleKey));
     }
@@ -1053,14 +1081,9 @@
       }).join('\n\n');
     }
 
-    /** 현재 사이클 위반 항목을 점수와 함께 표시 */
+    /** 현재 사이클 위반 항목을 점수와 함께 표시 (잔여 포함) */
     function buildCycleReasonTextWithPoints(studentKey){
-      const entries = getCurrentCycleEntries(studentKey);
-      if (!entries.length) return '-';
-      return entries.map((r, i) => {
-        const pts = Number(r.totalPoints || 0);
-        return '['+String(i+1)+'] '+String(r.violation||'').trim()+(pts?' ('+pts+'점)':'');
-      }).join('\n\n');
+      return buildNoticeReasonText(studentKey);
     }
 
     function buildReasonText(studentKey){
@@ -1091,7 +1114,7 @@
           // 선도위원회 회부 중이면 알림/회복교육 대기 (referral phase만 제외)
           const noticePhases=['notice_needed','notice_active','edu_notice_needed','edu_notice_active','referral'];
           if(!noticePhases.includes(state.phase)) return null;
-          const currentTotal=getStudentCurrentTotal(s.key),overallTotal=getStudentOverallTotal(s.key),reasons=buildReasonText(s.key);
+          const currentTotal=getStudentCurrentTotal(s.key),overallTotal=getStudentOverallTotal(s.key),reasons=buildNoticeReasonText(s.key);
           const latestEntry=getConfirmedEntriesForStudent(s.key)[0]||null,latestConfirmedAt=getLatestConfirmedAt(s.key);
           const activeNoticeObj=findActiveNotice(s.key,level);
           const notice=activeNoticeObj?activeNoticeObj.notice:{},noticeDocKey=activeNoticeObj?activeNoticeObj.key:null;
@@ -1866,7 +1889,7 @@
             <tr class="summary-row" onclick="toggleNoticeRow('${level}','${esc(s.key)}')">
               <td class="nowrap">${esc(sName(s.name||'',s.englishName||''))}</td>
               <td class="nowrap tc">${esc(s.className || '')}</td>
-              <td><span class="cell-reason-preview">${esc(buildCycleReasonText(s.key).split('\n')[0])}</span></td>
+              <td><span class="cell-reason-preview">${esc(buildNoticeReasonText(s.key).split('\n')[0])}</span></td>
               <td class="nowrap tc">${s.currentTotal}</td>
               <td class="nowrap tc">${s.overallTotal}</td>
               <td onclick="event.stopPropagation()">
@@ -2446,6 +2469,9 @@
       const msRestoreEmail = getFirstTeacherEmailByRole('ms_restore');
       const hsRestoreEmail = getFirstTeacherEmailByRole('hs_restore');
       const reasonText = buildCycleReasonTextWithPoints(student.key);
+      const _residual = getResidualFromLastRecovery(student.key);
+      const _curTotal = getStudentCurrentTotal(student.key);
+      const _residualNote = _residual > 0 ? ' (이전 잔여 ' + _residual + '점 + 신규 ' + (_curTotal - _residual) + '점)' : '';
       const memoLines = getCurrentCycleEntries(student.key).map(r => String(r.memo || '').trim()).filter(Boolean);
       const memoBlock = memoLines.length ? '\n    ▶ 메 모 (Memo)            :\n' + memoLines.map(m => '      ' + m).join('\n') : '';
       return [
@@ -2456,7 +2482,7 @@
         '',
         '    ▶ 이 름 (Name)            : ' + student.name,
         '    ▶ 홈 룸 (HR)              : ' + student.className,
-        '    ▶ Detention point         : ' + getStudentCurrentTotal(student.key),
+        '    ▶ Detention point         : ' + _curTotal + '점' + _residualNote,
         '    ▶ 사 유 (Reason)          :',
         reasonText.split('\n').map(l => '      ' + l).join('\n') + memoBlock,
         '',
@@ -2474,12 +2500,15 @@
     function buildStudentTeacherMailBody(student, level){
       const restoreEmail = level === 'ms' ? getFirstTeacherEmailByRole('ms_restore') : getFirstTeacherEmailByRole('hs_restore');
       const reasonText = buildCycleReasonTextWithPoints(student.key);
+      const _residual2 = getResidualFromLastRecovery(student.key);
+      const _curTotal2 = getStudentCurrentTotal(student.key);
+      const _residualNote2 = _residual2 > 0 ? ' (이전 잔여 ' + _residual2 + '점 + 신규 ' + (_curTotal2 - _residual2) + '점)' : '';
       const memoLines = getCurrentCycleEntries(student.key).map(r => String(r.memo || '').trim()).filter(Boolean);
       const memoBlock = memoLines.length ? '\n    ▶ 메 모 (Memo)            :\n' + memoLines.map(m => '      ' + m).join('\n') : '';
       return [
         '    ▶ 이 름 (Name)            : ' + student.name,
         '    ▶ 홈 룸 (HR)              : ' + student.className,
-        '    ▶ Detention point         : ' + getStudentCurrentTotal(student.key),
+        '    ▶ Detention point         : ' + _curTotal2 + '점' + _residualNote2,
         '    ▶ 사 유 (Reason)          :',
         reasonText.split('\n').map(l => '      ' + l).join('\n') + memoBlock,
         '',
