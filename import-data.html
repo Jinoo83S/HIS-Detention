@@ -68,7 +68,10 @@ tr:hover td{background:#edf3ff}
 
   <!-- Step 2: Preview -->
   <div class="card" id="step2" style="display:none">
-    <div class="card-title">2단계. 데이터 미리보기 및 확인</div>
+    <div class="card-title">
+      2단계. 데이터 미리보기 및 확인
+      <span id="sheetTypeLabel" style="font-size:12px;font-weight:600;color:#1b2f7a;background:#e8f0fe;padding:3px 10px;border-radius:999px;"></span>
+    </div>
     <div class="stats" id="statsGrid"></div>
 
     <div class="row">
@@ -119,6 +122,25 @@ const db = firebase.database();
 
 let parsedRows = [];
 let convertedEntries = [];
+let sheetType = ''; // 'detention' | 'notice' | 'restore'
+
+// ── Sheet type detection ──
+function detectSheetType(headers){
+  if(headers.includes('교육횟수') || headers.includes('회복점수')) return 'restore';
+  if(headers.includes('알림날짜') || headers.includes('학부모알림완료')) return 'notice';
+  return 'detention';
+}
+
+const SHEET_LABELS = {
+  detention:'디텐션 기록 (Detention)',
+  notice:'알림 기록 (Notices)',
+  restore:'회복교육 (Recovery)'
+};
+const SHEET_DB = {
+  detention:'detentionEntries',
+  notice:'detentionNotices',
+  restore:'recoveryEntries'
+};
 
 // ── Drag & Drop ──
 const dz = document.getElementById('dropZone');
@@ -143,6 +165,8 @@ function parseTSV(text){
   if(lines.length < 2){ alert('데이터가 없습니다.'); return; }
 
   const headers = lines[0].split('\t').map(h => h.trim());
+  sheetType = detectSheetType(headers);
+
   parsedRows = [];
   for(let i=1; i<lines.length; i++){
     const cols = lines[i].split('\t');
@@ -151,35 +175,44 @@ function parseTSV(text){
     if(row['ID'] || row['이름']) parsedRows.push(row);
   }
 
-  convertedEntries = parsedRows.map(convertRow).filter(Boolean);
+  const converterMap = { detention:convertDetentionRow, notice:convertNoticeRow, restore:convertRestoreRow };
+  convertedEntries = parsedRows.map(converterMap[sheetType]).filter(Boolean);
   showPreview();
 }
 
-// ── Row Converter ──
-function convertRow(row){
+// ── Shared helpers ──
+function parseName(fullName){
+  const m = fullName.match(/^([가-힣A-Z][가-힣A-Z\s]*?)\s+([A-Za-z].*)$/);
+  return m ? { ko: m[1].trim(), en: m[2].trim() } : { ko: fullName, en: '' };
+}
+
+function makeStudentKey(koreanName, className){
+  return [className, koreanName].filter(Boolean).join('_').replace(/[.#$/\[\]\s]/g,'_');
+}
+
+function gradeToLevel(className){
+  const m = String(className||'').match(/^(\d+)/);
+  if(!m) return 'ms';
+  return Number(m[1]) >= 9 ? 'hs' : 'ms';
+}
+
+function toISO(dateStr){
+  return dateStr ? dateStr.replace(/\s.*/,'')+'T00:00:00' : undefined;
+}
+
+function generateKey(){
+  return '-imp'+Math.random().toString(36).substr(2,11);
+}
+
+// ── Converter: 디텐션 기록 ──
+function convertDetentionRow(row){
   const fullName = (row['이름']||'').trim();
   if(!fullName) return null;
-
-  // Split Korean / English name
-  // Pattern: Korean chars first, then space, then English
-  const nameMatch = fullName.match(/^([가-힣A-Z][가-힣A-Z\s]*?)\s+([A-Za-z].*)$/);
-  let koreanName, englishName;
-  if(nameMatch){
-    koreanName = nameMatch[1].trim();
-    englishName = nameMatch[2].trim();
-  } else {
-    koreanName = fullName;
-    englishName = '';
-  }
-
+  const { ko, en } = parseName(fullName);
   const className = (row['학년']||'').trim();
-  const dateStr = (row['날짜']||'').trim(); // YYYY-MM-DD
+  const sKey = makeStudentKey(ko, className);
+  const dateStr = (row['날짜']||'').trim();
 
-  // Generate studentKey same as common.js studentKey()
-  const rawKey = [className, koreanName].filter(Boolean).join('_');
-  const sKey = rawKey.replace(/[.#$/\[\]\s]/g,'_');
-
-  // Status
   const isConfirmed = (row['확정']||'').toUpperCase()==='TRUE';
   const isCancelled = (row['취소']||'').toUpperCase()==='TRUE';
   const confirmDate = (row['확인날짜고정']||'').trim();
@@ -189,40 +222,27 @@ function convertRow(row){
   else if(isConfirmed && !confirmDate) status = '대기';
   else status = '임시저장';
 
-  // Points
-  const totalPoints = Number(row['최종점수']||0) || 0;
-  const manualPoints = Number(row['수동점수']||'') || undefined;
-  const autoRange = (row['자동점수']||row['자동점수검색']||'').trim(); // e.g. "1-12" or "1"
-
-  // isReferral: 경고 column has 생활교육위원회 or category has 이성교제
   const warning = (row['경고']||'').trim();
   const category = (row['종류']||'').trim();
   const isReferral = warning.includes('생활교육위원회') || category.startsWith('이성교제');
 
-  // confirmedAt: date string → ISO
-  const confirmedAt = confirmDate ? confirmDate+'T00:00:00' : undefined;
-  const createdAt = dateStr ? dateStr+'T00:00:00' : new Date().toISOString();
-
-  // Entry key: use original ID if available, else generate
-  const entryKey = (row['ID']||'').trim() || generateKey();
-
   return {
-    _key: entryKey,
+    _key: (row['ID']||'').trim() || generateKey(),
     studentKey: sKey,
-    studentName: koreanName,
-    englishName: englishName,
-    className: className,
-    category: category,
+    studentName: ko,
+    englishName: en,
+    className,
+    category,
     violation: (row['상세']||'').trim(),
-    totalPoints: totalPoints,
-    manualPoints: manualPoints,
-    autoPoints: autoRange || undefined,
+    totalPoints: Number(row['최종점수']||0) || 0,
+    manualPoints: Number(row['수동점수']||'') || undefined,
+    autoPoints: (row['자동점수']||row['자동점수검색']||'').trim() || undefined,
     memo: (row['메모']||'').trim() || undefined,
     adminNote: (row['관리자메모']||'').trim() || undefined,
     teacherName: (row['교사']||'').trim(),
-    status: status,
-    createdAt: createdAt,
-    confirmedAt: confirmedAt,
+    status,
+    createdAt: toISO(dateStr) || new Date().toISOString(),
+    confirmedAt: confirmDate ? confirmDate+'T00:00:00' : undefined,
     studentEmail: (row['학생이메일']||'').trim() || undefined,
     parentEmail: (row['부모이메일']||'').trim() || undefined,
     homeroomEmail: (row['담임이메일']||'').trim() || undefined,
@@ -231,64 +251,164 @@ function convertRow(row){
   };
 }
 
-function generateKey(){
-  return '-imp'+Math.random().toString(36).substr(2,11);
+// ── Converter: 알림 기록 ──
+function convertNoticeRow(row){
+  const fullName = (row['이름']||'').trim();
+  if(!fullName) return null;
+  const { ko, en } = parseName(fullName);
+  const className = (row['학년']||'').trim();
+  const sKey = makeStudentKey(ko, className);
+  const level = gradeToLevel(className);
+
+  const isDone = (row['완료']||'').toUpperCase()==='TRUE';
+  const parentDone = (row['학부모알림완료']||'').toUpperCase()==='TRUE';
+  const noticeDate = (row['알림날짜']||'').trim();        // 학생/교사 알림 날짜
+  const parentDate = (row['학부모알림날짜']||'').trim(); // 학부모 알림 날짜
+  const baseDate = (row['날짜']||'').trim();
+
+  // completedAt: 완료===TRUE이면 parentDate > noticeDate > baseDate 순으로
+  const completedAt = isDone
+    ? toISO(parentDate || noticeDate || baseDate)
+    : undefined;
+
+  return {
+    _key: (row['ID']||'').trim() || generateKey(),
+    studentKey: sKey,
+    studentName: ko,
+    englishName: en,
+    className,
+    level,
+    createdAt: toISO(baseDate) || new Date().toISOString(),
+    studentTeacherMailAt: noticeDate ? toISO(noticeDate) : undefined,
+    parentMailAt: (parentDone && parentDate) ? toISO(parentDate) : undefined,
+    completedAt,
+    importedAt: new Date().toISOString()
+  };
+}
+
+// ── Converter: 회복교육 ──
+function convertRestoreRow(row){
+  const fullName = (row['이름']||'').trim();
+  if(!fullName) return null;
+  const { ko, en } = parseName(fullName);
+  const className = (row['학년']||'').trim();
+  const sKey = makeStudentKey(ko, className);
+  const level = gradeToLevel(className);
+
+  const isDone = (row['완료']||'').toUpperCase()==='TRUE';
+  const completedDate = (row['완료날짜']||'').trim();
+  const baseDate = (row['날짜']||'').trim();
+
+  // sessions: 교육1~4 중 비어있지 않은 날짜들
+  const sessions = ['교육1','교육2','교육3','교육4']
+    .map(k => (row[k]||'').trim())
+    .filter(Boolean);
+
+  return {
+    _key: (row['ID']||'').trim() || generateKey(),
+    studentKey: sKey,
+    studentName: ko,
+    englishName: en,
+    className,
+    level,
+    staffName: (row['교사']||'').trim(),
+    originalPoints: Number(row['최종점수']||0) || 0,
+    recoveryPoints: Number(row['회복점수']||0) || 0,
+    totalSessions: Number(row['교육횟수']||0) || 0,
+    sessions: sessions.length ? sessions : undefined,
+    completedAt: isDone ? toISO(completedDate || baseDate) : undefined,
+    createdAt: toISO(baseDate) || new Date().toISOString(),
+    importedAt: new Date().toISOString()
+  };
 }
 
 // ── Preview ──
 function showPreview(){
   document.getElementById('step2').style.display='block';
 
+  // Sheet type badge
+  const labelEl = document.getElementById('sheetTypeLabel');
+  if(labelEl) labelEl.textContent = '📋 시트: ' + SHEET_LABELS[sheetType];
+
   const total = convertedEntries.length;
-  const confirmed = convertedEntries.filter(r=>r.status==='확정').length;
-  const pending = convertedEntries.filter(r=>r.status==='대기').length;
-  const rejected = convertedEntries.filter(r=>r.status==='반려').length;
-  const referral = convertedEntries.filter(r=>r.isReferral).length;
   const students = new Set(convertedEntries.map(r=>r.studentKey)).size;
-
-  document.getElementById('statsGrid').innerHTML = `
+  let statsHtml = `
     <div class="stat"><div class="stat-num">${total}</div><div class="stat-lbl">전체 기록</div></div>
-    <div class="stat"><div class="stat-num" style="color:#15803d">${confirmed}</div><div class="stat-lbl">확정</div></div>
-    <div class="stat"><div class="stat-num" style="color:#b45309">${pending}</div><div class="stat-lbl">대기</div></div>
-    <div class="stat"><div class="stat-num" style="color:#dc2626">${rejected}</div><div class="stat-lbl">반려</div></div>
-    <div class="stat"><div class="stat-num" style="color:#7c3aed">${referral}</div><div class="stat-lbl">위원회 대상</div></div>
-    <div class="stat"><div class="stat-num">${students}</div><div class="stat-lbl">학생 수</div></div>
-  `;
+    <div class="stat"><div class="stat-num">${students}</div><div class="stat-lbl">학생 수</div></div>`;
 
-  // Preview table (first 50 rows)
-  const head = document.getElementById('previewHead');
-  const body = document.getElementById('previewBody');
-  head.innerHTML = `<tr>
-    <th>#</th><th>학생명</th><th>영문명</th><th>학반</th><th>날짜</th>
-    <th>구분</th><th>점수</th><th>상태</th><th>교사</th><th>위원회</th>
-  </tr>`;
+  let headHtml, bodyHtml;
 
-  body.innerHTML = convertedEntries.slice(0,100).map((r,i)=>{
-    const statusBadge = r.status==='확정'?'badge-ok':r.status==='반려'?'badge-err':'badge-warn';
-    return `<tr>
-      <td>${i+1}</td>
-      <td>${esc(r.studentName)}</td>
-      <td>${esc(r.englishName)}</td>
-      <td>${esc(r.className)}</td>
-      <td>${(r.createdAt||'').substr(0,10)}</td>
-      <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;">${esc(r.category)}</td>
-      <td style="text-align:center">${r.totalPoints}</td>
-      <td><span class="badge ${statusBadge}">${r.status}</span></td>
-      <td>${esc(r.teacherName)}</td>
-      <td>${r.isReferral?'<span class="badge badge-err">위원회</span>':''}</td>
-    </tr>`;
-  }).join('');
+  if(sheetType === 'detention'){
+    const confirmed = convertedEntries.filter(r=>r.status==='확정').length;
+    const pending = convertedEntries.filter(r=>r.status==='대기').length;
+    const rejected = convertedEntries.filter(r=>r.status==='반려').length;
+    const referral = convertedEntries.filter(r=>r.isReferral).length;
+    statsHtml += `
+      <div class="stat"><div class="stat-num" style="color:#15803d">${confirmed}</div><div class="stat-lbl">확정</div></div>
+      <div class="stat"><div class="stat-num" style="color:#b45309">${pending}</div><div class="stat-lbl">대기</div></div>
+      <div class="stat"><div class="stat-num" style="color:#dc2626">${rejected}</div><div class="stat-lbl">반려</div></div>
+      <div class="stat"><div class="stat-num" style="color:#7c3aed">${referral}</div><div class="stat-lbl">위원회</div></div>`;
+    headHtml = `<tr><th>#</th><th>학생명</th><th>학반</th><th>날짜</th><th>구분</th><th>점수</th><th>상태</th><th>교사</th><th>위원회</th></tr>`;
+    bodyHtml = convertedEntries.slice(0,100).map((r,i)=>{
+      const sb = r.status==='확정'?'badge-ok':r.status==='반려'?'badge-err':'badge-warn';
+      return `<tr><td>${i+1}</td><td>${esc(r.studentName)}</td><td>${esc(r.className)}</td>
+        <td>${(r.createdAt||'').substr(0,10)}</td>
+        <td style="max-width:130px;overflow:hidden;text-overflow:ellipsis">${esc(r.category)}</td>
+        <td style="text-align:center">${r.totalPoints}</td>
+        <td><span class="badge ${sb}">${r.status}</span></td>
+        <td>${esc(r.teacherName)}</td>
+        <td>${r.isReferral?'<span class="badge badge-err">위원회</span>':''}</td></tr>`;
+    }).join('');
 
+  } else if(sheetType === 'notice'){
+    const withTeacher = convertedEntries.filter(r=>r.studentTeacherMailAt).length;
+    const withParent = convertedEntries.filter(r=>r.parentMailAt).length;
+    const completed = convertedEntries.filter(r=>r.completedAt).length;
+    statsHtml += `
+      <div class="stat"><div class="stat-num" style="color:#0f1f5c">${withTeacher}</div><div class="stat-lbl">학생/교사 알림</div></div>
+      <div class="stat"><div class="stat-num" style="color:#15803d">${withParent}</div><div class="stat-lbl">학부모 알림</div></div>
+      <div class="stat"><div class="stat-num" style="color:#7c3aed">${completed}</div><div class="stat-lbl">완료</div></div>`;
+    headHtml = `<tr><th>#</th><th>학생명</th><th>학반</th><th>구분</th><th>학생/교사 알림일</th><th>학부모 알림일</th><th>완료일</th></tr>`;
+    bodyHtml = convertedEntries.slice(0,100).map((r,i)=>`
+      <tr><td>${i+1}</td><td>${esc(r.studentName)}</td><td>${esc(r.className)}</td>
+      <td><span class="badge badge-info">${r.level==='hs'?'고등':'중등'}</span></td>
+      <td>${(r.studentTeacherMailAt||'').substr(0,10)||'-'}</td>
+      <td>${(r.parentMailAt||'').substr(0,10)||'-'}</td>
+      <td>${(r.completedAt||'').substr(0,10)||'-'}</td></tr>`).join('');
+
+  } else { // restore
+    const msCount = convertedEntries.filter(r=>r.level==='ms').length;
+    const hsCount = convertedEntries.filter(r=>r.level==='hs').length;
+    const doneCount = convertedEntries.filter(r=>r.completedAt).length;
+    statsHtml += `
+      <div class="stat"><div class="stat-num">${msCount}</div><div class="stat-lbl">중등</div></div>
+      <div class="stat"><div class="stat-num">${hsCount}</div><div class="stat-lbl">고등</div></div>
+      <div class="stat"><div class="stat-num" style="color:#15803d">${doneCount}</div><div class="stat-lbl">완료</div></div>`;
+    headHtml = `<tr><th>#</th><th>학생명</th><th>학반</th><th>구분</th><th>원점수</th><th>회복점수</th><th>교육횟수</th><th>담당교사</th><th>완료일</th></tr>`;
+    bodyHtml = convertedEntries.slice(0,100).map((r,i)=>`
+      <tr><td>${i+1}</td><td>${esc(r.studentName)}</td><td>${esc(r.className)}</td>
+      <td><span class="badge badge-info">${r.level==='hs'?'고등':'중등'}</span></td>
+      <td style="text-align:center">${r.originalPoints}</td>
+      <td style="text-align:center">${r.recoveryPoints}</td>
+      <td style="text-align:center">${r.totalSessions}</td>
+      <td>${esc(r.staffName)}</td>
+      <td>${(r.completedAt||'').substr(0,10)||'-'}</td></tr>`).join('');
+  }
+
+  document.getElementById('statsGrid').innerHTML = statsHtml;
+  document.getElementById('previewHead').innerHTML = headHtml;
+  document.getElementById('previewBody').innerHTML = bodyHtml;
   document.getElementById('importNote').textContent =
     total>100 ? `미리보기: 상위 100개 / 전체 ${total}개` : '';
 }
 
 function showMapping(){
-  const cols = ['ID→_key','이름→koreanName+englishName','학년→className','날짜→createdAt',
-    '교사→teacherName','종류→category','상세→violation','최종점수→totalPoints',
-    '수동점수→manualPoints','메모→memo','확정+취소+확인날짜→status',
-    '경고(생활교육위원회)/이성교제→isReferral'];
-  document.getElementById('mapNote').textContent = cols.join(' | ');
+  const maps = {
+    detention: ['ID→_key','이름→studentName+englishName','학년→className','날짜→createdAt','교사→teacherName','종류→category','상세→violation','최종점수→totalPoints','수동점수→manualPoints','메모→memo','확정+취소+확인날짜→status','경고(생활교육위원회)/이성교제→isReferral'],
+    notice: ['ID→_key','이름→studentName','학년→className+level(ms/hs)','날짜→createdAt','알림날짜→studentTeacherMailAt','학부모알림완료+학부모알림날짜→parentMailAt','완료→completedAt'],
+    restore: ['ID→_key','이름→studentName','학년→className+level(ms/hs)','날짜→createdAt','교사→staffName','최종점수→originalPoints','회복점수→recoveryPoints','교육횟수→totalSessions','교육1~4→sessions[]','완료날짜→completedAt']
+  };
+  document.getElementById('mapNote').textContent = (maps[sheetType]||[]).join(' | ');
 }
 
 function esc(s){ return String(s||'').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -303,9 +423,11 @@ function resetAll(){
 // ── Import to Firebase ──
 async function startImport(){
   if(!convertedEntries.length){ alert('데이터가 없습니다.'); return; }
+  const dbPath = SHEET_DB[sheetType] || 'detentionEntries';
 
   const confirmed = confirm(
-    `총 ${convertedEntries.length}개 기록을 Firebase에 업로드합니다.\n`+
+    `[${SHEET_LABELS[sheetType]}]\n`+
+    `총 ${convertedEntries.length}개 기록을 Firebase(${dbPath})에 업로드합니다.\n`+
     `기존 같은 ID의 데이터는 덮어씁니다.\n\n계속하시겠습니까?`
   );
   if(!confirmed) return;
@@ -317,8 +439,6 @@ async function startImport(){
 
   const total = convertedEntries.length;
   let done = 0, errors = 0;
-
-  // Build batch updates (500 per batch for Firebase limits)
   const batchSize = 100;
 
   for(let start=0; start<total; start+=batchSize){
@@ -329,9 +449,8 @@ async function startImport(){
       const key = entry._key;
       const data = {...entry};
       delete data._key;
-      // Remove undefined fields
       Object.keys(data).forEach(k => data[k]===undefined && delete data[k]);
-      updates[`detentionEntries/${key}`] = data;
+      updates[`${dbPath}/${key}`] = data;
     });
 
     try{
@@ -344,16 +463,15 @@ async function startImport(){
     }
 
     updateProgress(done, total);
-    await sleep(200); // Rate limit
+    await sleep(200);
   }
 
-  // Done
   if(errors===0){
     document.getElementById('doneNote').innerHTML =
       `<span style="color:#15803d;font-weight:700;font-size:14px">
-       ✅ 완료! ${done}개 기록이 Firebase에 저장되었습니다.
+       ✅ 완료! ${done}개 기록이 Firebase(${dbPath})에 저장되었습니다.
        </span><br>
-       <span style="font-size:12px;color:#5b6888">teacher.html을 새로고침하면 데이터를 확인할 수 있습니다.</span>`;
+       <span style="font-size:12px;color:#5b6888">페이지를 새로고침하면 데이터를 확인할 수 있습니다.</span>`;
   } else {
     document.getElementById('doneNote').innerHTML =
       `<span style="color:#dc2626;font-weight:700">완료 (오류 ${errors}건). 로그를 확인하세요.</span>`;
