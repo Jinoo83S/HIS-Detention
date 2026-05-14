@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>데이터 가져오기 | Import Data</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Noto Sans KR',sans-serif;background:#eef1f9;color:#111827;font-size:14px}
+.topbar{background:linear-gradient(120deg,#0f1f5c,#1b2f7a);padding:12px 16px;display:flex;align-items:center;gap:12px;color:#fff}
+.topbar h1{font-size:16px;font-weight:800}
+.content{max-width:1100px;margin:0 auto;padding:16px}
+.card{background:#fff;border-radius:12px;padding:16px;margin-bottom:14px;box-shadow:0 1px 8px rgba(15,31,92,.06)}
+.card-title{font-size:15px;font-weight:800;color:#0f1f5c;margin-bottom:12px}
+.btn{padding:8px 14px;border-radius:8px;border:none;font-weight:700;cursor:pointer;font-size:13px}
+.btn-primary{background:linear-gradient(135deg,#0f1f5c,#1b2f7a);color:#fff}
+.btn-secondary{background:#e9edf5;color:#111827}
+.btn-danger{background:#dc2626;color:#fff}
+.btn-success{background:#15803d;color:#fff}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+.drop-zone{border:2px dashed #c5d5f5;border-radius:10px;padding:30px;text-align:center;color:#5b6888;cursor:pointer;transition:.2s}
+.drop-zone:hover,.drop-zone.over{border-color:#1b2f7a;background:#f0f4ff}
+.drop-zone input{display:none}
+.stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;margin-bottom:12px}
+.stat{background:#f0f4ff;border-radius:8px;padding:10px;text-align:center}
+.stat-num{font-size:22px;font-weight:900;color:#0f1f5c}
+.stat-lbl{font-size:11px;color:#5b6888}
+.tbl-wrap{overflow:auto;border:1px solid #d8dded;border-radius:8px;max-height:400px}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{background:#dce6f7;color:#0f1f5c;font-size:10px;padding:5px 8px;position:sticky;top:0;z-index:1;white-space:nowrap}
+td{padding:5px 8px;border-bottom:1px solid #eef2ff;white-space:nowrap;max-width:200px;overflow:hidden;text-overflow:ellipsis}
+tr:hover td{background:#edf3ff}
+.badge{display:inline-block;padding:2px 7px;border-radius:999px;font-size:10px;font-weight:700}
+.badge-ok{background:#e8f8ee;color:#15803d}
+.badge-warn{background:#fff3cd;color:#5a3e00}
+.badge-err{background:#fde8e8;color:#dc2626}
+.badge-info{background:#e8f0fe;color:#0f1f5c}
+#progress-wrap{display:none}
+.prog-bar-bg{background:#e9edf5;border-radius:999px;height:10px;overflow:hidden;margin:8px 0}
+.prog-bar{background:linear-gradient(135deg,#0f1f5c,#1b2f7a);height:100%;width:0;transition:.2s;border-radius:999px}
+.log{background:#f8f9fc;border:1px solid #d8dded;border-radius:8px;padding:10px;max-height:200px;overflow-y:auto;font-size:11px;font-family:monospace;color:#374151}
+.notice{padding:10px 12px;border-radius:8px;background:#fffbeb;border:1px solid #fcd34d;color:#6b4f10;font-size:13px;margin-bottom:10px}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <h1>📥 데이터 가져오기 | Import from Google Sheets</h1>
+</div>
+
+<div class="content">
+  <div class="notice">
+    ⚠️ <strong>주의:</strong> 이 도구는 기존 구글시트 데이터를 Firebase에 가져옵니다.
+    <strong>기존 Firebase 데이터와 겹칠 수 있습니다.</strong> DB 초기화 후 사용하거나, 중복 여부를 확인하세요.
+    <br>TSV 파일을 Google Sheets에서 <strong>파일 → 다운로드 → 탭으로 구분된 값(.tsv)</strong>으로 저장 후 업로드하세요.
+  </div>
+
+  <!-- Step 1: Upload -->
+  <div class="card" id="step1">
+    <div class="card-title">1단계. TSV 파일 업로드</div>
+    <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+      <div style="font-size:32px;margin-bottom:8px">📂</div>
+      <div style="font-weight:700;margin-bottom:4px">TSV 파일을 드래그하거나 클릭하여 선택</div>
+      <div style="font-size:12px;color:#5b6888">Google Sheets에서 저장한 .tsv 파일</div>
+      <input type="file" id="fileInput" accept=".tsv,.txt,text/tab-separated-values"/>
+    </div>
+  </div>
+
+  <!-- Step 2: Preview -->
+  <div class="card" id="step2" style="display:none">
+    <div class="card-title">2단계. 데이터 미리보기 및 확인</div>
+    <div class="stats" id="statsGrid"></div>
+
+    <div class="row">
+      <button class="btn btn-secondary" onclick="showMapping()">컬럼 매핑 보기</button>
+      <span id="mapNote" style="font-size:12px;color:#5b6888"></span>
+    </div>
+
+    <div class="tbl-wrap">
+      <table id="previewTable">
+        <thead id="previewHead"></thead>
+        <tbody id="previewBody"></tbody>
+      </table>
+    </div>
+
+    <div style="margin-top:12px;display:flex;gap:8px;align-items:center;">
+      <button class="btn btn-primary" id="importBtn" onclick="startImport()">Firebase에 업로드 시작</button>
+      <button class="btn btn-secondary" onclick="resetAll()">다시 선택</button>
+      <span id="importNote" style="font-size:12px;color:#5b6888"></span>
+    </div>
+  </div>
+
+  <!-- Step 3: Progress -->
+  <div class="card" id="step3" style="display:none">
+    <div class="card-title">3단계. 업로드 진행</div>
+    <div id="progress-wrap" style="display:block">
+      <div class="prog-bar-bg"><div class="prog-bar" id="progBar"></div></div>
+      <div id="progText" style="font-size:12px;color:#5b6888;margin-bottom:8px"></div>
+    </div>
+    <div class="log" id="logBox"></div>
+    <div style="margin-top:10px" id="doneNote"></div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script>
+const firebaseConfig = {
+  apiKey:"AIzaSyCc3rwlIlZd7NaFkd2viT-tYhS9IemsV9o",
+  authDomain:"his-detention.firebaseapp.com",
+  databaseURL:"https://his-detention-default-rtdb.asia-southeast1.firebasedatabase.app/",
+  projectId:"his-detention",
+  storageBucket:"his-detention.firebasestorage.app",
+  messagingSenderId:"357843127217",
+  appId:"1:357843127217:web:88175e347add4931294b90"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+let parsedRows = [];
+let convertedEntries = [];
+
+// ── Drag & Drop ──
+const dz = document.getElementById('dropZone');
+dz.addEventListener('dragover', e=>{ e.preventDefault(); dz.classList.add('over'); });
+dz.addEventListener('dragleave', ()=> dz.classList.remove('over'));
+dz.addEventListener('drop', e=>{ e.preventDefault(); dz.classList.remove('over'); handleFile(e.dataTransfer.files[0]); });
+document.getElementById('fileInput').addEventListener('change', e=> handleFile(e.target.files[0]));
+
+function handleFile(file){
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const text = e.target.result.replace(/^\uFEFF/,'');
+    parseTSV(text);
+  };
+  reader.readAsText(file, 'utf-8');
+}
+
+// ── TSV Parser ──
+function parseTSV(text){
+  const lines = text.split(/\r?\n/).filter(l => l.trim());
+  if(lines.length < 2){ alert('데이터가 없습니다.'); return; }
+
+  const headers = lines[0].split('\t').map(h => h.trim());
+  parsedRows = [];
+  for(let i=1; i<lines.length; i++){
+    const cols = lines[i].split('\t');
+    const row = {};
+    headers.forEach((h,idx) => row[h] = (cols[idx]||'').trim());
+    if(row['ID'] || row['이름']) parsedRows.push(row);
+  }
+
+  convertedEntries = parsedRows.map(convertRow).filter(Boolean);
+  showPreview();
+}
+
+// ── Row Converter ──
+function convertRow(row){
+  const fullName = (row['이름']||'').trim();
+  if(!fullName) return null;
+
+  // Split Korean / English name
+  // Pattern: Korean chars first, then space, then English
+  const nameMatch = fullName.match(/^([가-힣A-Z][가-힣A-Z\s]*?)\s+([A-Za-z].*)$/);
+  let koreanName, englishName;
+  if(nameMatch){
+    koreanName = nameMatch[1].trim();
+    englishName = nameMatch[2].trim();
+  } else {
+    koreanName = fullName;
+    englishName = '';
+  }
+
+  const className = (row['학년']||'').trim();
+  const dateStr = (row['날짜']||'').trim(); // YYYY-MM-DD
+
+  // Generate studentKey same as common.js studentKey()
+  const rawKey = [className, koreanName].filter(Boolean).join('_');
+  const sKey = rawKey.replace(/[.#$/\[\]\s]/g,'_');
+
+  // Status
+  const isConfirmed = (row['확정']||'').toUpperCase()==='TRUE';
+  const isCancelled = (row['취소']||'').toUpperCase()==='TRUE';
+  const confirmDate = (row['확인날짜고정']||'').trim();
+  let status;
+  if(isCancelled) status = '반려';
+  else if(isConfirmed && confirmDate) status = '확정';
+  else if(isConfirmed && !confirmDate) status = '대기';
+  else status = '임시저장';
+
+  // Points
+  const totalPoints = Number(row['최종점수']||0) || 0;
+  const manualPoints = Number(row['수동점수']||'') || undefined;
+  const autoRange = (row['자동점수']||row['자동점수검색']||'').trim(); // e.g. "1-12" or "1"
+
+  // isReferral: 경고 column has 생활교육위원회 or category has 이성교제
+  const warning = (row['경고']||'').trim();
+  const category = (row['종류']||'').trim();
+  const isReferral = warning.includes('생활교육위원회') || category.startsWith('이성교제');
+
+  // confirmedAt: date string → ISO
+  const confirmedAt = confirmDate ? confirmDate+'T00:00:00' : undefined;
+  const createdAt = dateStr ? dateStr+'T00:00:00' : new Date().toISOString();
+
+  // Entry key: use original ID if available, else generate
+  const entryKey = (row['ID']||'').trim() || generateKey();
+
+  return {
+    _key: entryKey,
+    studentKey: sKey,
+    studentName: koreanName,
+    englishName: englishName,
+    className: className,
+    category: category,
+    violation: (row['상세']||'').trim(),
+    totalPoints: totalPoints,
+    manualPoints: manualPoints,
+    autoPoints: autoRange || undefined,
+    memo: (row['메모']||'').trim() || undefined,
+    adminNote: (row['관리자메모']||'').trim() || undefined,
+    teacherName: (row['교사']||'').trim(),
+    status: status,
+    createdAt: createdAt,
+    confirmedAt: confirmedAt,
+    studentEmail: (row['학생이메일']||'').trim() || undefined,
+    parentEmail: (row['부모이메일']||'').trim() || undefined,
+    homeroomEmail: (row['담임이메일']||'').trim() || undefined,
+    isReferral: isReferral || undefined,
+    importedAt: new Date().toISOString()
+  };
+}
+
+function generateKey(){
+  return '-imp'+Math.random().toString(36).substr(2,11);
+}
+
+// ── Preview ──
+function showPreview(){
+  document.getElementById('step2').style.display='block';
+
+  const total = convertedEntries.length;
+  const confirmed = convertedEntries.filter(r=>r.status==='확정').length;
+  const pending = convertedEntries.filter(r=>r.status==='대기').length;
+  const rejected = convertedEntries.filter(r=>r.status==='반려').length;
+  const referral = convertedEntries.filter(r=>r.isReferral).length;
+  const students = new Set(convertedEntries.map(r=>r.studentKey)).size;
+
+  document.getElementById('statsGrid').innerHTML = `
+    <div class="stat"><div class="stat-num">${total}</div><div class="stat-lbl">전체 기록</div></div>
+    <div class="stat"><div class="stat-num" style="color:#15803d">${confirmed}</div><div class="stat-lbl">확정</div></div>
+    <div class="stat"><div class="stat-num" style="color:#b45309">${pending}</div><div class="stat-lbl">대기</div></div>
+    <div class="stat"><div class="stat-num" style="color:#dc2626">${rejected}</div><div class="stat-lbl">반려</div></div>
+    <div class="stat"><div class="stat-num" style="color:#7c3aed">${referral}</div><div class="stat-lbl">위원회 대상</div></div>
+    <div class="stat"><div class="stat-num">${students}</div><div class="stat-lbl">학생 수</div></div>
+  `;
+
+  // Preview table (first 50 rows)
+  const head = document.getElementById('previewHead');
+  const body = document.getElementById('previewBody');
+  head.innerHTML = `<tr>
+    <th>#</th><th>학생명</th><th>영문명</th><th>학반</th><th>날짜</th>
+    <th>구분</th><th>점수</th><th>상태</th><th>교사</th><th>위원회</th>
+  </tr>`;
+
+  body.innerHTML = convertedEntries.slice(0,100).map((r,i)=>{
+    const statusBadge = r.status==='확정'?'badge-ok':r.status==='반려'?'badge-err':'badge-warn';
+    return `<tr>
+      <td>${i+1}</td>
+      <td>${esc(r.studentName)}</td>
+      <td>${esc(r.englishName)}</td>
+      <td>${esc(r.className)}</td>
+      <td>${(r.createdAt||'').substr(0,10)}</td>
+      <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;">${esc(r.category)}</td>
+      <td style="text-align:center">${r.totalPoints}</td>
+      <td><span class="badge ${statusBadge}">${r.status}</span></td>
+      <td>${esc(r.teacherName)}</td>
+      <td>${r.isReferral?'<span class="badge badge-err">위원회</span>':''}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('importNote').textContent =
+    total>100 ? `미리보기: 상위 100개 / 전체 ${total}개` : '';
+}
+
+function showMapping(){
+  const cols = ['ID→_key','이름→koreanName+englishName','학년→className','날짜→createdAt',
+    '교사→teacherName','종류→category','상세→violation','최종점수→totalPoints',
+    '수동점수→manualPoints','메모→memo','확정+취소+확인날짜→status',
+    '경고(생활교육위원회)/이성교제→isReferral'];
+  document.getElementById('mapNote').textContent = cols.join(' | ');
+}
+
+function esc(s){ return String(s||'').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function resetAll(){
+  parsedRows=[];convertedEntries=[];
+  document.getElementById('step2').style.display='none';
+  document.getElementById('step3').style.display='none';
+  document.getElementById('fileInput').value='';
+}
+
+// ── Import to Firebase ──
+async function startImport(){
+  if(!convertedEntries.length){ alert('데이터가 없습니다.'); return; }
+
+  const confirmed = confirm(
+    `총 ${convertedEntries.length}개 기록을 Firebase에 업로드합니다.\n`+
+    `기존 같은 ID의 데이터는 덮어씁니다.\n\n계속하시겠습니까?`
+  );
+  if(!confirmed) return;
+
+  document.getElementById('importBtn').disabled = true;
+  document.getElementById('step3').style.display='block';
+  document.getElementById('logBox').innerHTML='';
+  document.getElementById('doneNote').innerHTML='';
+
+  const total = convertedEntries.length;
+  let done = 0, errors = 0;
+
+  // Build batch updates (500 per batch for Firebase limits)
+  const batchSize = 100;
+
+  for(let start=0; start<total; start+=batchSize){
+    const batch = convertedEntries.slice(start, start+batchSize);
+    const updates = {};
+
+    batch.forEach(entry => {
+      const key = entry._key;
+      const data = {...entry};
+      delete data._key;
+      // Remove undefined fields
+      Object.keys(data).forEach(k => data[k]===undefined && delete data[k]);
+      updates[`detentionEntries/${key}`] = data;
+    });
+
+    try{
+      await db.ref().update(updates);
+      done += batch.length;
+      log(`✅ ${done}/${total} 완료`, 'ok');
+    } catch(e){
+      errors++;
+      log(`❌ 오류 (${start}~${start+batchSize}): ${e.message}`, 'err');
+    }
+
+    updateProgress(done, total);
+    await sleep(200); // Rate limit
+  }
+
+  // Done
+  if(errors===0){
+    document.getElementById('doneNote').innerHTML =
+      `<span style="color:#15803d;font-weight:700;font-size:14px">
+       ✅ 완료! ${done}개 기록이 Firebase에 저장되었습니다.
+       </span><br>
+       <span style="font-size:12px;color:#5b6888">teacher.html을 새로고침하면 데이터를 확인할 수 있습니다.</span>`;
+  } else {
+    document.getElementById('doneNote').innerHTML =
+      `<span style="color:#dc2626;font-weight:700">완료 (오류 ${errors}건). 로그를 확인하세요.</span>`;
+  }
+  document.getElementById('importBtn').disabled = false;
+}
+
+function updateProgress(done, total){
+  const pct = Math.round(done/total*100);
+  document.getElementById('progBar').style.width = pct+'%';
+  document.getElementById('progText').textContent = `${done} / ${total} (${pct}%)`;
+}
+
+function log(msg, type){
+  const box = document.getElementById('logBox');
+  const color = type==='ok'?'#15803d':type==='err'?'#dc2626':'#374151';
+  box.innerHTML += `<div style="color:${color}">${new Date().toLocaleTimeString()} ${msg}</div>`;
+  box.scrollTop = box.scrollHeight;
+}
+
+function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+</script>
+</body>
+</html>
