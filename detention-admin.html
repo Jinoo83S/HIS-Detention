@@ -111,14 +111,28 @@
     }
 
     th{
-      position:sticky;
-      top:0;
-      background:#cfd9ec;
-      color:#10296f;
-      font-weight:800;
-      z-index:1;
-      white-space:nowrap;
+      position: sticky;
+      top: 0;
+      background: #cfd9ec;
+      color: #10296f;
+      font-weight: 800;
+      z-index: 1;
+      white-space: nowrap;
+      overflow: hidden;
     }
+
+    /* sticky와 relative 동시 필요 - wrapper trick */
+    th::after{
+      content:'';
+      position:absolute;
+      right:0; top:0; bottom:0;
+      width:0;
+    }
+
+    /* resizer는 absolute이므로 th에 relative 강제 */
+    .tbl-wrap th{ position:sticky; }
+    .tbl-wrap thead tr th{ position:relative; }
+    .tbl-wrap thead tr th:first-child{ position:sticky; left:0; z-index:2; }
 
     tbody tr:nth-child(odd){background:#fff;}
     tbody tr:nth-child(even){background:#f7faff;}
@@ -271,6 +285,65 @@
       font-size:12px;
       padding:4px 7px;
     }
+    /* ── 컬럼 리사이즈 ── */
+    .tbl-wrap table{
+      table-layout: fixed;
+    }
+
+    th{
+      position: sticky;
+      top: 0;
+      background: #cfd9ec;
+      color: #10296f;
+      font-weight: 800;
+      z-index: 1;
+      white-space: nowrap;
+      /* resizable: relative 필요 */
+      position: sticky; /* keep sticky */
+    }
+
+    th .th-inner{
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      padding-right: 8px;
+    }
+
+    /* 리사이즈 핸들 */
+    th .col-resizer{
+      position: absolute;
+      right: 0;
+      top: 0;
+      height: 100%;
+      width: 5px;
+      cursor: col-resize;
+      z-index: 2;
+      background: transparent;
+      user-select: none;
+    }
+
+    th .col-resizer:hover,
+    th .col-resizer.resizing{
+      background: rgba(15,31,92,0.3);
+    }
+
+    th{
+      position: sticky;
+      top: 0;
+      overflow: hidden;
+    }
+
+    /* 뷰 모드: td도 overflow hidden */
+    .view-mode td{
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* 편집 모드: td overflow visible */
+    .edit-mode td{
+      overflow: visible;
+    }
   </style>
 </head>
 <body>
@@ -321,20 +394,20 @@
           <table>
             <thead>
               <tr>
-                <th style="width:32px">#</th>
-                <th>학생<span class="th-en">Student</span></th>
-                <th>영문명<span class="th-en">English</span></th>
-                <th>학반<span class="th-en">Class</span></th>
-                <th>구분<span class="th-en">Category</span></th>
-                <th>위반행위<span class="th-en">Violation</span></th>
-                <th>자동점수<span class="th-en">Auto</span></th>
-                <th>수동점수<span class="th-en">Manual</span></th>
-                <th>총점<span class="th-en">Total</span></th>
-                <th>상태<span class="th-en">Status</span></th>
-                <th>교사<span class="th-en">Teacher</span></th>
-                <th>작성일<span class="th-en">Created</span></th>
-                <th>확정일<span class="th-en">Confirmed</span></th>
-                <th>삭제</th>
+                <th style="width:36px"><span class="th-inner">#</span></th>
+                <th style="width:90px"><span class="th-inner">학생<span class="th-en">Student</span></span><span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:110px"><span class="th-inner">영문명<span class="th-en">English</span></span><span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:52px"><span class="th-inner">학반<span class="th-en">Class</span></span><span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:130px"><span class="th-inner">구분<span class="th-en">Category</span></span><span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:260px"><span class="th-inner">위반행위<span class="th-en">Violation</span></span><span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:70px"><span class="th-inner">자동점수<span class="th-en">Auto</span></span><span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:62px"><span class="th-inner">수동점수<span class="th-en">Manual</span></span><span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:52px"><span class="th-inner">총점<span class="th-en">Total</span></span><span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:72px"><span class="th-inner">상태<span class="th-en">Status</span></span><span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:70px"><span class="th-inner">교사<span class="th-en">Teacher</span></span><span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:88px"><span class="th-inner">작성일<span class="th-en">Created</span></span><span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:88px"><span class="th-inner">확정일<span class="th-en">Confirmed</span></span><span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:50px"><span class="th-inner">삭제</span></th>
               </tr>
             </thead>
             <tbody id="entries-tbody"></tbody>
@@ -356,14 +429,14 @@
           <table>
             <thead>
               <tr>
-                <th style="width:32px">#</th>
-                <th>학생키<span class="th-en">Student Key</span></th>
-                <th>구분</th>
-                <th>학생/교사 알림일</th>
-                <th>학부모 알림일</th>
-                <th>완료일</th>
-                <th>완료자</th>
-                <th>삭제</th>
+                <th style="width:36px"><span class="th-inner">#</span></th>
+                <th style="width:160px"><span class="th-inner">학생키<span class="th-en">Student Key</span></span><span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:62px"><span class="th-inner">구분</span><span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:100px"><span class="th-inner">학생/교사 알림일</span><span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:100px"><span class="th-inner">학부모 알림일</span><span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:100px"><span class="th-inner">완료일</span><span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:90px"><span class="th-inner">완료자</span><span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:50px"><span class="th-inner">삭제</span></th>
               </tr>
             </thead>
             <tbody id="notices-tbody"></tbody>
@@ -385,15 +458,15 @@
           <table>
             <thead>
               <tr>
-                <th style="width:32px">#</th>
-                <th>학생<span class="th-en">Student</span></th>
-                <th>영문명<span class="th-en">English</span></th>
-                <th>학반<span class="th-en">Class</span></th>
-                <th>구분<span class="th-en">Level</span></th>
-                <th>회복점수<span class="th-en">Recovery Points</span></th>
-                <th>담당자<span class="th-en">Staff</span></th>
-                <th>완료시간<span class="th-en">Completed At</span></th>
-                <th>삭제<span class="th-en">Delete</span></th>
+                <th style="width:36px"><span class="th-inner">#</span></th>
+                <th style="width:90px"><span class="th-inner">학생<span class="th-en">Student</span></span><span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:110px"><span class="th-inner">영문명<span class="th-en">English</span></span><span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:52px"><span class="th-inner">학반<span class="th-en">Class</span></span><span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:62px"><span class="th-inner">구분<span class="th-en">Level</span></span><span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:70px"><span class="th-inner">회복점수<span class="th-en">Points</span></span><span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:80px"><span class="th-inner">담당자<span class="th-en">Staff</span></span><span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:100px"><span class="th-inner">완료일<span class="th-en">Completed</span></span><span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:50px"><span class="th-inner">삭제</span></th>
               </tr>
             </thead>
             <tbody id="recovery-tbody"></tbody>
@@ -414,13 +487,13 @@
           <table>
             <thead>
               <tr>
-                <th style="width:32px">#</th>
-                <th>종류<span class="th-en">Type</span></th>
-                <th>학생 Key<span class="th-en">Student Key</span></th>
-                <th>항목 Key<span class="th-en">Entry Key</span></th>
-                <th>완료 시간<span class="th-en">Completed At</span></th>
-                <th>연도<span class="th-en">Year</span></th>
-                <th>삭제<span class="th-en">Delete</span></th>
+                <th style="width:36px"><span class="th-inner">#</span></th>
+                <th style="width:110px"><span class="th-inner">종류<span class="th-en">Type</span></span><span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:160px"><span class="th-inner">학생 Key<span class="th-en">Student Key</span></span><span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:130px"><span class="th-inner">항목 Key<span class="th-en">Entry Key</span></span><span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:100px"><span class="th-inner">완료일<span class="th-en">Completed</span></span><span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:60px"><span class="th-inner">연도<span class="th-en">Year</span></span><span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:50px"><span class="th-inner">삭제</span></th>
               </tr>
             </thead>
             <tbody id="committee-tbody"></tbody>
@@ -539,6 +612,38 @@
 
 
 
+
+    // ── 컬럼 리사이즈 ──
+    let _resizeState = null;
+
+    function startResize(e, handle){
+      e.preventDefault();
+      e.stopPropagation();
+      const th = handle.closest('th');
+      const startX = e.clientX;
+      const startW = th.offsetWidth;
+      handle.classList.add('resizing');
+      _resizeState = { th, startX, startW, handle };
+
+      document.addEventListener('mousemove', _onResizeMove);
+      document.addEventListener('mouseup', _onResizeUp);
+    }
+
+    function _onResizeMove(e){
+      if(!_resizeState) return;
+      const { th, startX, startW } = _resizeState;
+      const newW = Math.max(40, startW + e.clientX - startX);
+      th.style.width = newW + 'px';
+      th.style.minWidth = newW + 'px';
+    }
+
+    function _onResizeUp(){
+      if(!_resizeState) return;
+      _resizeState.handle.classList.remove('resizing');
+      _resizeState = null;
+      document.removeEventListener('mousemove', _onResizeMove);
+      document.removeEventListener('mouseup', _onResizeUp);
+    }
 
     // ── 뷰/편집 모드 상태 ──
     const editModes = { entries:false, notices:false, recovery:false, committee:false };
