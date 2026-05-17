@@ -181,7 +181,7 @@ function parseTSV(text){
     // (studentKey + 알림날짜)로 그룹핑 → 하나의 detentionNotices 레코드 생성
     convertedEntries = groupNoticeRows(parsedRows);
   } else if(sheetType === 'restore'){
-    convertedEntries = parsedRows.map(convertRestoreRow).filter(Boolean);
+    convertedEntries = expandRestoreRows(parsedRows);
   } else {
     convertedEntries = parsedRows.map(convertDetentionRow).filter(Boolean);
   }
@@ -331,78 +331,84 @@ function groupNoticeRows(rows){
 }
 
 // ── Converter: 회복교육 ──
-// De_Restore의 날짜/종류/상세 등은 "# val1 # val2" 형식으로 다중 위반을 병합
-function convertRestoreRow(row){
-  const fullName = (row['이름']||'').trim();
-  if(!fullName) return null;
-  const { ko, en } = parseName(fullName);
-  const className = (row['학년']||'').trim();
-  const sKey = makeStudentKey(ko, className);
-  const level = gradeToLevel(className);
+// TSV 1행 = 1사이클 (교육1~4 세션 포함)
+// Firebase = 세션 1개당 레코드 1개 (recoveryPoints=3/session)
+// 따라서 parseTSV에서 expandRestoreRows()로 flat 배열 생성
+function expandRestoreRows(rows){
+  const result = [];
 
-  const isDone = (row['완료']||'').toUpperCase()==='TRUE';
-  const completedDate = (row['완료날짜']||'').trim();
+  rows.forEach(row => {
+    const fullName = (row['이름']||'').trim();
+    if(!fullName) return;
+    const { ko, en } = parseName(fullName);
+    const className = (row['학년']||'').trim();
+    const sKey = makeStudentKey(ko, className);
+    const level = gradeToLevel(className);
 
-  // 완료되지 않은 행은 가져오지 않음
-  // (teacher.html의 recoveryEntries는 완료된 회복교육 세션만 저장)
-  if(!isDone && !completedDate) return null;
+    // 실제 진행된 세션 날짜만 추출 (교육1~4 중 값 있는 것)
+    const sessionDates = ['교육1','교육2','교육3','교육4']
+      .map(k => (row[k]||'').trim())
+      .filter(Boolean);
 
-  // "# val1 # val2" 형식 파싱 → 개별 값 배열로 분리
-  function parseMulti(str){
-    if(!str) return [];
-    if(!str.includes('#')) return [str.trim()];
-    return str.split('#').map(s=>s.trim()).filter(Boolean);
-  }
+    // 세션이 하나도 없으면 skip
+    if(!sessionDates.length) return;
 
-  const dates    = parseMulti(row['날짜자르기'] || row['날짜']);
-  const teachers = parseMulti(row['교사자르기'] || row['교사']);
-  const cats     = parseMulti(row['종류자르기'] || row['종류']);
-  const details  = parseMulti(row['상세자르기'] || row['상세']);
-  const memos    = parseMulti(row['메모자르기'] || row['메모']);
+    // "# val1 # val2" 다중값 파싱
+    function parseMulti(str){
+      if(!str) return [];
+      if(!str.includes('#')) return [str.trim()];
+      return str.split('#').map(s=>s.trim()).filter(Boolean);
+    }
 
-  // 위반행위 스냅샷 빌드 (teacher.html의 reasonsSnapshot 형식과 동일하게)
-  const maxLen = Math.max(dates.length, cats.length, details.length, 1);
-  const lines = [];
-  for(let i=0; i<maxLen; i++){
-    const parts = [
-      dates[i]   || '',
-      cats[i]    || '',
-      details[i] || '',
-      memos[i]   || ''
-    ].filter(Boolean);
-    if(parts.length) lines.push('[' + (i+1) + '] ' + parts.join(' / '));
-  }
-  const reasonsSnapshot = lines.join('\n') || (row['상세']||'').trim();
+    const dates   = parseMulti(row['날짜자르기'] || row['날짜']);
+    const cats    = parseMulti(row['종류자르기'] || row['종류']);
+    const details = parseMulti(row['상세자르기'] || row['상세']);
+    const memos   = parseMulti(row['메모자르기'] || row['메모']);
 
-  // 교육 세션 날짜 (교육1~4)
-  const sessions = ['교육1','교육2','교육3','교육4']
-    .map(k => (row[k]||'').trim())
-    .filter(Boolean);
+    // 위반행위 스냅샷 (모든 세션 공통)
+    const maxLen = Math.max(dates.length, cats.length, details.length, 1);
+    const snapLines = [];
+    for(let i=0; i<maxLen; i++){
+      const parts = [dates[i]||'', cats[i]||'', details[i]||'', memos[i]||''].filter(Boolean);
+      if(parts.length) snapLines.push('[' + (i+1) + '] ' + parts.join(' / '));
+    }
+    const reasonsSnapshot = snapLines.join('\n') || (row['상세']||'').trim();
+    const violationSnapshot = (cats[0]||'') + ' ' + (details[0]||'');
 
-  // staffName: 다중 교사면 마지막 교사 사용 (가장 최근 담당)
-  const staffArr = parseMulti(row['교사자르기'] || row['교사']);
-  const staffName = staffArr[staffArr.length-1] || '';
+    // staffName
+    const staffArr = parseMulti(row['교사자르기'] || row['교사']);
+    const staffName = staffArr[staffArr.length-1] || '';
 
-  // completedAt: 완료날짜 우선, 없으면 교육1 날짜
-  const completedAt = toISO(completedDate) || toISO(sessions[0]);
+    // 세션당 회복점수 = 총 회복점수 / 세션수 (보통 3)
+    const totalRecovery = Number(row['회복점수']||0) || 0;
+    const ptsPerSession = sessionDates.length > 0
+      ? Math.round(totalRecovery / sessionDates.length) || 3
+      : 3;
 
-  return {
-    _key: (row['ID']||'').trim() || generateKey(),
-    studentKey: sKey,
-    studentName: ko,
-    englishName: en,
-    className,
-    level,
-    staffName,
-    recoveryPoints: Number(row['회복점수']||0) || 0,
-    totalSessions: Number(row['교육횟수']||0) || 0,
-    sessions: sessions.length ? sessions : undefined,
-    reasonsSnapshot,
-    violationSnapshot: (cats[0] || '') + ' ' + (details[0] || ''),
-    completedAt,
-    createdAt: toISO(dates[0]) || new Date().toISOString(),
-    importedAt: new Date().toISOString()
-  };
+    const baseId = (row['ID']||'').trim() || generateKey();
+    const baseCreatedAt = toISO(dates[0]) || new Date().toISOString();
+
+    // 세션 1개당 Firebase 레코드 1개 생성
+    sessionDates.forEach((sessionDate, idx) => {
+      result.push({
+        _key: sessionDates.length === 1 ? baseId : baseId + '_s' + (idx+1),
+        studentKey: sKey,
+        studentName: ko,
+        englishName: en,
+        className,
+        level,
+        staffName,
+        recoveryPoints: ptsPerSession,
+        reasonsSnapshot,
+        violationSnapshot: violationSnapshot.trim(),
+        completedAt: toISO(sessionDate),
+        createdAt: baseCreatedAt,
+        importedAt: new Date().toISOString()
+      });
+    });
+  });
+
+  return result;
 }
 
 // ── Preview ──
@@ -462,20 +468,22 @@ function showPreview(){
   } else { // restore
     const msCount = convertedEntries.filter(r=>r.level==='ms').length;
     const hsCount = convertedEntries.filter(r=>r.level==='hs').length;
-    const doneCount = convertedEntries.filter(r=>r.completedAt).length;
+    const uniqueStudents = new Set(convertedEntries.map(r=>r.studentKey)).size;
+    const totalRecovery = convertedEntries.reduce((s,r)=>s+(r.recoveryPoints||0),0);
     statsHtml += `
-      <div class="stat"><div class="stat-num">${msCount}</div><div class="stat-lbl">중등</div></div>
-      <div class="stat"><div class="stat-num">${hsCount}</div><div class="stat-lbl">고등</div></div>
-      <div class="stat"><div class="stat-num" style="color:#15803d">${doneCount}</div><div class="stat-lbl">완료</div></div>`;
-    headHtml = `<tr><th>#</th><th>학생명</th><th>학반</th><th>구분</th><th>원점수</th><th>회복점수</th><th>교육횟수</th><th>담당교사</th><th>완료일</th></tr>`;
+      <div class="stat"><div class="stat-num">${msCount}</div><div class="stat-lbl">중등 세션</div></div>
+      <div class="stat"><div class="stat-num">${hsCount}</div><div class="stat-lbl">고등 세션</div></div>
+      <div class="stat"><div class="stat-num" style="color:#15803d">${uniqueStudents}</div><div class="stat-lbl">학생 수</div></div>
+      <div class="stat"><div class="stat-num" style="color:#1b2f7a">${totalRecovery}</div><div class="stat-lbl">총 회복점수</div></div>`;
+    headHtml = `<tr><th>#</th><th>학생명</th><th>학반</th><th>구분</th><th>세션 회복점수</th><th>담당교사</th><th>세션 완료일 (completedAt)</th><th>위반행위 스냅샷</th></tr>`;
     bodyHtml = convertedEntries.slice(0,100).map((r,i)=>`
       <tr><td>${i+1}</td><td>${esc(r.studentName)}</td><td>${esc(r.className)}</td>
       <td><span class="badge badge-info">${r.level==='hs'?'고등':'중등'}</span></td>
-      <td style="text-align:center">${r.originalPoints}</td>
-      <td style="text-align:center">${r.recoveryPoints}</td>
-      <td style="text-align:center">${r.totalSessions}</td>
+      <td style="text-align:center;font-weight:700;color:#15803d">+${r.recoveryPoints}</td>
       <td>${esc(r.staffName)}</td>
-      <td>${(r.completedAt||'').substr(0,10)||'-'}</td></tr>`).join('');
+      <td>${(r.completedAt||'').substr(0,10)||'-'}</td>
+      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;color:#5b6888">${esc((r.reasonsSnapshot||'').split('\n')[0]||'-')}</td>
+      </tr>`).join('');
   }
 
   document.getElementById('statsGrid').innerHTML = statsHtml;
