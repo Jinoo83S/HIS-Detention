@@ -182,12 +182,12 @@
         let found = null;
         let key = '';
 
+        // admin 계정은 adminConfig/password로 검증
+        let adminPw = null;
+
         snap.forEach(child => {
           const t = child.val() || {};
-          if (
-            String(t.email || '').trim().toLowerCase() === selectedEmail &&
-            String(t.password || '') === pw
-          ) {
+          if (String(t.email || '').trim().toLowerCase() === selectedEmail) {
             found = t;
             key = child.key;
           }
@@ -198,7 +198,23 @@
           return toast('아이디 또는 비밀번호가 올바르지 않습니다.\nInvalid teacher or password.', 'err');
         }
 
+        // admin role이면 adminConfig/password로 검증, 일반 교사면 teachers.password로 검증
         const roles = normalizeRoles(found.roles || found.role || []);
+        const isAdmin = roles.includes('admin');
+
+        if (isAdmin) {
+          const adminSnap = await db.ref('adminConfig/password').once('value');
+          adminPw = adminSnap.val() || '1751';
+          if (pw !== adminPw) {
+            document.getElementById('pw').value = '';
+            return toast('아이디 또는 비밀번호가 올바르지 않습니다.\nInvalid teacher or password.', 'err');
+          }
+        } else {
+          if (String(found.password || '') !== pw) {
+            document.getElementById('pw').value = '';
+            return toast('아이디 또는 비밀번호가 올바르지 않습니다.\nInvalid teacher or password.', 'err');
+          }
+        }
 
         sessionStorage.setItem(
           'his_teacher',
