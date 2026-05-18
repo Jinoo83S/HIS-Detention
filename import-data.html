@@ -201,7 +201,7 @@ function makeStudentKey(koreanName, className){
 function gradeToLevel(className){
   const m = String(className||'').match(/^(\d+)/);
   if(!m) return 'ms';
-  return Number(m[1]) >= 9 ? 'hs' : 'ms';
+  return Number(m[1]) >= 10 ? 'hs' : 'ms'; // 9학년 = 중등(HIS 기준)
 }
 
 function toISO(dateStr){
@@ -229,7 +229,7 @@ function convertDetentionRow(row){
   let status;
   if(isCancelled) status = '반려';
   else if(isConfirmed && confirmDate) status = '확정';
-  else if(isConfirmed && !confirmDate) status = '대기';
+  else if(isConfirmed && !confirmDate) status = '임시저장'; // '대기' 미사용 - DB 상태값 통일
   else status = '임시저장';
 
   const warning = (row['경고']||'').trim();
@@ -429,7 +429,7 @@ function showPreview(){
 
   if(sheetType === 'detention'){
     const confirmed = convertedEntries.filter(r=>r.status==='확정').length;
-    const pending = convertedEntries.filter(r=>r.status==='대기').length;
+    const pending = convertedEntries.filter(r=>r.status==='임시저장').length;
     const rejected = convertedEntries.filter(r=>r.status==='반려').length;
     const referral = convertedEntries.filter(r=>r.isReferral).length;
     statsHtml += `

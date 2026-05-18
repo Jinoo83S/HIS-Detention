@@ -637,7 +637,7 @@
             <td><input class="edit-input" value="${esc(row.level || '')}" oninput="recoveryRows[${idx}].level=this.value"></td>
             <td><input class="edit-input" value="${esc(String(row.recoveryPoints || row.points || ''))}" oninput="recoveryRows[${idx}].recoveryPoints=Number(this.value||0);checkRecoveryDirty()"></td>
             <td><input class="edit-input" value="${esc(row.staffName || '')}" oninput="recoveryRows[${idx}].staffName=this.value;checkRecoveryDirty()"></td>
-            <td><input class="edit-input" value="${esc(row.completedAt || '')}" oninput="recoveryRows[${idx}].completedAt=this.value"></td>
+            <td><input type="date" class="edit-input" value="${esc((row.completedAt||'').slice(0,10))}" onchange="recoveryRows[${idx}].completedAt=this.value?this.value+'T00:00:00':null;checkRecoveryDirty()"></td>
             <td><button class="btn btn-danger small-btn" onclick="(function(k){const r=recoveryRows.find(x=>x.key===k);if(r){r._deleted=!r._deleted;renderRecoveryTable();checkRecoveryDirty();}})('${row.key}')">${row._deleted ? "복구" : "삭제"}</button></td>
           </tr>
         `;

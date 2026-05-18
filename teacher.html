@@ -2269,8 +2269,8 @@
         if(!s) return false;
         const cls = String(s.className||'').trim();
         const grade = parseInt(cls)||0;
-        if(level==='ms' && grade>=9) return false;
-        if(level==='hs' && grade<9) return false;
+        if(level==='ms' && grade>=10) return false;
+        if(level==='hs' && grade<10) return false;
         if(clsFilter && cls!==clsFilter) return false;
         if(q && ![s.name,s.englishName].some(v=>String(v||'').toLowerCase().includes(q))) return false;
         return true;
@@ -2943,7 +2943,9 @@
       const studentKey = syncStudentSelection();
       const category = document.getElementById('category-select').value;
       const violation = document.getElementById('violation-select').value;
-      const autoPointsRaw = String(document.getElementById('auto-points').textContent || '').trim();
+      // 저장용 autoPoints는 기준표 원본값 사용 (화면 표시용 '1,3 — 2회차' 문구 오염 방지)
+      const _std = getSelectedStandard();
+      const autoPointsRaw = String(_std ? (_std.autoPoints || '') : '').trim();
       const manualPoints = Number(document.getElementById('manual-points').value || 0);
       const memo = (document.getElementById('memo').value || '').trim();
 
@@ -2964,7 +2966,8 @@
 
       // 범위형/선택형 자동벌점: 수동 입력 필수 검증
       const needsManual = autoPointsRaw && autoPointsRaw !== '-' && (autoPointsRaw.includes('-') || autoPointsRaw.includes(','));
-      if (manualPoints <= 0 && needsManual){
+      // apRaw: 화면 표시용 '— N회차' 접미사 제거 (저장용 원본값 보장)
+      const apRaw = autoPointsRaw.replace(/\s*—.*$/, '').trim();
         alert('수동벌점을 입력해 주세요.\nPlease enter manual points (required for range/choice type).');
         document.getElementById('manual-points').focus();
         return;
@@ -2973,7 +2976,6 @@
         // 고정형이면 자동으로 채우기
         document.getElementById('manual-points').value = autoPointsRaw.trim();
       }
-      const apRaw = autoPointsRaw.trim();
       if (apRaw && apRaw !== '-'){
         // 범위형: "1-12"
         const rangeMatch = apRaw.match(/^(\d+)-(\d+)$/);
