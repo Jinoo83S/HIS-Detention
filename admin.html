@@ -1,4 +1,4 @@
-2<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
@@ -318,8 +318,7 @@
 
     function checkAdmin() {
       const pw = document.getElementById('admin-pw').value;
-      const validPws = [ADMIN_PW, window._adminTeacherPw, '1751'].filter(Boolean);
-      if (!validPws.includes(pw)) {
+      if (pw !== ADMIN_PW) {
         document.getElementById('admin-pw').value = '';
         return toast('비밀번호가 올바르지 않습니다.\nInvalid password.', 'err');
       }
@@ -487,15 +486,23 @@
 
     async function saveTeachers() {
       try {
-        const next = {};
+        const updates = {};
+        const removes = [];
+
         teacherRows.forEach(r => {
-          if (r._delete) return;
           const key = teacherKey(r.email, r.name);
           if (!key || !String(r.name || '').trim()) {
             r._status = '오류';
             return;
           }
-          next[key] = {
+
+          if (r._delete) {
+            // 기존 키가 있으면 삭제 대상에 추가
+            if (r.oldKey) removes.push(r.oldKey);
+            return;
+          }
+
+          const data = {
             name: String(r.name || '').trim(),
             email: String(r.email || '').trim().toLowerCase(),
             password: String(r.password || '').trim(),
@@ -503,10 +510,24 @@
             roles: normalizeRoles(r.roles),
             updatedAt: new Date().toISOString()
           };
+
+          // 키가 바뀐 경우(이메일 변경) 구 키 삭제 후 새 키에 저장
+          if (r.oldKey && r.oldKey !== key) {
+            removes.push(r.oldKey);
+          }
+
+          updates[`teachers/${key}`] = data;
           r._status = '저장됨';
           r.oldKey = key;
         });
-        await db.ref('teachers').set(next);
+
+        // 개별 update (다른 키 건드리지 않음)
+        if (Object.keys(updates).length) {
+          await db.ref().update(updates);
+        }
+        // 삭제는 개별 remove
+        await Promise.all(removes.map(k => db.ref(`teachers/${k}`).remove()));
+
         toast('교사 데이터가 저장되었습니다.\nTeacher data has been saved.', 'ok');
         refreshAll();
       } catch (e) {
@@ -517,13 +538,10 @@
 
     async function saveStudents() {
       try {
-        const next = {};
-        // 신규 학생: Firebase push()로 불변 key 생성
-        // 기존 학생: oldKey 그대로 유지 (className 변경해도 key 불변)
-        const pushPromises = [];
+        const updates = {};
+        const removes = [];
 
         studentRows.forEach(r => {
-          if (r._delete) return;
           if (!String(r.name || '').trim()) { r._status = '오류'; return; }
 
           const homeroomTeacherEmail = getHomeroomTeacherEmail(r.className);
@@ -538,23 +556,33 @@
             updatedAt: new Date().toISOString()
           };
 
+          if (r._delete) {
+            if (r.oldKey) removes.push(r.oldKey);
+            return;
+          }
+
           if (r.oldKey) {
-            // 기존 학생: oldKey 유지 (불변 ID)
-            next[r.oldKey] = data;
+            // 기존 학생: oldKey로 update (불변 ID 유지)
+            updates[`students/${r.oldKey}`] = data;
             r._status = '저장됨';
             r.homeroomTeacherEmail = homeroomTeacherEmail;
           } else {
             // 신규 학생: Firebase push key 생성
-            const newRef = db.ref('students').push();
-            const newKey = newRef.key;
-            next[newKey] = data;
+            const newKey = db.ref('students').push().key;
+            updates[`students/${newKey}`] = data;
             r.oldKey = newKey;
             r._status = '저장됨';
             r.homeroomTeacherEmail = homeroomTeacherEmail;
           }
         });
 
-        await db.ref('students').set(next);
+        // 개별 update (다른 학생 키 건드리지 않음)
+        if (Object.keys(updates).length) {
+          await db.ref().update(updates);
+        }
+        // 삭제는 개별 remove
+        await Promise.all(removes.map(k => db.ref(`students/${k}`).remove()));
+
         toast('학생 데이터가 저장되었습니다.\nStudent data has been saved.', 'ok');
         refreshAll();
       } catch (e) {
@@ -703,27 +731,12 @@
 
     /* ── 세션 자동복원 ── */
     (async function initSession() {
-      // RTDB에서 관리자 비밀번호 로드 (adminConfig/password 우선, teachers admin fallback)
+      // RTDB에서 관리자 비밀번호 로드
       try{
         const snap = await db.ref('adminConfig/password').once('value');
         if(snap.val()) ADMIN_PW = snap.val();
       }catch(e){ console.warn('adminConfig load failed, using default'); }
-
-      // teachers 중 admin 계정의 password도 허용
-      try{
-        const tsnap = await db.ref('teachers').once('value');
-        let adminTeacherPw = null;
-        tsnap.forEach(child => {
-          const t = child.val() || {};
-          const email = String(t.email||'').toLowerCase();
-          const name  = String(t.name ||'').toLowerCase();
-          if(email.includes('admin') || name.includes('admin') || name.includes('관리자')){
-            adminTeacherPw = String(t.password||'') || null;
-          }
-        });
-        if(adminTeacherPw) window._adminTeacherPw = adminTeacherPw;
-      }catch(e){}
-
+      
       if (sessionStorage.getItem('his_admin_session') === '1') {
         document.getElementById('login-screen').classList.add('hidden');
         document.getElementById('admin-screen').classList.remove('hidden');
