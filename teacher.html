@@ -1816,78 +1816,105 @@
       const processedTb = document.getElementById('confirm-processed-tbody');
 
       let list = Object.entries(entries || {}).map(([key, value]) => ({ key, ...value }));
-
       if (statusFilter) list = list.filter(r => String(r.status || '임시저장') === statusFilter);
       if (q){
         list = list.filter(r =>
           [r.studentName, r.englishName, r.category, r.violation, r.teacherName].some(v => String(v || '').toLowerCase().includes(q))
         );
       }
-
       list = list.sort((a,b) => {
         const statusDiff = confirmSortValue(String(a.status || '임시저장')) - confirmSortValue(String(b.status || '임시저장'));
         if (statusDiff !== 0) return statusDiff;
         return String(b.createdAt || '').localeCompare(String(a.createdAt || ''));
       });
 
-      const pendingList = list.filter(r => String(r.status || '임시저장') === '임시저장');
+      const pendingList   = list.filter(r => String(r.status || '임시저장') === '임시저장');
       const processedList = list.filter(r => String(r.status || '임시저장') !== '임시저장');
 
-      function renderRows(arr){
-        if (!arr.length) return '<tr><td colspan="9" class="empty">해당 기록이 없습니다. | No matching records.</td></tr>';
+      // 관리자 노트 공통 td
+      function noteTd(r){
+        return `<td onclick="event.stopPropagation()" style="min-width:130px;max-width:200px">
+          <input class="edit-input admin-note-input" style="width:100%" value="${esc(r.adminNote||'')}" placeholder="관리자 노트" oninput="entries['${esc(r.key)}'].adminNote=this.value">
+        </td>`;
+      }
 
+      // ── 대기 행: 확정/반려 버튼 가로 배치 ──
+      function renderPendingRows(arr){
+        if (!arr.length) return '<tr><td colspan="9" class="empty">해당 기록이 없습니다. | No matching records.</td></tr>';
         return arr.map(r => {
           const expanded = expandedConfirmKeys.has(r.key);
+          const canConfirm = canManage && (String(r.status||'임시저장')==='임시저장'||String(r.status||'')==='반려');
+          const canReject  = canManage && (String(r.status||'임시저장')==='임시저장'||String(r.status||'')==='확정');
           return `
             <tr class="summary-row" onclick="toggleConfirmRow('${esc(r.key)}')">
               <td class="nowrap">${esc(sName(r.studentName||'',r.englishName||''))}</td>
-              <td class="nowrap tc">${esc(r.className || '-')}</td>
-              <td class="nowrap">${esc(r.category || '')}</td>
-              <td><span class="cell-reason-preview">${esc(String(r.violation || '').split('\n')[0])}</span></td>
-              <td class="nowrap tc">${esc(String(r.totalPoints || 0))}${(r.isReferral===true||r.isReferral==='true')?'<br><span style="color:var(--rd);font-size:10px;font-weight:700;">선도위원회</span>':''}</td>
-              <td class="nowrap">${esc(r.teacherName || '')}</td>
-              <td class="nowrap">${statusBadge(r.status || '임시저장')}</td>
-              <td onclick="event.stopPropagation()">
-                <input class="edit-input admin-note-input" value="${esc(r.adminNote || '')}" placeholder="관리자 노트" oninput="entries['${esc(r.key)}'].adminNote=this.value">
-              </td>
-              <td class="nowrap tc" onclick="event.stopPropagation()">
-                <div class="mini-actions" style="margin-top:0;display:flex;flex-direction:column;gap:3px;align-items:stretch;">
-                    ${(canManage && (String(r.status || '임시저장') === '임시저장' || String(r.status || '') === '반려')) ? `<button class="btn btn-primary btn-xs" style="width:100%;" onclick="confirmDetention('${esc(r.key)}')">확정</button>` : ''}
-                    ${(canManage && (String(r.status || '임시저장') === '임시저장' || String(r.status || '') === '확정')) ? `<button class="btn btn-danger btn-xs" style="width:100%;" onclick="rejectDetention('${esc(r.key)}')">반려</button>` : ''}
-                  ${(canManage && String(r.status || '') === '확정') ? `<button class="btn btn-xs" style="background:#fef9e8;color:#5a3e00;border:1px solid #f0c040;margin-top:3px;width:100%;" onclick="openManualCommittee('${esc(r.key)}','${esc(r.studentKey||'')}','${esc(r.studentName||'')}')">위원회 수동</button>` : ''}
-                  ${(!canManage) ? '-' : ''}
+              <td class="nowrap tc">${esc(r.className||'-')}</td>
+              <td class="nowrap">${esc(r.category||'')}</td>
+              <td><span class="cell-reason-preview">${esc(String(r.violation||'').split('\n')[0])}</span></td>
+              <td class="nowrap tc">${esc(String(r.totalPoints||0))}</td>
+              <td class="nowrap">${esc(r.teacherName||'')}</td>
+              <td class="nowrap">${statusBadge(r.status||'임시저장')}</td>
+              ${noteTd(r)}
+              <td class="nowrap tc" onclick="event.stopPropagation()" style="min-width:100px">
+                <div style="display:flex;gap:4px;justify-content:center">
+                  ${canConfirm?`<button class="btn btn-primary btn-xs" onclick="confirmDetention('${esc(r.key)}')">확정</button>`:''}
+                  ${canReject ?`<button class="btn btn-danger btn-xs"  onclick="rejectDetention('${esc(r.key)}')">반려</button>`:''}
+                  ${!canManage?'-':''}
                 </div>
               </td>
             </tr>
-            <tr class="detail-row ${expanded ? 'show' : ''}">
-              <td colspan="9">
-                <div class="detail-box">
-                  <div class="detail-section">
-                    <div class="detail-title">위반행위 | Violation</div>
-                    <div class="detail-content">${esc(r.violation || '')}</div>
-                  </div>
-                  <div class="detail-section">
-                    <div class="detail-title">메모 | Memo</div>
-                    <div class="detail-content">${esc(r.memo || '-')}</div>
-                  </div>
-                  <div class="detail-section">
-                    <div class="detail-title">처리 정보 | Process Info</div>
-                    <div class="detail-content">작성 시간: ${fmt(r.createdAt)}
-확정 시간: ${fmt(r.confirmedAt)}
-반려 시간: ${fmt(r.rejectedAt)}
-관리자 노트: ${esc(r.adminNote || '-')}</div>
-                  </div>
-                </div>
-              </td>
-            </tr>
-          `;
+            <tr class="detail-row ${expanded?'show':''}">
+              <td colspan="9"><div class="detail-box">
+                <div class="detail-section"><div class="detail-title">위반행위 | Violation</div><div class="detail-content">${esc(r.violation||'')}</div></div>
+                <div class="detail-section"><div class="detail-title">메모 | Memo</div><div class="detail-content">${esc(r.memo||'-')}</div></div>
+                <div class="detail-section"><div class="detail-title">처리 정보</div><div class="detail-content">작성: ${fmt(r.createdAt)}\n확정: ${fmt(r.confirmedAt)}\n반려: ${fmt(r.rejectedAt)}\n노트: ${esc(r.adminNote||'-')}</div></div>
+              </div></td>
+            </tr>`;
         }).join('');
       }
 
-      pendingTb.innerHTML = renderRows(pendingList);
-      processedTb.innerHTML = renderRows(processedList);
-    }
+      // ── 확정/반려 행: 버튼은 펼쳤을 때만 표시 ──
+      function renderProcessedRows(arr){
+        if (!arr.length) return '<tr><td colspan="9" class="empty">해당 기록이 없습니다. | No matching records.</td></tr>';
+        return arr.map(r => {
+          const expanded     = expandedConfirmKeys.has(r.key);
+          const canReject    = canManage && String(r.status||'')==='확정';
+          const canCommittee = canManage && String(r.status||'')==='확정';
+          const isReferral   = r.isReferral===true||r.isReferral==='true';
+          return `
+            <tr class="summary-row" onclick="toggleConfirmRow('${esc(r.key)}')">
+              <td class="nowrap">${esc(sName(r.studentName||'',r.englishName||''))}</td>
+              <td class="nowrap tc">${esc(r.className||'-')}</td>
+              <td class="nowrap">${esc(r.category||'')}</td>
+              <td><span class="cell-reason-preview">${esc(String(r.violation||'').split('\n')[0])}</span></td>
+              <td class="nowrap tc">${esc(String(r.totalPoints||0))}${isReferral?'<br><span style="color:var(--rd);font-size:10px;font-weight:700;">선도위원회</span>':''}</td>
+              <td class="nowrap">${esc(r.teacherName||'')}</td>
+              <td class="nowrap">${statusBadge(r.status||'임시저장')}</td>
+              ${noteTd(r)}
+              <td class="nowrap tc" style="min-width:36px">
+                <span style="font-size:11px;color:var(--sb)">${expanded?'▲':'▼'}</span>
+              </td>
+            </tr>
+            <tr class="detail-row ${expanded?'show':''}">
+              <td colspan="9"><div class="detail-box">
+                <div class="detail-section"><div class="detail-title">위반행위 | Violation</div><div class="detail-content">${esc(r.violation||'')}</div></div>
+                <div class="detail-section"><div class="detail-title">메모 | Memo</div><div class="detail-content">${esc(r.memo||'-')}</div></div>
+                <div class="detail-section"><div class="detail-title">처리 정보</div><div class="detail-content">작성: ${fmt(r.createdAt)}\n확정: ${fmt(r.confirmedAt)}\n반려: ${fmt(r.rejectedAt)}\n노트: ${esc(r.adminNote||'-')}</div></div>
+                ${(canReject||canCommittee)?`
+                <div class="detail-section"><div class="detail-title">처리 | Actions</div>
+                  <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">
+                    ${canReject   ?`<button class="btn btn-danger btn-xs" onclick="event.stopPropagation();rejectDetention('${esc(r.key)}')">반려</button>`:''}
+                    ${canCommittee?`<button class="btn btn-xs" style="background:#fef9e8;color:#5a3e00;border:1px solid #f0c040" onclick="event.stopPropagation();openManualCommittee('${esc(r.key)}','${esc(r.studentKey||'')}','${esc(r.studentName||'')}')">위원회 수동</button>`:''}
+                  </div>
+                </div>`:''}
+              </div></td>
+            </tr>`;
+        }).join('');
+      }
 
+      pendingTb.innerHTML   = renderPendingRows(pendingList);
+      processedTb.innerHTML = renderProcessedRows(processedList);
+    }
     function renderNotifyTables(){
       window._doneNoticeMap = {};
       renderNotifyTableByLevel('ms');
@@ -2768,9 +2795,7 @@
         document.getElementById('entry-teacher-hint').style.display = '';
       }
 
-      renderEntryTeacherList();
-
-      // 날짜 기본값: 오늘
+      // 날짜 기본값: 오늘 (teachers 목록은 loadData 후 renderEntryTeacherList에서 채워짐)
       document.getElementById('entry-date').value = new Date().toISOString().slice(0,10);
     }
 
