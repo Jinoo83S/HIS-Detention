@@ -745,25 +745,47 @@
         <!-- 헤더 -->
         <div style="padding:10px 14px;border-bottom:1px solid var(--bd);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
           <span style="font-weight:800;font-size:15px;color:var(--nv)">전체 학생관리 | Student Management</span>
-          <div style="display:flex;gap:8px;align-items:center">
-            <input id="student-mgmt-search" class="edit-input" style="width:160px;font-size:12px" placeholder="이름 검색" oninput="renderStudentGrid()">
-            <select id="student-mgmt-level" class="edit-input" style="width:100px;font-size:12px" onchange="renderStudentGrid()">
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <input id="student-mgmt-search" class="edit-input" style="width:150px;font-size:12px" placeholder="이름 검색" oninput="renderStudentOverview()">
+            <select id="student-mgmt-level" class="edit-input" style="width:100px;font-size:12px" onchange="renderStudentOverview()">
               <option value="">전체 학년</option>
               <option value="ms">중등 (7-8)</option>
               <option value="hs">고등 (9-12)</option>
             </select>
+            <select id="student-mgmt-class" class="edit-input" style="width:80px;font-size:12px" onchange="renderStudentOverview()">
+              <option value="">전체 반</option>
+            </select>
           </div>
         </div>
-        <!-- 스플릿 레이아웃 -->
-        <div style="display:grid;grid-template-columns:280px 1fr;min-height:600px">
-          <!-- 왼쪽: 학반별 학생 리스트 -->
+
+        <!-- 개요 뷰 (기본) -->
+        <div id="student-overview-view" style="padding:12px">
+          <div class="tbl-wrap">
+            <table style="table-layout:fixed;width:100%">
+              <thead>
+                <tr>
+                  <th style="width:7%">학반</th>
+                  <th style="width:18%">이름</th>
+                  <th style="width:18%">영문명</th>
+                  <th style="width:10%;text-align:center">현재점수</th>
+                  <th style="width:10%;text-align:center">전체누적</th>
+                  <th style="width:10%;text-align:center">회복점수</th>
+                  <th style="width:27%">이메일</th>
+                  <th style="width:8%">보기</th>
+                </tr>
+              </thead>
+              <tbody id="student-overview-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 상세 뷰 (보기 클릭 시) -->
+        <div id="student-split-view" style="display:none;grid-template-columns:260px 1fr;min-height:600px">
           <div id="student-grid-wrap" style="border-right:1px solid var(--bd);overflow-y:auto;max-height:80vh"></div>
-          <!-- 오른쪽: 학생 상세 -->
           <div id="student-detail-panel" style="overflow-y:auto;max-height:80vh;padding:16px">
             <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:300px;color:var(--sb)">
               <div style="font-size:36px;margin-bottom:12px">👈</div>
               <div style="font-size:13px">학생을 선택하면 상세 정보가 표시됩니다.</div>
-              <div style="font-size:12px;margin-top:4px">Select a student to view details.</div>
             </div>
           </div>
         </div>
@@ -1828,7 +1850,8 @@
         renderStudentOptions();
         renderAllStudentSearchOptions();
         renderEntryTeacherList();
-        renderStudentGrid();
+        renderStudentClassFilter();
+        renderStudentOverview();
         renderFilters();
         renderCriteriaTable();
         renderRecentEntries();
@@ -2224,7 +2247,99 @@
     }
 
     // ── 전체 학생관리 탭 ──
-    function renderStudentGrid(){
+
+    // 학반 필터 옵션 구성
+    function renderStudentClassFilter(){
+      const sel = document.getElementById('student-mgmt-class');
+      if(!sel) return;
+      const classes = [...new Set(Object.values(students).map(s=>String(s.className||'').trim()).filter(Boolean))]
+        .sort((a,b)=>a.localeCompare(b,'ko',{numeric:true}));
+      sel.innerHTML = '<option value="">전체 반</option>' + classes.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');
+    }
+
+    // 개요 뷰 (기본)
+    function renderStudentOverview(){
+      const tb = document.getElementById('student-overview-tbody');
+      if(!tb) return;
+      const q       = (document.getElementById('student-mgmt-search')?.value||'').trim().toLowerCase();
+      const level   = (document.getElementById('student-mgmt-level')?.value||'');
+      const clsFilter = (document.getElementById('student-mgmt-class')?.value||'');
+
+      const list = Object.values(students).filter(s=>{
+        if(!s) return false;
+        const cls = String(s.className||'').trim();
+        const grade = parseInt(cls)||0;
+        if(level==='ms' && grade>=9) return false;
+        if(level==='hs' && grade<9) return false;
+        if(clsFilter && cls!==clsFilter) return false;
+        if(q && ![s.name,s.englishName].some(v=>String(v||'').toLowerCase().includes(q))) return false;
+        return true;
+      }).sort((a,b)=>
+        String(a.className||'').localeCompare(String(b.className||''),'ko',{numeric:true})||
+        String(a.name||'').localeCompare(String(b.name||''),'ko')
+      );
+
+      if(!list.length){ tb.innerHTML='<tr><td colspan="8" class="empty">학생이 없습니다.</td></tr>'; return; }
+
+      tb.innerHTML = list.map((s,i)=>{
+        const overallTotal = Object.values(entries||{})
+          .filter(r=>(String(r.studentKey||'')===s.key||String(r.studentName||'')===String(s.name||''))&&r.status==='확정')
+          .reduce((n,r)=>n+(Number(r.totalPoints)||0),0);
+        const recoveredTotal = Object.values(recoveryEntries||{})
+          .filter(r=>String(r.studentKey||'')===s.key||String(r.studentName||'')===String(s.name||''))
+          .reduce((n,r)=>n+(Number(r.recoveryPoints)||0),0);
+        const currentTotal = Math.max(0, overallTotal - recoveredTotal);
+        const ptColor = currentTotal>=9?'var(--rd)':currentTotal>=6?'#b45309':currentTotal>=3?'#1d4ed8':'inherit';
+        const bg = i%2===0?'#fff':'#f0f5ff';
+
+        return `<tr style="background:${bg}">
+          <td style="font-size:12px;font-weight:600">${esc(s.className||'-')}</td>
+          <td style="font-size:12px;font-weight:600">${esc(s.name||'-')}</td>
+          <td style="font-size:11px;color:var(--sb)">${esc(s.englishName||'-')}</td>
+          <td style="text-align:center;font-weight:800;font-size:13px;color:${ptColor}">${currentTotal}</td>
+          <td style="text-align:center;font-size:12px;color:var(--sb)">${overallTotal}</td>
+          <td style="text-align:center;font-size:12px;color:var(--gn)">${recoveredTotal}</td>
+          <td style="font-size:11px;color:var(--sb);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.selfEmail||'-')}</td>
+          <td style="text-align:center">
+            <button class="btn-view" onclick="switchToSplitView('${esc(s.key)}')">보기</button>
+          </td>
+        </tr>`;
+      }).join('');
+    }
+
+    // 개요 → 스플릿 뷰 전환
+    function switchToSplitView(studentKey){
+      const ov = document.getElementById('student-overview-view');
+      const sp = document.getElementById('student-split-view');
+      if(!ov||!sp) return;
+      ov.style.display = 'none';
+      sp.style.display = 'grid';
+      renderStudentGrid();
+      selectStudentInPanel(studentKey);
+
+      // 헤더에 돌아가기 버튼 추가
+      let backBtn = document.getElementById('btn-back-overview');
+      if(!backBtn){
+        backBtn = document.createElement('button');
+        backBtn.id = 'btn-back-overview';
+        backBtn.className = 'btn btn-secondary';
+        backBtn.style.cssText = 'font-size:12px;padding:5px 12px';
+        backBtn.textContent = '← 전체 목록';
+        backBtn.onclick = backToOverview;
+        const header = document.querySelector('#tab-students .card > div:first-child');
+        if(header) header.appendChild(backBtn);
+      }
+      backBtn.style.display = '';
+    }
+
+    function backToOverview(){
+      const ov = document.getElementById('student-overview-view');
+      const sp = document.getElementById('student-split-view');
+      if(ov) ov.style.display = '';
+      if(sp) sp.style.display = 'none';
+      const backBtn = document.getElementById('btn-back-overview');
+      if(backBtn) backBtn.style.display = 'none';
+    }
       const wrap = document.getElementById('student-grid-wrap');
       if(!wrap) return;
       const q     = (document.getElementById('student-mgmt-search')?.value || '').trim().toLowerCase();
