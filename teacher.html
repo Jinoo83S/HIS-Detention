@@ -632,13 +632,14 @@
           <table style="table-layout:fixed;">
             <thead>
               <tr>
-                <th class="nowrap" style="width:22%;">학생</th>
-                <th class="nowrap tc" style="width:7%;">학반</th>
-                <th class="nowrap tc" style="width:7%;">현재</th>
-                <th class="nowrap tc" style="width:7%;">전체</th>
-                <th style="width:26%;">위반 행위</th>
-                <th class="nowrap tc" style="width:9%;">필요횟수</th>
-                <th class="nowrap tc" style="width:12%;">알림완료</th>
+                <th class="nowrap" style="width:20%;">학생</th>
+                <th class="nowrap tc" style="width:6%;">학반</th>
+                <th class="nowrap tc" style="width:6%;">현재</th>
+                <th class="nowrap tc" style="width:6%;">전체</th>
+                <th style="width:22%;">위반 행위</th>
+                <th class="nowrap tc" style="width:8%;">필요횟수</th>
+                <th class="nowrap tc" style="width:10%;">알림완료</th>
+                <th class="nowrap tc" style="width:10%;">완료점수</th>
                 <th class="nowrap tc" style="width:10%;">처리</th>
               </tr>
             </thead>
@@ -686,13 +687,14 @@
           <table style="table-layout:fixed;">
             <thead>
               <tr>
-                <th class="nowrap" style="width:22%;">학생</th>
-                <th class="nowrap tc" style="width:7%;">학반</th>
-                <th class="nowrap tc" style="width:7%;">현재</th>
-                <th class="nowrap tc" style="width:7%;">전체</th>
-                <th style="width:26%;">위반 행위</th>
-                <th class="nowrap tc" style="width:9%;">필요횟수</th>
-                <th class="nowrap tc" style="width:12%;">알림완료</th>
+                <th class="nowrap" style="width:20%;">학생</th>
+                <th class="nowrap tc" style="width:6%;">학반</th>
+                <th class="nowrap tc" style="width:6%;">현재</th>
+                <th class="nowrap tc" style="width:6%;">전체</th>
+                <th style="width:22%;">위반 행위</th>
+                <th class="nowrap tc" style="width:8%;">필요횟수</th>
+                <th class="nowrap tc" style="width:10%;">알림완료</th>
+                <th class="nowrap tc" style="width:10%;">완료점수</th>
                 <th class="nowrap tc" style="width:10%;">처리</th>
               </tr>
             </thead>
@@ -1358,7 +1360,7 @@
       const manualInput = document.getElementById('manual-points');
       const studentKey = selectedStudentKey || syncStudentSelectionWithoutUpdate();
       const std = getSelectedStandard();
-      const canOverride = hasRole('admin') || hasRole('master');
+      const canOverride = teacherRoles.includes('admin'); // admin만, master 제외
 
       if (!manualInput || !std){
         manualInput.disabled = false;
@@ -2227,9 +2229,23 @@
         const list = classMap[cls].sort((a,b) => String(a.name||'').localeCompare(String(b.name||''), 'ko'));
         const rows = list.map(s => {
           const skey = esc(s.key);
+
+          // 점수 계산
+          const overallTotal = Object.values(entries||{})
+            .filter(r => (String(r.studentKey||'')===s.key || String(r.studentName||'')===String(s.name||'')) && r.status==='확정')
+            .reduce((n,r) => n+(Number(r.totalPoints)||0), 0);
+          const recoveredTotal = Object.values(recoveryEntries||{})
+            .filter(r => String(r.studentKey||'')===s.key || String(r.studentName||'')===String(s.name||''))
+            .reduce((n,r) => n+(Number(r.recoveryPoints)||0), 0);
+          const currentTotal = Math.max(0, overallTotal - recoveredTotal);
+
+          const ptColor = currentTotal >= 9 ? 'var(--rd)' : currentTotal >= 6 ? '#b45309' : currentTotal >= 3 ? '#1d4ed8' : 'var(--sb)';
+
           return `<div class="student-row">
             <div class="student-name">${esc(s.name||'')}<span class="en">${esc(s.englishName||'')}</span></div>
-            <div class="student-btns">
+            <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
+              <span style="font-size:11px;font-weight:700;color:${ptColor};min-width:28px;text-align:right">${currentTotal}</span>
+              <span style="font-size:10px;color:var(--sb)">/ ${overallTotal}</span>
               <button class="btn-det" data-skey="${skey}">디텐션</button>
               <button class="btn-view" data-skey="${skey}">보기</button>
             </div>
@@ -2491,6 +2507,12 @@
               <td><span class="cell-reason-preview">${esc(buildReasonTextWithPoints(s.key).split('\n')[0])}</span></td>
               <td class="nowrap tc">${Math.floor(s.currentTotal / 3)}회 필요</td>
               <td class="nowrap tc small-muted">${s.noticedAt ? fmt(s.noticedAt) : '-'}</td>
+              <td class="nowrap tc" onclick="event.stopPropagation()">
+                <input type="number" class="edit-input" min="1" max="99" value="3"
+                  id="rp-${esc(s.key)}"
+                  style="width:58px;padding:3px 6px;font-size:12px;text-align:center"
+                  onclick="event.stopPropagation()">
+              </td>
               <td class="nowrap tc" onclick="event.stopPropagation()">
                 ${(s.state && s.state.committeeStatus === 'pending_referral')
                   ? '<button class="btn btn-xs" style="background:#fde8e8;color:#7f1d1d;border:1px solid #fca5a5;cursor:not-allowed;line-height:1.3;" disabled>선도위원회 회부<br>회복 일시정지</button>'
@@ -2812,7 +2834,7 @@
         const rangeMatch = apRaw.match(/^(\d+)-(\d+)$/);
         // 선택형: "1,3"
         const choiceMatch = apRaw.match(/^[\d]+(,[\d]+)+$/);
-        const canOverride = hasRole('admin') || hasRole('master');
+        const canOverride = teacherRoles.includes('admin'); // admin만, master 제외
         if (rangeMatch && !canOverride){
           const [, minP, maxP] = rangeMatch.map(Number);
           if (manualPoints < minP || manualPoints > maxP){
@@ -3147,7 +3169,11 @@
           .reduce((s, r) => s + Number(r.recoveryPoints || 0), 0);
 
         const currentTotalBefore = overallTotal - recoveryTotal;
-        const recoveryPoints = Math.min(3, Math.max(currentTotalBefore, 0));
+
+        // 완료점수: 입력값 우선, 없으면 기본 3점 (최대 currentTotalBefore)
+        const rpInput = document.getElementById('rp-' + studentKey);
+        const inputPts = rpInput ? Math.max(1, parseInt(rpInput.value)||3) : 3;
+        const recoveryPoints = Math.min(inputPts, Math.max(currentTotalBefore, 0));
 
         if (recoveryPoints <= 0){
           return toast('회복할 점수가 없습니다.\nNo points left to recover.', 'err');
