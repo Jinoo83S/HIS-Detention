@@ -102,9 +102,19 @@
     .cell-reason-preview{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;max-width:100%}
     .cell-reason-preview{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:320px;display:block}
 
+    /* 교차 행 색상 */
     tbody tr:nth-child(odd){background:#ffffff}
-    tbody tr:nth-child(even){background:#f7faff}
-    tbody tr:hover{background:#edf3ff}
+    tbody tr:nth-child(even){background:#f0f5ff}
+    tbody tr:hover{background:#deeaff}
+    .detail-row,
+    .detail-row.show{background:#f8faff !important}
+    /* JS로 부여하는 stripe 클래스 */
+    tr.row-odd {background:#ffffff}
+    tr.row-even{background:#f0f5ff}
+    tr.row-odd:hover,
+    tr.row-even:hover{background:#deeaff !important}
+    .detail-row.row-odd,
+    .detail-row.row-even{background:#f8faff !important}
 
     @media (max-width:980px){
       .page-grid{grid-template-columns:1fr}
@@ -1778,6 +1788,7 @@
           </tr>
         `;
       }).join('');
+      stripeAll();
     }
 
     function renderAllRecoveryEntries(){
@@ -1954,6 +1965,7 @@
 
       pendingTb.innerHTML   = renderPendingRows(pendingList);
       processedTb.innerHTML = renderProcessedRows(processedList);
+      stripeAll();
     }
     // 관리자 노트 dirty tracking
     let _dirtyAdminNotes = {}; // { entryKey: newValue }
@@ -1983,6 +1995,29 @@
       } catch(e){
         toast('저장 실패: ' + e.message, 'err');
       }
+    }
+
+    // 테이블 교차 색상: summary-row만 카운팅 (detail-row 무시)
+    function stripeTable(tbodyId){
+      const tb = document.getElementById(tbodyId);
+      if(!tb) return;
+      let idx = 0;
+      tb.querySelectorAll('tr').forEach(tr => {
+        tr.classList.remove('row-odd','row-even');
+        if(tr.classList.contains('detail-row')) return;
+        tr.classList.add(idx % 2 === 0 ? 'row-odd' : 'row-even');
+        idx++;
+      });
+    }
+
+    function stripeAll(){
+      ['confirm-pending-tbody','confirm-processed-tbody',
+       'notify-ms-active-tbody','notify-ms-done-tbody',
+       'notify-hs-active-tbody','notify-hs-done-tbody',
+       'recovery-ms-active-tbody','recovery-ms-done-tbody',
+       'recovery-hs-active-tbody','recovery-hs-done-tbody',
+       'all-entries-tbody','committee-tbody'
+      ].forEach(stripeTable);
     }
 
     // admin 전용 (master 제외): 디텐션 확정 테이블 날짜 편집
@@ -2020,6 +2055,7 @@
       window._doneNoticeMap = {};
       renderNotifyTableByLevel('ms');
       renderNotifyTableByLevel('hs');
+      stripeAll();
     }
 
     function renderNotifyTableByLevel(level){
@@ -2167,6 +2203,7 @@
     function renderRecoveryTables(){
       renderRecoveryTableByLevel('ms');
       renderRecoveryTableByLevel('hs');
+      stripeAll();
     }
 
     function renderRecoveryTableByLevel(level){
