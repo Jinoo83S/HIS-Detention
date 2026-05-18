@@ -1474,7 +1474,21 @@
 
     function syncAutoPoints(){
       const std = getSelectedStandard();
-      document.getElementById('auto-points').textContent = std ? String(std.autoPoints || '') : '-';
+      let display = std ? String(std.autoPoints || '') : '-';
+
+      // 선택형 (예: 1,3) → 회차 표기 추가
+      if(std && display.includes(',') && !display.includes('-')){
+        const parts = display.split(',').map(v => v.trim());
+        const count = countSameDetention(
+          selectedStudentKey || syncStudentSelectionWithoutUpdate(),
+          std.category || '',
+          std.violation || ''
+        );
+        const round = count + 1; // 다음 입력될 회차
+        display = `${display} — ${round}회차`;
+      }
+
+      document.getElementById('auto-points').textContent = display;
       updateManualPointsMode();
     }
 
@@ -1530,7 +1544,7 @@
     function syncStudentSelection(){
       const inputValue = (document.getElementById('student-search-input').value || '').trim();
       selectedStudentKey = studentSearchMap[inputValue] || '';
-      updateManualPointsMode();
+      syncAutoPoints(); // 회차 표기 갱신
       return selectedStudentKey;
     }
 
