@@ -401,7 +401,10 @@
           </table>
         </div>
 
-        <div class="card-title" style="margin-top:16px;">확정 / 반려 | Confirmed / Rejected</div>
+        <div class="card-title" style="margin-top:16px;">
+          확정 / 반려 | Confirmed / Rejected
+          <button id="btn-save-admin-notes" class="btn btn-primary" style="display:none;opacity:.4;cursor:not-allowed;" disabled onclick="saveAdminNotes()">관리자 노트 저장 | Save Notes</button>
+        </div>
         <div class="tbl-wrap">
           <table style="table-layout:fixed;">
             <thead>
@@ -1839,19 +1842,22 @@
           [r.studentName, r.englishName, r.category, r.violation, r.teacherName].some(v => String(v || '').toLowerCase().includes(q))
         );
       }
-      list = list.sort((a,b) => {
-        const statusDiff = confirmSortValue(String(a.status || '임시저장')) - confirmSortValue(String(b.status || '임시저장'));
-        if (statusDiff !== 0) return statusDiff;
-        return String(b.createdAt || '').localeCompare(String(a.createdAt || ''));
-      });
+      list = list.sort((a,b) =>
+        String(a.createdAt || '').localeCompare(String(b.createdAt || ''))
+      );
 
       const pendingList   = list.filter(r => String(r.status || '임시저장') === '임시저장');
       const processedList = list.filter(r => String(r.status || '임시저장') !== '임시저장');
 
-      // 관리자 노트 공통 td
+      // 저장 버튼: admin만 표시
+      const saveBtn = document.getElementById('btn-save-admin-notes');
+      if(saveBtn) saveBtn.style.display = teacherRoles.includes('admin') ? '' : 'none';
+
+      // 관리자 노트 공통 td (dirty tracking 포함)
       function noteTd(r){
         return `<td onclick="event.stopPropagation()" style="min-width:130px;max-width:200px">
-          <input class="edit-input admin-note-input" style="width:100%" value="${esc(r.adminNote||'')}" placeholder="관리자 노트" oninput="entries['${esc(r.key)}'].adminNote=this.value">
+          <input class="edit-input admin-note-input" style="width:100%" value="${esc(r.adminNote||'')}" placeholder="관리자 노트"
+            oninput="entries['${esc(r.key)}'].adminNote=this.value;markAdminNoteDirty('${esc(r.key)}')">
         </td>`;
       }
 
@@ -1949,6 +1955,36 @@
       pendingTb.innerHTML   = renderPendingRows(pendingList);
       processedTb.innerHTML = renderProcessedRows(processedList);
     }
+    // 관리자 노트 dirty tracking
+    let _dirtyAdminNotes = {}; // { entryKey: newValue }
+
+    function markAdminNoteDirty(key){
+      _dirtyAdminNotes[key] = entries[key]?.adminNote || '';
+      const btn = document.getElementById('btn-save-admin-notes');
+      if(!btn) return;
+      const hasDirty = Object.keys(_dirtyAdminNotes).length > 0;
+      btn.disabled = !hasDirty;
+      btn.style.opacity = hasDirty ? '1' : '.4';
+      btn.style.cursor  = hasDirty ? 'pointer' : 'not-allowed';
+    }
+
+    async function saveAdminNotes(){
+      if(!teacherRoles.includes('admin')) return;
+      const keys = Object.keys(_dirtyAdminNotes);
+      if(!keys.length) return;
+      try{
+        const updates = {};
+        keys.forEach(k => { updates[DETENTION_DB_PATH + '/' + k + '/adminNote'] = _dirtyAdminNotes[k]; });
+        await db.ref().update(updates);
+        _dirtyAdminNotes = {};
+        const btn = document.getElementById('btn-save-admin-notes');
+        if(btn){ btn.disabled = true; btn.style.opacity = '.4'; btn.style.cursor = 'not-allowed'; }
+        toast(`관리자 노트 ${keys.length}건 저장 완료`, 'ok');
+      } catch(e){
+        toast('저장 실패: ' + e.message, 'err');
+      }
+    }
+
     // admin 전용 (master 제외): 디텐션 확정 테이블 날짜 편집
     async function updateEntryDateField(entryKey, field, dateValue){
       if(!teacherRoles.includes('admin')) return toast('admin 권한 필요', 'err');
