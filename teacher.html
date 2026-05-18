@@ -386,14 +386,14 @@
           <table style="table-layout:fixed;">
             <thead>
               <tr>
-                <th class="nowrap" style="width:10%;">학생<span class="th-en">Student</span></th>
-                <th class="nowrap" style="width:6%;">학반<span class="th-en">Class</span></th>
+                <th class="nowrap" style="width:11%;">학생<span class="th-en">Student</span></th>
+                <th class="nowrap" style="width:5%;">학반<span class="th-en">Class</span></th>
                 <th class="nowrap" style="width:10%;">구분<span class="th-en">Category</span></th>
-                <th style="width:30%;">위반행위<span class="th-en">Violation</span></th>
-                <th class="nowrap" style="width:6%;">합계<span class="th-en">Total</span></th>
-                <th class="nowrap" style="width:9%;">작성자<span class="th-en">Created By</span></th>
-                <th class="nowrap" style="width:9%;">상태<span class="th-en">Status</span></th>
-                <th class="nowrap" style="width:13%;">관리자 노트<span class="th-en">Admin Note</span></th>
+                <th style="width:26%;">위반행위<span class="th-en">Violation</span></th>
+                <th class="nowrap" style="width:5%;">합계<span class="th-en">Total</span></th>
+                <th class="nowrap" style="width:8%;">작성자<span class="th-en">Created By</span></th>
+                <th class="nowrap" style="width:10%;">상태<span class="th-en">Status</span></th>
+                <th class="nowrap" style="width:18%;">관리자 노트<span class="th-en">Admin Note</span></th>
                 <th class="nowrap" style="width:7%;">처리<span class="th-en">Action</span></th>
               </tr>
             </thead>
@@ -406,14 +406,14 @@
           <table style="table-layout:fixed;">
             <thead>
               <tr>
-                <th class="nowrap" style="width:10%;">학생<span class="th-en">Student</span></th>
-                <th class="nowrap" style="width:6%;">학반<span class="th-en">Class</span></th>
+                <th class="nowrap" style="width:11%;">학생<span class="th-en">Student</span></th>
+                <th class="nowrap" style="width:5%;">학반<span class="th-en">Class</span></th>
                 <th class="nowrap" style="width:10%;">구분<span class="th-en">Category</span></th>
-                <th style="width:30%;">위반행위<span class="th-en">Violation</span></th>
-                <th class="nowrap" style="width:6%;">합계<span class="th-en">Total</span></th>
-                <th class="nowrap" style="width:9%;">작성자<span class="th-en">Created By</span></th>
-                <th class="nowrap" style="width:9%;">상태<span class="th-en">Status</span></th>
-                <th class="nowrap" style="width:13%;">관리자 노트<span class="th-en">Admin Note</span></th>
+                <th style="width:26%;">위반행위<span class="th-en">Violation</span></th>
+                <th class="nowrap" style="width:5%;">합계<span class="th-en">Total</span></th>
+                <th class="nowrap" style="width:8%;">작성자<span class="th-en">Created By</span></th>
+                <th class="nowrap" style="width:10%;">상태<span class="th-en">Status</span></th>
+                <th class="nowrap" style="width:18%;">관리자 노트<span class="th-en">Admin Note</span></th>
                 <th class="nowrap" style="width:7%;">처리<span class="th-en">Action</span></th>
               </tr>
             </thead>
@@ -1916,6 +1916,23 @@
       pendingTb.innerHTML   = renderPendingRows(pendingList);
       processedTb.innerHTML = renderProcessedRows(processedList);
     }
+    // admin: 알림 완료 테이블 날짜 인라인 편집
+    async function updateNoticeDateField(noticeKey, field, dateValue){
+      if(!noticeKey) return toast('noticeKey 없음', 'err');
+      try{
+        const isoVal = dateValue ? new Date(dateValue + 'T00:00:00').toISOString() : null;
+        const update = {};
+        update[field] = isoVal;
+        await db.ref(NOTICE_DB_PATH + '/' + noticeKey).update(update);
+        // 로컬 noticeEntries 반영
+        if(noticeEntries[noticeKey]) noticeEntries[noticeKey][field] = isoVal;
+        renderNotifyTables();
+        toast(field + ' 수정 완료', 'ok');
+      } catch(e){
+        toast('저장 실패: ' + e.message, 'err');
+      }
+    }
+
     function renderNotifyTables(){
       window._doneNoticeMap = {};
       renderNotifyTableByLevel('ms');
@@ -2015,19 +2032,45 @@
         doneTb.innerHTML = '<tr><td colspan="8" class="empty">해당 학생이 없습니다. | No matching students.</td></tr>';
       } else {
       // _doneNoticeMap은 renderNotifyTables()에서 일괄 초기화
+        const isAdmin = hasRole('admin') || hasRole('master');
         doneTb.innerHTML = doneList.map((s,doneIdx) => {
           const expanded = expandedNoticeKeys[level] && expandedNoticeKeys[level].has(s.key+'_done');
           const doneMapKey = level+'_done_'+doneIdx;
           window._doneNoticeMap[doneMapKey] = s.noticeKey||'';
+
+          // 날짜 셀: admin은 date input, 일반은 텍스트
+          function dateCell(val, field){
+            const fmtd = val ? fmt(val) : '-';
+            if(!isAdmin) return `<td class="nowrap" style="font-size:11px;color:var(--sb)">${fmtd}</td>`;
+            const iso = val ? String(val).slice(0,10) : '';
+            return `<td class="nowrap" onclick="event.stopPropagation()" style="min-width:130px">
+              <input type="date" class="edit-input" style="font-size:11px;padding:3px 6px;width:130px"
+                value="${iso}"
+                onchange="updateNoticeDateField('${esc(s.noticeKey||'')}','${field}',this.value)">
+            </td>`;
+          }
+
+          const completedColor = s.notice.completedAt ? 'color:var(--gn);font-weight:700' : 'color:var(--sb)';
+          const completedText  = s.notice.completedAt ? '✓ '+fmt(s.notice.completedAt) : '-';
+
           return `<tr class="summary-row" onclick="toggleNoticeRow('${level}','${esc(s.key)}_done')">
             <td class="nowrap">${esc(sName(s.name||'',s.englishName||''))}</td>
             <td class="nowrap tc">${esc(s.className||'')}</td>
             <td><span class="cell-reason-preview">${esc(buildReasonPreview(s.key))}</span></td>
             <td class="nowrap">${s.currentTotal}</td>
             <td class="nowrap">${s.overallTotal}</td>
-            <td class="nowrap" style="font-size:11px;">${s.notice.parentMailAt ? '<span style="color:var(--sb)">' + fmt(s.notice.parentMailAt) + '</span>' : '<button class="btn-mail" onclick="event.stopPropagation();sendParentMailForDone(\''+esc(s.key)+'\',\''+level+'\',\''+doneMapKey+'\')">메일 보내기</button>'}</td>
-            <td class="nowrap" style="font-size:11px;">${s.notice.studentTeacherMailAt ? '<span style="color:var(--sb)">' + fmt(s.notice.studentTeacherMailAt) + '</span>' : '<button class="btn-mail" onclick="event.stopPropagation();sendStudentTeacherMailForDone(\''+esc(s.key)+'\',\''+level+'\',\''+doneMapKey+'\')">메일 보내기</button>'}</td>
-            <td class="nowrap" style="color:var(--gn);font-size:11px;font-weight:700;">${s.notice.completedAt ? '✓ '+fmt(s.notice.completedAt) : '-'}</td>
+            ${isAdmin
+              ? dateCell(s.notice.parentMailAt,        'parentMailAt')
+              : `<td class="nowrap" style="font-size:11px;">${s.notice.parentMailAt ? '<span style="color:var(--sb)">'+fmt(s.notice.parentMailAt)+'</span>' : '<button class="btn-mail" onclick="event.stopPropagation();sendParentMailForDone(\''+esc(s.key)+'\',\''+level+'\',\''+doneMapKey+'\')">메일 보내기</button>'}</td>`
+            }
+            ${isAdmin
+              ? dateCell(s.notice.studentTeacherMailAt,'studentTeacherMailAt')
+              : `<td class="nowrap" style="font-size:11px;">${s.notice.studentTeacherMailAt ? '<span style="color:var(--sb)">'+fmt(s.notice.studentTeacherMailAt)+'</span>' : '<button class="btn-mail" onclick="event.stopPropagation();sendStudentTeacherMailForDone(\''+esc(s.key)+'\',\''+level+'\',\''+doneMapKey+'\')">메일 보내기</button>'}</td>`
+            }
+            ${isAdmin
+              ? dateCell(s.notice.completedAt,         'completedAt')
+              : `<td class="nowrap" style="font-size:11px;${completedColor}">${completedText}</td>`
+            }
           </tr>
           <tr class="detail-row ${expanded ? 'show' : ''}">
             <td colspan="8"><div class="detail-box">
