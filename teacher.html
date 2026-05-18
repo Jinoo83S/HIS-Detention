@@ -1031,6 +1031,15 @@
       if(hasActiveReferral || hasManualReferralPending){
         // 선도위원회 대기 중 → 알림/회복 중단
         phase = 'referral';
+        // 진행 중인 알림이 있으면 자동 완료 처리 (알림 목록에서 즉시 제거)
+        if(activeNotice && !activeNotice.notice.completedAt){
+          try{
+            await db.ref(NOTICE_DB_PATH+'/'+activeNotice.key).update({
+              completedAt: new Date().toISOString(),
+              completedBy: 'system_referral'
+            });
+          }catch(e){ console.warn('notice auto-complete failed:', e); }
+        }
       } else if(needsEduCommittee || hasManualEduPending){
         // 생활교육위원회: phase는 일반 알림/회복과 완전 독립 (committeeStatus만 별도)
         if(activeNotice){
@@ -1341,8 +1350,8 @@
         .filter(s=>getSchoolLevel(s.className)===level)
         .map(s=>{
           const state = getCycleState(s.key, level);
-          // 선도위원회 회부 중이면 알림/회복교육 대기 (referral phase만 제외)
-          const noticePhases=['notice_needed','notice_active','edu_notice_needed','edu_notice_active','referral'];
+          // 선도위원회 회부(referral) 중이면 알림 목록 제외
+          const noticePhases=['notice_needed','notice_active','edu_notice_needed','edu_notice_active'];
           if(!noticePhases.includes(state.phase)) return null;
           const currentTotal=getStudentCurrentTotal(s.key),overallTotal=getStudentOverallTotal(s.key),reasons=buildNoticeReasonText(s.key);
           const latestEntry=getConfirmedEntriesForStudent(s.key)[0]||null,latestConfirmedAt=getLatestConfirmedAt(s.key);
