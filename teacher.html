@@ -931,8 +931,8 @@
       return [];
     }
 
-    function hasRole(roleName){ return teacherRoles.includes(roleName); }
-    function canEditStandard(){ return teacherRoles.includes('master'); }
+    function hasRole(roleName){ return teacherRoles.includes('admin') || teacherRoles.includes(roleName); }
+    function canEditStandard(){ return teacherRoles.includes('admin') || teacherRoles.includes('master'); }
     function canConfirmDetention(){ return hasRole('master'); }
 
     function statusBadge(status){
