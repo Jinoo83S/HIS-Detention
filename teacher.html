@@ -1843,7 +1843,7 @@
         );
       }
       list = list.sort((a,b) =>
-        String(a.createdAt || '').localeCompare(String(b.createdAt || ''))
+        String(b.createdAt || '').localeCompare(String(a.createdAt || ''))
       );
 
       const pendingList   = list.filter(r => String(r.status || '임시저장') === '임시저장');
