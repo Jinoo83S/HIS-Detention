@@ -252,22 +252,23 @@
       <div class="card">
         <div class="card-title">
           <span>디텐션 기준표 | Detention Standards</span>
-          <div style="text-align:right;">
-            <div class="small" id="standard-edit-note">기본 보기 모드 | View Mode</div>
-            <div class="small" id="standard-save-status">저장 이력 없음 | Not saved yet</div>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <div style="text-align:right;">
+              <div class="small" id="standard-edit-note">기본 보기 모드 | View Mode</div>
+              <div class="small" id="standard-save-status">저장 이력 없음 | Not saved yet</div>
+            </div>
+            <div id="standard-actions" class="mini-actions role-only" data-role="master" style="margin:0">
+              <button id="btn-enable-edit" class="btn btn-secondary" onclick="enableStandardEdit()">편집 활성화 | Enable Edit</button>
+              <button id="btn-add-criteria" class="btn btn-secondary hidden" onclick="addCriteriaRow()">행 추가 | Add Row</button>
+              <button id="btn-save-criteria" class="btn btn-primary hidden" onclick="saveCriteriaTable()" disabled style="opacity:.4;cursor:not-allowed;">저장할 내용 없음 | No Changes</button>
+              <button id="btn-cancel-edit" class="btn btn-danger hidden" onclick="cancelStandardEdit()">편집 취소 | Cancel</button>
+            </div>
           </div>
         </div>
 
         <div class="section-note">
           <div>권한에 따라 보기 또는 편집이 가능합니다.</div>
           <div>View or edit access is available depending on your role.</div>
-        </div>
-
-        <div id="standard-actions" class="mini-actions role-only" data-role="master" style="margin-top:10px;">
-          <button id="btn-enable-edit" class="btn btn-secondary" onclick="enableStandardEdit()">편집 활성화 | Enable Edit</button>
-          <button id="btn-add-criteria" class="btn btn-secondary hidden" onclick="addCriteriaRow()">행 추가 | Add Row</button>
-          <button id="btn-save-criteria" class="btn btn-primary hidden" onclick="saveCriteriaTable()" disabled style="opacity:.4;cursor:not-allowed;">저장할 내용 없음 | No Changes</button>
-          <button id="btn-cancel-edit" class="btn btn-danger hidden" onclick="cancelStandardEdit()">편집 취소 | Cancel</button>
         </div>
 
         <div class="tbl-wrap" style="margin-top:10px;">
@@ -285,9 +286,9 @@
           </table>
         </div>
 
-        <div style="margin-top:12px;padding:10px 12px;border:1px solid #444;background:#fff;line-height:1.5;font-size:13px;">
+        <div class="notice" style="margin-top:12px;border-color:#d8dded;background:#f0f4ff;color:#1f2d6b;">
           <div>※위반 행동의 정도가 심한 경우 및 상기 기준 외의 것은 생활교육위원회의 심의를 거쳐 결정할 수 있다.</div>
-          <div>※Regarding highly serious violations and matters not stipulated above, decisions can be separately made after deliberation by the Life Education Committee.</div>
+          <div style="margin-top:4px">※Regarding highly serious violations and matters not stipulated above, decisions can be separately made after deliberation by the Life Education Committee.</div>
         </div>
       </div>
     </div>
