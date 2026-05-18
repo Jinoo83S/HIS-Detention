@@ -1927,11 +1927,11 @@
                 <div class="detail-section"><div class="detail-title">메모 | Memo</div><div class="detail-content">${esc(r.memo||'-')}</div></div>
                 <div class="detail-section">
                   <div class="detail-title">처리 정보${isAdminOnly?' <span style="font-size:10px;color:var(--sb);font-weight:400">(admin: 날짜 편집 가능)</span>':''}</div>
-                  <div class="detail-content" style="line-height:2">
-                    ${entryDateInput(r.createdAt,   'createdAt',   '작성')}
-                    <br>${entryDateInput(r.confirmedAt,'confirmedAt','확정')}
-                    <br>${entryDateInput(r.rejectedAt, 'rejectedAt', '반려')}
-                    <br>노트: ${esc(r.adminNote||'-')}
+                  <div class="detail-content">
+                    <div style="margin-bottom:4px">${entryDateInput(r.createdAt,   'createdAt',   '작성')}</div>
+                    <div style="margin-bottom:4px">${entryDateInput(r.confirmedAt,'confirmedAt','확정')}</div>
+                    <div style="margin-bottom:4px">${entryDateInput(r.rejectedAt, 'rejectedAt', '반려')}</div>
+                    <div>노트: ${esc(r.adminNote||'-')}</div>
                   </div>
                 </div>
                 ${(canReject||canCommittee)?`
