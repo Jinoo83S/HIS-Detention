@@ -108,13 +108,13 @@
     tbody tr:hover{background:#deeaff}
     .detail-row,
     .detail-row.show{background:#f8faff !important}
-    /* JS로 부여하는 stripe 클래스 */
-    tr.row-odd {background:#ffffff}
-    tr.row-even{background:#f0f5ff}
-    tr.row-odd:hover,
-    tr.row-even:hover{background:#deeaff !important}
-    .detail-row.row-odd,
-    .detail-row.row-even{background:#f8faff !important}
+    /* JS로 부여하는 stripe 클래스 - !important로 nth-child 확실히 override */
+    tbody tr.row-odd  { background:#ffffff  !important; }
+    tbody tr.row-even { background:#eef4ff  !important; }
+    tbody tr.row-odd:hover,
+    tbody tr.row-even:hover { background:#deeaff !important; }
+    tbody tr.detail-row.row-odd,
+    tbody tr.detail-row.row-even { background:#f8faff !important; }
 
     @media (max-width:980px){
       .page-grid{grid-template-columns:1fr}
@@ -1986,32 +1986,41 @@
 
     function markAdminNoteDirty(key){
       _dirtyAdminNotes[key] = entries[key]?.adminNote || '';
-      const btn = document.getElementById('btn-save-admin-notes');
-      if(!btn) return;
-      const hasDirty = Object.keys(_dirtyAdminNotes).length > 0;
-      btn.disabled = !hasDirty;
-      btn.style.opacity = hasDirty ? '1' : '.4';
-      btn.style.cursor  = hasDirty ? 'pointer' : 'not-allowed';
+      markConfirmDirty();
     }
 
     async function saveAdminNotes(){
       if(!teacherRoles.includes('admin')) return;
-      const keys = Object.keys(_dirtyAdminNotes);
-      if(!keys.length) return;
+      const noteKeys = Object.keys(_dirtyAdminNotes);
+      const dateKeys = Object.keys(_dirtyEntryDates);
+      if(!noteKeys.length && !dateKeys.length) return;
       try{
         const updates = {};
-        keys.forEach(k => { updates[DETENTION_DB_PATH + '/' + k + '/adminNote'] = _dirtyAdminNotes[k]; });
+        noteKeys.forEach(k => { updates[DETENTION_DB_PATH+'/'+k+'/adminNote'] = _dirtyAdminNotes[k]; });
+        dateKeys.forEach(k => {
+          const { field, val } = _dirtyEntryDates[k];
+          updates[DETENTION_DB_PATH+'/'+k+'/'+field] = val;
+        });
         await db.ref().update(updates);
         _dirtyAdminNotes = {};
+        _dirtyEntryDates = {};
         const btn = document.getElementById('btn-save-admin-notes');
-        if(btn){ btn.disabled = true; btn.style.opacity = '.4'; btn.style.cursor = 'not-allowed'; }
-        toast(`관리자 노트 ${keys.length}건 저장 완료`, 'ok');
+        if(btn){ btn.disabled=true; btn.style.opacity='.4'; btn.style.cursor='not-allowed'; }
+        toast((noteKeys.length+dateKeys.length)+'건 저장 완료', 'ok');
       } catch(e){
-        toast('저장 실패: ' + e.message, 'err');
+        toast('저장 실패: '+e.message, 'err');
       }
     }
 
-    // 테이블 교차 색상: summary-row만 카운팅 (detail-row 무시)
+    function markConfirmDirty(){
+      const btn = document.getElementById('btn-save-admin-notes');
+      if(!btn) return;
+      const has = Object.keys(_dirtyAdminNotes).length>0 || Object.keys(_dirtyEntryDates).length>0;
+      btn.disabled = !has;
+      btn.style.opacity = has ? '1' : '.4';
+      btn.style.cursor  = has ? 'pointer' : 'not-allowed';
+    }
+
     function stripeTable(tbodyId){
       const tb = document.getElementById(tbodyId);
       if(!tb) return;
@@ -2030,41 +2039,36 @@
        'notify-hs-active-tbody','notify-hs-done-tbody',
        'recovery-ms-active-tbody','recovery-ms-done-tbody',
        'recovery-hs-active-tbody','recovery-hs-done-tbody',
-       'all-entries-tbody','committee-tbody'
+       'all-records-tbody','all-recovery-tbody',
+       'discipline-referral-tbody','discipline-referral-done-tbody',
+       'discipline-education-tbody','discipline-education-done-tbody'
       ].forEach(stripeTable);
     }
 
-    // admin 전용 (master 제외): 디텐션 확정 테이블 날짜 편집
-    async function updateEntryDateField(entryKey, field, dateValue){
-      if(!teacherRoles.includes('admin')) return toast('admin 권한 필요', 'err');
-      try{
-        const isoVal = dateValue ? dateValue + 'T00:00:00' : null;
-        await db.ref(DETENTION_DB_PATH + '/' + entryKey).update({ [field]: isoVal });
-        if(entries[entryKey]) entries[entryKey][field] = isoVal;
-        renderConfirmEntries();
-        toast('날짜 수정 완료', 'ok');
-      } catch(e){
-        toast('저장 실패: ' + e.message, 'err');
-      }
+    let _dirtyEntryDates = {};
+
+    function updateEntryDateField(entryKey, field, dateValue){
+      if(!teacherRoles.includes('admin')) return;
+      const isoVal = dateValue ? dateValue + 'T00:00:00' : null;
+      if(entries[entryKey]) entries[entryKey][field] = isoVal;
+      _dirtyEntryDates[entryKey] = { field, val: isoVal };
+      markConfirmDirty();
     }
 
-    // admin: 알림 완료 테이블 날짜 인라인 편집
     async function updateNoticeDateField(noticeKey, field, dateValue){
       if(!noticeKey) return toast('noticeKey 없음', 'err');
       try{
-        // toISOString() 사용 시 UTC 변환으로 -1일 버그 발생 → 날짜 문자열 직접 저장
         const isoVal = dateValue ? dateValue + 'T00:00:00' : null;
         const update = {};
         update[field] = isoVal;
-        await db.ref(NOTICE_DB_PATH + '/' + noticeKey).update(update);
+        await db.ref(NOTICE_DB_PATH+'/'+noticeKey).update(update);
         if(noticeEntries[noticeKey]) noticeEntries[noticeKey][field] = isoVal;
         renderNotifyTables();
-        toast(field + ' 수정 완료', 'ok');
+        toast(field+' 수정 완료', 'ok');
       } catch(e){
-        toast('저장 실패: ' + e.message, 'err');
+        toast('저장 실패: '+e.message, 'err');
       }
     }
-
     function renderNotifyTables(){
       window._doneNoticeMap = {};
       renderNotifyTableByLevel('ms');
@@ -2537,7 +2541,7 @@
       const entryTeacherEmail= selectedTeacher ? (selectedTeacher.email || teacher.email || '') : teacher.email || '';
       const entryDateRaw = document.getElementById('entry-date').value || '';
       const entryCreatedAt = entryDateRaw
-        ? new Date(entryDateRaw + 'T00:00:00').toISOString()
+        ? entryDateRaw + 'T00:00:00'
         : new Date().toISOString();
 
       if (!studentKey || !students[studentKey]){
@@ -2962,6 +2966,8 @@
       return entryTeacherMap[val] || { name: val, email: '' };
     }
 
+    function localDateStr(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+
     function initEntryFormMeta(){
       const canEdit = hasRole('admin') || hasRole('master');
 
@@ -2975,7 +2981,7 @@
       }
 
       // 날짜 기본값: 오늘 (teachers 목록은 loadData 후 renderEntryTeacherList에서 채워짐)
-      document.getElementById('entry-date').value = new Date().toISOString().slice(0,10);
+      document.getElementById('entry-date').value = localDateStr();
     }
 
     function resetEntryForm(){
@@ -2989,7 +2995,7 @@
       document.getElementById('memo').value = '';
       // 교사/날짜 초기화
       document.getElementById('entry-teacher').value = teacher.name || '';
-      document.getElementById('entry-date').value = new Date().toISOString().slice(0,10);
+      document.getElementById('entry-date').value = localDateStr();
     }
 
     init();
