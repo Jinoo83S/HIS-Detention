@@ -216,6 +216,20 @@
               <label class="label">메모 | Memo</label>
               <textarea id="memo" class="edit-input" placeholder="상세 메모를 입력해 주세요. / Enter memo details."></textarea>
             </div>
+
+            <div>
+              <label class="label">교사 | Teacher</label>
+              <input id="entry-teacher" class="edit-input" readonly
+                title="admin 또는 master 권한이 있는 경우에만 변경 가능합니다.">
+              <div class="small" id="entry-teacher-hint" style="display:none">
+                admin/master 권한으로 변경 가능 | Editable by admin/master
+              </div>
+            </div>
+
+            <div>
+              <label class="label">날짜 | Date</label>
+              <input id="entry-date" type="date" class="edit-input">
+            </div>
           </div>
 
           <div class="mini-actions">
@@ -1278,6 +1292,7 @@
       setupRoleVisibility();
       setupSelectors();
       setupEvents();
+      initEntryFormMeta();
       loadData();
     }
 
@@ -2307,6 +2322,19 @@
       const manualPoints = Number(document.getElementById('manual-points').value || 0);
       const memo = (document.getElementById('memo').value || '').trim();
 
+      // 교사/날짜 (admin·master만 변경 가능)
+      const canEditTeacher = hasRole('admin') || hasRole('master');
+      const entryTeacher = canEditTeacher
+        ? (document.getElementById('entry-teacher').value || '').trim() || teacher.name || ''
+        : teacher.name || '';
+      const entryTeacherEmail = (entryTeacher === teacher.name)
+        ? teacher.email || ''
+        : entryTeacher; // 변경 시 이름만 기록 (이메일 불명)
+      const entryDateRaw = document.getElementById('entry-date').value || '';
+      const entryCreatedAt = entryDateRaw
+        ? new Date(entryDateRaw + 'T00:00:00').toISOString()
+        : new Date().toISOString();
+
       if (!studentKey || !students[studentKey]){
         alert('학생을 선택해 주세요.\nPlease select a student.');
         return toast('학생을 선택해 주세요.', 'err');
@@ -2367,11 +2395,11 @@
         manualPoints,
         totalPoints: manualPoints,
         memo,
-        teacherName: teacher.name || '',
-        teacherEmail: teacher.email || '',
+        teacherName: entryTeacher,
+        teacherEmail: entryTeacherEmail,
         teacherRoles: teacherRoles,
         status: '임시저장',
-        createdAt: new Date().toISOString()
+        createdAt: entryCreatedAt
       };
 
       try{
@@ -2701,6 +2729,24 @@
       }
     }
 
+    function initEntryFormMeta(){
+      const canEditTeacher = hasRole('admin') || hasRole('master');
+
+      // 교사 필드 설정
+      const teacherInput = document.getElementById('entry-teacher');
+      teacherInput.value = teacher.name || '';
+      teacherInput.readOnly = !canEditTeacher;
+      teacherInput.style.background = canEditTeacher ? '' : '#f3f5fb';
+      teacherInput.style.color = canEditTeacher ? '' : 'var(--sb)';
+      if(canEditTeacher){
+        document.getElementById('entry-teacher-hint').style.display = '';
+      }
+
+      // 날짜 필드 설정 (오늘 날짜)
+      const dateInput = document.getElementById('entry-date');
+      dateInput.value = new Date().toISOString().slice(0,10);
+    }
+
     function resetEntryForm(){
       document.getElementById('student-search-input').value = '';
       selectedStudentKey = '';
@@ -2710,6 +2756,9 @@
       document.getElementById('manual-points').disabled = false;
       document.getElementById('manual-points').readOnly = false;
       document.getElementById('memo').value = '';
+      // 교사/날짜 초기화
+      document.getElementById('entry-teacher').value = teacher.name || '';
+      document.getElementById('entry-date').value = new Date().toISOString().slice(0,10);
     }
 
     init();
