@@ -123,6 +123,69 @@
       .recent-entry-top{flex-direction:column}
       .recent-entry-side{min-width:0;align-items:flex-start;text-align:left}
     }
+    /* ── 전체 학생관리 탭 ── */
+    .student-grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+      gap:14px;
+      margin-top:12px;
+    }
+    .class-card{
+      background:#fff;
+      border:1px solid var(--bd,#d8dded);
+      border-radius:10px;
+      overflow:hidden;
+    }
+    .class-card-header{
+      background:linear-gradient(120deg,var(--nv,#0f1f5c),var(--nv2,#1b2f7a));
+      color:#fff;
+      font-weight:800;
+      font-size:13px;
+      padding:7px 12px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+    }
+    .class-card-header .cnt{font-size:11px;opacity:.7;font-weight:500}
+    .student-row{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:5px 10px;
+      border-bottom:1px solid #eef2ff;
+      gap:6px;
+    }
+    .student-row:last-child{border-bottom:none}
+    .student-row:nth-child(odd){background:#fff}
+    .student-row:nth-child(even){background:#f7faff}
+    .student-row:hover{background:#edf3ff}
+    .student-name{font-size:12px;font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .student-name .en{font-weight:400;color:var(--sb,#5b6888);font-size:11px;display:block}
+    .student-btns{display:flex;gap:4px;flex-shrink:0}
+    .btn-det{padding:3px 8px;font-size:11px;border-radius:6px;border:none;cursor:pointer;font-weight:700;background:linear-gradient(135deg,var(--nv),var(--nv2));color:#fff}
+    .btn-view{padding:3px 8px;font-size:11px;border-radius:6px;border:1px solid var(--bd);cursor:pointer;font-weight:700;background:#fff;color:var(--nv)}
+
+    /* 학생 상세 모달 */
+    #student-modal-overlay{
+      position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;display:none;align-items:center;justify-content:center;padding:16px
+    }
+    #student-modal-overlay.open{display:flex}
+    #student-modal{
+      background:#fff;border-radius:14px;width:min(820px,100%);max-height:90vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.2)
+    }
+    .modal-header{
+      background:linear-gradient(120deg,var(--nv),var(--nv2));
+      color:#fff;padding:14px 18px;border-radius:14px 14px 0 0;
+      display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:1
+    }
+    .modal-header h2{margin:0;font-size:16px}
+    .modal-close{background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:8px;padding:4px 10px;cursor:pointer;font-size:16px}
+    .modal-body{padding:16px}
+    .modal-stat-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+    .modal-stat{background:#eef3ff;border-radius:10px;padding:10px 16px;text-align:center;flex:1;min-width:80px}
+    .modal-stat .num{font-size:22px;font-weight:800;color:var(--nv)}
+    .modal-stat .lbl{font-size:11px;color:var(--sb);margin-top:2px}
+    .modal-section-title{font-weight:800;font-size:13px;color:var(--nv);margin:14px 0 6px;padding-bottom:4px;border-bottom:2px solid var(--bd)}
   </style>
 </head>
 <body>
@@ -181,6 +244,7 @@
       <button class="tab-btn role-only" data-role="hs_notice" data-tab="notify-hs">고등 디텐션 알림 | HS Notice</button>
       <button class="tab-btn role-only" data-role="ms_restore" data-tab="recovery-ms">중등 회복교육 | MS Restore</button>
       <button class="tab-btn role-only" data-role="hs_restore" data-tab="recovery-hs">고등 회복교육 | HS Restore</button>
+      <button class="tab-btn" data-tab="students">전체 학생관리 | Students</button>
       <button class="tab-btn role-only" data-role="master" data-tab="discipline">위원회 | Committee</button>
     </div>
     <div id="committee-pending-banner" style="display:none;background:#fff3cd;border:1px solid #f0c040;border-radius:8px;padding:8px 16px;margin:var(--ui-gap) 0 var(--ui-gap);font-size:12px;color:#5a3e00;font-weight:600;"></div>
@@ -655,6 +719,63 @@
         </div>
       </div>
 
+    </div>
+
+    <!-- STUDENTS -->
+    <div id="tab-students" class="tab-panel">
+      <div class="card">
+        <div class="card-title">
+          전체 학생관리 | Student Management
+          <div style="display:flex;gap:8px;align-items:center">
+            <input id="student-mgmt-search" class="edit-input" style="width:180px;font-size:12px" placeholder="이름 검색 / Search" oninput="renderStudentGrid()">
+            <select id="student-mgmt-level" class="edit-input" style="width:110px;font-size:12px" onchange="renderStudentGrid()">
+              <option value="">전체 학년</option>
+              <option value="ms">중등 (7-8)</option>
+              <option value="hs">고등 (9-12)</option>
+            </select>
+          </div>
+        </div>
+        <div id="student-grid-wrap" class="student-grid"></div>
+      </div>
+    </div>
+
+    <!-- 학생 상세 모달 -->
+    <div id="student-modal-overlay" onclick="if(event.target===this)closeStudentModal()">
+      <div id="student-modal">
+        <div class="modal-header">
+          <h2 id="modal-student-name">학생 상세</h2>
+          <button class="modal-close" onclick="closeStudentModal()">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="modal-stat-row" id="modal-stats"></div>
+          <div class="modal-section-title">디텐션 기록 | Detention Records</div>
+          <div class="tbl-wrap">
+            <table style="table-layout:fixed;width:100%">
+              <thead><tr>
+                <th style="width:90px">날짜</th>
+                <th style="width:120px">구분</th>
+                <th>위반행위</th>
+                <th style="width:46px">점수</th>
+                <th style="width:72px">상태</th>
+                <th style="width:66px">교사</th>
+              </tr></thead>
+              <tbody id="modal-detention-tbody"></tbody>
+            </table>
+          </div>
+          <div class="modal-section-title" style="margin-top:18px">회복교육 기록 | Recovery Records</div>
+          <div class="tbl-wrap">
+            <table style="table-layout:fixed;width:100%">
+              <thead><tr>
+                <th style="width:90px">날짜</th>
+                <th>위반행위</th>
+                <th style="width:72px">회복점수</th>
+                <th style="width:80px">담당교사</th>
+              </tr></thead>
+              <tbody id="modal-recovery-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- COMMITTEE -->
@@ -1676,6 +1797,7 @@
         renderStudentOptions();
         renderAllStudentSearchOptions();
         renderEntryTeacherList();
+        renderStudentGrid();
         renderFilters();
         renderCriteriaTable();
         renderRecentEntries();
@@ -2069,6 +2191,116 @@
         toast('저장 실패: '+e.message, 'err');
       }
     }
+
+    // ── 전체 학생관리 탭 ──
+    function renderStudentGrid(){
+      const wrap = document.getElementById('student-grid-wrap');
+      if(!wrap) return;
+      const q     = (document.getElementById('student-mgmt-search')?.value || '').trim().toLowerCase();
+      const level = (document.getElementById('student-mgmt-level')?.value || '');
+
+      const classMap = {};
+      Object.entries(students).forEach(([key, s]) => {
+        if(!s || !s.className) return;
+        const cls = String(s.className).trim();
+        const grade = parseInt(cls) || 0;
+        if(level === 'ms' && grade >= 9) return;
+        if(level === 'hs' && grade < 9) return;
+        if(q){
+          const match = [s.name, s.englishName].some(v => String(v||'').toLowerCase().includes(q));
+          if(!match) return;
+        }
+        if(!classMap[cls]) classMap[cls] = [];
+        classMap[cls].push({ key, ...s });
+      });
+
+      const sortedClasses = Object.keys(classMap).sort((a,b) =>
+        a.localeCompare(b, 'ko', { numeric:true })
+      );
+
+      if(!sortedClasses.length){
+        wrap.innerHTML = '<div class="empty">학생이 없습니다. | No students found.</div>';
+        return;
+      }
+
+      wrap.innerHTML = sortedClasses.map(cls => {
+        const list = classMap[cls].sort((a,b) => String(a.name||'').localeCompare(String(b.name||''), 'ko'));
+        const rows = list.map(s => {
+          const label = cls + ' · ' + (s.name||'') + ' · ' + (s.englishName||'');
+          return '<div class="student-row">'
+            + '<div class="student-name">' + esc(s.name||'') + '<span class="en">' + esc(s.englishName||'') + '</span></div>'
+            + '<div class="student-btns">'
+            + '<button class="btn-det" onclick="goToDetentionEntry(' + JSON.stringify(label) + ')">디텐션</button>'
+            + '<button class="btn-view" onclick="openStudentModal(' + JSON.stringify(s.key) + ')">보기</button>'
+            + '</div></div>';
+        }).join('');
+        return '<div class="class-card"><div class="class-card-header"><span>' + esc(cls) + '</span><span class="cnt">' + list.length + '명</span></div>' + rows + '</div>';
+      }).join('');
+    }
+
+    function goToDetentionEntry(label){
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      document.querySelector('[data-tab="entry"]').classList.add('active');
+      document.getElementById('tab-entry').classList.add('active');
+      const inp = document.getElementById('student-search-input');
+      if(inp){ inp.value = label; syncStudentSelection(); }
+      window.scrollTo(0,0);
+    }
+
+    function openStudentModal(studentKey){
+      const s = students[studentKey];
+      if(!s) return;
+      document.getElementById('modal-student-name').textContent =
+        (s.name||'') + (s.englishName ? ' · '+s.englishName : '') + ' (' + (s.className||'') + ')';
+
+      const detList = Object.values(entries||{})
+        .filter(r => String(r.studentKey||'')===studentKey || String(r.studentName||'')===String(s.name||''))
+        .sort((a,b) => String(b.createdAt||'').localeCompare(String(a.createdAt||'')));
+      const recList = Object.values(recoveryEntries||{})
+        .filter(r => String(r.studentKey||'')===studentKey || String(r.studentName||'')===String(s.name||''))
+        .sort((a,b) => String(b.completedAt||'').localeCompare(String(a.completedAt||'')));
+
+      const confirmedPts  = detList.filter(r=>r.status==='확정').reduce((n,r)=>n+(Number(r.totalPoints)||0),0);
+      const recoveredPts  = recList.reduce((n,r)=>n+(Number(r.recoveryPoints)||0),0);
+      const currentPts    = Math.max(0, confirmedPts - recoveredPts);
+
+      document.getElementById('modal-stats').innerHTML =
+        '<div class="modal-stat"><div class="num">' + detList.length + '</div><div class="lbl">전체 기록</div></div>'
+        + '<div class="modal-stat"><div class="num" style="color:var(--gn)">' + detList.filter(r=>r.status==='확정').length + '</div><div class="lbl">확정</div></div>'
+        + '<div class="modal-stat"><div class="num" style="color:var(--rd)">' + confirmedPts + '</div><div class="lbl">누적 벌점</div></div>'
+        + '<div class="modal-stat"><div class="num" style="color:#7c3aed">' + recoveredPts + '</div><div class="lbl">회복 점수</div></div>'
+        + '<div class="modal-stat"><div class="num" style="color:var(--nv);font-size:26px">' + currentPts + '</div><div class="lbl">현재 잔여</div></div>';
+
+      document.getElementById('modal-detention-tbody').innerHTML = detList.length
+        ? detList.map((r,i) => '<tr style="background:' + (i%2===0?'#fff':'#f0f5ff') + '">'
+            + '<td style="font-size:11px">' + (r.createdAt||'').slice(0,10) + '</td>'
+            + '<td style="font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(r.category||'-') + '</td>'
+            + '<td style="font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(r.violation||'-') + '</td>'
+            + '<td style="text-align:center;font-weight:700">' + (r.totalPoints||0) + '</td>'
+            + '<td>' + statusBadge(r.status||'임시저장') + '</td>'
+            + '<td style="font-size:11px">' + esc(r.teacherName||'-') + '</td></tr>').join('')
+        : '<tr><td colspan="6" class="empty">기록 없음</td></tr>';
+
+      document.getElementById('modal-recovery-tbody').innerHTML = recList.length
+        ? recList.map((r,i) => '<tr style="background:' + (i%2===0?'#fff':'#f0f5ff') + '">'
+            + '<td style="font-size:11px">' + (r.completedAt||'').slice(0,10) + '</td>'
+            + '<td style="font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc((r.violationSnapshot||r.reasonsSnapshot||'').split('\n')[0]||'-') + '</td>'
+            + '<td style="text-align:center;font-weight:700;color:var(--gn)">+' + (r.recoveryPoints||0) + '</td>'
+            + '<td style="font-size:11px">' + esc(r.staffName||'-') + '</td></tr>').join('')
+        : '<tr><td colspan="4" class="empty">기록 없음</td></tr>';
+
+      document.getElementById('student-modal-overlay').classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeStudentModal(){
+      document.getElementById('student-modal-overlay').classList.remove('open');
+      document.body.style.overflow = '';
+    }
+
+    document.addEventListener('keydown', e => { if(e.key==='Escape') closeStudentModal(); });
+
     function renderNotifyTables(){
       window._doneNoticeMap = {};
       renderNotifyTableByLevel('ms');
