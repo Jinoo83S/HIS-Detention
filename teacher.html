@@ -2226,19 +2226,33 @@
       wrap.innerHTML = sortedClasses.map(cls => {
         const list = classMap[cls].sort((a,b) => String(a.name||'').localeCompare(String(b.name||''), 'ko'));
         const rows = list.map(s => {
-          const label = cls + ' · ' + (s.name||'') + ' · ' + (s.englishName||'');
-          return '<div class="student-row">'
-            + '<div class="student-name">' + esc(s.name||'') + '<span class="en">' + esc(s.englishName||'') + '</span></div>'
-            + '<div class="student-btns">'
-            + '<button class="btn-det" onclick="goToDetentionEntry(' + JSON.stringify(label) + ')">디텐션</button>'
-            + '<button class="btn-view" onclick="openStudentModal(' + JSON.stringify(s.key) + ')">보기</button>'
-            + '</div></div>';
+          const skey = esc(s.key);
+          return `<div class="student-row">
+            <div class="student-name">${esc(s.name||'')}<span class="en">${esc(s.englishName||'')}</span></div>
+            <div class="student-btns">
+              <button class="btn-det" data-skey="${skey}">디텐션</button>
+              <button class="btn-view" data-skey="${skey}">보기</button>
+            </div>
+          </div>`;
         }).join('');
-        return '<div class="class-card"><div class="class-card-header"><span>' + esc(cls) + '</span><span class="cnt">' + list.length + '명</span></div>' + rows + '</div>';
+        return `<div class="class-card">
+          <div class="class-card-header"><span>${esc(cls)}</span><span class="cnt">${list.length}명</span></div>
+          ${rows}
+        </div>`;
       }).join('');
-    }
 
-    function goToDetentionEntry(label){
+      // 이벤트 위임
+      wrap.onclick = function(e){
+        const det  = e.target.closest('.btn-det');
+        const view = e.target.closest('.btn-view');
+        if(det)  goToDetentionEntry(det.dataset.skey);
+        if(view) openStudentModal(view.dataset.skey);
+      };
+    }
+    function goToDetentionEntry(studentKey){
+      const s = students[studentKey];
+      if(!s) return;
+      const label = `${String(s.className||'-')} · ${String(s.name||'')} · ${String(s.englishName||'')}`;
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
       document.querySelector('[data-tab="entry"]').classList.add('active');
