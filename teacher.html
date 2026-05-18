@@ -219,8 +219,10 @@
 
             <div>
               <label class="label">교사 | Teacher</label>
-              <input id="entry-teacher" class="edit-input" readonly
-                title="admin 또는 master 권한이 있는 경우에만 변경 가능합니다.">
+              <input id="entry-teacher" class="edit-input" list="entry-teacher-list"
+                placeholder="교사 검색 / Search teacher"
+                oninput="syncEntryTeacher()">
+              <datalist id="entry-teacher-list"></datalist>
               <div class="small" id="entry-teacher-hint" style="display:none">
                 admin/master 권한으로 변경 가능 | Editable by admin/master
               </div>
@@ -1629,6 +1631,7 @@
 
         renderStudentOptions();
         renderAllStudentSearchOptions();
+        renderEntryTeacherList();
         renderFilters();
         renderCriteriaTable();
         renderRecentEntries();
@@ -2324,12 +2327,9 @@
 
       // 교사/날짜 (admin·master만 변경 가능)
       const canEditTeacher = hasRole('admin') || hasRole('master');
-      const entryTeacher = canEditTeacher
-        ? (document.getElementById('entry-teacher').value || '').trim() || teacher.name || ''
-        : teacher.name || '';
-      const entryTeacherEmail = (entryTeacher === teacher.name)
-        ? teacher.email || ''
-        : entryTeacher; // 변경 시 이름만 기록 (이메일 불명)
+      const selectedTeacher = canEditTeacher ? syncEntryTeacher() : null;
+      const entryTeacher     = selectedTeacher ? selectedTeacher.name  : teacher.name || '';
+      const entryTeacherEmail= selectedTeacher ? (selectedTeacher.email || teacher.email || '') : teacher.email || '';
       const entryDateRaw = document.getElementById('entry-date').value || '';
       const entryCreatedAt = entryDateRaw
         ? new Date(entryDateRaw + 'T00:00:00').toISOString()
@@ -2729,22 +2729,49 @@
       }
     }
 
-    function initEntryFormMeta(){
-      const canEditTeacher = hasRole('admin') || hasRole('master');
+    // 교사 검색맵: label → name
+    let entryTeacherMap = {};
 
-      // 교사 필드 설정
+    function renderEntryTeacherList(){
+      const canEdit = hasRole('admin') || hasRole('master');
+      const dl = document.getElementById('entry-teacher-list');
+      if(!dl) return;
+      entryTeacherMap = {};
+      if(!canEdit){ dl.innerHTML = ''; return; }
+
+      const list = Object.values(teachers)
+        .filter(t => t && t.active !== false)
+        .sort((a,b) => String(a.name||'').localeCompare(String(b.name||''), 'ko'));
+
+      dl.innerHTML = list.map(t => {
+        const label = `${String(t.name||'').trim()} | ${String(t.email||'').trim()}`;
+        entryTeacherMap[label] = { name: String(t.name||'').trim(), email: String(t.email||'').trim() };
+        return `<option value="${esc(label)}"></option>`;
+      }).join('');
+    }
+
+    // 선택된 교사 정보 반환 (name, email)
+    function syncEntryTeacher(){
+      const val = (document.getElementById('entry-teacher').value || '').trim();
+      return entryTeacherMap[val] || { name: val, email: '' };
+    }
+
+    function initEntryFormMeta(){
+      const canEdit = hasRole('admin') || hasRole('master');
+
       const teacherInput = document.getElementById('entry-teacher');
       teacherInput.value = teacher.name || '';
-      teacherInput.readOnly = !canEditTeacher;
-      teacherInput.style.background = canEditTeacher ? '' : '#f3f5fb';
-      teacherInput.style.color = canEditTeacher ? '' : 'var(--sb)';
-      if(canEditTeacher){
+      teacherInput.readOnly = !canEdit;
+      teacherInput.style.background = canEdit ? '' : '#f3f5fb';
+      teacherInput.style.color = canEdit ? '' : 'var(--sb)';
+      if(canEdit){
         document.getElementById('entry-teacher-hint').style.display = '';
       }
 
-      // 날짜 필드 설정 (오늘 날짜)
-      const dateInput = document.getElementById('entry-date');
-      dateInput.value = new Date().toISOString().slice(0,10);
+      renderEntryTeacherList();
+
+      // 날짜 기본값: 오늘
+      document.getElementById('entry-date').value = new Date().toISOString().slice(0,10);
     }
 
     function resetEntryForm(){
