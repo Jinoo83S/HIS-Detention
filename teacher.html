@@ -1877,11 +1877,20 @@
       // ── 확정/반려 행: 버튼은 펼쳤을 때만 표시 ──
       function renderProcessedRows(arr){
         if (!arr.length) return '<tr><td colspan="9" class="empty">해당 기록이 없습니다. | No matching records.</td></tr>';
+        const isAdminOnly = teacherRoles.includes('admin'); // master 제외
         return arr.map(r => {
           const expanded     = expandedConfirmKeys.has(r.key);
           const canReject    = canManage && String(r.status||'')==='확정';
           const canCommittee = canManage && String(r.status||'')==='확정';
           const isReferral   = r.isReferral===true||r.isReferral==='true';
+
+          // admin 전용 날짜 편집 인풋 생성
+          function entryDateInput(val, field, label){
+            const iso = val ? String(val).slice(0,10) : '';
+            if(!isAdminOnly) return `${label}: ${fmt(val)}`;
+            return `${label}: <input type="date" class="edit-input" style="font-size:11px;padding:2px 6px;width:130px;display:inline-block;vertical-align:middle" value="${iso}" onchange="updateEntryDateField('${esc(r.key)}','${field}',this.value)">`;
+          }
+
           return `
             <tr class="summary-row" onclick="toggleConfirmRow('${esc(r.key)}')">
               <td class="nowrap">${esc(sName(r.studentName||'',r.englishName||''))}</td>
@@ -1900,7 +1909,15 @@
               <td colspan="9"><div class="detail-box">
                 <div class="detail-section"><div class="detail-title">위반행위 | Violation</div><div class="detail-content">${esc(r.violation||'')}</div></div>
                 <div class="detail-section"><div class="detail-title">메모 | Memo</div><div class="detail-content">${esc(r.memo||'-')}</div></div>
-                <div class="detail-section"><div class="detail-title">처리 정보</div><div class="detail-content">작성: ${fmt(r.createdAt)}\n확정: ${fmt(r.confirmedAt)}\n반려: ${fmt(r.rejectedAt)}\n노트: ${esc(r.adminNote||'-')}</div></div>
+                <div class="detail-section">
+                  <div class="detail-title">처리 정보${isAdminOnly?' <span style="font-size:10px;color:var(--sb);font-weight:400">(admin: 날짜 편집 가능)</span>':''}</div>
+                  <div class="detail-content" style="line-height:2">
+                    ${entryDateInput(r.createdAt,   'createdAt',   '작성')}
+                    <br>${entryDateInput(r.confirmedAt,'confirmedAt','확정')}
+                    <br>${entryDateInput(r.rejectedAt, 'rejectedAt', '반려')}
+                    <br>노트: ${esc(r.adminNote||'-')}
+                  </div>
+                </div>
                 ${(canReject||canCommittee)?`
                 <div class="detail-section"><div class="detail-title">처리 | Actions</div>
                   <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">
@@ -1916,15 +1933,29 @@
       pendingTb.innerHTML   = renderPendingRows(pendingList);
       processedTb.innerHTML = renderProcessedRows(processedList);
     }
+    // admin 전용 (master 제외): 디텐션 확정 테이블 날짜 편집
+    async function updateEntryDateField(entryKey, field, dateValue){
+      if(!teacherRoles.includes('admin')) return toast('admin 권한 필요', 'err');
+      try{
+        const isoVal = dateValue ? dateValue + 'T00:00:00' : null;
+        await db.ref(DETENTION_DB_PATH + '/' + entryKey).update({ [field]: isoVal });
+        if(entries[entryKey]) entries[entryKey][field] = isoVal;
+        renderConfirmEntries();
+        toast('날짜 수정 완료', 'ok');
+      } catch(e){
+        toast('저장 실패: ' + e.message, 'err');
+      }
+    }
+
     // admin: 알림 완료 테이블 날짜 인라인 편집
     async function updateNoticeDateField(noticeKey, field, dateValue){
       if(!noticeKey) return toast('noticeKey 없음', 'err');
       try{
-        const isoVal = dateValue ? new Date(dateValue + 'T00:00:00').toISOString() : null;
+        // toISOString() 사용 시 UTC 변환으로 -1일 버그 발생 → 날짜 문자열 직접 저장
+        const isoVal = dateValue ? dateValue + 'T00:00:00' : null;
         const update = {};
         update[field] = isoVal;
         await db.ref(NOTICE_DB_PATH + '/' + noticeKey).update(update);
-        // 로컬 noticeEntries 반영
         if(noticeEntries[noticeKey]) noticeEntries[noticeKey][field] = isoVal;
         renderNotifyTables();
         toast(field + ' 수정 완료', 'ok');
@@ -2032,7 +2063,7 @@
         doneTb.innerHTML = '<tr><td colspan="8" class="empty">해당 학생이 없습니다. | No matching students.</td></tr>';
       } else {
       // _doneNoticeMap은 renderNotifyTables()에서 일괄 초기화
-        const isAdmin = hasRole('admin') || hasRole('master');
+        const isAdmin = teacherRoles.includes('admin'); // master 제외
         doneTb.innerHTML = doneList.map((s,doneIdx) => {
           const expanded = expandedNoticeKeys[level] && expandedNoticeKeys[level].has(s.key+'_done');
           const doneMapKey = level+'_done_'+doneIdx;
