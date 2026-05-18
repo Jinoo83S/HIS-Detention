@@ -182,9 +182,6 @@
         let found = null;
         let key = '';
 
-        // admin 계정은 adminConfig/password로 검증
-        let adminPw = null;
-
         snap.forEach(child => {
           const t = child.val() || {};
           if (String(t.email || '').trim().toLowerCase() === selectedEmail) {
@@ -198,13 +195,23 @@
           return toast('아이디 또는 비밀번호가 올바르지 않습니다.\nInvalid teacher or password.', 'err');
         }
 
-        // admin role이면 adminConfig/password로 검증, 일반 교사면 teachers.password로 검증
+        // admin 판별: roles에 admin 포함 OR email/name에 admin/관리자 포함
         const roles = normalizeRoles(found.roles || found.role || []);
-        const isAdmin = roles.includes('admin');
+        const emailStr = String(found.email || '').toLowerCase();
+        const nameStr  = String(found.name  || '').toLowerCase();
+        const isAdmin  = roles.includes('admin')
+                      || emailStr.includes('admin')
+                      || nameStr.includes('admin')
+                      || nameStr.includes('관리자');
 
         if (isAdmin) {
-          const adminSnap = await db.ref('adminConfig/password').once('value');
-          adminPw = adminSnap.val() || '1751';
+          // adminConfig/password 로 검증
+          let adminPw = '1751';
+          try {
+            const adminSnap = await db.ref('adminConfig/password').once('value');
+            if (adminSnap.val()) adminPw = adminSnap.val();
+          } catch(e) { /* 기본값 사용 */ }
+
           if (pw !== adminPw) {
             document.getElementById('pw').value = '';
             return toast('아이디 또는 비밀번호가 올바르지 않습니다.\nInvalid teacher or password.', 'err');
