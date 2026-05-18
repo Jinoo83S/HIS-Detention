@@ -1994,7 +1994,7 @@
           <td class="nowrap tc">${esc(String(r.currentTotalAfter??r.currentTotalAtRecovery??getStudentCurrentTotal(r.studentKey)))}</td>
           <td class="nowrap tc">${esc(String(r.overallTotalAtRecovery??getStudentOverallTotal(r.studentKey)))}</td>
           <td class="nowrap">${esc(r.staffName||'')}</td>
-          <td class="nowrap">${fmt(r.completedAt)}</td>
+          <td class="nowrap" onclick="event.stopPropagation()">${teacherRoles.includes('admin') ? `<input type="date" class="edit-input" style="font-size:11px;padding:2px 5px;width:122px" value="${(r.completedAt||'').slice(0,10)}" onchange="updateRecoveryCompletedAt('${esc(r.key)}',this.value)">` : fmt(r.completedAt)}</td>
         </tr>
         <tr class="detail-row">
           <td colspan="9"><div class="detail-box"><div class="detail-section">
@@ -2548,6 +2548,20 @@
       }
     }
 
+    // admin 전용: 회복교육 완료시간 수정
+    async function updateRecoveryCompletedAt(key, dateValue){
+      if(!teacherRoles.includes('admin')) return;
+      if(!key) return;
+      const isoVal = dateValue ? dateValue + 'T00:00:00' : null;
+      try{
+        await db.ref(RECOVERY_DB_PATH + '/' + key + '/completedAt').set(isoVal);
+        if(recoveryEntries[key]) recoveryEntries[key].completedAt = isoVal;
+        toast('완료시간 수정 완료', 'ok');
+      } catch(e){
+        toast('저장 실패: ' + e.message, 'err');
+      }
+    }
+
     function renderRecoveryTables(){
       renderRecoveryTableByLevel('ms');
       renderRecoveryTableByLevel('hs');
@@ -2632,7 +2646,7 @@
             '<td class="nowrap tc">-'+esc(String(r.recoveryPoints||0))+'</td>'+
             '<td class="nowrap tc">'+esc(String(r.currentTotalAfter??r.currentTotalAtRecovery??'-'))+'</td>'+
             '<td class="nowrap tc">'+esc(String(r.overallTotalAtRecovery??'-'))+'</td>'+
-            '<td class="nowrap">'+fmt(r.completedAt)+'</td>'+
+            '<td class="nowrap" onclick="event.stopPropagation()">'+(teacherRoles.includes('admin')  ? '<input type="date" class="edit-input" style="font-size:11px;padding:2px 5px;width:122px" value="'+(r.completedAt||'').slice(0,10)+'"'    +' onchange="updateRecoveryCompletedAt(\''+r.key+'\',this.value)">'  : fmt(r.completedAt))+'</td>'+
             '</tr>'+
             '<tr class="detail-row">'+
             '<td colspan="7"><div class="detail-box"><div class="detail-section">'+
