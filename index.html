@@ -200,8 +200,8 @@
         const emailStr = String(found.email || '').toLowerCase();
         const nameStr  = String(found.name  || '').toLowerCase();
         const isAdmin  = roles.includes('admin')
-                      || emailStr.includes('admin')
-                      || nameStr.includes('admin')
+                      || roles.includes('master')
+                      || emailStr === 'admin'
                       || nameStr.includes('관리자');
 
         if (isAdmin) {
