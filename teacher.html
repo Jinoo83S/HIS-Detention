@@ -2968,6 +2968,8 @@
       const needsManual = autoPointsRaw && autoPointsRaw !== '-' && (autoPointsRaw.includes('-') || autoPointsRaw.includes(','));
       // apRaw: 화면 표시용 '— N회차' 접미사 제거 (저장용 원본값 보장)
       const apRaw = autoPointsRaw.replace(/\s*—.*$/, '').trim();
+
+      if (manualPoints <= 0 && needsManual){
         alert('수동벌점을 입력해 주세요.\nPlease enter manual points (required for range/choice type).');
         document.getElementById('manual-points').focus();
         return;
