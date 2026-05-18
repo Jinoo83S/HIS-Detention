@@ -123,8 +123,23 @@
       .recent-entry-top{flex-direction:column}
       .recent-entry-side{min-width:0;align-items:flex-start;text-align:left}
     }
-    /* ── 전체 학생관리 탭 ── */
-    .student-grid{
+    .class-list-header{
+      background:linear-gradient(120deg,var(--nv),var(--nv2));
+      color:#fff;font-weight:800;font-size:12px;
+      padding:5px 10px;position:sticky;top:0;z-index:1
+    }
+    .student-list-row{
+      display:flex;align-items:center;padding:6px 10px;gap:6px;
+      border-bottom:1px solid #eef2ff;cursor:pointer;
+    }
+    .student-list-row:nth-child(odd){background:#fff}
+    .student-list-row:nth-child(even){background:#f7faff}
+    .student-list-row:hover{background:#deeaff}
+    .student-list-row.selected{background:#dbeafe !important;border-left:3px solid var(--nv)}
+    @media(max-width:768px){
+      #tab-students [style*="grid-template-columns:280px"]{grid-template-columns:1fr}
+      #student-grid-wrap{max-height:240px;border-right:none;border-bottom:1px solid var(--bd)}
+    }
       display:grid;
       grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
       gap:14px;
@@ -725,19 +740,32 @@
 
     <!-- STUDENTS -->
     <div id="tab-students" class="tab-panel">
-      <div class="card">
-        <div class="card-title">
-          전체 학생관리 | Student Management
+      <div class="card" style="padding:0;overflow:hidden">
+        <!-- 헤더 -->
+        <div style="padding:10px 14px;border-bottom:1px solid var(--bd);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+          <span style="font-weight:800;font-size:15px;color:var(--nv)">전체 학생관리 | Student Management</span>
           <div style="display:flex;gap:8px;align-items:center">
-            <input id="student-mgmt-search" class="edit-input" style="width:180px;font-size:12px" placeholder="이름 검색 / Search" oninput="renderStudentGrid()">
-            <select id="student-mgmt-level" class="edit-input" style="width:110px;font-size:12px" onchange="renderStudentGrid()">
+            <input id="student-mgmt-search" class="edit-input" style="width:160px;font-size:12px" placeholder="이름 검색" oninput="renderStudentGrid()">
+            <select id="student-mgmt-level" class="edit-input" style="width:100px;font-size:12px" onchange="renderStudentGrid()">
               <option value="">전체 학년</option>
               <option value="ms">중등 (7-8)</option>
               <option value="hs">고등 (9-12)</option>
             </select>
           </div>
         </div>
-        <div id="student-grid-wrap" class="student-grid"></div>
+        <!-- 스플릿 레이아웃 -->
+        <div style="display:grid;grid-template-columns:280px 1fr;min-height:600px">
+          <!-- 왼쪽: 학반별 학생 리스트 -->
+          <div id="student-grid-wrap" style="border-right:1px solid var(--bd);overflow-y:auto;max-height:80vh"></div>
+          <!-- 오른쪽: 학생 상세 -->
+          <div id="student-detail-panel" style="overflow-y:auto;max-height:80vh;padding:16px">
+            <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:300px;color:var(--sb)">
+              <div style="font-size:36px;margin-bottom:12px">👈</div>
+              <div style="font-size:13px">학생을 선택하면 상세 정보가 표시됩니다.</div>
+              <div style="font-size:12px;margin-top:4px">Select a student to view details.</div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -2221,7 +2249,7 @@
       );
 
       if(!sortedClasses.length){
-        wrap.innerHTML = '<div class="empty">학생이 없습니다. | No students found.</div>';
+        wrap.innerHTML = '<div class="empty" style="padding:20px">학생이 없습니다.</div>';
         return;
       }
 
@@ -2229,8 +2257,6 @@
         const list = classMap[cls].sort((a,b) => String(a.name||'').localeCompare(String(b.name||''), 'ko'));
         const rows = list.map(s => {
           const skey = esc(s.key);
-
-          // 점수 계산
           const overallTotal = Object.values(entries||{})
             .filter(r => (String(r.studentKey||'')===s.key || String(r.studentName||'')===String(s.name||'')) && r.status==='확정')
             .reduce((n,r) => n+(Number(r.totalPoints)||0), 0);
@@ -2238,32 +2264,119 @@
             .filter(r => String(r.studentKey||'')===s.key || String(r.studentName||'')===String(s.name||''))
             .reduce((n,r) => n+(Number(r.recoveryPoints)||0), 0);
           const currentTotal = Math.max(0, overallTotal - recoveredTotal);
+          const ptColor = currentTotal >= 9 ? 'var(--rd)' : currentTotal >= 6 ? '#b45309' : currentTotal >= 3 ? '#1d4ed8' : '#9ca3af';
 
-          const ptColor = currentTotal >= 9 ? 'var(--rd)' : currentTotal >= 6 ? '#b45309' : currentTotal >= 3 ? '#1d4ed8' : 'var(--sb)';
-
-          return `<div class="student-row">
-            <div class="student-name">${esc(s.name||'')}<span class="en">${esc(s.englishName||'')}</span></div>
-            <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
-              <span style="font-size:11px;font-weight:700;color:${ptColor};min-width:28px;text-align:right">${currentTotal}</span>
-              <span style="font-size:10px;color:var(--sb)">/ ${overallTotal}</span>
-              <button class="btn-det" data-skey="${skey}">디텐션</button>
-              <button class="btn-view" data-skey="${skey}">보기</button>
+          return `<div class="student-list-row" data-skey="${skey}" onclick="selectStudentInPanel('${skey}')">
+            <div style="flex:1;min-width:0">
+              <div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(s.name||'')}</div>
+              <div style="font-size:11px;color:var(--sb);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(s.englishName||'')}</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:4px;flex-shrink:0">
+              <span style="font-size:12px;font-weight:700;color:${ptColor}">${currentTotal}</span>
+              <span style="font-size:10px;color:#9ca3af">/${overallTotal}</span>
+              <button class="btn-det" data-skey="${skey}" onclick="event.stopPropagation();goToDetentionEntry('${skey}')">+</button>
             </div>
           </div>`;
         }).join('');
-        return `<div class="class-card">
-          <div class="class-card-header"><span>${esc(cls)}</span><span class="cnt">${list.length}명</span></div>
+
+        return `<div>
+          <div class="class-list-header">${esc(cls)} <span style="font-size:10px;opacity:.7">${list.length}명</span></div>
           ${rows}
         </div>`;
       }).join('');
+    }
 
-      // 이벤트 위임
-      wrap.onclick = function(e){
-        const det  = e.target.closest('.btn-det');
-        const view = e.target.closest('.btn-view');
-        if(det)  goToDetentionEntry(det.dataset.skey);
-        if(view) openStudentModal(view.dataset.skey);
-      };
+    function selectStudentInPanel(studentKey){
+      // 선택 하이라이트
+      document.querySelectorAll('.student-list-row').forEach(r => r.classList.remove('selected'));
+      document.querySelectorAll(`[data-skey="${studentKey}"]`).forEach(r => r.classList.add('selected'));
+      renderStudentDetail(studentKey);
+    }
+
+    function renderStudentDetail(studentKey){
+      const panel = document.getElementById('student-detail-panel');
+      const s = students[studentKey];
+      if(!s || !panel) return;
+
+      const detList = Object.values(entries||{})
+        .filter(r => String(r.studentKey||'')===studentKey || String(r.studentName||'')===String(s.name||''))
+        .sort((a,b) => String(b.createdAt||'').localeCompare(String(a.createdAt||'')));
+      const recList = Object.values(recoveryEntries||{})
+        .filter(r => String(r.studentKey||'')===studentKey || String(r.studentName||'')===String(s.name||''))
+        .sort((a,b) => String(b.completedAt||'').localeCompare(String(a.completedAt||'')));
+
+      const confirmedPts = detList.filter(r=>r.status==='확정').reduce((n,r)=>n+(Number(r.totalPoints)||0),0);
+      const recoveredPts = recList.reduce((n,r)=>n+(Number(r.recoveryPoints)||0),0);
+      const currentPts   = Math.max(0, confirmedPts - recoveredPts);
+
+      const detRows = detList.map((r,i) => {
+        const hasMemo = r.memo || r.adminNote;
+        return `<tr style="background:${i%2===0?'#fff':'#f0f5ff'}">
+          <td style="font-size:11px">${(r.createdAt||'').slice(0,10)||'-'}</td>
+          <td style="font-size:11px;overflow:hidden;text-overflow:ellipsis;max-width:120px;white-space:nowrap">${esc(r.category||'-')}</td>
+          <td style="font-size:11px;overflow:hidden;text-overflow:ellipsis;max-width:160px;white-space:nowrap">${esc(r.violation||'-')}</td>
+          <td style="text-align:center;font-weight:700;font-size:12px">${r.totalPoints||0}</td>
+          <td>${statusBadge(r.status||'임시저장')}</td>
+          <td style="font-size:11px">${esc(r.teacherName||'-')}</td>
+          ${hasMemo ? `</tr><tr style="background:${i%2===0?'#fffdf0':'#f8f5e0'}"><td colspan="6" style="font-size:11px;color:#5a3e00;padding:3px 10px">
+            ${r.memo?'📝 '+esc(r.memo):''}${r.memo&&r.adminNote?' &nbsp;·&nbsp; ':''}${r.adminNote?'🔒 '+esc(r.adminNote):''}
+          </td>` : ''}
+        </tr>`;
+      }).join('');
+
+      const recRows = recList.map((r,i) => `
+        <tr style="background:${i%2===0?'#fff':'#f0f5ff'}">
+          <td style="font-size:11px">${(r.completedAt||'').slice(0,10)||'-'}</td>
+          <td style="font-size:11px;overflow:hidden;text-overflow:ellipsis;max-width:200px;white-space:nowrap">${esc((r.violationSnapshot||r.reasonsSnapshot||'').split('\n')[0]||'-')}</td>
+          <td style="text-align:center;font-weight:700;color:var(--gn)">+${r.recoveryPoints||0}</td>
+          <td style="font-size:11px">${esc(r.staffName||'-')}</td>
+        </tr>`).join('');
+
+      panel.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+          <div>
+            <div style="font-size:17px;font-weight:800;color:var(--nv)">${esc(s.name||'')} <span style="font-weight:400;font-size:14px;color:var(--sb)">${esc(s.englishName||'')}</span></div>
+            <div style="font-size:12px;color:var(--sb);margin-top:2px">${esc(s.className||'')} · ${esc(s.selfEmail||'-')}</div>
+            ${s.homeroomTeacherEmail?`<div style="font-size:11px;color:var(--sb)">담임: ${esc(s.homeroomTeacherEmail)}</div>`:''}
+          </div>
+          <button class="btn-det" onclick="goToDetentionEntry('${esc(studentKey)}')">디텐션 입력</button>
+        </div>
+
+        <!-- 집계 -->
+        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:14px">
+          ${[['전체','var(--nv)',detList.length],['확정','var(--gn)',detList.filter(r=>r.status==='확정').length],['누적벌점','var(--rd)',confirmedPts],['회복점수','#7c3aed',recoveredPts],['잔여','var(--nv)',currentPts]]
+            .map(([l,c,v])=>`<div style="background:#eef3ff;border-radius:8px;padding:8px;text-align:center"><div style="font-size:20px;font-weight:800;color:${c}">${v}</div><div style="font-size:10px;color:var(--sb)">${l}</div></div>`).join('')}
+        </div>
+
+        <!-- 연락처 -->
+        ${(s.fatherEmail||s.motherEmail)?`
+        <div style="background:#f8faff;border-radius:8px;padding:8px 12px;margin-bottom:12px;font-size:12px">
+          ${s.fatherEmail?`<div>부: ${esc(s.fatherEmail)}</div>`:''}
+          ${s.motherEmail?`<div>모: ${esc(s.motherEmail)}</div>`:''}
+        </div>`:''}
+
+        <!-- 디텐션 기록 -->
+        <div style="font-weight:800;font-size:13px;color:var(--nv);margin-bottom:6px;padding-bottom:4px;border-bottom:2px solid var(--bd)">디텐션 기록 | Detention Records</div>
+        <div class="tbl-wrap" style="margin-bottom:16px">
+          <table style="table-layout:fixed;width:100%">
+            <thead><tr>
+              <th style="width:84px">날짜</th><th style="width:110px">구분</th><th>위반행위</th>
+              <th style="width:44px">점수</th><th style="width:68px">상태</th><th style="width:60px">교사</th>
+            </tr></thead>
+            <tbody>${detRows||'<tr><td colspan="6" class="empty">기록 없음</td></tr>'}</tbody>
+          </table>
+        </div>
+
+        <!-- 회복교육 기록 -->
+        <div style="font-weight:800;font-size:13px;color:var(--nv);margin-bottom:6px;padding-bottom:4px;border-bottom:2px solid var(--bd)">회복교육 기록 | Recovery Records</div>
+        <div class="tbl-wrap">
+          <table style="table-layout:fixed;width:100%">
+            <thead><tr>
+              <th style="width:84px">날짜</th><th>위반행위</th><th style="width:68px">회복점수</th><th style="width:76px">담당교사</th>
+            </tr></thead>
+            <tbody>${recRows||'<tr><td colspan="4" class="empty">기록 없음</td></tr>'}</tbody>
+          </table>
+        </div>`;
     }
     function goToDetentionEntry(studentKey){
       const s = students[studentKey];
@@ -2278,52 +2391,7 @@
       window.scrollTo(0,0);
     }
 
-    function openStudentModal(studentKey){
-      const s = students[studentKey];
-      if(!s) return;
-      document.getElementById('modal-student-name').textContent =
-        (s.name||'') + (s.englishName ? ' · '+s.englishName : '') + ' (' + (s.className||'') + ')';
-
-      const detList = Object.values(entries||{})
-        .filter(r => String(r.studentKey||'')===studentKey || String(r.studentName||'')===String(s.name||''))
-        .sort((a,b) => String(b.createdAt||'').localeCompare(String(a.createdAt||'')));
-      const recList = Object.values(recoveryEntries||{})
-        .filter(r => String(r.studentKey||'')===studentKey || String(r.studentName||'')===String(s.name||''))
-        .sort((a,b) => String(b.completedAt||'').localeCompare(String(a.completedAt||'')));
-
-      const confirmedPts  = detList.filter(r=>r.status==='확정').reduce((n,r)=>n+(Number(r.totalPoints)||0),0);
-      const recoveredPts  = recList.reduce((n,r)=>n+(Number(r.recoveryPoints)||0),0);
-      const currentPts    = Math.max(0, confirmedPts - recoveredPts);
-
-      document.getElementById('modal-stats').innerHTML =
-        '<div class="modal-stat"><div class="num">' + detList.length + '</div><div class="lbl">전체 기록</div></div>'
-        + '<div class="modal-stat"><div class="num" style="color:var(--gn)">' + detList.filter(r=>r.status==='확정').length + '</div><div class="lbl">확정</div></div>'
-        + '<div class="modal-stat"><div class="num" style="color:var(--rd)">' + confirmedPts + '</div><div class="lbl">누적 벌점</div></div>'
-        + '<div class="modal-stat"><div class="num" style="color:#7c3aed">' + recoveredPts + '</div><div class="lbl">회복 점수</div></div>'
-        + '<div class="modal-stat"><div class="num" style="color:var(--nv);font-size:26px">' + currentPts + '</div><div class="lbl">현재 잔여</div></div>';
-
-      document.getElementById('modal-detention-tbody').innerHTML = detList.length
-        ? detList.map((r,i) => '<tr style="background:' + (i%2===0?'#fff':'#f0f5ff') + '">'
-            + '<td style="font-size:11px">' + (r.createdAt||'').slice(0,10) + '</td>'
-            + '<td style="font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(r.category||'-') + '</td>'
-            + '<td style="font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(r.violation||'-') + '</td>'
-            + '<td style="text-align:center;font-weight:700">' + (r.totalPoints||0) + '</td>'
-            + '<td>' + statusBadge(r.status||'임시저장') + '</td>'
-            + '<td style="font-size:11px">' + esc(r.teacherName||'-') + '</td></tr>').join('')
-        : '<tr><td colspan="6" class="empty">기록 없음</td></tr>';
-
-      document.getElementById('modal-recovery-tbody').innerHTML = recList.length
-        ? recList.map((r,i) => '<tr style="background:' + (i%2===0?'#fff':'#f0f5ff') + '">'
-            + '<td style="font-size:11px">' + (r.completedAt||'').slice(0,10) + '</td>'
-            + '<td style="font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc((r.violationSnapshot||r.reasonsSnapshot||'').split('\n')[0]||'-') + '</td>'
-            + '<td style="text-align:center;font-weight:700;color:var(--gn)">+' + (r.recoveryPoints||0) + '</td>'
-            + '<td style="font-size:11px">' + esc(r.staffName||'-') + '</td></tr>').join('')
-        : '<tr><td colspan="4" class="empty">기록 없음</td></tr>';
-
-      document.getElementById('student-modal-overlay').classList.add('open');
-      document.body.style.overflow = 'hidden';
-    }
-
+    function openStudentModal(studentKey){ selectStudentInPanel(studentKey); }
     function closeStudentModal(){
       document.getElementById('student-modal-overlay').classList.remove('open');
       document.body.style.overflow = '';
@@ -2521,12 +2589,19 @@
               </td>
             </tr>
             <tr class="detail-row ${expanded ? 'show' : ''}">
-              <td colspan="8">
+              <td colspan="9">
                 <div class="detail-box">
                   <div class="detail-section">
                     <div class="detail-title">위반 행위 | Violations</div>
                     <div class="detail-content">${esc(s.reasons || '-')}</div>
                   </div>
+                  ${(()=>{
+                    const memos = getConfirmedEntriesForStudent(s.key)
+                      .filter(r => r.memo || r.adminNote)
+                      .map((r,i) => '['+String(i+1)+'] '+(r.memo?'메모: '+r.memo:'')+(r.memo&&r.adminNote?' / ':'')+(r.adminNote?'관리자: '+r.adminNote:''))
+                      .join('\n');
+                    return memos ? `<div class="detail-section"><div class="detail-title">메모 | Notes</div><div class="detail-content">${esc(memos)}</div></div>` : '';
+                  })()}
                   <div class="detail-section">
                     <div class="detail-title">회복교육 완료 이력 | Completed Recovery History</div>
                     <div class="detail-content">${s.recoveryList.length ? esc(s.recoveryList.map((r, i) => `[${i+1}] ${fmt(r.completedAt)} / -${r.recoveryPoints} / 교육 후 현재누적 ${r.currentTotalAfter ?? r.currentTotalAtRecovery ?? '-'}`).join('\n')) : '-'}</div>
@@ -2563,7 +2638,8 @@
             '<td colspan="7"><div class="detail-box"><div class="detail-section">'+
             '<div class="detail-title">위반 행위 | Violations</div>'+
             '<div class="detail-content">'+esc(reasonText)+'</div>'+
-            '</div></div></td></tr>'
+            '</div>'+(()=>{ const memos=getConfirmedEntriesForStudent(r.studentKey).filter(e=>e.memo||e.adminNote).map((e,i)=>'['+(i+1)+'] '+(e.memo?'메모: '+e.memo:'')+(e.memo&&e.adminNote?' / ':'')+(e.adminNote?'관리자: '+e.adminNote:'')).join('\n'); return memos?'<div class="detail-section"><div class="detail-title">메모 | Notes</div><div class="detail-content">'+esc(memos)+'</div></div>':''; })()+
+            '</div></td></tr>'
           );
         });
         doneTb.innerHTML = rows.join('');
