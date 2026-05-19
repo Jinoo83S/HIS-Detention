@@ -2467,44 +2467,193 @@
       renderStudentDetail(studentKey);
     }
 
+    function toggleStudentDetailRow(rowId){
+      const row = document.getElementById(rowId);
+      if (row) row.classList.toggle('show');
+    }
+
+    function setStudentDetailExpanded(expanded){
+      document.querySelectorAll('#student-detail-panel tr.detail-row').forEach(row => row.classList.toggle('show', expanded));
+    }
+
+    function committeeTypeLabel(type){
+      const t = String(type || '');
+      if (t === 'referral' || t === 'manual_referral') return '선도위원회 | Disciplinary Committee';
+      if (t === 'edu' || t === 'manual_edu' || t === 'edu_points' || t === 'edu_overall') return '생활교육위원회 | Education Committee';
+      return t || '-';
+    }
+
     function renderStudentDetail(studentKey){
       const panel = document.getElementById('student-detail-panel');
       const s = students[studentKey];
       if(!s || !panel) return;
 
-      const detList = Object.values(entries||{})
-        .filter(r => String(r.studentKey||'')===studentKey || String(r.studentName||'')===String(s.name||''))
-        .sort((a,b) => String(b.createdAt||'').localeCompare(String(a.createdAt||'')));
-      const recList = Object.values(recoveryEntries||{})
-        .filter(r => String(r.studentKey||'')===studentKey || String(r.studentName||'')===String(s.name||''))
-        .sort((a,b) => String(b.completedAt||'').localeCompare(String(a.completedAt||'')));
+      const matchStudent = r => String(r.studentKey||'')===String(studentKey) || String(r.studentName||'')===String(s.name||'');
+
+      const detList = Object.entries(entries||{})
+        .map(([key, value]) => ({ key, ...value }))
+        .filter(matchStudent)
+        .sort((a,b) => String(b.confirmedAt || b.createdAt || b.rejectedAt || '').localeCompare(String(a.confirmedAt || a.createdAt || a.rejectedAt || '')));
+
+      const recList = Object.entries(recoveryEntries||{})
+        .map(([key, value]) => ({ key, ...value }))
+        .filter(matchStudent)
+        .sort((a,b) => String(b.completedAt || '').localeCompare(String(a.completedAt || '')));
+
+      const noticeList = Object.entries(noticeEntries||{})
+        .map(([key, value]) => ({ key, ...value }))
+        .filter(matchStudent)
+        .sort((a,b) => String(b.completedAt || b.createdAt || '').localeCompare(String(a.completedAt || a.createdAt || '')));
+
+      const committeeList = Object.entries(committeeEntries||{})
+        .map(([key, value]) => ({ key, ...value }))
+        .filter(c => {
+          if (matchStudent(c)) return true;
+          const entry = c.entryKey ? entries[c.entryKey] : null;
+          return entry ? matchStudent(entry) : false;
+        })
+        .sort((a,b) => String(b.completedAt || b.createdAt || b.referredAt || '').localeCompare(String(a.completedAt || a.createdAt || a.referredAt || '')));
 
       const confirmedPts = detList.filter(r=>r.status==='확정').reduce((n,r)=>n+(Number(r.totalPoints)||0),0);
       const recoveredPts = recList.reduce((n,r)=>n+(Number(r.recoveryPoints)||0),0);
       const currentPts   = Math.max(0, confirmedPts - recoveredPts);
 
       const detRows = detList.map((r,i) => {
-        const hasMemo = r.memo || r.adminNote;
-        return `<tr style="background:${i%2===0?'#fff':'#f0f5ff'}">
-          <td style="font-size:11px">${(r.createdAt||'').slice(0,10)||'-'}</td>
-          <td style="font-size:11px;overflow:hidden;text-overflow:ellipsis;max-width:120px;white-space:nowrap">${esc(r.category||'-')}</td>
-          <td style="font-size:11px;overflow:hidden;text-overflow:ellipsis;max-width:160px;white-space:nowrap">${esc(r.violation||'-')}</td>
-          <td style="text-align:center;font-weight:700;font-size:12px">${r.totalPoints||0}</td>
-          <td>${statusBadge(r.status||'임시저장')}</td>
-          <td style="font-size:11px">${esc(r.teacherName||'-')}</td>
-          ${hasMemo ? `</tr><tr style="background:${i%2===0?'#fffdf0':'#f8f5e0'}"><td colspan="6" style="font-size:11px;color:#5a3e00;padding:3px 10px">
-            ${r.memo?'📝 '+esc(r.memo):''}${r.memo&&r.adminNote?' &nbsp;·&nbsp; ':''}${r.adminNote?'🔒 '+esc(r.adminNote):''}
-          </td>` : ''}
+        const rowId = `student-det-detail-${i}`;
+        const when = r.confirmedAt || r.createdAt || r.rejectedAt || '';
+        return `<tr class="summary-row" onclick="toggleStudentDetailRow('${rowId}')" style="cursor:pointer;">
+          <td class="nowrap" style="font-size:11px">${fmt(when).slice(0,10)}</td>
+          <td class="nowrap" style="font-size:11px">${esc(r.category||'-')}</td>
+          <td><span class="cell-reason-preview">${esc(String(r.violation||'-').split('\n')[0])}</span></td>
+          <td class="tc" style="font-weight:700;font-size:12px">${esc(String(r.totalPoints||0))}</td>
+          <td class="tc">${statusBadge(r.status||'임시저장')}</td>
+          <td class="nowrap" style="font-size:11px">${esc(r.teacherName||'-')}</td>
+        </tr>
+        <tr id="${rowId}" class="detail-row">
+          <td colspan="6">
+            <div class="detail-box">
+              <div class="detail-section">
+                <div class="detail-title">위반행위 | Violation</div>
+                <div class="detail-content">${esc(r.violation || '-')}</div>
+              </div>
+              <div class="detail-section">
+                <div class="detail-title">메모 | Memo</div>
+                <div class="detail-content">${esc(r.memo || '-')}</div>
+              </div>
+              <div class="detail-section">
+                <div class="detail-title">관리자 노트 | Admin Note</div>
+                <div class="detail-content">${esc(r.adminNote || '-')}</div>
+              </div>
+              <div class="detail-section">
+                <div class="detail-title">상세 | Detail</div>
+                <div class="detail-content">카테고리: ${esc(r.category || '-')}
+상태: ${esc(r.status || '-')}
+작성일: ${fmt(r.createdAt || '')}
+확정일: ${fmt(r.confirmedAt || '')}
+반려일: ${fmt(r.rejectedAt || '')}
+자동점수: ${esc(String(r.autoPoints || '-'))}
+수동점수: ${esc(String(r.manualPoints ?? '-'))}
+총점: ${esc(String(r.totalPoints || 0))}
+위반 회차: ${esc(String(r.violationCount || '-'))}
+담당교사: ${esc(r.teacherName || '-')} ${r.teacherEmail ? '('+esc(r.teacherEmail)+')' : ''}</div>
+              </div>
+            </div>
+          </td>
         </tr>`;
       }).join('');
 
-      const recRows = recList.map((r,i) => `
-        <tr style="background:${i%2===0?'#fff':'#f0f5ff'}">
-          <td style="font-size:11px">${(r.completedAt||'').slice(0,10)||'-'}</td>
-          <td style="font-size:11px;overflow:hidden;text-overflow:ellipsis;max-width:200px;white-space:nowrap">${esc((r.violationSnapshot||r.reasonsSnapshot||'').split('\n')[0]||'-')}</td>
-          <td style="text-align:center;font-weight:700;color:var(--gn)">+${r.recoveryPoints||0}</td>
-          <td style="font-size:11px">${esc(r.staffName||'-')}</td>
-        </tr>`).join('');
+      const noticeRows = noticeList.map((r,i) => {
+        const rowId = `student-notice-detail-${i}`;
+        const reason = String(r.cycleViolationsSnapshot || '-');
+        return `<tr class="summary-row" onclick="toggleStudentDetailRow('${rowId}')" style="cursor:pointer;">
+          <td class="nowrap" style="font-size:11px">${fmt(r.completedAt || r.createdAt).slice(0,10)}</td>
+          <td><span class="cell-reason-preview">${esc(reason.split('\n')[0])}</span></td>
+          <td class="nowrap tc" style="font-size:11px">${r.parentMailAt ? '발송' : '-'}</td>
+          <td class="nowrap tc" style="font-size:11px">${r.studentTeacherMailAt ? '발송' : '-'}</td>
+          <td class="nowrap tc" style="font-size:11px">${r.completedAt ? '완료' : '진행중'}</td>
+        </tr>
+        <tr id="${rowId}" class="detail-row">
+          <td colspan="5">
+            <div class="detail-box">
+              <div class="detail-section">
+                <div class="detail-title">알림 사유 | Notice Reasons</div>
+                <div class="detail-content">${esc(reason)}</div>
+              </div>
+              <div class="detail-section">
+                <div class="detail-title">알림 상태 | Notice Status</div>
+                <div class="detail-content">생성일: ${fmt(r.createdAt || '')}
+학부모 메일: ${r.parentMailAt ? fmt(r.parentMailAt) : '-'}
+학생/교사 메일: ${r.studentTeacherMailAt ? fmt(r.studentTeacherMailAt) : '-'}
+완료일: ${r.completedAt ? fmt(r.completedAt) : '-'}
+완료자: ${esc(r.completedBy || '-')} ${r.completedByEmail ? '('+esc(r.completedByEmail)+')' : ''}
+구분: ${esc(r.level || '-')}</div>
+              </div>
+            </div>
+          </td>
+        </tr>`;
+      }).join('');
+
+      const recRows = recList.map((r,i) => {
+        const rowId = `student-rec-detail-${i}`;
+        const reason = String(r.reasonsSnapshot || r.violationSnapshot || '-');
+        return `<tr class="summary-row" onclick="toggleStudentDetailRow('${rowId}')" style="cursor:pointer;">
+          <td class="nowrap" style="font-size:11px">${fmt(r.completedAt).slice(0,10)}</td>
+          <td><span class="cell-reason-preview">${esc(reason.split('\n')[0])}</span></td>
+          <td class="tc" style="font-weight:700;color:var(--gn)">-${esc(String(r.recoveryPoints||0))}</td>
+          <td class="tc">${esc(String(r.currentTotalAfter ?? r.currentTotalAtRecovery ?? '-'))}</td>
+          <td class="nowrap" style="font-size:11px">${esc(r.staffName||'-')}</td>
+        </tr>
+        <tr id="${rowId}" class="detail-row">
+          <td colspan="5">
+            <div class="detail-box">
+              <div class="detail-section">
+                <div class="detail-title">회복교육 사유 | Recovery Reasons</div>
+                <div class="detail-content">${esc(reason)}</div>
+              </div>
+              <div class="detail-section">
+                <div class="detail-title">상세 | Detail</div>
+                <div class="detail-content">완료일: ${fmt(r.completedAt || '')}
+회복점수: -${esc(String(r.recoveryPoints || 0))}
+교육 전 현재점수: ${esc(String(r.currentTotalBefore ?? '-'))}
+교육 후 현재점수: ${esc(String(r.currentTotalAfter ?? r.currentTotalAtRecovery ?? '-'))}
+당시 전체점수: ${esc(String(r.overallTotalAtRecovery ?? '-'))}
+담당자: ${esc(r.staffName || '-')} ${r.staffEmail ? '('+esc(r.staffEmail)+')' : ''}</div>
+              </div>
+            </div>
+          </td>
+        </tr>`;
+      }).join('');
+
+      const committeeRows = committeeList.map((r,i) => {
+        const rowId = `student-com-detail-${i}`;
+        const linkedEntry = r.entryKey ? entries[r.entryKey] : null;
+        const reason = String(r.reason || r.memo || r.reasonsSnapshot || r.violationSnapshot || linkedEntry?.violation || '-');
+        return `<tr class="summary-row" onclick="toggleStudentDetailRow('${rowId}')" style="cursor:pointer;">
+          <td class="nowrap" style="font-size:11px">${fmt(r.completedAt || r.createdAt || r.referredAt).slice(0,10)}</td>
+          <td class="nowrap" style="font-size:11px">${esc(committeeTypeLabel(r.type))}</td>
+          <td><span class="cell-reason-preview">${esc(reason.split('\n')[0])}</span></td>
+          <td class="nowrap tc" style="font-size:11px">${r.completedAt ? '완료' : '진행중'}</td>
+          <td class="nowrap" style="font-size:11px">${esc(r.staffName || r.completedBy || r.createdBy || '-')}</td>
+        </tr>
+        <tr id="${rowId}" class="detail-row">
+          <td colspan="5">
+            <div class="detail-box">
+              <div class="detail-section">
+                <div class="detail-title">위원회 사유 | Committee Reason</div>
+                <div class="detail-content">${esc(reason)}</div>
+              </div>
+              <div class="detail-section">
+                <div class="detail-title">상세 | Detail</div>
+                <div class="detail-content">유형: ${esc(committeeTypeLabel(r.type))}
+생성일: ${fmt(r.createdAt || r.referredAt || '')}
+완료일: ${r.completedAt ? fmt(r.completedAt) : '-'}
+연결 디텐션: ${esc(r.entryKey || '-')}
+처리자: ${esc(r.staffName || r.completedBy || r.createdBy || '-')} ${r.staffEmail ? '('+esc(r.staffEmail)+')' : ''}</div>
+              </div>
+            </div>
+          </td>
+        </tr>`;
+      }).join('');
 
       panel.innerHTML = `
         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;flex-wrap:wrap;gap:8px">
@@ -2513,42 +2662,80 @@
             <div style="font-size:12px;color:var(--sb);margin-top:2px">${esc(s.className||'')} · ${esc(s.selfEmail||'-')}</div>
             ${s.homeroomTeacherEmail?`<div style="font-size:11px;color:var(--sb)">담임: ${esc(s.homeroomTeacherEmail)}</div>`:''}
           </div>
-          <button class="btn-det" onclick="goToDetentionEntry('${esc(studentKey)}')">디텐션 입력</button>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end">
+            <button class="btn btn-secondary btn-xs" onclick="setStudentDetailExpanded(true)">전체 펼침</button>
+            <button class="btn btn-secondary btn-xs" onclick="setStudentDetailExpanded(false)">전체 접기</button>
+            <button class="btn-det" onclick="goToDetentionEntry('${esc(studentKey)}')">디텐션 입력</button>
+          </div>
         </div>
 
         <!-- 집계 -->
         <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:14px">
-          ${[['전체','var(--nv)',detList.length],['확정','var(--gn)',detList.filter(r=>r.status==='확정').length],['누적벌점','var(--rd)',confirmedPts],['회복점수','#7c3aed',recoveredPts],['잔여','var(--nv)',currentPts]]
+          ${[['전체', 'var(--nv)', detList.length], ['확정', 'var(--gn)', detList.filter(r=>r.status==='확정').length], ['누적벌점', 'var(--rd)', confirmedPts], ['회복점수', '#7c3aed', recoveredPts], ['잔여', 'var(--nv)', currentPts]]
             .map(([l,c,v])=>`<div style="background:#eef3ff;border-radius:8px;padding:8px;text-align:center"><div style="font-size:20px;font-weight:800;color:${c}">${v}</div><div style="font-size:10px;color:var(--sb)">${l}</div></div>`).join('')}
         </div>
 
         <!-- 연락처 -->
-        ${(s.fatherEmail||s.motherEmail)?`
-        <div style="background:#f8faff;border-radius:8px;padding:8px 12px;margin-bottom:12px;font-size:12px">
+        ${(s.fatherEmail||s.motherEmail||s.selfEmail||s.homeroomTeacherEmail)?`
+        <div style="background:#f8faff;border-radius:8px;padding:8px 12px;margin-bottom:12px;font-size:12px;line-height:1.5">
+          ${s.selfEmail?`<div>학생: ${esc(s.selfEmail)}</div>`:''}
           ${s.fatherEmail?`<div>부: ${esc(s.fatherEmail)}</div>`:''}
           ${s.motherEmail?`<div>모: ${esc(s.motherEmail)}</div>`:''}
+          ${s.homeroomTeacherEmail?`<div>담임: ${esc(s.homeroomTeacherEmail)}</div>`:''}
         </div>`:''}
 
+        <div style="font-size:11px;color:var(--sb);margin-bottom:10px">각 행을 클릭하면 상세 내용이 펼쳐집니다. | Click each row to view details.</div>
+
         <!-- 디텐션 기록 -->
-        <div style="font-weight:800;font-size:13px;color:var(--nv);margin-bottom:6px;padding-bottom:4px;border-bottom:2px solid var(--bd)">디텐션 기록 | Detention Records</div>
+        <div class="section-title-row" style="margin-top:6px;margin-bottom:6px">
+          <span class="stitle">디텐션 기록 | Detention Records</span>
+        </div>
         <div class="tbl-wrap" style="margin-bottom:16px">
           <table style="table-layout:fixed;width:100%">
             <thead><tr>
               <th style="width:84px">날짜</th><th style="width:110px">구분</th><th>위반행위</th>
-              <th style="width:44px">점수</th><th style="width:68px">상태</th><th style="width:60px">교사</th>
+              <th style="width:44px">점수</th><th style="width:74px">상태</th><th style="width:70px">교사</th>
             </tr></thead>
             <tbody>${detRows||'<tr><td colspan="6" class="empty">기록 없음</td></tr>'}</tbody>
           </table>
         </div>
 
+        <!-- 알림 기록 -->
+        <div class="section-title-row" style="margin-bottom:6px">
+          <span class="stitle">알림 기록 | Notice Records</span>
+        </div>
+        <div class="tbl-wrap" style="margin-bottom:16px">
+          <table style="table-layout:fixed;width:100%">
+            <thead><tr>
+              <th style="width:84px">날짜</th><th>사유</th><th style="width:72px">학부모</th><th style="width:86px">학생/교사</th><th style="width:70px">완료</th>
+            </tr></thead>
+            <tbody>${noticeRows||'<tr><td colspan="5" class="empty">기록 없음</td></tr>'}</tbody>
+          </table>
+        </div>
+
         <!-- 회복교육 기록 -->
-        <div style="font-weight:800;font-size:13px;color:var(--nv);margin-bottom:6px;padding-bottom:4px;border-bottom:2px solid var(--bd)">회복교육 기록 | Recovery Records</div>
+        <div class="section-title-row" style="margin-bottom:6px">
+          <span class="stitle">회복교육 기록 | Recovery Records</span>
+        </div>
+        <div class="tbl-wrap" style="margin-bottom:16px">
+          <table style="table-layout:fixed;width:100%">
+            <thead><tr>
+              <th style="width:84px">날짜</th><th>위반행위</th><th style="width:68px">회복점수</th><th style="width:62px">잔여</th><th style="width:76px">담당교사</th>
+            </tr></thead>
+            <tbody>${recRows||'<tr><td colspan="5" class="empty">기록 없음</td></tr>'}</tbody>
+          </table>
+        </div>
+
+        <!-- 위원회 기록 -->
+        <div class="section-title-row" style="margin-bottom:6px">
+          <span class="stitle">위원회 기록 | Committee Records</span>
+        </div>
         <div class="tbl-wrap">
           <table style="table-layout:fixed;width:100%">
             <thead><tr>
-              <th style="width:84px">날짜</th><th>위반행위</th><th style="width:68px">회복점수</th><th style="width:76px">담당교사</th>
+              <th style="width:84px">날짜</th><th style="width:150px">구분</th><th>사유</th><th style="width:70px">상태</th><th style="width:76px">담당</th>
             </tr></thead>
-            <tbody>${recRows||'<tr><td colspan="4" class="empty">기록 없음</td></tr>'}</tbody>
+            <tbody>${committeeRows||'<tr><td colspan="5" class="empty">기록 없음</td></tr>'}</tbody>
           </table>
         </div>`;
     }
