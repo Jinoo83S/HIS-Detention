@@ -757,34 +757,20 @@
           </div>
         </div>
 
-        <!-- 개요 뷰 (기본) -->
+        <!-- 개요 뷰 (기본) - 학반별 테이블 그리드 -->
         <div id="student-overview-view" style="padding:12px">
-          <div class="tbl-wrap">
-            <table style="table-layout:fixed;width:100%">
-              <thead>
-                <tr>
-                  <th style="width:7%">학반</th>
-                  <th style="width:18%">이름</th>
-                  <th style="width:18%">영문명</th>
-                  <th style="width:10%;text-align:center">현재점수</th>
-                  <th style="width:10%;text-align:center">전체누적</th>
-                  <th style="width:10%;text-align:center">회복점수</th>
-                  <th style="width:27%">이메일</th>
-                  <th style="width:8%">보기</th>
-                </tr>
-              </thead>
-              <tbody id="student-overview-tbody"></tbody>
-            </table>
-          </div>
+          <div id="student-class-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px"></div>
         </div>
 
         <!-- 상세 뷰 (보기 클릭 시) -->
-        <div id="student-split-view" style="display:none;grid-template-columns:260px 1fr;min-height:600px">
-          <div id="student-grid-wrap" style="border-right:1px solid var(--bd);overflow-y:auto;max-height:80vh"></div>
-          <div id="student-detail-panel" style="overflow-y:auto;max-height:80vh;padding:16px">
-            <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:300px;color:var(--sb)">
-              <div style="font-size:36px;margin-bottom:12px">👈</div>
-              <div style="font-size:13px">학생을 선택하면 상세 정보가 표시됩니다.</div>
+        <div id="student-split-view" style="display:none">
+          <div style="display:grid;grid-template-columns:260px 1fr;min-height:600px">
+            <div id="student-grid-wrap" style="border-right:1px solid var(--bd);overflow-y:auto;max-height:80vh"></div>
+            <div id="student-detail-panel" style="overflow-y:auto;max-height:80vh;padding:16px">
+              <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:300px;color:var(--sb)">
+                <div style="font-size:36px;margin-bottom:12px">👈</div>
+                <div style="font-size:13px">학생을 선택하면 상세 정보가 표시됩니다.</div>
+              </div>
             </div>
           </div>
         </div>
@@ -2322,53 +2308,69 @@
 
     // 개요 뷰 (기본)
     function renderStudentOverview(){
-      const tb = document.getElementById('student-overview-tbody');
-      if(!tb) return;
-      const q       = (document.getElementById('student-mgmt-search')?.value||'').trim().toLowerCase();
-      const level   = (document.getElementById('student-mgmt-level')?.value||'');
+      const grid = document.getElementById('student-class-grid');
+      if(!grid) return;
+      const q         = (document.getElementById('student-mgmt-search')?.value||'').trim().toLowerCase();
+      const level     = (document.getElementById('student-mgmt-level')?.value||'');
       const clsFilter = (document.getElementById('student-mgmt-class')?.value||'');
 
-      const list = Object.entries(students||{})
-        .map(([key, s]) => ({ key, ...(s||{}) }))
-        .filter(s=>{
-        if(!s.name) return false;
-        const cls = String(s.className||'').trim();
+      // 학반별로 그룹핑
+      const classMap = {};
+      Object.entries(students||{}).forEach(([key, s]) => {
+        if(!s||!s.name) return;
+        const cls   = String(s.className||'').trim();
         const grade = parseInt(cls)||0;
-        if(level==='ms' && grade>=10) return false;
-        if(level==='hs' && grade<10) return false;
-        if(clsFilter && cls!==clsFilter) return false;
-        if(q && ![s.name,s.englishName].some(v=>String(v||'').toLowerCase().includes(q))) return false;
-        return true;
-      }).sort((a,b)=>
-        String(a.className||'').localeCompare(String(b.className||''),'ko',{numeric:true})||
-        String(a.name||'').localeCompare(String(b.name||''),'ko')
-      );
+        if(level==='ms' && grade>=10) return;
+        if(level==='hs' && grade<10) return;
+        if(clsFilter && cls!==clsFilter) return;
+        if(q && ![s.name,s.englishName].some(v=>String(v||'').toLowerCase().includes(q))) return;
+        if(!classMap[cls]) classMap[cls]=[];
+        classMap[cls].push({key,...s});
+      });
 
-      if(!list.length){ tb.innerHTML='<tr><td colspan="8" class="empty">학생이 없습니다.</td></tr>'; return; }
+      const sortedClasses = Object.keys(classMap).sort((a,b)=>a.localeCompare(b,'ko',{numeric:true}));
 
-      tb.innerHTML = list.map((s,i)=>{
-        const overallTotal = Object.values(entries||{})
-          .filter(r=>(String(r.studentKey||'')===s.key||String(r.studentName||'')===String(s.name||''))&&r.status==='확정')
-          .reduce((n,r)=>n+(Number(r.totalPoints)||0),0);
-        const recoveredTotal = Object.values(recoveryEntries||{})
-          .filter(r=>String(r.studentKey||'')===s.key||String(r.studentName||'')===String(s.name||''))
-          .reduce((n,r)=>n+(Number(r.recoveryPoints)||0),0);
-        const currentTotal = Math.max(0, overallTotal - recoveredTotal);
-        const ptColor = currentTotal>=9?'var(--rd)':currentTotal>=6?'#b45309':currentTotal>=3?'#1d4ed8':'inherit';
-        const bg = i%2===0?'#fff':'#f0f5ff';
+      if(!sortedClasses.length){
+        grid.innerHTML='<div class="empty" style="padding:24px;grid-column:1/-1">학생이 없습니다.</div>';
+        return;
+      }
 
-        return `<tr style="background:${bg}">
-          <td style="font-size:12px;font-weight:600">${esc(s.className||'-')}</td>
-          <td style="font-size:12px;font-weight:600">${esc(s.name||'-')}</td>
-          <td style="font-size:11px;color:var(--sb)">${esc(s.englishName||'-')}</td>
-          <td style="text-align:center;font-weight:800;font-size:13px;color:${ptColor}">${currentTotal}</td>
-          <td style="text-align:center;font-size:12px;color:var(--sb)">${overallTotal}</td>
-          <td style="text-align:center;font-size:12px;color:var(--gn)">${recoveredTotal}</td>
-          <td style="font-size:11px;color:var(--sb);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.selfEmail||'-')}</td>
-          <td style="text-align:center">
-            <button class="btn-view" onclick="switchToSplitView('${esc(s.key)}')">보기</button>
-          </td>
-        </tr>`;
+      grid.innerHTML = sortedClasses.map(cls => {
+        const list = classMap[cls].sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'ko'));
+        const rows = list.map((s,i) => {
+          const _pts = getStudentPoints(s.key, getSchoolLevel(s.className||''));
+          const current=_pts.current, overall=_pts.overall, recovered=overall-current;
+          const ptColor = current>=9?'var(--rd)':current>=6?'#b45309':current>=3?'#1d4ed8':'#9ca3af';
+          const bg = i%2===0?'#fff':'#f7faff';
+          return `<tr style="background:${bg}">
+            <td style="font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.name||'')}</td>
+            <td style="font-size:11px;color:var(--sb);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.englishName||'')}</td>
+            <td style="text-align:center;font-weight:800;font-size:13px;color:${ptColor};white-space:nowrap">${current}</td>
+            <td style="text-align:center;font-size:11px;color:var(--sb);white-space:nowrap">${overall}</td>
+            <td style="text-align:center;padding:0 4px">
+              <button class="btn-view" style="padding:2px 8px;font-size:11px" onclick="switchToSplitView('${esc(s.key)}')">보기</button>
+            </td>
+          </tr>`;
+        }).join('');
+
+        return `<div style="background:#fff;border:1px solid var(--bd);border-radius:8px;overflow:hidden">
+          <div style="background:linear-gradient(120deg,var(--nv),var(--nv2));color:#fff;font-weight:800;font-size:13px;padding:6px 10px;display:flex;justify-content:space-between">
+            <span>${esc(cls)}</span>
+            <span style="font-size:11px;opacity:.75;font-weight:500">${list.length}명</span>
+          </div>
+          <table style="width:100%;border-collapse:collapse;table-layout:fixed">
+            <thead>
+              <tr style="background:#dce6f7">
+                <th style="font-size:11px;padding:4px 8px;text-align:left;width:35%">이름</th>
+                <th style="font-size:11px;padding:4px 8px;text-align:left;width:35%">영문명</th>
+                <th style="font-size:11px;padding:4px;text-align:center;width:10%">현재</th>
+                <th style="font-size:11px;padding:4px;text-align:center;width:10%">전체</th>
+                <th style="font-size:11px;padding:4px;text-align:center;width:10%"></th>
+              </tr>
+            </thead>
+            <tbody style="border-bottom:1px solid #eef2ff">${rows}</tbody>
+          </table>
+        </div>`;
       }).join('');
     }
 
