@@ -1186,8 +1186,30 @@
         .reduce((sum, r) => sum + Number(r.recoveryPoints || 0), 0);
     }
 
+    // ── 점수 계산 단일 진입점 ──
+    // cycleState에 캐시된 값이 있으면 사용, 없으면 entries에서 직접 계산 (fallback)
+    function getStudentPoints(studentKey, level){
+      const state = level
+        ? getCycleState(studentKey, level)
+        : (getCycleState(studentKey,'ms').phase !== 'clean'
+            ? getCycleState(studentKey,'ms')
+            : getCycleState(studentKey,'hs'));
+      if(state && typeof state.overallPoints === 'number'){
+        return {
+          overall: state.overallPoints,
+          current: typeof state.cyclePoints === 'number'
+            ? state.cyclePoints
+            : (state.overallPoints - getStudentRecoveryTotal(studentKey))
+        };
+      }
+      const overall = getStudentOverallTotal(studentKey);
+      const current = overall - getStudentRecoveryTotal(studentKey);
+      return { overall, current };
+    }
+
+    // 기존 호출 호환성 wrapper
     function getStudentCurrentTotal(studentKey){
-      return getStudentOverallTotal(studentKey) - getStudentRecoveryTotal(studentKey);
+      return Math.max(0, getStudentOverallTotal(studentKey) - getStudentRecoveryTotal(studentKey));
     }
 
     function getGradeNumber(className){
@@ -1353,7 +1375,9 @@
           // 선도위원회 회부(referral) 중이면 알림 목록 제외
           const noticePhases=['notice_needed','notice_active','edu_notice_needed','edu_notice_active'];
           if(!noticePhases.includes(state.phase)) return null;
-          const currentTotal=getStudentCurrentTotal(s.key),overallTotal=getStudentOverallTotal(s.key),reasons=buildNoticeReasonText(s.key);
+          const pts = getStudentPoints(s.key, level);
+          const currentTotal=pts.current, overallTotal=pts.overall;
+          const reasons=buildNoticeReasonText(s.key);
           const latestEntry=getConfirmedEntriesForStudent(s.key)[0]||null,latestConfirmedAt=getLatestConfirmedAt(s.key);
           const activeNoticeObj=findActiveNotice(s.key,level);
           const notice=activeNoticeObj?activeNoticeObj.notice:{},noticeDocKey=activeNoticeObj?activeNoticeObj.key:null;
@@ -1397,9 +1421,12 @@
         const completedNoticeObj=findLatestCompletedNotice(s.key,level);
         if(!completedNoticeObj) return null;
         const currentTotal=getStudentCurrentTotal(s.key),overallTotal=getStudentOverallTotal(s.key),reasons=buildReasonText(s.key);
+        // getStudentPoints: cycleState 캐시 우선, 없으면 직접 계산
+        const _pts = getStudentPoints(s.key, level);
+        const verifiedCurrent = _pts.current, verifiedOverall = _pts.overall;
         const recoveryList=Object.entries(recoveryEntries||{}).map(([key,value])=>({key,...value})).filter(r=>String(r.studentKey||'')===String(s.key)&&String(r.level||'')===String(level)).sort((a,b)=>String(b.completedAt||'').localeCompare(String(a.completedAt||'')));
         const noticedAt = completedNoticeObj.notice.completedAt || '';
-        return{...s,state,currentTotal,overallTotal,reasons,recoveryList,completedRecoveryCount:recoveryList.length,completedNotice:completedNoticeObj.notice,noticedAt};
+        return{...s,state,currentTotal:verifiedCurrent,overallTotal:verifiedOverall,reasons,recoveryList,completedRecoveryCount:recoveryList.length,completedNotice:completedNoticeObj.notice,noticedAt};
       }).filter(Boolean).sort((a,b)=>String(b.noticedAt||'').localeCompare(String(a.noticedAt||'')));
     }
 
@@ -1492,6 +1519,66 @@
       if (btn) btn.textContent = hidden ? '▲ 접기' : '▼ 펼치기';
     }
 
+    // ── 실시간 동기화 리스너 ──
+    // loadData 완료 후 한 번만 등록. 변경 감지 시 해당 데이터만 교체 후 화면 재렌더.
+    let _rtListeners = []; // 정리용 (로그아웃 시 off 가능)
+    let _rtDebounce = null;
+
+    function _rtRefresh(){
+      // 300ms 디바운스: 여러 노드가 동시에 바뀌어도 한 번만 렌더
+      clearTimeout(_rtDebounce);
+      _rtDebounce = setTimeout(() => {
+        renderConfirmEntries();
+        renderNotifyTables();
+        renderRecoveryTables();
+        renderAllEntries();
+        renderAllRecoveryEntries();
+        renderStats();
+        renderCommitteePendingBanner();
+        renderRecentEntries();
+        renderStudentOverview();
+      }, 300);
+    }
+
+    function setupRealtimeListeners(){
+      // 기존 리스너 정리
+      _rtListeners.forEach(({ ref, fn }) => ref.off('value', fn));
+      _rtListeners = [];
+
+      const watch = (path, onData) => {
+        const ref = db.ref(path);
+        const fn = snap => {
+          onData(snap);
+          _rtRefresh();
+        };
+        ref.on('value', fn);
+        _rtListeners.push({ ref, fn });
+      };
+
+      // 4개 핵심 컬렉션 실시간 감시
+      watch(DETENTION_DB_PATH, snap => {
+        const raw = snap.val() || {};
+        entries = {};
+        Object.entries(raw).forEach(([k, v]) => { entries[k] = { ...v, key: k }; });
+      });
+
+      watch(NOTICE_DB_PATH, snap => {
+        noticeEntries = snap.val() || {};
+      });
+
+      watch(RECOVERY_DB_PATH, snap => {
+        recoveryEntries = snap.val() || {};
+      });
+
+      watch(COMMITTEE_DB_PATH, snap => {
+        committeeEntries = snap.val() || {};
+      });
+
+      watch(CYCLE_STATE_PATH, snap => {
+        cycleStates = snap.val() || {};
+      });
+    }
+
     function init(){
       teacher = requireTeacherSession();
       if (!teacher) return;
@@ -1508,7 +1595,7 @@
       setupSelectors();
       setupEvents();
       initEntryFormMeta();
-      loadData();
+      loadData().then(() => setupRealtimeListeners());
     }
 
     function setupRoleVisibility(){
@@ -2918,7 +3005,7 @@
       // 점수 조건 직접 체크 (cycleState 미갱신 방어)
       Object.entries(students||{}).forEach(([sk,sv])=>{
         const lv=getSchoolLevel(sv.className||'');if(!lv) return;
-        const cur=getStudentCurrentTotal(sk),ovr=getStudentOverallTotal(sk);
+        const _p=getStudentPoints(sk,lv);const cur=_p.current,ovr=_p.overall;
         if(cur>=12||ovr>30){
           const done=Object.values(committeeEntries||{}).some(c=>(['edu','manual_edu','edu_points','edu_overall'].includes(c.type))&&String(c.studentKey||'')===sk&&!!c.completedAt&&String(c.year||'')===yr);
           if(!done) addP((sv.name||'')+(sv.englishName?' '+sv.englishName:''),'생활교육위원회');
