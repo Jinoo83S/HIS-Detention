@@ -1318,14 +1318,16 @@
         if(prevEntries.length){
           residualText+='\n'+prevEntries.map(r=>{
             const pts=Number(r.totalPoints||0);
-            return '  · '+String(r.violation||'').split('\n')[0].trim()+(pts?' ('+pts+'점)':'');
+            const cLabel=getCommitteeCompletedLabelForEntry(r);
+            return '  · '+String(r.violation||'').split('\n')[0].trim()+(pts?' ('+pts+'점)':'')+(cLabel?' · '+cLabel:'');
           }).join('\n');
         }
         parts.push(residualText);
       }
       cycleEntries.forEach(r=>{
         const pts=Number(r.totalPoints||0);
-        parts.push('['+idx+'] '+String(r.violation||'').trim()+(pts?' ('+pts+'점)':''));
+        const cLabel=getCommitteeCompletedLabelForEntry(r);
+        parts.push('['+idx+'] '+String(r.violation||'').trim()+(pts?' ('+pts+'점)':'')+(cLabel?' · '+cLabel:''));
         idx++;
       });
       return parts.length ? parts.join('\n\n') : '-';
@@ -1369,7 +1371,8 @@
       if (!entries.length) return '-';
       return entries.map((r, i) => {
         const pts = Number(r.totalPoints || 0);
-        return '['+String(i+1)+'] '+String(r.violation||'').trim()+(pts?' ('+pts+'점)':'');
+        const cLabel = getCommitteeCompletedLabelForEntry(r);
+        return '['+String(i+1)+'] '+String(r.violation||'').trim()+(pts?' ('+pts+'점)':'')+(cLabel?' · '+cLabel:'');
       }).join('\n\n');
     }
 
@@ -1428,6 +1431,8 @@
         .sort((a,b)=>String(b.completedAt||'').localeCompare(String(a.completedAt||'')))
         .map(v=>{
           const s=students[v.studentKey]||{};
+          const savedReason = String(v.cycleViolationsSnapshot || '').trim();
+          const liveReason = buildNoticeReasonText(v.studentKey);
           return{
             key:v.studentKey,
             noticeKey:v.noticeKey,
@@ -1437,7 +1442,7 @@
             notice:v,
             currentTotal:getStudentCurrentTotal(v.studentKey),
             overallTotal:getStudentOverallTotal(v.studentKey),
-            reasons:(String(v.cycleViolationsSnapshot || '').trim() || buildNoticeReasonText(v.studentKey))
+            reasons:(liveReason.includes('위원회 완료') ? liveReason : (savedReason || liveReason))
           };
         });
     }
@@ -2209,8 +2214,7 @@
                 <div style="display:flex;gap:4px;justify-content:center;flex-wrap:wrap">
                   ${canConfirm?`<button class="btn btn-primary btn-xs" onclick="confirmDetention('${esc(r.key)}')">확정</button>`:''}
                   ${canReject ?`<button class="btn btn-danger btn-xs"  onclick="rejectDetention('${esc(r.key)}')">반려</button>`:''}
-                  ${canCancelDraftDetention(r)?`<button class="btn btn-danger btn-xs" style="background:#fff;color:var(--rd);border:1px solid #fca5a5" onclick="cancelDraftDetention('${esc(r.key)}')">입력취소</button>`:''}
-                  ${!canManage&&!canCancelDraftDetention(r)?'-':''}
+                  ${!canManage?'-':''}
                 </div>
               </td>
             </tr>
@@ -2219,6 +2223,7 @@
                 <div class="detail-section"><div class="detail-title">위반행위 | Violation</div><div class="detail-content">${esc(r.violation||'')}</div></div>
                 <div class="detail-section"><div class="detail-title">메모 | Memo</div><div class="detail-content">${esc(r.memo||'-')}</div></div>
                 <div class="detail-section"><div class="detail-title">처리 정보</div><div class="detail-content">작성: ${fmt(r.createdAt)}\n확정: ${fmt(r.confirmedAt)}\n반려: ${fmt(r.rejectedAt)}\n노트: ${esc(r.adminNote||'-')}</div></div>
+                ${canCancelDraftDetention(r)?`<div class="detail-section"><div class="detail-title">취소 | Cancel</div><button class="btn btn-danger btn-xs" style="background:#fff;color:var(--rd);border:1px solid #fca5a5" onclick="event.stopPropagation();cancelDraftDetention('${esc(r.key)}')">입력취소</button></div>`:''}
               </div></td>
             </tr>`;
         }).join('');
@@ -2532,6 +2537,85 @@
       return t || '-';
     }
 
+    const EDU_COMMITTEE_TYPES = ['edu','manual_edu','edu_points','edu_overall'];
+    const REFERRAL_COMMITTEE_TYPES = ['referral','manual_referral'];
+
+    function normalizeKeyList(v){
+      if(Array.isArray(v)) return v.map(x=>String(x||'').trim()).filter(Boolean);
+      if(typeof v === 'string') return v.split(/[\s,]+/).map(x=>x.trim()).filter(Boolean);
+      return [];
+    }
+
+    function getEntrySortTime(r){ return String((r && (r.confirmedAt || r.createdAt || r.rejectedAt)) || ''); }
+
+    function getCommitteeLinkedEntryList(record){
+      record = record || {};
+      const ids = [];
+      if(record.entryKey) ids.push(String(record.entryKey));
+      ids.push(...normalizeKeyList(record.linkedEntryKeys));
+      const seen = new Set();
+      const direct = ids.filter(k=>{ if(!k || seen.has(k)) return false; seen.add(k); return true; })
+        .map(k=> entries && entries[k] ? ({ key:k, ...entries[k] }) : null)
+        .filter(Boolean);
+      if(direct.length) return direct.sort((a,b)=>getEntrySortTime(b).localeCompare(getEntrySortTime(a)));
+      const sk = String(record.studentKey || '');
+      if(!sk) return [];
+      const completedAt = String(record.completedAt || record.createdAt || record.referredAt || '');
+      const t = String(record.type || '');
+      let list = getConfirmedEntriesForStudent(sk);
+      if(REFERRAL_COMMITTEE_TYPES.includes(t)) list = list.filter(e=>e.isReferral===true || e.isReferral==='true');
+      if(completedAt) list = list.filter(e=>String(e.confirmedAt || e.createdAt || '') <= completedAt);
+      return list;
+    }
+
+    function getCommitteeReasonText(record){
+      record = record || {};
+      const stored = String(record.reason || record.reasonSnapshot || record.reasonsSnapshot || record.violationSnapshot || '').trim();
+      if(stored) return stored;
+      const linked = getCommitteeLinkedEntryList(record);
+      if(linked.length){
+        return linked.map((e,i)=>'['+(i+1)+'] '+String(e.violation||'').trim()+(Number(e.totalPoints||0)?' ('+Number(e.totalPoints||0)+'점)':'')).join('\n\n');
+      }
+      if(record.studentKey) return buildReasonTextWithPoints(record.studentKey);
+      return '-';
+    }
+
+    function getCommitteeLinkedText(record){
+      record = record || {};
+      const linked = getCommitteeLinkedEntryList(record);
+      if(linked.length){
+        return linked.map((e,i)=>'['+(i+1)+'] '+(e.key||'-')+' / '+String(e.violation||'').split('\n')[0].trim()+(Number(e.totalPoints||0)?' ('+Number(e.totalPoints||0)+'점)':'')).join('\n');
+      }
+      if(record.studentKey) return '학생 점수 기준 자동 회부: '+record.studentKey;
+      return '-';
+    }
+
+    function getCommitteeCompletedLabelForEntry(entry){
+      if(!entry) return '';
+      const sk = String(entry.studentKey || '');
+      const ek = String(entry.key || '');
+      const entryAt = String(entry.confirmedAt || entry.createdAt || '');
+      const found = Object.values(committeeEntries || {}).filter(c=>!!c.completedAt).find(c=>{
+        const t = String(c.type || '');
+        if(REFERRAL_COMMITTEE_TYPES.includes(t)){
+          return (String(c.entryKey||'') === ek) || (String(c.studentKey||'') === sk && (entry.isReferral===true || entry.isReferral==='true'));
+        }
+        if(EDU_COMMITTEE_TYPES.includes(t)){
+          if(String(c.studentKey||'') !== sk) return false;
+          const doneAt = String(c.completedAt || '');
+          return !entryAt || !doneAt || entryAt <= doneAt;
+        }
+        return false;
+      });
+      if(!found) return '';
+      return EDU_COMMITTEE_TYPES.includes(String(found.type||'')) ? '생활교육위원회 완료' : '선도위원회 완료';
+    }
+
+    function committeeCreatedAt(record){
+      record = record || {};
+      return record.createdAt || record.referredAt || record.completedAt || '';
+    }
+
     function renderStudentDetail(studentKey){
       const panel = document.getElementById('student-detail-panel');
       const s = students[studentKey];
@@ -2675,10 +2759,10 @@
 
       const committeeRows = committeeList.map((r,i) => {
         const rowId = `student-com-detail-${i}`;
-        const linkedEntry = r.entryKey ? entries[r.entryKey] : null;
-        const reason = String(r.reason || r.memo || r.reasonsSnapshot || r.violationSnapshot || linkedEntry?.violation || '-');
+        const reason = String(getCommitteeReasonText(r) || '-');
+        const linkedText = getCommitteeLinkedText(r);
         return `<tr class="summary-row" onclick="toggleStudentDetailRow('${rowId}')" style="cursor:pointer;">
-          <td class="nowrap" style="font-size:11px">${fmt(r.completedAt || r.createdAt || r.referredAt)}</td>
+          <td class="nowrap" style="font-size:11px">${fmt(committeeCreatedAt(r))}</td>
           <td class="nowrap" style="font-size:11px">${esc(committeeTypeLabel(r.type))}</td>
           <td><span class="cell-reason-preview">${esc(reason.split('\n')[0])}</span></td>
           <td class="nowrap tc" style="font-size:11px">${r.completedAt ? '완료' : '진행중'}</td>
@@ -2692,12 +2776,16 @@
                 <div class="detail-content">${esc(reason)}</div>
               </div>
               <div class="detail-section">
+                <div class="detail-title">연결 디텐션 | Linked Detention Entries</div>
+                <div class="detail-content">${esc(linkedText)}</div>
+              </div>
+              <div class="detail-section">
                 <div class="detail-title">상세 | Detail</div>
                 <div class="detail-content">유형: ${esc(committeeTypeLabel(r.type))}
-생성일: ${fmt(r.createdAt || r.referredAt || '')}
+생성일: ${fmt(committeeCreatedAt(r))}
 완료일: ${r.completedAt ? fmt(r.completedAt) : '-'}
-연결 디텐션: ${esc(r.entryKey || '-')}
-처리자: ${esc(r.staffName || r.completedBy || r.createdBy || '-')} ${r.staffEmail ? '('+esc(r.staffEmail)+')' : ''}</div>
+연도: ${esc(String(r.year || '-'))}
+처리자: ${esc(r.staffName || r.completedBy || r.createdBy || '-')} ${r.staffEmail || r.completedByEmail || r.createdByEmail ? '('+esc(r.staffEmail || r.completedByEmail || r.createdByEmail)+')' : ''}</div>
               </div>
             </div>
           </td>
@@ -2882,7 +2970,7 @@
               </td>
             </tr>
             <tr class="detail-row ${expanded ? 'show' : ''}">
-              <td colspan="8">
+              <td colspan="9">
                 <div class="detail-box">
                   <div class="detail-section">
                     <div class="detail-title">사유 | Reasons</div>
@@ -2948,13 +3036,15 @@
               ? dateCell(s.notice.completedAt,         'completedAt')
               : `<td class="nowrap" style="font-size:11px;${completedColor}">${completedText}</td>`
             }
-            <td class="nowrap tc" onclick="event.stopPropagation()">
-              ${s.noticeKey ? `<button class="btn btn-secondary btn-xs" onclick="cancelNoticeCompletion('${esc(s.noticeKey||'')}','${esc(s.key)}','${level}')">완료취소</button>` : '-'}
+            <td class="nowrap tc">
+              <span style="font-size:11px;color:var(--sb)">${expanded?'▲':'▼'}</span>
             </td>
           </tr>
           <tr class="detail-row ${expanded ? 'show' : ''}">
             <td colspan="9"><div class="detail-box">
               <div class="detail-section"><div class="detail-title">사유 | Reasons</div><div class="detail-content">${esc(s.reasons||'-')}</div></div>
+              <div class="detail-section"><div class="detail-title">알림 상태 | Notice Status</div><div class="detail-content">학부모 메일: ${s.notice.parentMailAt ? fmt(s.notice.parentMailAt) : '-'}\n학생/교사 메일: ${s.notice.studentTeacherMailAt ? fmt(s.notice.studentTeacherMailAt) : '-'}\n완료일: ${s.notice.completedAt ? fmt(s.notice.completedAt) : '-'}\n완료자: ${esc(s.notice.completedBy || '-')} ${s.notice.completedByEmail ? '('+esc(s.notice.completedByEmail)+')' : ''}</div></div>
+              ${s.noticeKey ? `<div class="detail-section"><div class="detail-title">취소 | Cancel</div><button class="btn btn-secondary btn-xs" onclick="event.stopPropagation();cancelNoticeCompletion('${esc(s.noticeKey||'')}','${esc(s.key)}','${level}')">완료취소</button></div>` : ''}
             </div></td>
           </tr>`;
         }).join('');
@@ -3081,13 +3171,14 @@
             '<td class="nowrap tc">-'+esc(String(r.recoveryPoints||0))+'</td>'+
             '<td class="nowrap tc">'+esc(String(r.currentTotalAfter??r.currentTotalAtRecovery??'-'))+'</td>'+
             '<td class="nowrap tc">'+esc(String(r.overallTotalAtRecovery??'-'))+'</td>'+
-            '<td class="nowrap" onclick="event.stopPropagation()">'+(teacherRoles.includes('admin')  ? '<input type="date" class="edit-input" style="font-size:11px;padding:2px 3px;width:100%;max-width:100%;min-width:0" value="'+(r.completedAt||'').slice(0,10)+'"'    +' onchange="updateRecoveryCompletedAt(\''+r.key+'\',this.value)">'  : fmt(r.completedAt))+'</td>'+            '<td class="nowrap tc" onclick="event.stopPropagation()">'+(canManageRecoveryLevel(level)?'<button class="btn btn-secondary btn-xs" onclick="cancelRecoveryCompletion(\''+r.key+'\')">완료취소</button>':'-')+'</td>'+
+            '<td class="nowrap" onclick="event.stopPropagation()">'+(teacherRoles.includes('admin')  ? '<input type="date" class="edit-input" style="font-size:11px;padding:2px 3px;width:100%;max-width:100%;min-width:0" value="'+(r.completedAt||'').slice(0,10)+'"'    +' onchange="updateRecoveryCompletedAt(\''+r.key+'\',this.value)">'  : fmt(r.completedAt))+'</td>'+            '<td class="nowrap tc"><span style="font-size:11px;color:var(--sb)">상세</span></td>'+
             '</tr>'+
             '<tr class="detail-row">'+
             '<td colspan="8"><div class="detail-box"><div class="detail-section">'+
             '<div class="detail-title">위반 행위 | Violations</div>'+
             '<div class="detail-content">'+esc(reasonText)+'</div>'+
             '</div>'+(()=>{ const memos=getConfirmedEntriesForStudent(r.studentKey).filter(e=>e.memo||e.adminNote).map((e,i)=>'['+(i+1)+'] '+(e.memo?'메모: '+e.memo:'')+(e.memo&&e.adminNote?' / ':'')+(e.adminNote?'관리자: '+e.adminNote:'')).join('\n'); return memos?'<div class="detail-section"><div class="detail-title">메모 | Notes</div><div class="detail-content">'+esc(memos)+'</div></div>':''; })()+
+            (canManageRecoveryLevel(level)?'<div class="detail-section"><div class="detail-title">취소 | Cancel</div><button class="btn btn-secondary btn-xs" onclick="event.stopPropagation();cancelRecoveryCompletion(\''+r.key+'\')">완료취소</button></div>':'')+
             '</div></td></tr>'
           );
         });
@@ -3151,12 +3242,14 @@
           '<td class="tc">'+fmt(r.confirmedAt||r.createdAt)+'</td>'+
           '<td class="tc">'+(done ? statusBadge(r.status) : '<span style="background:#fde8e8;color:#7f1d1d;padding:4px 8px;border-radius:8px;font-size:11px;font-weight:700;">선도위원회 회부</span>')+'</td>'+
           (done
-            ? '<td class="tc" style="font-size:11px;"><div style="color:var(--gn);font-weight:700;">&#10003; '+fmt(r.committeeCompletedAt)+'</div>'+(canManageCommittee()?'<button class="btn btn-secondary btn-xs" style="margin-top:4px" onclick="event.stopPropagation();cancelCommitteeCompletion(\''+esc(r.committeeKey||'')+'\')">완료취소</button>':'')+'</td>'
+            ? '<td class="tc" style="font-size:11px;"><div style="color:var(--gn);font-weight:700;">&#10003; '+fmt(r.committeeCompletedAt)+'</div></td>'
             : '<td class="tc"><button class="btn btn-primary" style="font-size:11px;padding:4px 8px;" onclick="event.stopPropagation();completeCommittee(\'referral\',\''+esc(r.key||'')+'\',\''+esc(r.studentKey||'')+'\',\'\')">완료</button></td>')+
           '</tr>'+
           '<tr class="detail-row" id="'+did+'"><td colspan="8">'+
           '<div class="detail-box"><div class="detail-section"><div class="detail-title">전체 위반 내역</div>'+
-          '<div class="detail-content">'+esc(buildReasonTextWithPoints(r.studentKey))+'</div></div></div>'+
+          '<div class="detail-content">'+esc(buildReasonTextWithPoints(r.studentKey))+'</div></div>'+
+          (done&&canManageCommittee()?'<div class="detail-section"><div class="detail-title">취소 | Cancel</div><button class="btn btn-secondary btn-xs" onclick="event.stopPropagation();cancelCommitteeCompletion(\''+esc(r.committeeKey||'')+'\')">완료취소</button></div>':'')+
+          '</div>'+
           '</td></tr>';
       };
       const activeRef=allRef.filter(r=>!completedRefKeys.has(r.key));
@@ -3192,13 +3285,15 @@
           '<td class="tc" style="font-weight:700;color:var(--rd);">'+ovr+'점</td>'+
           '<td style="font-size:11px;">'+esc(trig)+'</td>'+
           (done
-            ? '<td class="tc" style="font-size:11px;"><div style="color:var(--gn);font-weight:700;">&#10003; '+fmt(s.committeeCompletedAt)+'</div>'+(canManageCommittee()?'<button class="btn btn-secondary btn-xs" style="margin-top:4px" onclick="event.stopPropagation();cancelCommitteeCompletion(\''+esc(s.committeeKey||'')+'\')">완료취소</button>':'')+'</td><td></td>'
+            ? '<td class="tc" style="font-size:11px;"><div style="color:var(--gn);font-weight:700;">&#10003; '+fmt(s.committeeCompletedAt)+'</div></td><td></td>'
             : '<td class="tc"><span style="color:var(--rd);font-weight:700;font-size:12px;">대상</span></td>'+
               '<td class="tc"><button class="btn btn-primary" style="font-size:11px;padding:4px 8px;" onclick="event.stopPropagation();completeCommittee(\'edu\',\'\',\''+esc(s.key||'')+'\')">완료</button></td>')+
           '</tr>'+
           '<tr class="detail-row" id="'+did+'"><td colspan="7">'+
           '<div class="detail-box"><div class="detail-section"><div class="detail-title">전체 위반 내역</div>'+
-          '<div class="detail-content">'+esc(buildReasonTextWithPoints(s.key))+'</div></div></div>'+
+          '<div class="detail-content">'+esc(buildReasonTextWithPoints(s.key))+'</div></div>'+
+          (done&&canManageCommittee()?'<div class="detail-section"><div class="detail-title">취소 | Cancel</div><button class="btn btn-secondary btn-xs" onclick="event.stopPropagation();cancelCommitteeCompletion(\''+esc(s.committeeKey||'')+'\')">완료취소</button></div>':'')+
+          '</div>'+
           '</td></tr>';
       };
       const activeEdu=allEdu.filter(s=>!doneEduKeysYr.has(s.key));
@@ -3222,16 +3317,23 @@
           const keyMatch=(entryKey&&entryKey!==''&&c.entryKey===entryKey)||(studentKey&&studentKey!==''&&String(c.studentKey||'')===String(studentKey||''));
           return typeMatch&&keyMatch;
         });
+        const linkedEntryKeys = entryKey ? [entryKey] : getCurrentCycleEntries(studentKey).map(r=>r.key).filter(Boolean);
+        const reasonSnapshot = studentKey ? buildNoticeReasonText(studentKey) : (entryKey && entries[entryKey] ? String(entries[entryKey].violation || '') : '');
+        const completePayload = {
+          completedAt:now,
+          completedBy:teacher.name||'',
+          completedByEmail:teacher.email||'',
+          reasonSnapshot: reasonSnapshot || null,
+          linkedEntryKeys: linkedEntryKeys.length ? linkedEntryKeys : null,
+          createdAt: (pendingEntry && pendingEntry[1] && pendingEntry[1].createdAt) ? pendingEntry[1].createdAt : now
+        };
         if(pendingEntry){
-          await db.ref(COMMITTEE_DB_PATH+'/'+pendingEntry[0]).update({
-            completedAt:now,completedBy:teacher.name||'',completedByEmail:teacher.email||''
-          });
+          await db.ref(COMMITTEE_DB_PATH+'/'+pendingEntry[0]).update(completePayload);
         } else {
-          await db.ref(COMMITTEE_DB_PATH).push({
-            type,completedAt:now,year:yr,
-            entryKey:entryKey||'',studentKey:studentKey||'',
-            completedBy:teacher.name||'',completedByEmail:teacher.email||''
-          });
+          await db.ref(COMMITTEE_DB_PATH).push(Object.assign({
+            type,year:yr,
+            entryKey:entryKey||'',studentKey:studentKey||''
+          }, completePayload));
         }
         toast('완료 처리되었습니다.','ok');
         // 상태 재계산
@@ -3293,6 +3395,8 @@
           type, studentKey,
           studentName, entryKey,
           reason,
+          reasonSnapshot: reason,
+          linkedEntryKeys: entryKey ? [entryKey] : getCurrentCycleEntries(studentKey).map(r=>r.key).filter(Boolean),
           completedAt: null,
           year: new Date().getFullYear(),
           createdAt: new Date().toISOString(),

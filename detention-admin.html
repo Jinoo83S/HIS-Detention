@@ -409,11 +409,15 @@
             <thead>
               <tr>
                 <th style="width:32px">#</th>
-                <th style="width:100px">종류<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
-                <th style="width:170px">학생 Key<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
-                <th style="width:140px">항목 Key<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:95px">종류<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:150px">학생 Key<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:150px">항목 Key<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:170px">연결 항목 Keys<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:240px">사유/스냅샷<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:110px">생성일<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
                 <th style="width:110px">완료일<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
-                <th style="width:54px">연도<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:100px">처리자<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:58px">연도<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
                 <th style="width:46px">삭제</th>
               </tr>
             </thead>
@@ -811,8 +815,19 @@
       const tbody=document.getElementById('committee-tbody');
       if(!tbody)return;
       const visible=committeeRows.filter(r=>!r._deleted);
-      if(!visible.length){tbody.innerHTML='<tr><td colspan="7" class="empty">기록이 없습니다.</td></tr>';return;}
+      if(!visible.length){tbody.innerHTML='<tr><td colspan="11" class="empty">기록이 없습니다.</td></tr>';return;}
       const rows=[];
+      function valueForTextarea(v){
+        if(Array.isArray(v)) return v.join('\n');
+        return v || '';
+      }
+      function writeTextareaValue(row, field, value){
+        if(field==='linkedEntryKeys'){
+          row[field]=String(value||'').split(/[\n,]+/).map(x=>x.trim()).filter(Boolean);
+        }else{
+          row[field]=value;
+        }
+      }
       visible.forEach(function(r){
         const idx=committeeRows.findIndex(function(x){return x.key===r.key;});
         const tr=document.createElement('tr');
@@ -820,15 +835,16 @@
         noTd.textContent=String(idx+1);
         noTd.style.textAlign='center';
         tr.appendChild(noTd);
-        ['type','studentKey','entryKey','completedAt','year'].forEach(function(field){
+
+        function addInput(field, type){
           const td=document.createElement('td');
           const inp=document.createElement('input');
           inp.className='edit-input';
           inp.style.width='100%';
           inp.style.maxWidth='100%';
           inp.style.boxSizing='border-box';
-          if(field==='completedAt'){
-            inp.type='date';
+          inp.type=type||'text';
+          if(type==='date'){
             inp.value=dateInputValue(r[field]);
             inp.onchange=function(){committeeRows[idx][field]=this.value?this.value+'T00:00:00':null;checkCommitteeDirty();};
           }else{
@@ -836,7 +852,32 @@
             inp.oninput=function(){committeeRows[idx][field]=this.value;checkCommitteeDirty();};
           }
           td.appendChild(inp);tr.appendChild(td);
-        });
+        }
+        function addTextarea(field){
+          const td=document.createElement('td');
+          const ta=document.createElement('textarea');
+          ta.className='edit-input';
+          ta.rows=2;
+          ta.style.width='100%';
+          ta.style.maxWidth='100%';
+          ta.style.minWidth='0';
+          ta.style.boxSizing='border-box';
+          ta.style.resize='vertical';
+          ta.value=valueForTextarea(r[field]);
+          ta.oninput=function(){writeTextareaValue(committeeRows[idx],field,this.value);checkCommitteeDirty();};
+          td.appendChild(ta);tr.appendChild(td);
+        }
+
+        addInput('type');
+        addInput('studentKey');
+        addInput('entryKey');
+        addTextarea('linkedEntryKeys');
+        addTextarea('reasonSnapshot');
+        addInput('createdAt','date');
+        addInput('completedAt','date');
+        addInput('completedBy');
+        addInput('year');
+
         const td=document.createElement('td');
         const btn=document.createElement('button');
         btn.className='btn btn-danger small-btn';
