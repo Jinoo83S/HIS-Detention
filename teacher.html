@@ -1405,7 +1405,7 @@
         if(!recoveryPhases.includes(state.phase)) return null;
         const completedNoticeObj=findLatestCompletedNotice(s.key,level);
         if(!completedNoticeObj) return null;
-        const currentTotal=getStudentCurrentTotal(s.key),overallTotal=getStudentOverallTotal(s.key),reasons=buildReasonText(s.key);
+        const currentTotal=getStudentCurrentTotal(s.key),overallTotal=getStudentOverallTotal(s.key),reasons=buildCycleReasonTextWithPoints(s.key);
         // getStudentPoints: cycleState 캐시 우선, 없으면 직접 계산
         const _pts = getStudentPoints(s.key, level);
         const verifiedCurrent = _pts.current, verifiedOverall = _pts.overall;
@@ -2760,7 +2760,7 @@
               <td class="nowrap tc">${esc(s.className || '')}</td>
               <td class="nowrap tc">${s.currentTotal}</td>
               <td class="nowrap tc">${s.overallTotal}</td>
-              <td><span class="cell-reason-preview">${esc(buildReasonTextWithPoints(s.key).split('\n')[0])}</span></td>
+              <td><span class="cell-reason-preview">${esc(String(s.reasons||'-').split('\n')[0])}</span></td>
               <td class="nowrap tc">${Math.floor(s.currentTotal / 3)}회 필요</td>
               <td class="nowrap tc small-muted">${s.noticedAt ? fmt(s.noticedAt) : '-'}</td>
               <td class="nowrap tc" onclick="event.stopPropagation()">
@@ -3457,7 +3457,7 @@
           className: student.className || '',
           level,
           recoveryPoints,
-          reasonsSnapshot: buildReasonText(studentKey), // 전체 확정 위반 목록 저장
+          reasonsSnapshot: buildCycleReasonTextWithPoints(studentKey), // 회복교육 대상 사이클의 위반 목록 저장
           overallTotalAtRecovery: overallTotal,
           currentTotalBefore,
           currentTotalAfter: Math.max(0, currentTotalBefore - recoveryPoints),
