@@ -121,6 +121,120 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
+
+// ── studentCycleState 전체 재계산 ──
+function levelFromClassNameForState(className){
+  const m = String(className || '').match(/^(\d+)/);
+  if(!m) return '';
+  return Number(m[1]) >= 10 ? 'hs' : 'ms'; // HIS 기준: 7-9 중등, 10-12 고등
+}
+function safeStateKey(studentKey, level){
+  return (String(studentKey || '') + '_' + String(level || '')).replace(/[.#$\[\]\/]/g, '_');
+}
+function latestEntryDate(v){
+  return String((v && (v.confirmedAt || v.createdAt || v.completedAt)) || '');
+}
+async function recalculateAllStudentCycleStatesAfterImport(){
+  const [studentsSnap, entriesSnap, noticesSnap, recoverySnap, committeeSnap] = await Promise.all([
+    db.ref('students').once('value'),
+    db.ref('detentionEntries').once('value'),
+    db.ref('detentionNotices').once('value'),
+    db.ref('recoveryEntries').once('value'),
+    db.ref('committeeRecords').once('value')
+  ]);
+  const students = studentsSnap.val() || {};
+  const entries = entriesSnap.val() || {};
+  const notices = noticesSnap.val() || {};
+  const recovery = recoverySnap.val() || {};
+  const committee = committeeSnap.val() || {};
+  const targets = {};
+  function addTarget(studentKey, level, className){
+    const sk = String(studentKey || '').trim();
+    const lv = String(level || levelFromClassNameForState(className) || '').trim();
+    if(!sk || !lv) return;
+    targets[sk + '|||' + lv] = { studentKey: sk, level: lv };
+  }
+  Object.entries(students).forEach(([key, st]) => addTarget(key, levelFromClassNameForState(st && st.className), st && st.className));
+  Object.values(entries).forEach(r => addTarget(r && r.studentKey, r && r.schoolLevel, r && r.className));
+  Object.values(notices).forEach(r => addTarget(r && r.studentKey, r && r.level, r && r.className));
+  Object.values(recovery).forEach(r => addTarget(r && r.studentKey, r && r.level, r && r.className));
+  Object.values(committee).forEach(r => addTarget(r && r.studentKey, r && r.level, r && r.className));
+
+  const curYear = String(new Date().getFullYear());
+  const newStates = {};
+  Object.values(targets).forEach(({studentKey, level}) => {
+    const sk = String(studentKey || '');
+    const confirmedEntries = Object.entries(entries)
+      .filter(([, r]) => String((r || {}).studentKey || '') === sk && String((r || {}).status || '') === '확정')
+      .sort((a,b) => latestEntryDate(b[1]).localeCompare(latestEntryDate(a[1])));
+    const overallTotal = confirmedEntries.reduce((sum, [, r]) => sum + Number((r || {}).totalPoints || 0), 0);
+    const recoveredTotal = Object.values(recovery)
+      .filter(r => String((r || {}).studentKey || '') === sk && String((r || {}).level || '') === level)
+      .reduce((sum, r) => sum + Number((r || {}).recoveryPoints || 0), 0);
+    const currentTotal = overallTotal - recoveredTotal;
+
+    const activeNoticeArr = Object.entries(notices)
+      .filter(([, v]) => String((v || {}).studentKey || '') === sk && String((v || {}).level || '') === level && !(v || {}).completedAt)
+      .sort((a,b) => String((b[1] || {}).createdAt || '').localeCompare(String((a[1] || {}).createdAt || '')));
+    const activeNotice = activeNoticeArr.length ? (activeNoticeArr[0][1] || {}) : null;
+    const completedNoticeArr = Object.entries(notices)
+      .filter(([, v]) => String((v || {}).studentKey || '') === sk && String((v || {}).level || '') === level && !!(v || {}).completedAt)
+      .sort((a,b) => String((b[1] || {}).completedAt || '').localeCompare(String((a[1] || {}).completedAt || '')));
+    const lastCompletedNotice = completedNoticeArr.length ? (completedNoticeArr[0][1] || {}) : null;
+
+    const referralEntries = confirmedEntries.filter(([, r]) => (r || {}).isReferral === true);
+    const referralCompleted = referralEntries.length > 0 && referralEntries.every(([refKey]) => {
+      return Object.values(committee).some(c =>
+        ((c || {}).type === 'referral' || (c || {}).type === 'manual_referral') &&
+        (((c || {}).entryKey === refKey) || String((c || {}).studentKey || '') === sk) &&
+        !!(c || {}).completedAt
+      );
+    });
+    const hasActiveReferral = referralEntries.length > 0 && !referralCompleted;
+    const eduCompletedThisYear = Object.values(committee).some(c =>
+      ['edu_points','edu_overall','manual_edu','edu'].includes(String((c || {}).type || '')) &&
+      String((c || {}).studentKey || '') === sk && !!(c || {}).completedAt && String((c || {}).year || '') === curYear
+    );
+    const needsEduCommittee = !eduCompletedThisYear && (currentTotal >= 12 || overallTotal > 30);
+    const hasManualReferralPending = Object.values(committee).some(c =>
+      String((c || {}).type || '') === 'manual_referral' && String((c || {}).studentKey || '') === sk && !(c || {}).completedAt
+    );
+    const hasManualEduPending = Object.values(committee).some(c =>
+      String((c || {}).type || '') === 'manual_edu' && String((c || {}).studentKey || '') === sk && !(c || {}).completedAt
+    );
+
+    let phase = 'clean';
+    if(hasActiveReferral || hasManualReferralPending){
+      phase = 'referral';
+    } else if(activeNotice){
+      phase = (activeNotice.parentMailAt || activeNotice.studentTeacherMailAt) ? 'notice_active' : 'notice_needed';
+    } else if(lastCompletedNotice && currentTotal >= 3){
+      const latestAt = confirmedEntries.length ? latestEntryDate(confirmedEntries[0][1]) : '';
+      const noticeAt = String(lastCompletedNotice.completedAt || '');
+      phase = latestAt > noticeAt ? 'notice_needed' : 'in_recovery';
+    } else if(lastCompletedNotice && currentTotal > 0){
+      phase = 'residual';
+    } else if(currentTotal >= 3){
+      phase = 'notice_needed';
+    }
+
+    let committeeStatus = 'none';
+    if(hasActiveReferral || hasManualReferralPending) committeeStatus = 'pending_referral';
+    else if(needsEduCommittee || hasManualEduPending) committeeStatus = 'pending_edu';
+
+    newStates[safeStateKey(sk, level)] = {
+      phase,
+      cyclePoints: currentTotal,
+      overallPoints: overallTotal,
+      committeeStatus,
+      updatedAt: new Date().toISOString(),
+      updatedBy: 'import-data'
+    };
+  });
+  await db.ref('studentCycleState').set(Object.keys(newStates).length ? newStates : null);
+  return Object.keys(newStates).length;
+}
+
 let parsedRows = [];
 let convertedEntries = [];
 let sheetType = ''; // 'detention' | 'notice' | 'restore'
@@ -557,10 +671,21 @@ async function startImport(){
     await sleep(200);
   }
 
+  if(done > 0){
+    try{
+      log('🔄 studentCycleState 재계산 중...', 'info');
+      const stateCount = await recalculateAllStudentCycleStatesAfterImport();
+      log(`✅ studentCycleState 재계산 완료 (${stateCount}명)`, 'ok');
+    }catch(e){
+      errors++;
+      log(`❌ studentCycleState 재계산 실패: ${e.message}`, 'err');
+    }
+  }
+
   if(errors===0){
     document.getElementById('doneNote').innerHTML =
       `<span style="color:#15803d;font-weight:700;font-size:14px">
-       ✅ 완료! ${done}개 기록이 Firebase(${dbPath})에 저장되었습니다.
+       ✅ 완료! ${done}개 기록이 Firebase(${dbPath})에 저장되었고 studentCycleState가 재계산되었습니다.
        </span><br>
        <span style="font-size:12px;color:#5b6888">페이지를 새로고침하면 데이터를 확인할 수 있습니다.</span>`;
   } else {

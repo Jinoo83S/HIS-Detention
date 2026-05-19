@@ -269,6 +269,7 @@
 
     <div class="inline-actions">
       <button class="btn btn-secondary" onclick="loadAllData()">새로고침 | Refresh</button>
+      <button class="btn btn-secondary" onclick="manualRecalculateCycleStates()">상태 재계산 | Recalculate State</button>
       <button class="btn btn-danger" onclick="confirmResetDB()" style="background:#dc2626;color:#fff;font-weight:700;">DB 초기화 | Reset DB</button>
       <a href="admin.html" class="btn btn-secondary" style="text-decoration:none;display:inline-flex;align-items:center;">관리자 메인 | Admin</a>
       <button class="btn btn-danger" onclick="logoutAdmin()">로그아웃 | Logout</button>
@@ -432,6 +433,28 @@
     function checkNoticeDirty(){ _setBtnState('btn-save-notices', _sig(noticeRows)!==_noticeSnap); }
     function checkRecoveryDirty(){ _setBtnState('btn-save-recovery', _sig(recoveryRows)!==_recoverySnap); }
 
+
+    async function recalculateCycleStatesAfterAdminEdit(reason){
+      if (typeof recalculateAllStudentCycleStates !== 'function') {
+        console.warn('recalculateAllStudentCycleStates is not available.');
+        return null;
+      }
+      toast('studentCycleState 재계산 중... | Recalculating state...', 'ok');
+      const result = await recalculateAllStudentCycleStates({ updatedBy: reason || 'detention-admin' });
+      return result;
+    }
+
+    async function manualRecalculateCycleStates(){
+      try{
+        const result = await recalculateCycleStatesAfterAdminEdit('detention-admin-manual');
+        toast('상태 재계산 완료: ' + ((result && result.count) || 0) + '명 | State recalculated.', 'ok');
+        await loadAllData();
+      }catch(err){
+        console.error(err);
+        toast('상태 재계산 실패 | Failed to recalculate state.', 'err');
+      }
+    }
+
     // 인증 확인: admin.html에서 로그인한 세션이 없으면 돌려보냄
     function checkAdminSession() {
       if (!sessionStorage.getItem('his_admin_session')) {
@@ -564,7 +587,7 @@
       });
 
       if (!filtered.length){
-        tbody.innerHTML = `<tr><td colspan="13">기록이 없습니다. | No records found.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="15">기록이 없습니다. | No records found.</td></tr>`;
         return;
       }
 
@@ -624,8 +647,9 @@
           delete payload._deleted;
           await db.ref('detentionEntries/' + row.key).set(payload);
         }
-        toast('디텐션 기록이 저장되었습니다. | Entries saved.', 'ok');
-        loadAllData();
+        const result = await recalculateCycleStatesAfterAdminEdit('detention-admin-entries');
+        toast('디텐션 기록 저장 및 상태 재계산 완료: ' + ((result && result.count) || 0) + '명 | Entries saved.', 'ok');
+        await loadAllData();
       }catch(err){
         console.error(err);
         toast('디텐션 기록 저장 실패 | Failed to save entries.', 'err');
@@ -643,7 +667,7 @@
       });
 
       if (!filtered.length){
-        tbody.innerHTML = `<tr><td colspan="7">기록이 없습니다. | No notice records found.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8">기록이 없습니다. | No notice records found.</td></tr>`;
         return;
       }
 
@@ -652,12 +676,12 @@
         return `
           <tr>
             <td class="row-num">${rowNum+1}</td>
-            <td><input class="edit-input" value="${esc(row.studentKey || '')}" oninput="noticeRows[${idx}].studentKey=this.value"></td>
-            <td><input class="edit-input" value="${esc(row.level || '')}" oninput="noticeRows[${idx}].level=this.value"></td>
+            <td><input class="edit-input" value="${esc(row.studentKey || '')}" oninput="noticeRows[${idx}].studentKey=this.value;checkNoticeDirty()"></td>
+            <td><input class="edit-input" value="${esc(row.level || '')}" oninput="noticeRows[${idx}].level=this.value;checkNoticeDirty()"></td>
             <td><input class="edit-input" value="${esc(row.parentMailAt || '')}" oninput="noticeRows[${idx}].parentMailAt=this.value;checkNoticeDirty()"></td>
             <td><input class="edit-input" value="${esc(row.studentTeacherMailAt || '')}" oninput="noticeRows[${idx}].studentTeacherMailAt=this.value;checkNoticeDirty()"></td>
             <td><input class="edit-input" value="${esc(row.completedAt || '')}" oninput="noticeRows[${idx}].completedAt=this.value;checkNoticeDirty()"></td>
-            <td><input class="edit-input" value="${esc(row.completedBy || '')}" oninput="noticeRows[${idx}].completedBy=this.value"></td>
+            <td><input class="edit-input" value="${esc(row.completedBy || '')}" oninput="noticeRows[${idx}].completedBy=this.value;checkNoticeDirty()"></td>
             <td><button class="btn btn-danger small-btn" onclick="(function(k){const r=noticeRows.find(x=>x.key===k);if(r){r._deleted=!r._deleted;renderNoticesTable();checkNoticeDirty();}})('${row.key}')">${row._deleted ? "복구" : "삭제"}</button></td>
           </tr>
         `;
@@ -684,8 +708,9 @@
           delete payload._deleted;
           await db.ref('detentionNotices/' + row.key).set(payload);
         }
-        toast('알림 기록이 저장되었습니다. | Notices saved.', 'ok');
-        loadAllData();
+        const result = await recalculateCycleStatesAfterAdminEdit('detention-admin-notices');
+        toast('알림 기록 저장 및 상태 재계산 완료: ' + ((result && result.count) || 0) + '명 | Notices saved.', 'ok');
+        await loadAllData();
       }catch(err){
         console.error(err);
         toast('알림 기록 저장 실패 | Failed to save notices.', 'err');
@@ -708,7 +733,7 @@
       });
 
       if (!filtered.length){
-        tbody.innerHTML = `<tr><td colspan="8">기록이 없습니다. | No recovery records found.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="9">기록이 없습니다. | No recovery records found.</td></tr>`;
         return;
       }
 
@@ -718,9 +743,9 @@
           <tr>
             <td class="row-num">${rowNum+1}</td>
             <td><input class="edit-input" value="${esc(row.studentName || '')}" oninput="recoveryRows[${idx}].studentName=this.value;checkRecoveryDirty()"></td>
-            <td><input class="edit-input" value="${esc(row.englishName || '')}" oninput="recoveryRows[${idx}].englishName=this.value"></td>
-            <td><input class="edit-input" value="${esc(row.className || '')}" oninput="recoveryRows[${idx}].className=this.value"></td>
-            <td><input class="edit-input" value="${esc(row.level || '')}" oninput="recoveryRows[${idx}].level=this.value"></td>
+            <td><input class="edit-input" value="${esc(row.englishName || '')}" oninput="recoveryRows[${idx}].englishName=this.value;checkRecoveryDirty()"></td>
+            <td><input class="edit-input" value="${esc(row.className || '')}" oninput="recoveryRows[${idx}].className=this.value;checkRecoveryDirty()"></td>
+            <td><input class="edit-input" value="${esc(row.level || '')}" oninput="recoveryRows[${idx}].level=this.value;checkRecoveryDirty()"></td>
             <td><input class="edit-input" value="${esc(String(row.recoveryPoints || row.points || ''))}" oninput="recoveryRows[${idx}].recoveryPoints=Number(this.value||0);checkRecoveryDirty()"></td>
             <td><input class="edit-input" value="${esc(row.staffName || '')}" oninput="recoveryRows[${idx}].staffName=this.value;checkRecoveryDirty()"></td>
             <td><input type="date" class="edit-input" value="${esc((row.completedAt||'').slice(0,10))}" onchange="recoveryRows[${idx}].completedAt=this.value?this.value+'T00:00:00':null;checkRecoveryDirty()"></td>
@@ -750,8 +775,9 @@
           delete payload._deleted;
           await db.ref('recoveryEntries/' + row.key).set(payload);
         }
-        toast('회복교육 기록이 저장되었습니다. | Recovery saved.', 'ok');
-        loadAllData();
+        const result = await recalculateCycleStatesAfterAdminEdit('detention-admin-recovery');
+        toast('회복교육 기록 저장 및 상태 재계산 완료: ' + ((result && result.count) || 0) + '명 | Recovery saved.', 'ok');
+        await loadAllData();
       }catch(err){
         console.error(err);
         toast('회복교육 기록 저장 실패 | Failed to save recovery.', 'err');
@@ -765,7 +791,7 @@
       const tbody=document.getElementById('committee-tbody');
       if(!tbody)return;
       const visible=committeeRows.filter(r=>!r._deleted);
-      if(!visible.length){tbody.innerHTML='<tr><td colspan="6" class="empty">기록이 없습니다.</td></tr>';return;}
+      if(!visible.length){tbody.innerHTML='<tr><td colspan="7" class="empty">기록이 없습니다.</td></tr>';return;}
       const rows=[];
       visible.forEach(function(r){
         const idx=committeeRows.findIndex(function(x){return x.key===r.key;});
@@ -803,9 +829,10 @@
           else{const {key,_deleted,...data}=r;updates['committeeRecords/'+r.key]=data;}
         });
         await db.ref('/').update(updates);
-        toast('저장되었습니다.','ok');
+        const result = await recalculateCycleStatesAfterAdminEdit('detention-admin-committee');
+        toast('위원회 기록 저장 및 상태 재계산 완료: ' + ((result && result.count) || 0) + '명', 'ok');
         _committeeSnap=_sig(committeeRows);_setBtnState('btn-save-committee',false);
-        loadAllData();
+        await loadAllData();
       }catch(e){console.error(e);toast('저장 실패','err');}
     }
 
