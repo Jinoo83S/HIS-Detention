@@ -129,6 +129,8 @@
                   <th>본인 이메일 | Student Email</th>
                   <th>부 이메일 | Father Email</th>
                   <th>모 이메일 | Mother Email</th>
+                  <th>대표메일 대상 | Parent Target</th>
+                  <th>대표메일 | Parent Notice Email</th>
                   <th>담임교사 이메일 | Homeroom Teacher Email</th>
                   <th>저장 상태 | Status</th>
                   <th>삭제 | Delete</th>
@@ -143,7 +145,7 @@
       <div id="tab-csv" class="tab-panel">
         <div class="card">
           <div class="card-title">학생 명단 엑셀 붙여넣기 | Student Excel Paste</div>
-          <div class="notice">열 순서 | Columns: <strong>이름 · 영문명 · 학반 · 본인이메일 · 부이메일 · 모이메일</strong></div>
+          <div class="notice">열 순서 | Columns: <strong>이름 · 영문명 · 학반 · 본인이메일 · 부이메일 · 모이메일 · 대표메일대상 · 대표메일</strong><br><span class="small">대표메일대상 값: 부 / 모 / 둘다 / 직접입력. 대표메일은 실제 발송 대상 이메일이며, 비워두면 대표메일대상에 따라 자동 생성됩니다.</span></div>
           <textarea id="student-paste-area" class="edit-input" rows="5" style="font-family:monospace;font-size:12px;resize:vertical;margin-top:6px;" placeholder="엑셀에서 복사(Ctrl+C) 후 붙여넣기(Ctrl+V)"></textarea>
           <div class="filter-bar" style="margin-top:8px;align-items:center;">
             <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;white-space:nowrap;">
@@ -157,9 +159,10 @@
 
         <div class="card">
           <div class="card-title">학생 명단 CSV 업로드 | Student CSV Upload</div>
-          <div class="notice">CSV 첫 줄 | Header: name,englishName,className,selfEmail,fatherEmail,motherEmail</div>
+          <div class="notice">CSV 첫 줄 | Header: name,englishName,className,selfEmail,fatherEmail,motherEmail,parentEmailTarget,parentEmail<br><span class="small">한글 헤더도 지원: 이름, 영문명, 학반, 본인이메일, 부이메일, 모이메일, 대표메일대상, 대표메일</span></div>
           <div class="small" style="margin-bottom:10px;">
             담임교사 이메일은 학반(className) 기준으로 교사 계정의 담당학반에서 자동 연결됩니다.<br>
+            대표메일은 학부모 알림 메일 발송 대상입니다. parentEmail이 있으면 우선 사용하고, 없으면 parentEmailTarget에 따라 부/모/둘다 이메일을 자동 조합합니다.<br>
             Homeroom teacher email is filled automatically from the teacher account based on className.
           </div>
           <div class="filter-bar">
@@ -237,6 +240,7 @@
       return [String(r.name||'').trim(), String(r.englishName||'').trim(),
               String(r.className||'').trim(), String(r.selfEmail||'').trim(),
               String(r.fatherEmail||'').trim(), String(r.motherEmail||'').trim(),
+              String(r.parentEmailTarget||'').trim(), String(r.parentEmail||'').trim(),
               !!r._delete].join('|');
     }
     function takeTeacherSnapshot() { teacherSnapshot = JSON.stringify([...teacherRows.map(teacherRowSig)].sort()); }
@@ -315,6 +319,112 @@
       );
       return foundInRaw ? String(foundInRaw.email || '').trim().toLowerCase() : '';
     }
+    function normalizeEmailList(value) {
+      const list = String(value || '')
+        .split(/[;,\n]/)
+        .map(v => v.trim())
+        .filter(Boolean);
+      return [...new Set(list)].join(', ');
+    }
+
+    function getField(row, names) {
+      for (const name of names) {
+        if (row && Object.prototype.hasOwnProperty.call(row, name)) return row[name];
+      }
+      return '';
+    }
+
+    function normalizeParentEmailTarget(value) {
+      const raw = String(value || '').trim();
+      if (!raw || raw.includes('@')) return '';
+      const v = raw.toLowerCase().replace(/[\s_\-]/g, '');
+      if (['부', '아버지', '부이메일', 'father', 'dad', 'fatheremail', 'fatheronly', 'f'].includes(v)) return 'father';
+      if (['모', '어머니', '모이메일', 'mother', 'mom', 'motheremail', 'motheronly', 'm'].includes(v)) return 'mother';
+      if (['둘다', '부모', '부모님', '부모모두', '부모전체', 'fatherandmother', 'motherandfather', 'both', 'all', 'fathermother', 'fm', 'mf'].includes(v)) return 'both';
+      if (['직접', '직접입력', '수동', '별도', 'custom', 'manual'].includes(v)) return 'custom';
+      return '';
+    }
+
+    function parentTargetLabel(value) {
+      const t = normalizeParentEmailTarget(value) || value;
+      if (t === 'father') return '부';
+      if (t === 'mother') return '모';
+      if (t === 'both') return '둘다';
+      if (t === 'custom') return '직접입력';
+      return '';
+    }
+
+    function buildParentNoticeEmail(target, explicitEmail, fatherEmail, motherEmail) {
+      const explicit = normalizeEmailList(explicitEmail);
+      const t = normalizeParentEmailTarget(target) || (explicit ? 'custom' : '');
+      if (t === 'father') return normalizeEmailList(fatherEmail);
+      if (t === 'mother') return normalizeEmailList(motherEmail);
+      if (t === 'both') return normalizeEmailList([fatherEmail, motherEmail].filter(Boolean).join(', '));
+      if (explicit) return explicit;
+      return normalizeEmailList([fatherEmail, motherEmail].filter(Boolean).join(', '));
+    }
+
+    function inferParentEmailTarget(target, parentEmail, fatherEmail, motherEmail) {
+      const t = normalizeParentEmailTarget(target);
+      if (t) return t;
+      const p = normalizeEmailList(parentEmail).toLowerCase();
+      const f = normalizeEmailList(fatherEmail).toLowerCase();
+      const m = normalizeEmailList(motherEmail).toLowerCase();
+      if (p && f && p === f) return 'father';
+      if (p && m && p === m) return 'mother';
+      if (p && f && m && p === normalizeEmailList([fatherEmail, motherEmail].filter(Boolean).join(', ')).toLowerCase()) return 'both';
+      if (p) return 'custom';
+      if (f && m) return 'both';
+      if (f) return 'father';
+      if (m) return 'mother';
+      return '';
+    }
+
+    function normalizeStudentUploadRow(raw) {
+      const name = String(getField(raw, ['name','이름','학생이름','학생 이름','성명','학생명']) || '').trim();
+      const englishName = String(getField(raw, ['englishName','영문명','영문 이름','영어이름','영어 이름','English Name']) || '').trim();
+      const className = String(getField(raw, ['className','학반','반','Class','class']) || '').trim();
+      const selfEmail = normalizeEmailList(getField(raw, ['selfEmail','본인이메일','본인 이메일','학생이메일','학생 이메일','studentEmail','Student Email']));
+      const fatherEmail = normalizeEmailList(getField(raw, ['fatherEmail','부이메일','부 이메일','아버지이메일','아버지 이메일','Father Email']));
+      const motherEmail = normalizeEmailList(getField(raw, ['motherEmail','모이메일','모 이메일','어머니이메일','어머니 이메일','Mother Email']));
+
+      let parentEmailTarget = getField(raw, ['parentEmailTarget','representativeParent','대표메일대상','대표 메일 대상','대표메일 대상','대표수신대상','대표 수신 대상','학부모대표','학부모 대표','parentTarget']);
+      let parentEmail = getField(raw, ['parentEmail','representativeEmail','대표메일','대표 메일','학부모대표메일','학부모 대표메일','학부모메일','부모이메일','Parent Email']);
+
+      // “대표메일” 칸에 부/모/둘다 값이 들어간 경우 대상값으로 처리합니다.
+      if (!parentEmailTarget && normalizeParentEmailTarget(parentEmail) && !String(parentEmail || '').includes('@')) {
+        parentEmailTarget = parentEmail;
+        parentEmail = '';
+      }
+      // “대표메일대상” 칸에 실제 이메일이 들어간 경우 대표메일로 처리합니다.
+      if (!parentEmail && String(parentEmailTarget || '').includes('@')) {
+        parentEmail = parentEmailTarget;
+        parentEmailTarget = '';
+      }
+
+      parentEmailTarget = inferParentEmailTarget(parentEmailTarget, parentEmail, fatherEmail, motherEmail);
+      parentEmail = buildParentNoticeEmail(parentEmailTarget, parentEmail, fatherEmail, motherEmail);
+
+      const explicitKey = String(getField(raw, ['studentKey','key','학생Key','학생 Key','학생키']) || '').trim();
+      const stableKey = explicitKey || studentKey(name, className);
+
+      return {
+        oldKey: stableKey && studentsRaw[stableKey] ? stableKey : '',
+        keyCandidate: stableKey,
+        name,
+        englishName,
+        className,
+        selfEmail,
+        fatherEmail,
+        motherEmail,
+        parentEmailTarget,
+        parentEmail,
+        homeroomTeacherEmail: getHomeroomTeacherEmail(className),
+        _delete: false,
+        _status: '업로드됨'
+      };
+    }
+
 
     function checkAdmin() {
       const pw = document.getElementById('admin-pw').value;
@@ -374,12 +484,19 @@
           _delete: false, _status: '기존'
         }));
 
-        studentRows = Object.entries(studentsRaw).map(([k, v]) => ({
-          oldKey: k, name: v.name || '', englishName: v.englishName || '', className: v.className || '',
-          selfEmail: v.selfEmail || '', fatherEmail: v.fatherEmail || '', motherEmail: v.motherEmail || '',
-          homeroomTeacherEmail: v.homeroomTeacherEmail || getHomeroomTeacherEmail(v.className || ''),
-          _delete: false, _status: '기존'
-        }));
+        studentRows = Object.entries(studentsRaw).map(([k, v]) => {
+          const fatherEmail = normalizeEmailList(v.fatherEmail || '');
+          const motherEmail = normalizeEmailList(v.motherEmail || '');
+          const parentEmailTarget = inferParentEmailTarget(v.parentEmailTarget || v.representativeParent || '', v.parentEmail || v.representativeEmail || '', fatherEmail, motherEmail);
+          const parentEmail = buildParentNoticeEmail(parentEmailTarget, v.parentEmail || v.representativeEmail || '', fatherEmail, motherEmail);
+          return {
+            oldKey: k, keyCandidate: k, name: v.name || '', englishName: v.englishName || '', className: v.className || '',
+            selfEmail: normalizeEmailList(v.selfEmail || ''), fatherEmail, motherEmail,
+            parentEmailTarget, parentEmail,
+            homeroomTeacherEmail: v.homeroomTeacherEmail || getHomeroomTeacherEmail(v.className || ''),
+            _delete: false, _status: '기존'
+          };
+        });
 
         renderTeachers();
         renderStudents();
@@ -441,7 +558,7 @@
         homeroomTeacherEmail: getHomeroomTeacherEmail(r.className || '')
       })).filter(r => {
         if (!q) return true;
-        return [r.name, r.englishName, r.className, r.selfEmail, r.fatherEmail, r.motherEmail, r.homeroomTeacherEmail]
+        return [r.name, r.englishName, r.className, r.selfEmail, r.fatherEmail, r.motherEmail, r.parentEmailTarget, r.parentEmail, r.homeroomTeacherEmail]
           .some(v => String(v || '').toLowerCase().includes(q));
       }).sort((a, b) =>
         String(a.className || '').localeCompare(String(b.className || ''), 'ko', { numeric: true }) ||
@@ -449,7 +566,7 @@
       );
 
       if (!filtered.length) {
-        tb.innerHTML = '<tr><td colspan="9" class="empty">학생 데이터가 없습니다. | No student data.</td></tr>';
+        tb.innerHTML = '<tr><td colspan="11" class="empty">학생 데이터가 없습니다. | No student data.</td></tr>';
         return;
       }
 
@@ -459,12 +576,22 @@
 
         return `
           <tr>
-            <td><input class="edit-input" style="min-width:0" value="${esc(r.name || '')}" oninput="studentRows[${idx}].name=this.value;checkStudentDirty()"></td>
+            <td><input class="edit-input" style="min-width:0" value="${esc(r.name || '')}" oninput="studentRows[${idx}].name=this.value;if(!studentRows[${idx}].oldKey){studentRows[${idx}].keyCandidate=studentKey(studentRows[${idx}].name, studentRows[${idx}].className)}checkStudentDirty()"></td>
             <td><input class="edit-input" style="min-width:0" value="${esc(r.englishName || '')}" oninput="studentRows[${idx}].englishName=this.value;checkStudentDirty()"></td>
-            <td><input class="edit-input" style="min-width:0" value="${esc(r.className || '')}" oninput="studentRows[${idx}].className=this.value;studentRows[${idx}].homeroomTeacherEmail=getHomeroomTeacherEmail(this.value);renderStudents();checkStudentDirty()"></td>
+            <td><input class="edit-input" style="min-width:0" value="${esc(r.className || '')}" oninput="studentRows[${idx}].className=this.value;studentRows[${idx}].homeroomTeacherEmail=getHomeroomTeacherEmail(this.value);if(!studentRows[${idx}].oldKey){studentRows[${idx}].keyCandidate=studentKey(studentRows[${idx}].name, studentRows[${idx}].className)}renderStudents();checkStudentDirty()"></td>
             <td><input class="edit-input" style="min-width:0" value="${esc(r.selfEmail || '')}" oninput="studentRows[${idx}].selfEmail=this.value;checkStudentDirty()"></td>
-            <td><input class="edit-input" style="min-width:0" value="${esc(r.fatherEmail || '')}" oninput="studentRows[${idx}].fatherEmail=this.value;checkStudentDirty()"></td>
-            <td><input class="edit-input" style="min-width:0" value="${esc(r.motherEmail || '')}" oninput="studentRows[${idx}].motherEmail=this.value;checkStudentDirty()"></td>
+            <td><input class="edit-input" style="min-width:0" value="${esc(r.fatherEmail || '')}" oninput="studentRows[${idx}].fatherEmail=normalizeEmailList(this.value);studentRows[${idx}].parentEmailTarget=inferParentEmailTarget(studentRows[${idx}].parentEmailTarget, studentRows[${idx}].parentEmail, studentRows[${idx}].fatherEmail, studentRows[${idx}].motherEmail);studentRows[${idx}].parentEmail=buildParentNoticeEmail(studentRows[${idx}].parentEmailTarget, studentRows[${idx}].parentEmail, studentRows[${idx}].fatherEmail, studentRows[${idx}].motherEmail);checkStudentDirty()"></td>
+            <td><input class="edit-input" style="min-width:0" value="${esc(r.motherEmail || '')}" oninput="studentRows[${idx}].motherEmail=normalizeEmailList(this.value);studentRows[${idx}].parentEmailTarget=inferParentEmailTarget(studentRows[${idx}].parentEmailTarget, studentRows[${idx}].parentEmail, studentRows[${idx}].fatherEmail, studentRows[${idx}].motherEmail);studentRows[${idx}].parentEmail=buildParentNoticeEmail(studentRows[${idx}].parentEmailTarget, studentRows[${idx}].parentEmail, studentRows[${idx}].fatherEmail, studentRows[${idx}].motherEmail);checkStudentDirty()"></td>
+            <td>
+              <select class="edit-input" style="min-width:0" onchange="studentRows[${idx}].parentEmailTarget=this.value;studentRows[${idx}].parentEmail=buildParentNoticeEmail(this.value, studentRows[${idx}].parentEmail, studentRows[${idx}].fatherEmail, studentRows[${idx}].motherEmail);renderStudents();checkStudentDirty()">
+                <option value="" ${!r.parentEmailTarget ? 'selected' : ''}>자동</option>
+                <option value="father" ${r.parentEmailTarget==='father' ? 'selected' : ''}>부</option>
+                <option value="mother" ${r.parentEmailTarget==='mother' ? 'selected' : ''}>모</option>
+                <option value="both" ${r.parentEmailTarget==='both' ? 'selected' : ''}>둘다</option>
+                <option value="custom" ${r.parentEmailTarget==='custom' ? 'selected' : ''}>직접입력</option>
+              </select>
+            </td>
+            <td><input class="edit-input" style="min-width:0" value="${esc(r.parentEmail || '')}" oninput="studentRows[${idx}].parentEmail=normalizeEmailList(this.value);studentRows[${idx}].parentEmailTarget=inferParentEmailTarget(studentRows[${idx}].parentEmailTarget, studentRows[${idx}].parentEmail, studentRows[${idx}].fatherEmail, studentRows[${idx}].motherEmail);checkStudentDirty()"></td>
             <td><input class="readonly-input" readonly value="${esc(r.homeroomTeacherEmail || '')}"></td>
             <td>${statusPill(r._status)}</td>
             <td style="text-align:center"><input type="checkbox" ${r._delete ? 'checked' : ''} onchange="studentRows[${idx}]._delete=this.checked;checkStudentDirty()"></td>
@@ -479,7 +606,7 @@
     }
 
     function addStudentRow() {
-      studentRows.unshift({ oldKey:'', name:'', englishName:'', className:'', selfEmail:'', fatherEmail:'', motherEmail:'', homeroomTeacherEmail:'', _delete:false, _status:'신규' });
+      studentRows.unshift({ oldKey:'', keyCandidate:'', name:'', englishName:'', className:'', selfEmail:'', fatherEmail:'', motherEmail:'', parentEmailTarget:'', parentEmail:'', homeroomTeacherEmail:'', _delete:false, _status:'신규' });
       renderStudents();
       checkStudentDirty();
     }
@@ -545,13 +672,19 @@
           if (!String(r.name || '').trim()) { r._status = '오류'; return; }
 
           const homeroomTeacherEmail = getHomeroomTeacherEmail(r.className);
+          const fatherEmail = normalizeEmailList(r.fatherEmail || '');
+          const motherEmail = normalizeEmailList(r.motherEmail || '');
+          const parentEmailTarget = inferParentEmailTarget(r.parentEmailTarget || '', r.parentEmail || '', fatherEmail, motherEmail);
+          const parentEmail = buildParentNoticeEmail(parentEmailTarget, r.parentEmail || '', fatherEmail, motherEmail);
           const data = {
             name: String(r.name || '').trim(),
             englishName: String(r.englishName || '').trim(),
             className: String(r.className || '').trim(),
-            selfEmail: String(r.selfEmail || '').trim(),
-            fatherEmail: String(r.fatherEmail || '').trim(),
-            motherEmail: String(r.motherEmail || '').trim(),
+            selfEmail: normalizeEmailList(r.selfEmail || ''),
+            fatherEmail,
+            motherEmail,
+            parentEmailTarget,
+            parentEmail,
             homeroomTeacherEmail: String(homeroomTeacherEmail || '').trim(),
             updatedAt: new Date().toISOString()
           };
@@ -566,13 +699,20 @@
             updates[`students/${r.oldKey}`] = data;
             r._status = '저장됨';
             r.homeroomTeacherEmail = homeroomTeacherEmail;
+            r.parentEmailTarget = parentEmailTarget;
+            r.parentEmail = parentEmail;
           } else {
-            // 신규 학생: Firebase push key 생성
-            const newKey = db.ref('students').push().key;
+            // 신규/전체 업로드 학생: className + name 기반의 안정 key 사용
+            // 기존 디텐션 기록의 studentKey와 학생 DB key가 맞아야 하므로 push key를 사용하지 않습니다.
+            const newKey = r.keyCandidate || studentKey(r.name, r.className);
+            if (!newKey) { r._status = '오류'; return; }
             updates[`students/${newKey}`] = data;
             r.oldKey = newKey;
+            r.keyCandidate = newKey;
             r._status = '저장됨';
             r.homeroomTeacherEmail = homeroomTeacherEmail;
+            r.parentEmailTarget = parentEmailTarget;
+            r.parentEmail = parentEmail;
           }
         });
 
@@ -605,18 +745,7 @@
           return toast('CSV 내용이 비어 있습니다.\nCSV is empty.', 'err');
         }
 
-        studentRows = rows.map(r => ({
-          oldKey: '',
-          name: String(r.name || '').trim(),
-          englishName: String(r.englishName || '').trim(),
-          className: String(r.className || '').trim(),
-          selfEmail: String(r.selfEmail || '').trim(),
-          fatherEmail: String(r.fatherEmail || '').trim(),
-          motherEmail: String(r.motherEmail || '').trim(),
-          homeroomTeacherEmail: getHomeroomTeacherEmail(r.className || ''),
-          _delete: false,
-          _status: '업로드됨'
-        }));
+        studentRows = rows.map(normalizeStudentUploadRow).filter(r => r.name && r.className);
 
         msg.textContent = `${studentRows.length}명의 학생 데이터를 불러왔습니다. | Loaded ${studentRows.length} student rows.`;
         toast('CSV를 불러왔습니다.\nCSV loaded.', 'ok');
@@ -706,10 +835,10 @@
       if (!raw) { msg.textContent = '데이터가 없습니다.'; return; }
       const rows = parseTsv(raw);
       const dataRows = document.getElementById('student-paste-header').checked ? rows.slice(1) : rows;
-      const COLS = ['name','englishName','className','selfEmail','fatherEmail','motherEmail'];
+      const COLS = ['name','englishName','className','selfEmail','fatherEmail','motherEmail','parentEmailTarget','parentEmail'];
       const loaded = dataRows.map(cols => { const o={}; COLS.forEach((k,i) => { o[k]=cols[i]||''; }); return o; }).filter(r => r.name);
       if (!loaded.length) { msg.textContent = '유효한 데이터가 없습니다.'; return; }
-      studentRows = loaded.map(r => ({ oldKey:'', ...r, homeroomTeacherEmail:getHomeroomTeacherEmail(r.className), _delete:false, _status:'업로드됨' }));
+      studentRows = loaded.map(normalizeStudentUploadRow).filter(r => r.name && r.className);
       msg.textContent = `✅ ${studentRows.length}명 불러옴`;
       toast('붙여넣기 완료', 'ok');
       switchToTab('students'); renderStudents(); checkStudentDirty();

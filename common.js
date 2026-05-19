@@ -246,7 +246,7 @@ function readFileText(file, enc = 'utf-8') {
         String((c || {}).type || '') === 'manual_referral' && String((c || {}).studentKey || '') === sk && !(c || {}).completedAt
       );
       const hasManualEduPending = Object.values(committee).some(c =>
-        ['manual_edu','edu'].includes(String((c || {}).type || '')) && String((c || {}).studentKey || '') === sk && !(c || {}).completedAt
+        String((c || {}).type || '') === 'manual_edu' && String((c || {}).studentKey || '') === sk && !(c || {}).completedAt
       );
 
       let phase = 'clean';
