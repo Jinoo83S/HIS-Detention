@@ -192,7 +192,7 @@
     .student-name .en{font-weight:400;color:var(--sb,#5b6888);font-size:11px;display:block}
     .student-btns{display:flex;gap:4px;flex-shrink:0}
     .btn-det{padding:3px 8px;font-size:11px;border-radius:6px;border:none;cursor:pointer;font-weight:700;background:linear-gradient(135deg,var(--nv),var(--nv2));color:#fff}
-    .btn-view{padding:3px 8px;font-size:11px;border-radius:6px;border:1px solid var(--bd);cursor:pointer;font-weight:700;background:#fff;color:var(--nv)}
+    .btn-view{padding:2px 6px;font-size:11px;line-height:1.1;white-space:nowrap;border-radius:6px;border:1px solid var(--bd);cursor:pointer;font-weight:700;background:#fff;color:var(--nv)}
 
     /* 학생 상세 모달 */
     #student-modal-overlay{
@@ -491,13 +491,13 @@
               <tr>
                 <th class="nowrap" style="width:11%;">학생<span class="th-en">Student</span></th>
                 <th class="nowrap" style="width:5%;">학반<span class="th-en">Class</span></th>
-                <th class="nowrap" style="width:10%;">구분<span class="th-en">Category</span></th>
-                <th style="width:26%;">위반행위<span class="th-en">Violation</span></th>
+                <th class="nowrap" style="width:9%;">구분<span class="th-en">Category</span></th>
+                <th style="width:24%;">위반행위<span class="th-en">Violation</span></th>
                 <th class="nowrap" style="width:5%;">합계<span class="th-en">Total</span></th>
                 <th class="nowrap" style="width:8%;">작성자<span class="th-en">Created By</span></th>
-                <th class="nowrap" style="width:10%;">상태<span class="th-en">Status</span></th>
-                <th class="nowrap" style="width:18%;">관리자 노트<span class="th-en">Admin Note</span></th>
-                <th class="nowrap" style="width:7%;">처리<span class="th-en">Action</span></th>
+                <th class="nowrap" style="width:9%;">상태<span class="th-en">Status</span></th>
+                <th class="nowrap" style="width:15%;">관리자 노트<span class="th-en">Admin Note</span></th>
+                <th class="nowrap" style="width:14%;">처리<span class="th-en">Action</span></th>
               </tr>
             </thead>
             <tbody id="confirm-pending-tbody"></tbody>
@@ -513,13 +513,13 @@
               <tr>
                 <th class="nowrap" style="width:11%;">학생<span class="th-en">Student</span></th>
                 <th class="nowrap" style="width:5%;">학반<span class="th-en">Class</span></th>
-                <th class="nowrap" style="width:10%;">구분<span class="th-en">Category</span></th>
-                <th style="width:26%;">위반행위<span class="th-en">Violation</span></th>
+                <th class="nowrap" style="width:9%;">구분<span class="th-en">Category</span></th>
+                <th style="width:24%;">위반행위<span class="th-en">Violation</span></th>
                 <th class="nowrap" style="width:5%;">합계<span class="th-en">Total</span></th>
                 <th class="nowrap" style="width:8%;">작성자<span class="th-en">Created By</span></th>
-                <th class="nowrap" style="width:10%;">상태<span class="th-en">Status</span></th>
-                <th class="nowrap" style="width:18%;">관리자 노트<span class="th-en">Admin Note</span></th>
-                <th class="nowrap" style="width:7%;">처리<span class="th-en">Action</span></th>
+                <th class="nowrap" style="width:9%;">상태<span class="th-en">Status</span></th>
+                <th class="nowrap" style="width:15%;">관리자 노트<span class="th-en">Admin Note</span></th>
+                <th class="nowrap" style="width:14%;">처리<span class="th-en">Action</span></th>
               </tr>
             </thead>
             <tbody id="confirm-processed-tbody"></tbody>
@@ -662,13 +662,12 @@
           <table style="table-layout:fixed;">
             <thead>
               <tr>
-                <th class="nowrap" style="width:20%;">학생</th>
+                <th class="nowrap" style="width:22%;">학생</th>
                 <th class="nowrap tc" style="width:6%;">학반</th>
                 <th class="nowrap tc" style="width:6%;">현재</th>
                 <th class="nowrap tc" style="width:6%;">전체</th>
-                <th style="width:22%;">위반 행위</th>
-                <th class="nowrap tc" style="width:8%;">필요횟수</th>
-                <th class="nowrap tc" style="width:10%;">알림완료</th>
+                <th style="width:28%;">위반 행위</th>
+                <th class="nowrap tc" style="width:12%;">알림완료</th>
                 <th class="nowrap tc" style="width:10%;">완료점수</th>
                 <th class="nowrap tc" style="width:10%;">처리</th>
               </tr>
@@ -718,13 +717,12 @@
           <table style="table-layout:fixed;">
             <thead>
               <tr>
-                <th class="nowrap" style="width:20%;">학생</th>
+                <th class="nowrap" style="width:22%;">학생</th>
                 <th class="nowrap tc" style="width:6%;">학반</th>
                 <th class="nowrap tc" style="width:6%;">현재</th>
                 <th class="nowrap tc" style="width:6%;">전체</th>
-                <th style="width:22%;">위반 행위</th>
-                <th class="nowrap tc" style="width:8%;">필요횟수</th>
-                <th class="nowrap tc" style="width:10%;">알림완료</th>
+                <th style="width:28%;">위반 행위</th>
+                <th class="nowrap tc" style="width:12%;">알림완료</th>
                 <th class="nowrap tc" style="width:10%;">완료점수</th>
                 <th class="nowrap tc" style="width:10%;">처리</th>
               </tr>
@@ -2207,8 +2205,8 @@
               <td class="nowrap">${esc(r.teacherName||'')}</td>
               <td class="nowrap">${statusBadge(r.status||'임시저장')}</td>
               ${noteTd(r)}
-              <td class="nowrap tc" onclick="event.stopPropagation()" style="min-width:100px">
-                <div style="display:flex;gap:4px;justify-content:center">
+              <td class="nowrap tc" onclick="event.stopPropagation()" style="min-width:150px">
+                <div style="display:flex;gap:4px;justify-content:center;flex-wrap:wrap">
                   ${canConfirm?`<button class="btn btn-primary btn-xs" onclick="confirmDetention('${esc(r.key)}')">확정</button>`:''}
                   ${canReject ?`<button class="btn btn-danger btn-xs"  onclick="rejectDetention('${esc(r.key)}')">반려</button>`:''}
                   ${canCancelDraftDetention(r)?`<button class="btn btn-danger btn-xs" style="background:#fff;color:var(--rd);border:1px solid #fca5a5" onclick="cancelDraftDetention('${esc(r.key)}')">입력취소</button>`:''}
@@ -2398,8 +2396,8 @@
             <td style="font-size:11px;color:var(--sb);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.englishName||'')}</td>
             <td style="text-align:center;font-weight:800;font-size:13px;color:${ptColor};white-space:nowrap">${current}</td>
             <td style="text-align:center;font-size:11px;color:var(--sb);white-space:nowrap">${overall}</td>
-            <td style="text-align:center;padding:0 4px">
-              <button class="btn-view" style="padding:2px 8px;font-size:11px" onclick="switchToSplitView('${esc(s.key)}')">보기</button>
+            <td style="text-align:center;padding:0 2px;white-space:nowrap">
+              <button class="btn-view" style="padding:1px 6px;font-size:11px;line-height:1.1;white-space:nowrap;min-width:34px" onclick="switchToSplitView('${esc(s.key)}')">보기</button>
             </td>
           </tr>`;
         }).join('');
@@ -2412,11 +2410,11 @@
           <table style="width:100%;border-collapse:collapse;table-layout:fixed">
             <thead>
               <tr style="background:#dce6f7">
-                <th style="font-size:11px;padding:4px 8px;text-align:left;width:35%">이름</th>
-                <th style="font-size:11px;padding:4px 8px;text-align:left;width:35%">영문명</th>
+                <th style="font-size:11px;padding:4px 8px;text-align:left;width:34%">이름</th>
+                <th style="font-size:11px;padding:4px 8px;text-align:left;width:34%">영문명</th>
                 <th style="font-size:11px;padding:4px;text-align:center;width:10%">현재</th>
                 <th style="font-size:11px;padding:4px;text-align:center;width:10%">전체</th>
-                <th style="font-size:11px;padding:4px;text-align:center;width:10%"></th>
+                <th style="font-size:11px;padding:4px 2px;text-align:center;width:12%"></th>
               </tr>
             </thead>
             <tbody style="border-bottom:1px solid #eef2ff">${rows}</tbody>
@@ -2884,7 +2882,7 @@
               </td>
             </tr>
             <tr class="detail-row ${expanded ? 'show' : ''}">
-              <td colspan="9">
+              <td colspan="8">
                 <div class="detail-box">
                   <div class="detail-section">
                     <div class="detail-title">사유 | Reasons</div>
@@ -3010,7 +3008,7 @@
       const activeTb = document.getElementById(level === 'ms' ? 'recovery-ms-active-tbody' : 'recovery-hs-active-tbody');
       const doneTb = document.getElementById(level === 'ms' ? 'recovery-ms-done-tbody' : 'recovery-hs-done-tbody');
       const candidates = getRecoveryCandidates(level);
-      const activeList = candidates.filter(s => Math.floor(s.currentTotal / 3) > 0);
+      const activeList = candidates.filter(s => Number(s.currentTotal || 0) >= 3);
       const historyList = getRecoveryHistoryRows(level);
 
       if (!activeList.length){
@@ -3025,7 +3023,6 @@
               <td class="nowrap tc">${s.currentTotal}</td>
               <td class="nowrap tc">${s.overallTotal}</td>
               <td><span class="cell-reason-preview">${esc(String(s.reasons||'-').split('\n')[0])}</span></td>
-              <td class="nowrap tc">${Math.floor(s.currentTotal / 3)}회 필요</td>
               <td class="nowrap tc small-muted">${s.noticedAt ? fmt(s.noticedAt) : '-'}</td>
               <td class="nowrap tc" onclick="event.stopPropagation()">
                 <input type="number" class="edit-input" min="1" max="99" value="3"
@@ -3041,7 +3038,7 @@
               </td>
             </tr>
             <tr class="detail-row ${expanded ? 'show' : ''}">
-              <td colspan="9">
+              <td colspan="8">
                 <div class="detail-box">
                   <div class="detail-section">
                     <div class="detail-title">위반 행위 | Violations</div>

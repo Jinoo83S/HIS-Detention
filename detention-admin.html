@@ -816,10 +816,17 @@
       visible.forEach(function(r){
         const idx=committeeRows.findIndex(function(x){return x.key===r.key;});
         const tr=document.createElement('tr');
+        const noTd=document.createElement('td');
+        noTd.textContent=String(idx+1);
+        noTd.style.textAlign='center';
+        tr.appendChild(noTd);
         ['type','studentKey','entryKey','completedAt','year'].forEach(function(field){
           const td=document.createElement('td');
           const inp=document.createElement('input');
           inp.className='edit-input';
+          inp.style.width='100%';
+          inp.style.maxWidth='100%';
+          inp.style.boxSizing='border-box';
           if(field==='completedAt'){
             inp.type='date';
             inp.value=dateInputValue(r[field]);
@@ -828,7 +835,6 @@
             inp.value=r[field]||'';
             inp.oninput=function(){committeeRows[idx][field]=this.value;checkCommitteeDirty();};
           }
-          if(field==='year')inp.style.width='100%';
           td.appendChild(inp);tr.appendChild(td);
         });
         const td=document.createElement('td');
