@@ -169,7 +169,7 @@
     .edit-textarea{
       width:100%;
       box-sizing:border-box;
-      border:2px solid #1a73e8;
+      border:1px solid #c9cdd4;
       border-radius:2px;
       padding:2px 5px;
       font-size:12px;
@@ -181,7 +181,8 @@
     }
     .edit-input:focus,
     .edit-textarea:focus{
-      box-shadow:0 0 0 2px rgba(26,115,232,.25);
+      border-color:#6b7280;
+      box-shadow:none;
     }
     .edit-textarea{
       min-height:48px;
@@ -191,14 +192,14 @@
     }
     select.edit-input{ height:24px; padding:1px 4px; }
 
-    /* .th-en 제거 대신 col resizer 유지 */
+    /* col resizer */
     .th-en{ display:none; }
     .col-resizer{
       position:absolute;
       right:0;top:0;height:100%;width:4px;
       cursor:col-resize;background:transparent;
     }
-    .col-resizer:hover,.col-resizer.resizing{ background:#1a73e8; }
+    .col-resizer:hover,.col-resizer.resizing{ background:#9aa3b8; }
 
     /* ── 버튼 ── */
     .btn{
@@ -298,23 +299,24 @@
           <button id="btn-save-entries" class="btn btn-primary" onclick="saveEntries()" disabled style="opacity:.4;cursor:not-allowed;">저장할 내용 없음</button>
         </div>
         <div class="tbl-wrap">
-          <table>
+          <table style="table-layout:fixed">
             <thead>
               <tr>
-                <th>학생<span class="th-en">Student</span></th>
-                <th>영문명<span class="th-en">English</span></th>
-                <th>학반<span class="th-en">Class</span></th>
-                <th>구분<span class="th-en">Category</span></th>
-                <th>위반행위<span class="th-en">Violation</span></th>
-                <th>자동점수<span class="th-en">Auto</span></th>
-                <th>수동점수<span class="th-en">Manual</span></th>
-                <th>총점<span class="th-en">Total</span></th>
-                <th>상태<span class="th-en">Status</span></th>
-                <th>교사<span class="th-en">Teacher</span></th>
-                <th>작성일<span class="th-en">Created</span></th>
-                <th>확정일<span class="th-en">Confirmed</span></th>
-                <th>메모<span class="th-en">Memo</span></th>
-                <th>삭제<span class="th-en">Delete</span></th>
+                <th style="width:32px">  #  </th>
+                <th style="width:90px" >학생<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:100px">영문명<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:48px" >학반<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:120px">구분<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:240px">위반행위<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:62px" >자동점수<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:56px" >수동점수<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:46px" >총점<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:68px" >상태<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:70px" >교사<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:96px" >작성일<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:96px" >확정일<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:140px">메모<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:46px" >삭제</th>
               </tr>
             </thead>
             <tbody id="entries-tbody"></tbody>
@@ -332,16 +334,17 @@
           <button id="btn-save-notices" class="btn btn-primary" onclick="saveNotices()" disabled style="opacity:.4;cursor:not-allowed;">저장할 내용 없음</button>
         </div>
         <div class="tbl-wrap">
-          <table>
+          <table style="table-layout:fixed">
             <thead>
               <tr>
-                <th>학생키<span class="th-en">Student Key</span></th>
-                <th>구분<span class="th-en">Level</span></th>
-                <th>학부모 메일<span class="th-en">Parent Mail At</span></th>
-                <th>학생/교사 메일<span class="th-en">Student/Teacher Mail At</span></th>
-                <th>완료시간<span class="th-en">Completed At</span></th>
-                <th>완료자<span class="th-en">Completed By</span></th>
-                <th>삭제<span class="th-en">Delete</span></th>
+                <th style="width:32px">#</th>
+                <th style="width:180px">학생키<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:56px">구분<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:110px">학부모 알림일<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:110px">학생/교사 알림일<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:110px">완료일<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:90px">완료자<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:46px">삭제</th>
               </tr>
             </thead>
             <tbody id="notices-tbody"></tbody>
@@ -359,17 +362,18 @@
           <button id="btn-save-recovery" class="btn btn-primary" onclick="saveRecovery()" disabled style="opacity:.4;cursor:not-allowed;">저장할 내용 없음</button>
         </div>
         <div class="tbl-wrap">
-          <table>
+          <table style="table-layout:fixed">
             <thead>
               <tr>
-                <th>학생<span class="th-en">Student</span></th>
-                <th>영문명<span class="th-en">English</span></th>
-                <th>학반<span class="th-en">Class</span></th>
-                <th>구분<span class="th-en">Level</span></th>
-                <th>회복점수<span class="th-en">Recovery Points</span></th>
-                <th>담당자<span class="th-en">Staff</span></th>
-                <th>완료시간<span class="th-en">Completed At</span></th>
-                <th>삭제<span class="th-en">Delete</span></th>
+                <th style="width:32px">#</th>
+                <th style="width:90px">학생<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:100px">영문명<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:48px">학반<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:56px">구분<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:68px">회복점수<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:80px">담당자<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:110px">완료일<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:46px">삭제</th>
               </tr>
             </thead>
             <tbody id="recovery-tbody"></tbody>
@@ -386,15 +390,16 @@
           <button id="btn-save-committee" class="btn btn-primary" onclick="saveCommittee()" disabled style="opacity:.4;cursor:not-allowed;">저장할 내용 없음</button>
         </div>
         <div class="tbl-wrap">
-          <table>
+          <table style="table-layout:fixed">
             <thead>
               <tr>
-                <th>종류<span class="th-en">Type</span></th>
-                <th>학생 Key<span class="th-en">Student Key</span></th>
-                <th>항목 Key<span class="th-en">Entry Key</span></th>
-                <th>완료 시간<span class="th-en">Completed At</span></th>
-                <th>연도<span class="th-en">Year</span></th>
-                <th>삭제<span class="th-en">Delete</span></th>
+                <th style="width:32px">#</th>
+                <th style="width:100px">종류<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:170px">학생 Key<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:140px">항목 Key<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:110px">완료일<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:54px">연도<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:46px">삭제</th>
               </tr>
             </thead>
             <tbody id="committee-tbody"></tbody>
@@ -461,6 +466,31 @@
       if (!btn) return;
       openPanel(btn.dataset.panel);
     });
+
+    // ── 컬럼 리사이즈 ──
+    let _resizeState = null;
+    function startResize(e, handle){
+      e.preventDefault(); e.stopPropagation();
+      const th = handle.closest('th');
+      const startX = e.clientX, startW = th.offsetWidth;
+      handle.classList.add('resizing');
+      _resizeState = { th, startX, startW, handle };
+      document.addEventListener('mousemove', _onResizeMove);
+      document.addEventListener('mouseup',   _onResizeUp);
+    }
+    function _onResizeMove(e){
+      if(!_resizeState) return;
+      const w = Math.max(40, _resizeState.startW + e.clientX - _resizeState.startX);
+      _resizeState.th.style.width    = w + 'px';
+      _resizeState.th.style.minWidth = w + 'px';
+    }
+    function _onResizeUp(){
+      if(!_resizeState) return;
+      _resizeState.handle.classList.remove('resizing');
+      _resizeState = null;
+      document.removeEventListener('mousemove', _onResizeMove);
+      document.removeEventListener('mouseup',   _onResizeUp);
+    }
 
     document.getElementById('entry-search')?.addEventListener('input', renderEntriesTable);
     document.getElementById('notice-search')?.addEventListener('input', renderNoticesTable);
@@ -538,10 +568,11 @@
         return;
       }
 
-      tbody.innerHTML = filtered.map(row => {
+      tbody.innerHTML = filtered.map((row, rowNum) => {
         const idx = entryRows.findIndex(r => r.key === row.key);
         return `
           <tr>
+            <td class="row-num">${rowNum+1}</td>
             <td><input class="edit-input" value="${esc(row.studentName || '')}" oninput="entryRows[${idx}].studentName=this.value;checkEntryDirty()"></td>
             <td><input class="edit-input" value="${esc(row.englishName || '')}" oninput="entryRows[${idx}].englishName=this.value;checkEntryDirty()"></td>
             <td><input class="edit-input" value="${esc(row.className || '')}" oninput="entryRows[${idx}].className=this.value;checkEntryDirty()"></td>
@@ -616,10 +647,11 @@
         return;
       }
 
-      tbody.innerHTML = filtered.map(row => {
+      tbody.innerHTML = filtered.map((row, rowNum) => {
         const idx = noticeRows.findIndex(r => r.key === row.key);
         return `
           <tr>
+            <td class="row-num">${rowNum+1}</td>
             <td><input class="edit-input" value="${esc(row.studentKey || '')}" oninput="noticeRows[${idx}].studentKey=this.value"></td>
             <td><input class="edit-input" value="${esc(row.level || '')}" oninput="noticeRows[${idx}].level=this.value"></td>
             <td><input class="edit-input" value="${esc(row.parentMailAt || '')}" oninput="noticeRows[${idx}].parentMailAt=this.value;checkNoticeDirty()"></td>
@@ -680,10 +712,11 @@
         return;
       }
 
-      tbody.innerHTML = filtered.map(row => {
+      tbody.innerHTML = filtered.map((row, rowNum) => {
         const idx = recoveryRows.findIndex(r => r.key === row.key);
         return `
           <tr>
+            <td class="row-num">${rowNum+1}</td>
             <td><input class="edit-input" value="${esc(row.studentName || '')}" oninput="recoveryRows[${idx}].studentName=this.value;checkRecoveryDirty()"></td>
             <td><input class="edit-input" value="${esc(row.englishName || '')}" oninput="recoveryRows[${idx}].englishName=this.value"></td>
             <td><input class="edit-input" value="${esc(row.className || '')}" oninput="recoveryRows[${idx}].className=this.value"></td>

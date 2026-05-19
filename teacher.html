@@ -749,8 +749,8 @@
             <input id="student-mgmt-search" class="edit-input" style="width:150px;font-size:12px" placeholder="이름 검색" oninput="renderStudentOverview()">
             <select id="student-mgmt-level" class="edit-input" style="width:100px;font-size:12px" onchange="renderStudentOverview()">
               <option value="">전체 학년</option>
-              <option value="ms">중등 (7-8)</option>
-              <option value="hs">고등 (9-12)</option>
+              <option value="ms">중등 (7-9)</option>
+              <option value="hs">고등 (10-12)</option>
             </select>
             <select id="student-mgmt-class" class="edit-input" style="width:80px;font-size:12px" onchange="renderStudentOverview()">
               <option value="">전체 반</option>
@@ -2361,8 +2361,10 @@
       const level   = (document.getElementById('student-mgmt-level')?.value||'');
       const clsFilter = (document.getElementById('student-mgmt-class')?.value||'');
 
-      const list = Object.values(students).filter(s=>{
-        if(!s) return false;
+      const list = Object.entries(students||{})
+        .map(([key, s]) => ({ key, ...(s||{}) }))
+        .filter(s=>{
+        if(!s.name) return false;
         const cls = String(s.className||'').trim();
         const grade = parseInt(cls)||0;
         if(level==='ms' && grade>=10) return false;
@@ -2435,6 +2437,58 @@
       if(sp) sp.style.display = 'none';
       const backBtn = document.getElementById('btn-back-overview');
       if(backBtn) backBtn.style.display = 'none';
+    }
+
+    function renderStudentGrid(){
+      const wrap = document.getElementById('student-grid-wrap');
+      if(!wrap) return;
+      const q       = (document.getElementById('student-mgmt-search')?.value||'').trim().toLowerCase();
+      const level   = (document.getElementById('student-mgmt-level')?.value||'');
+      const clsFilter = (document.getElementById('student-mgmt-class')?.value||'');
+
+      const classMap = {};
+      Object.entries(students||{}).forEach(([key, s]) => {
+        if(!s||!s.className) return;
+        const cls   = String(s.className).trim();
+        const grade = parseInt(cls)||0;
+        if(level==='ms' && grade>=10) return;
+        if(level==='hs' && grade<10) return;
+        if(clsFilter && cls!==clsFilter) return;
+        if(q && ![s.name,s.englishName].some(v=>String(v||'').toLowerCase().includes(q))) return;
+        if(!classMap[cls]) classMap[cls]=[];
+        classMap[cls].push({key,...s});
+      });
+
+      const sortedClasses = Object.keys(classMap).sort((a,b)=>a.localeCompare(b,'ko',{numeric:true}));
+      if(!sortedClasses.length){
+        wrap.innerHTML='<div class="empty" style="padding:20px">학생이 없습니다.</div>';
+        return;
+      }
+
+      wrap.innerHTML = sortedClasses.map(cls=>{
+        const list = classMap[cls].sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'ko'));
+        const rows = list.map(s=>{
+          const skey = esc(s.key);
+          const _pts = getStudentPoints(s.key, level||getSchoolLevel(s.className||''));
+          const currentTotal = _pts.current, overallTotal = _pts.overall;
+          const ptColor = currentTotal>=9?'var(--rd)':currentTotal>=6?'#b45309':currentTotal>=3?'#1d4ed8':'#9ca3af';
+          return `<div class="student-list-row" data-skey="${skey}" onclick="selectStudentInPanel('${skey}')">
+            <div style="flex:1;min-width:0">
+              <div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(s.name||'')}</div>
+              <div style="font-size:11px;color:var(--sb);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(s.englishName||'')}</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:4px;flex-shrink:0">
+              <span style="font-size:12px;font-weight:700;color:${ptColor}">${currentTotal}</span>
+              <span style="font-size:10px;color:#9ca3af">/${overallTotal}</span>
+              <button class="btn-det" data-skey="${skey}" onclick="event.stopPropagation();goToDetentionEntry('${skey}')">+</button>
+            </div>
+          </div>`;
+        }).join('');
+        return `<div>
+          <div class="class-list-header">${esc(cls)} <span style="font-size:10px;opacity:.7">${list.length}명</span></div>
+          ${rows}
+        </div>`;
+      }).join('');
     }
 
     function selectStudentInPanel(studentKey){
