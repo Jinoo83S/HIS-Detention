@@ -2189,8 +2189,8 @@
           // admin 전용 날짜 편집 인풋 생성
           function entryDateInput(val, field, label){
             const iso = val ? String(val).slice(0,10) : '';
-            if(!isAdminOnly) return `${label}: ${fmt(val)}`;
-            return `${label}: <input type="date" class="edit-input" style="font-size:11px;padding:2px 6px;width:130px;display:inline-block;vertical-align:middle" value="${iso}" onchange="updateEntryDateField('${esc(r.key)}','${field}',this.value)">`;
+            if(!isAdminOnly) return `<span>${fmt(val)}</span>`;
+            return `<input type="date" class="edit-input" style="font-size:11px;padding:2px 6px;width:130px" value="${iso}" onchange="updateEntryDateField('${esc(r.key)}','${field}',this.value)">`;
           }
 
           return `
@@ -2213,11 +2213,11 @@
                 <div class="detail-section"><div class="detail-title">메모 | Memo</div><div class="detail-content">${esc(r.memo||'-')}</div></div>
                 <div class="detail-section">
                   <div class="detail-title">처리 정보${isAdminOnly?' <span style="font-size:10px;color:var(--sb);font-weight:400">(admin: 날짜 편집 가능)</span>':''}</div>
-                  <div class="detail-content">
-                    <div style="margin-bottom:4px">${entryDateInput(r.createdAt,   'createdAt',   '작성')}</div>
-                    <div style="margin-bottom:4px">${entryDateInput(r.confirmedAt,'confirmedAt','확정')}</div>
-                    <div style="margin-bottom:4px">${entryDateInput(r.rejectedAt, 'rejectedAt', '반려')}</div>
-                    <div>노트: ${esc(r.adminNote||'-')}</div>
+                  <div class="detail-content" style="display:grid;grid-template-columns:auto 1fr;gap:2px 8px;align-items:center;white-space:normal">
+                    <span style="color:var(--sb)">작성:</span>${entryDateInput(r.createdAt,   'createdAt',   '')}
+                    <span style="color:var(--sb)">확정:</span>${entryDateInput(r.confirmedAt,'confirmedAt','')}
+                    <span style="color:var(--sb)">반려:</span>${entryDateInput(r.rejectedAt, 'rejectedAt', '')}
+                    <span style="color:var(--sb)">노트:</span><span>${esc(r.adminNote||'-')}</span>
                   </div>
                 </div>
                 ${(canReject||canCommittee)?`
