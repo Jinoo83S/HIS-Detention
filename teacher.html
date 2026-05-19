@@ -563,6 +563,7 @@
                 <th class="nowrap">학부모 메일</th>
                 <th class="nowrap">학생/교사 메일</th>
                 <th class="nowrap tc">완료</th>
+                <th class="nowrap tc">처리</th>
               </tr>
             </thead>
             <tbody id="notify-ms-done-tbody"></tbody>
@@ -619,6 +620,7 @@
                 <th class="nowrap">학부모 메일</th>
                 <th class="nowrap">학생/교사 메일</th>
                 <th class="nowrap tc">완료</th>
+                <th class="nowrap tc">처리</th>
               </tr>
             </thead>
             <tbody id="notify-hs-done-tbody"></tbody>
@@ -673,7 +675,8 @@
                 <th class="nowrap tc" style="width:9%;">회복점수</th>
                 <th class="nowrap tc" style="width:9%;">잔여점수</th>
                 <th class="nowrap tc" style="width:9%;">전체점수</th>
-                <th class="nowrap" style="width:14%;">완료시간</th>
+                <th class="nowrap" style="width:12%;">완료시간</th>
+                <th class="nowrap tc" style="width:8%;">처리</th>
               </tr>
             </thead>
             <tbody id="recovery-ms-done-tbody"></tbody>
@@ -728,7 +731,8 @@
                 <th class="nowrap tc" style="width:9%;">회복점수</th>
                 <th class="nowrap tc" style="width:9%;">잔여점수</th>
                 <th class="nowrap tc" style="width:9%;">전체점수</th>
-                <th class="nowrap" style="width:14%;">완료시간</th>
+                <th class="nowrap" style="width:12%;">완료시간</th>
+                <th class="nowrap tc" style="width:8%;">처리</th>
               </tr>
             </thead>
             <tbody id="recovery-hs-done-tbody"></tbody>
@@ -1116,6 +1120,35 @@
     function hasRole(roleName){ return teacherRoles.includes('admin') || teacherRoles.includes(roleName); }
     function canEditStandard(){ return teacherRoles.includes('admin') || teacherRoles.includes('master'); }
     function canConfirmDetention(){ return hasRole('master'); }
+    function canManageNoticeLevel(level){ return hasRole(level === 'ms' ? 'ms_notice' : 'hs_notice'); }
+    function canManageRecoveryLevel(level){ return hasRole(level === 'ms' ? 'ms_restore' : 'hs_restore'); }
+    function canManageCommittee(){ return hasRole('master'); }
+    function getLevelForStudentKey(studentKey, fallbackLevel){
+      const s = students[String(studentKey || '')] || {};
+      return getSchoolLevel(s.className || '') || String(fallbackLevel || '');
+    }
+    async function recalcByStudentKey(studentKey, fallbackLevel){
+      const lvl = getLevelForStudentKey(studentKey, fallbackLevel);
+      if(studentKey && lvl){ await recalculateStudentState(String(studentKey), lvl); }
+    }
+    function canCancelDraftDetention(record){
+      const status = String((record && record.status) || '임시저장');
+      return status === '임시저장' && (hasRole('master') || String((record && record.teacherEmail) || '') === String((teacher && teacher.email) || ''));
+    }
+    function inferPointsAfterConfirmCancel(record){
+      const cur = Number((record && (record.manualPoints || record.totalPoints)) || 0);
+      if(cur > 0) return cur;
+      const ap = String((record && record.autoPoints) || '').replace(/\s*—.*$/, '').trim();
+      const vc = Number((record && record.violationCount) || 1);
+      if(/^\d+$/.test(ap)) return Number(ap);
+      if(/^\d+\s*,\s*\d+/.test(ap)){
+        const parts = ap.split(',').map(v=>Number(String(v).trim())).filter(n=>!isNaN(n));
+        return parts.length ? (vc <= 1 ? parts[0] : (parts[1] || parts[0])) : 0;
+      }
+      const m = ap.match(/^(\d+)\s*-\s*(\d+)$/);
+      if(m) return Number(m[1]);
+      return 0;
+    }
 
     function statusBadge(status){
       if (status === '확정') return '<span class="status-confirmed">확정 | Confirmed</span>';
@@ -1955,8 +1988,8 @@
 
     function renderRecentEntries(){
       const box = document.getElementById('recent-entry-list');
-      const list = Object.values(entries || {})
-        .filter(r => String(r.teacherEmail || '') === String(teacher.email || ''))
+      const list = Object.entries(entries || {}).map(([key, value]) => ({ key, ...(value || {}) }))
+        .filter(r => String(r.teacherEmail || '') === String(teacher.email || '') || hasRole('master'))
         .sort((a,b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')))
         .slice(0, 10);
 
@@ -1981,6 +2014,7 @@
               <div class="recent-entry-points">${esc(String(r.totalPoints || 0))}점</div>
               <div>${statusBadge(r.status || '임시저장')}</div>
               <div class="recent-entry-datetime">${fmt(r.createdAt)}</div>
+              ${canCancelDraftDetention(r) ? `<button class="btn btn-danger btn-xs" style="margin-top:6px" onclick="cancelDraftDetention('${esc(r.key)}')">입력 취소</button>` : ''}
             </div>
           </div>
         </div>
@@ -2162,7 +2196,8 @@
                 <div style="display:flex;gap:4px;justify-content:center">
                   ${canConfirm?`<button class="btn btn-primary btn-xs" onclick="confirmDetention('${esc(r.key)}')">확정</button>`:''}
                   ${canReject ?`<button class="btn btn-danger btn-xs"  onclick="rejectDetention('${esc(r.key)}')">반려</button>`:''}
-                  ${!canManage?'-':''}
+                  ${canCancelDraftDetention(r)?`<button class="btn btn-danger btn-xs" style="background:#fff;color:var(--rd);border:1px solid #fca5a5" onclick="cancelDraftDetention('${esc(r.key)}')">입력취소</button>`:''}
+                  ${!canManage&&!canCancelDraftDetention(r)?'-':''}
                 </div>
               </td>
             </tr>
@@ -2220,10 +2255,11 @@
                     <span style="color:var(--sb)">노트:</span><span>${esc(r.adminNote||'-')}</span>
                   </div>
                 </div>
-                ${(canReject||canCommittee)?`
+                ${(canReject||canCommittee||canManage)?`
                 <div class="detail-section"><div class="detail-title">처리 | Actions</div>
                   <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">
                     ${canReject   ?`<button class="btn btn-danger btn-xs" onclick="event.stopPropagation();rejectDetention('${esc(r.key)}')">반려</button>`:''}
+                    ${canManage   ?`<button class="btn btn-secondary btn-xs" onclick="event.stopPropagation();cancelDetentionProcessing('${esc(r.key)}')">${String(r.status||'')==='확정'?'확정취소':'반려취소'}</button>`:''}
                     ${canCommittee?`<button class="btn btn-xs" style="background:#fef9e8;color:#5a3e00;border:1px solid #f0c040" onclick="event.stopPropagation();openManualCommittee('${esc(r.key)}','${esc(r.studentKey||'')}','${esc(r.studentName||'')}')">위원회 수동</button>`:''}
                   </div>
                 </div>`:''}
@@ -2857,7 +2893,7 @@
       activeTb.innerHTML = renderRows(finalActiveList);
       // 완료된 목록: 완료 버튼 없음, 메일도 재발송 불필요
       if (!doneList.length){
-        doneTb.innerHTML = '<tr><td colspan="8" class="empty">해당 학생이 없습니다. | No matching students.</td></tr>';
+        doneTb.innerHTML = '<tr><td colspan="9" class="empty">해당 학생이 없습니다. | No matching students.</td></tr>';
       } else {
       // _doneNoticeMap은 renderNotifyTables()에서 일괄 초기화
         const isAdmin = teacherRoles.includes('admin'); // master 제외
@@ -2899,14 +2935,39 @@
               ? dateCell(s.notice.completedAt,         'completedAt')
               : `<td class="nowrap" style="font-size:11px;${completedColor}">${completedText}</td>`
             }
+            <td class="nowrap tc" onclick="event.stopPropagation()">
+              ${s.noticeKey ? `<button class="btn btn-secondary btn-xs" onclick="cancelNoticeCompletion('${esc(s.noticeKey||'')}','${esc(s.key)}','${level}')">완료취소</button>` : '-'}
+            </td>
           </tr>
           <tr class="detail-row ${expanded ? 'show' : ''}">
-            <td colspan="8"><div class="detail-box">
+            <td colspan="9"><div class="detail-box">
               <div class="detail-section"><div class="detail-title">사유 | Reasons</div><div class="detail-content">${esc(s.reasons||'-')}</div></div>
             </div></td>
           </tr>`;
         }).join('');
       }
+    }
+
+
+    async function cancelNoticeCompletion(noticeKey, studentKey, level){
+      if(!noticeKey) return toast('알림 기록을 찾을 수 없습니다.', 'err');
+      if(!canManageNoticeLevel(level)) return toast('알림 완료 취소 권한이 없습니다.', 'err');
+      if(!confirm('알림 완료 처리를 취소하시겠습니까?\n메일 발송 기록은 유지되고, 완료 상태만 진행 중으로 되돌아갑니다.')) return;
+      try{
+        await db.ref(NOTICE_DB_PATH + '/' + noticeKey).update({
+          completedAt: null,
+          completedBy: null,
+          completedByEmail: null
+        });
+        if(noticeEntries[noticeKey]){
+          noticeEntries[noticeKey].completedAt = null;
+          noticeEntries[noticeKey].completedBy = null;
+          noticeEntries[noticeKey].completedByEmail = null;
+        }
+        await recalcByStudentKey(studentKey, level);
+        toast('알림 완료가 취소되었습니다.', 'ok');
+        await loadData();
+      }catch(e){ console.error(e); toast('알림 완료 취소 실패', 'err'); }
     }
 
     // admin 전용: 회복교육 완료시간 수정
@@ -2917,6 +2978,7 @@
       try{
         await db.ref(RECOVERY_DB_PATH + '/' + key + '/completedAt').set(isoVal);
         if(recoveryEntries[key]) recoveryEntries[key].completedAt = isoVal;
+        if(recoveryEntries[key]) await recalcByStudentKey(recoveryEntries[key].studentKey || '', recoveryEntries[key].level || '');
         toast('완료시간 수정 완료', 'ok');
       } catch(e){
         toast('저장 실패: ' + e.message, 'err');
@@ -2991,7 +3053,7 @@
       const _histExpandedKeys = new Set();
 
       if (!historyList.length){
-        doneTb.innerHTML = '<tr><td colspan="7" class="empty">완료된 교육 기록이 없습니다. | No completed recovery history.</td></tr>';
+        doneTb.innerHTML = '<tr><td colspan="8" class="empty">완료된 교육 기록이 없습니다. | No completed recovery history.</td></tr>';
       } else {
         const rows = [];
         historyList.forEach((r, i) => {
@@ -3007,10 +3069,10 @@
             '<td class="nowrap tc">-'+esc(String(r.recoveryPoints||0))+'</td>'+
             '<td class="nowrap tc">'+esc(String(r.currentTotalAfter??r.currentTotalAtRecovery??'-'))+'</td>'+
             '<td class="nowrap tc">'+esc(String(r.overallTotalAtRecovery??'-'))+'</td>'+
-            '<td class="nowrap" onclick="event.stopPropagation()">'+(teacherRoles.includes('admin')  ? '<input type="date" class="edit-input" style="font-size:11px;padding:2px 5px;width:122px" value="'+(r.completedAt||'').slice(0,10)+'"'    +' onchange="updateRecoveryCompletedAt(\''+r.key+'\',this.value)">'  : fmt(r.completedAt))+'</td>'+
+            '<td class="nowrap" onclick="event.stopPropagation()">'+(teacherRoles.includes('admin')  ? '<input type="date" class="edit-input" style="font-size:11px;padding:2px 5px;width:122px" value="'+(r.completedAt||'').slice(0,10)+'"'    +' onchange="updateRecoveryCompletedAt(\''+r.key+'\',this.value)">'  : fmt(r.completedAt))+'</td>'+            '<td class="nowrap tc" onclick="event.stopPropagation()">'+(canManageRecoveryLevel(level)?'<button class="btn btn-secondary btn-xs" onclick="cancelRecoveryCompletion(\''+r.key+'\')">완료취소</button>':'-')+'</td>'+
             '</tr>'+
             '<tr class="detail-row">'+
-            '<td colspan="7"><div class="detail-box"><div class="detail-section">'+
+            '<td colspan="8"><div class="detail-box"><div class="detail-section">'+
             '<div class="detail-title">위반 행위 | Violations</div>'+
             '<div class="detail-content">'+esc(reasonText)+'</div>'+
             '</div>'+(()=>{ const memos=getConfirmedEntriesForStudent(r.studentKey).filter(e=>e.memo||e.adminNote).map((e,i)=>'['+(i+1)+'] '+(e.memo?'메모: '+e.memo:'')+(e.memo&&e.adminNote?' / ':'')+(e.adminNote?'관리자: '+e.adminNote:'')).join('\n'); return memos?'<div class="detail-section"><div class="detail-title">메모 | Notes</div><div class="detail-content">'+esc(memos)+'</div></div>':''; })()+
@@ -3028,6 +3090,23 @@
           });
         });
       }
+    }
+
+
+    async function cancelRecoveryCompletion(recoveryKey){
+      const record = recoveryEntries[recoveryKey] || {};
+      if(!record || !recoveryKey) return toast('회복교육 기록을 찾을 수 없습니다.', 'err');
+      if(!canManageRecoveryLevel(record.level || getLevelForStudentKey(record.studentKey, ''))) return toast('회복교육 완료 취소 권한이 없습니다.', 'err');
+      if(!confirm('회복교육 완료 처리를 취소하시겠습니까?\n해당 회복교육 기록이 삭제되고 차감된 점수가 복원됩니다.')) return;
+      try{
+        const studentKey = String(record.studentKey || '');
+        const level = record.level || getLevelForStudentKey(studentKey, '');
+        await db.ref(RECOVERY_DB_PATH + '/' + recoveryKey).remove();
+        delete recoveryEntries[recoveryKey];
+        await recalcByStudentKey(studentKey, level);
+        toast('회복교육 완료가 취소되었습니다.', 'ok');
+        await loadData();
+      }catch(e){ console.error(e); toast('회복교육 완료 취소 실패', 'err'); }
     }
 
     function renderDisciplineTab(){
@@ -3060,7 +3139,7 @@
           '<td class="tc">'+fmt(r.confirmedAt||r.createdAt)+'</td>'+
           '<td class="tc">'+(done ? statusBadge(r.status) : '<span style="background:#fde8e8;color:#7f1d1d;padding:4px 8px;border-radius:8px;font-size:11px;font-weight:700;">선도위원회 회부</span>')+'</td>'+
           (done
-            ? '<td class="tc" style="color:var(--gn);font-weight:700;font-size:11px;">&#10003; '+fmt(r.committeeCompletedAt)+'</td>'
+            ? '<td class="tc" style="font-size:11px;"><div style="color:var(--gn);font-weight:700;">&#10003; '+fmt(r.committeeCompletedAt)+'</div>'+(canManageCommittee()?'<button class="btn btn-secondary btn-xs" style="margin-top:4px" onclick="event.stopPropagation();cancelCommitteeCompletion(\''+esc(r.committeeKey||'')+'\')">완료취소</button>':'')+'</td>'
             : '<td class="tc"><button class="btn btn-primary" style="font-size:11px;padding:4px 8px;" onclick="event.stopPropagation();completeCommittee(\'referral\',\''+esc(r.key||'')+'\',\''+esc(r.studentKey||'')+'\',\'\')">완료</button></td>')+
           '</tr>'+
           '<tr class="detail-row" id="'+did+'"><td colspan="8">'+
@@ -3070,8 +3149,9 @@
       };
       const activeRef=allRef.filter(r=>!completedRefKeys.has(r.key));
       const doneRef=allRef.filter(r=>completedRefKeys.has(r.key)).map(r=>{
-        const rec=Object.values(committeeEntries||{}).find(c=>c.entryKey===r.key&&(c.type==='referral'||c.type==='manual_referral'));
-        return Object.assign({},r,{committeeCompletedAt:rec&&rec.completedAt});
+        const recEntry=Object.entries(committeeEntries||{}).find(([,c])=>c.entryKey===r.key&&(c.type==='referral'||c.type==='manual_referral'));
+        const rec=recEntry&&recEntry[1];
+        return Object.assign({},r,{committeeCompletedAt:rec&&rec.completedAt,committeeKey:recEntry&&recEntry[0]});
       });
       referralTb.innerHTML=activeRef.length?activeRef.map(r=>mkRefRow(r,false)).join(''):'<tr><td colspan="8" class="empty">선도위원회 회부 내역이 없습니다.</td></tr>';
       if(referralDoneTb)referralDoneTb.innerHTML=doneRef.length?doneRef.map(r=>mkRefRow(r,true)).join(''):'<tr><td colspan="8" class="empty">완료된 내역이 없습니다.</td></tr>';
@@ -3100,7 +3180,7 @@
           '<td class="tc" style="font-weight:700;color:var(--rd);">'+ovr+'점</td>'+
           '<td style="font-size:11px;">'+esc(trig)+'</td>'+
           (done
-            ? '<td class="tc" style="color:var(--gn);font-weight:700;font-size:11px;">&#10003; '+fmt(s.committeeCompletedAt)+'</td><td></td>'
+            ? '<td class="tc" style="font-size:11px;"><div style="color:var(--gn);font-weight:700;">&#10003; '+fmt(s.committeeCompletedAt)+'</div>'+(canManageCommittee()?'<button class="btn btn-secondary btn-xs" style="margin-top:4px" onclick="event.stopPropagation();cancelCommitteeCompletion(\''+esc(s.committeeKey||'')+'\')">완료취소</button>':'')+'</td><td></td>'
             : '<td class="tc"><span style="color:var(--rd);font-weight:700;font-size:12px;">대상</span></td>'+
               '<td class="tc"><button class="btn btn-primary" style="font-size:11px;padding:4px 8px;" onclick="event.stopPropagation();completeCommittee(\'edu\',\'\',\''+esc(s.key||'')+'\')">완료</button></td>')+
           '</tr>'+
@@ -3111,8 +3191,9 @@
       };
       const activeEdu=allEdu.filter(s=>!doneEduKeysYr.has(s.key));
       const doneEdu=allEdu.filter(s=>doneEduKeysYr.has(s.key)).map(s=>{
-        const rec=Object.values(committeeEntries||{}).find(c=>EDU_TYPES.includes(c.type)&&String(c.studentKey||'')===String(s.key||'')&&String(c.year||'')===String(yr));
-        return Object.assign({},s,{committeeCompletedAt:rec&&rec.completedAt});
+        const recEntry=Object.entries(committeeEntries||{}).find(([,c])=>EDU_TYPES.includes(c.type)&&String(c.studentKey||'')===String(s.key||'')&&String(c.year||'')===String(yr));
+        const rec=recEntry&&recEntry[1];
+        return Object.assign({},s,{committeeCompletedAt:rec&&rec.completedAt,committeeKey:recEntry&&recEntry[0]});
       });
       eduTb.innerHTML=activeEdu.length?activeEdu.map(s=>mkEduRow(s,false)).join(''):'<tr><td colspan="7" class="empty">해당 학생이 없습니다.</td></tr>';
       if(eduDoneTb)eduDoneTb.innerHTML=doneEdu.length?doneEdu.map(s=>mkEduRow(s,true)).join(''):'<tr><td colspan="7" class="empty">완료된 내역이 없습니다.</td></tr>';
@@ -3154,6 +3235,31 @@
       }catch(e){console.error(e);toast('저장 실패','err');}
     }
 
+
+
+    async function cancelCommitteeCompletion(committeeKey){
+      const record = committeeEntries[committeeKey] || {};
+      if(!record || !committeeKey) return toast('위원회 기록을 찾을 수 없습니다.', 'err');
+      if(!canManageCommittee()) return toast('위원회 완료 취소 권한이 없습니다.', 'err');
+      if(!confirm('위원회 완료 처리를 취소하고 다시 진행 중 상태로 되돌리시겠습니까?')) return;
+      try{
+        await db.ref(COMMITTEE_DB_PATH + '/' + committeeKey).update({
+          completedAt: null,
+          completedBy: null,
+          completedByEmail: null
+        });
+        if(committeeEntries[committeeKey]){
+          committeeEntries[committeeKey].completedAt = null;
+          committeeEntries[committeeKey].completedBy = null;
+          committeeEntries[committeeKey].completedByEmail = null;
+        }
+        const studentKey = String(record.studentKey || '') || String((entries[String(record.entryKey||'')] || {}).studentKey || '');
+        const level = getLevelForStudentKey(studentKey, '');
+        if(studentKey && level) await recalcByStudentKey(studentKey, level);
+        toast('위원회 완료가 취소되었습니다.', 'ok');
+        await loadData();
+      }catch(e){ console.error(e); toast('위원회 완료 취소 실패', 'err'); }
+    }
 
     let _manualCommitteeData = {};
     function openManualCommittee(entryKey, studentKey, studentName){
@@ -3243,6 +3349,51 @@
       });
       let wb=document.getElementById('disc-warn');if(!wb){wb=document.createElement('div');wb.id='disc-warn';wb.style.cssText='margin:8px 0;padding:10px 14px;border-radius:10px;background:#fde8e8;border:1px solid #fca5a5;color:#7f1d1d;font-size:13px;font-weight:700;';const sc=document.getElementById('today-count');if(sc&&sc.closest('.card'))sc.closest('.card').after(wb);}
       if(o30.length){wb.style.display='';wb.innerHTML='<b>생활교육위원회 대상 (누적 30점 이상):</b> '+o30.map(k=>{const s=students[k]||{};return esc(s.name||'')+' '+esc(s.englishName||'')+' '+esc(s.className||'')+' ('+getStudentOverallTotal(k)+'점)';}).join(' / ');}else{wb.style.display='none';}
+    }
+
+
+    async function cancelDraftDetention(key){
+      const record = entries[key] || {};
+      if(!record || !key) return toast('기록을 찾을 수 없습니다.', 'err');
+      if(!canCancelDraftDetention(record)) return toast('입력 취소 권한이 없습니다.', 'err');
+      if(!confirm('이 디텐션 입력 기록을 취소하시겠습니까?\n임시저장 기록이 삭제됩니다.')) return;
+      try{
+        const studentKey = String(record.studentKey || '');
+        const fallbackLevel = record.schoolLevel || getSchoolLevel(record.className || '');
+        await db.ref(DETENTION_DB_PATH + '/' + key).remove();
+        delete entries[key];
+        if(studentKey) await recalcByStudentKey(studentKey, fallbackLevel);
+        toast('디텐션 입력이 취소되었습니다.', 'ok');
+        await loadData();
+      }catch(e){ console.error(e); toast('입력 취소 실패', 'err'); }
+    }
+
+    async function cancelDetentionProcessing(key){
+      const record = entries[key] || {};
+      if(!record || !key) return toast('기록을 찾을 수 없습니다.', 'err');
+      if(!canConfirmDetention()) return toast('처리 취소 권한이 없습니다.', 'err');
+      const status = String(record.status || '임시저장');
+      if(status === '임시저장') return cancelDraftDetention(key);
+      const label = status === '확정' ? '확정' : '반려';
+      if(!confirm('이 디텐션의 ' + label + ' 처리를 취소하고 대기 상태로 되돌리시겠습니까?')) return;
+      try{
+        const restorePoints = status === '확정' ? inferPointsAfterConfirmCancel(record) : Number(record.manualPoints || record.totalPoints || 0);
+        const updatePayload = {
+          status: '임시저장',
+          confirmedAt: null, confirmedBy: null, confirmedByEmail: null,
+          rejectedAt: null, rejectedBy: null, rejectedByEmail: null,
+          isReferral: false
+        };
+        if(status === '확정' && restorePoints > 0){
+          updatePayload.manualPoints = restorePoints;
+          updatePayload.totalPoints = restorePoints;
+        }
+        await db.ref(DETENTION_DB_PATH + '/' + key).update(updatePayload);
+        if(entries[key]) Object.assign(entries[key], updatePayload);
+        await recalcByStudentKey(record.studentKey || '', record.schoolLevel || getSchoolLevel(record.className || ''));
+        toast(label + ' 처리가 취소되었습니다.', 'ok');
+        await loadData();
+      }catch(e){ console.error(e); toast('처리 취소 실패', 'err'); }
     }
 
     async function saveDetention(){
