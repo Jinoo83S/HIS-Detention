@@ -191,6 +191,20 @@
       line-height:1.4;
     }
     select.edit-input{ height:24px; padding:1px 4px; }
+    .tbl-wrap td .edit-input,
+    .tbl-wrap td .edit-textarea,
+    .tbl-wrap td input[type="date"].edit-input,
+    .tbl-wrap td select.edit-input{
+      display:block;
+      width:100% !important;
+      max-width:100% !important;
+      min-width:0 !important;
+      box-sizing:border-box;
+    }
+    .tbl-wrap td input[type="date"].edit-input{
+      padding:1px 2px !important;
+      font-size:11px !important;
+    }
 
     /* col resizer */
     .th-en{ display:none; }
@@ -432,6 +446,12 @@
     function checkEntryDirty(){ _setBtnState('btn-save-entries', _sig(entryRows)!==_entrySnap); }
     function checkNoticeDirty(){ _setBtnState('btn-save-notices', _sig(noticeRows)!==_noticeSnap); }
     function checkRecoveryDirty(){ _setBtnState('btn-save-recovery', _sig(recoveryRows)!==_recoverySnap); }
+
+    function dateInputValue(v){
+      const raw = String(v || '').trim();
+      const m = raw.match(/^(\d{4}-\d{2}-\d{2})/);
+      return m ? m[1] : '';
+    }
 
 
     async function recalculateCycleStatesAfterAdminEdit(reason){
@@ -678,9 +698,9 @@
             <td class="row-num">${rowNum+1}</td>
             <td><input class="edit-input" value="${esc(row.studentKey || '')}" oninput="noticeRows[${idx}].studentKey=this.value;checkNoticeDirty()"></td>
             <td><input class="edit-input" value="${esc(row.level || '')}" oninput="noticeRows[${idx}].level=this.value;checkNoticeDirty()"></td>
-            <td><input class="edit-input" value="${esc(row.parentMailAt || '')}" oninput="noticeRows[${idx}].parentMailAt=this.value;checkNoticeDirty()"></td>
-            <td><input class="edit-input" value="${esc(row.studentTeacherMailAt || '')}" oninput="noticeRows[${idx}].studentTeacherMailAt=this.value;checkNoticeDirty()"></td>
-            <td><input class="edit-input" value="${esc(row.completedAt || '')}" oninput="noticeRows[${idx}].completedAt=this.value;checkNoticeDirty()"></td>
+            <td><input type="date" class="edit-input" value="${esc(dateInputValue(row.parentMailAt))}" onchange="noticeRows[${idx}].parentMailAt=this.value?this.value+'T00:00:00':null;checkNoticeDirty()"></td>
+            <td><input type="date" class="edit-input" value="${esc(dateInputValue(row.studentTeacherMailAt))}" onchange="noticeRows[${idx}].studentTeacherMailAt=this.value?this.value+'T00:00:00':null;checkNoticeDirty()"></td>
+            <td><input type="date" class="edit-input" value="${esc(dateInputValue(row.completedAt))}" onchange="noticeRows[${idx}].completedAt=this.value?this.value+'T00:00:00':null;checkNoticeDirty()"></td>
             <td><input class="edit-input" value="${esc(row.completedBy || '')}" oninput="noticeRows[${idx}].completedBy=this.value;checkNoticeDirty()"></td>
             <td><button class="btn btn-danger small-btn" onclick="(function(k){const r=noticeRows.find(x=>x.key===k);if(r){r._deleted=!r._deleted;renderNoticesTable();checkNoticeDirty();}})('${row.key}')">${row._deleted ? "복구" : "삭제"}</button></td>
           </tr>
@@ -800,9 +820,15 @@
           const td=document.createElement('td');
           const inp=document.createElement('input');
           inp.className='edit-input';
-          inp.value=r[field]||'';
-          if(field==='year')inp.style.width='60px';
-          inp.oninput=function(){committeeRows[idx][field]=this.value;checkCommitteeDirty();};
+          if(field==='completedAt'){
+            inp.type='date';
+            inp.value=dateInputValue(r[field]);
+            inp.onchange=function(){committeeRows[idx][field]=this.value?this.value+'T00:00:00':null;checkCommitteeDirty();};
+          }else{
+            inp.value=r[field]||'';
+            inp.oninput=function(){committeeRows[idx][field]=this.value;checkCommitteeDirty();};
+          }
+          if(field==='year')inp.style.width='100%';
           td.appendChild(inp);tr.appendChild(td);
         });
         const td=document.createElement('td');

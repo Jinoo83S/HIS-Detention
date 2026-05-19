@@ -101,6 +101,19 @@
     .tbl-wrap td.tc,.tbl-wrap th.tc{text-align:center!important;white-space:nowrap}
     .cell-reason-preview{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;max-width:100%}
     .cell-reason-preview{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:320px;display:block}
+    .tbl-wrap td .edit-input,
+    .tbl-wrap td input[type="date"].edit-input,
+    .tbl-wrap td select.edit-input{
+      display:block;
+      width:100% !important;
+      max-width:100% !important;
+      min-width:0 !important;
+      box-sizing:border-box;
+    }
+    .tbl-wrap td input[type="date"].edit-input{
+      font-size:11px !important;
+      padding:2px 3px !important;
+    }
 
     /* 교차 행 색상 */
     tbody tr:nth-child(odd){background:#ffffff}
@@ -555,15 +568,15 @@
           <table>
             <thead>
               <tr>
-                <th class="nowrap">학생</th>
-                <th class="nowrap tc">학반</th>
-                <th>사유</th>
-                <th class="nowrap tc">현재</th>
-                <th class="nowrap tc">전체</th>
-                <th class="nowrap">학부모 메일</th>
-                <th class="nowrap">학생/교사 메일</th>
-                <th class="nowrap tc">완료</th>
-                <th class="nowrap tc">처리</th>
+                <th class="nowrap" style="width:16%">학생</th>
+                <th class="nowrap tc" style="width:6%">학반</th>
+                <th style="width:23%">사유</th>
+                <th class="nowrap tc" style="width:6%">현재</th>
+                <th class="nowrap tc" style="width:6%">전체</th>
+                <th class="nowrap" style="width:13%">학부모 메일</th>
+                <th class="nowrap" style="width:13%">학생/교사 메일</th>
+                <th class="nowrap tc" style="width:10%">완료</th>
+                <th class="nowrap tc" style="width:7%">처리</th>
               </tr>
             </thead>
             <tbody id="notify-ms-done-tbody"></tbody>
@@ -612,15 +625,15 @@
           <table>
             <thead>
               <tr>
-                <th class="nowrap">학생</th>
-                <th class="nowrap tc">학반</th>
-                <th>사유</th>
-                <th class="nowrap tc">현재</th>
-                <th class="nowrap tc">전체</th>
-                <th class="nowrap">학부모 메일</th>
-                <th class="nowrap">학생/교사 메일</th>
-                <th class="nowrap tc">완료</th>
-                <th class="nowrap tc">처리</th>
+                <th class="nowrap" style="width:16%">학생</th>
+                <th class="nowrap tc" style="width:6%">학반</th>
+                <th style="width:23%">사유</th>
+                <th class="nowrap tc" style="width:6%">현재</th>
+                <th class="nowrap tc" style="width:6%">전체</th>
+                <th class="nowrap" style="width:13%">학부모 메일</th>
+                <th class="nowrap" style="width:13%">학생/교사 메일</th>
+                <th class="nowrap tc" style="width:10%">완료</th>
+                <th class="nowrap tc" style="width:7%">처리</th>
               </tr>
             </thead>
             <tbody id="notify-hs-done-tbody"></tbody>
@@ -920,14 +933,16 @@
     let expandedRecoveryKeys = { ms:new Set(), hs:new Set() };
 
     function fmt(v){
-      const d = new Date(v || '');
+      if(!v) return '-';
+      const raw = String(v || '').trim();
+      const m = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if(m) return `${m[1]}. ${m[2]}. ${m[3]}`;
+      const d = new Date(raw);
       if (isNaN(d)) return '-';
       const yyyy = d.getFullYear();
       const mm = String(d.getMonth()+1).padStart(2,'0');
       const dd = String(d.getDate()).padStart(2,'0');
-      const hh = String(d.getHours()).padStart(2,'0');
-      const mi = String(d.getMinutes()).padStart(2,'0');
-      return `${yyyy}. ${mm}. ${dd}. ${hh}:${mi}`;
+      return `${yyyy}. ${mm}. ${dd}`;
     }
 
     function todayKey(){
@@ -2133,7 +2148,7 @@
           <td class="nowrap tc">${esc(String(r.currentTotalAfter??r.currentTotalAtRecovery??getStudentCurrentTotal(r.studentKey)))}</td>
           <td class="nowrap tc">${esc(String(r.overallTotalAtRecovery??getStudentOverallTotal(r.studentKey)))}</td>
           <td class="nowrap">${esc(r.staffName||'')}</td>
-          <td class="nowrap" onclick="event.stopPropagation()">${teacherRoles.includes('admin') ? `<input type="date" class="edit-input" style="font-size:11px;padding:2px 5px;width:122px" value="${(r.completedAt||'').slice(0,10)}" onchange="updateRecoveryCompletedAt('${esc(r.key)}',this.value)">` : fmt(r.completedAt)}</td>
+          <td class="nowrap" onclick="event.stopPropagation()">${teacherRoles.includes('admin') ? `<input type="date" class="edit-input" style="font-size:11px;padding:2px 3px;width:100%;max-width:100%;min-width:0" value="${(r.completedAt||'').slice(0,10)}" onchange="updateRecoveryCompletedAt('${esc(r.key)}',this.value)">` : fmt(r.completedAt)}</td>
         </tr>
         <tr class="detail-row">
           <td colspan="9"><div class="detail-box"><div class="detail-section">
@@ -2225,7 +2240,7 @@
           function entryDateInput(val, field, label){
             const iso = val ? String(val).slice(0,10) : '';
             if(!isAdminOnly) return `<span>${fmt(val)}</span>`;
-            return `<input type="date" class="edit-input" style="font-size:11px;padding:2px 6px;width:130px" value="${iso}" onchange="updateEntryDateField('${esc(r.key)}','${field}',this.value)">`;
+            return `<input type="date" class="edit-input" style="font-size:11px;padding:2px 3px;width:100%;max-width:100%;min-width:0" value="${iso}" onchange="updateEntryDateField('${esc(r.key)}','${field}',this.value)">`;
           }
 
           return `
@@ -2558,7 +2573,7 @@
         const rowId = `student-det-detail-${i}`;
         const when = r.confirmedAt || r.createdAt || r.rejectedAt || '';
         return `<tr class="summary-row" onclick="toggleStudentDetailRow('${rowId}')" style="cursor:pointer;">
-          <td class="nowrap" style="font-size:11px">${fmt(when).slice(0,10)}</td>
+          <td class="nowrap" style="font-size:11px">${fmt(when)}</td>
           <td class="nowrap" style="font-size:11px">${esc(r.category||'-')}</td>
           <td><span class="cell-reason-preview">${esc(String(r.violation||'-').split('\n')[0])}</span></td>
           <td class="tc" style="font-weight:700;font-size:12px">${esc(String(r.totalPoints||0))}</td>
@@ -2602,7 +2617,7 @@
         const rowId = `student-notice-detail-${i}`;
         const reason = String(r.cycleViolationsSnapshot || '-');
         return `<tr class="summary-row" onclick="toggleStudentDetailRow('${rowId}')" style="cursor:pointer;">
-          <td class="nowrap" style="font-size:11px">${fmt(r.completedAt || r.createdAt).slice(0,10)}</td>
+          <td class="nowrap" style="font-size:11px">${fmt(r.completedAt || r.createdAt)}</td>
           <td><span class="cell-reason-preview">${esc(reason.split('\n')[0])}</span></td>
           <td class="nowrap tc" style="font-size:11px">${r.parentMailAt ? '발송' : '-'}</td>
           <td class="nowrap tc" style="font-size:11px">${r.studentTeacherMailAt ? '발송' : '-'}</td>
@@ -2633,7 +2648,7 @@
         const rowId = `student-rec-detail-${i}`;
         const reason = String(r.reasonsSnapshot || r.violationSnapshot || '-');
         return `<tr class="summary-row" onclick="toggleStudentDetailRow('${rowId}')" style="cursor:pointer;">
-          <td class="nowrap" style="font-size:11px">${fmt(r.completedAt).slice(0,10)}</td>
+          <td class="nowrap" style="font-size:11px">${fmt(r.completedAt)}</td>
           <td><span class="cell-reason-preview">${esc(reason.split('\n')[0])}</span></td>
           <td class="tc" style="font-weight:700;color:var(--gn)">-${esc(String(r.recoveryPoints||0))}</td>
           <td class="tc">${esc(String(r.currentTotalAfter ?? r.currentTotalAtRecovery ?? '-'))}</td>
@@ -2665,7 +2680,7 @@
         const linkedEntry = r.entryKey ? entries[r.entryKey] : null;
         const reason = String(r.reason || r.memo || r.reasonsSnapshot || r.violationSnapshot || linkedEntry?.violation || '-');
         return `<tr class="summary-row" onclick="toggleStudentDetailRow('${rowId}')" style="cursor:pointer;">
-          <td class="nowrap" style="font-size:11px">${fmt(r.completedAt || r.createdAt || r.referredAt).slice(0,10)}</td>
+          <td class="nowrap" style="font-size:11px">${fmt(r.completedAt || r.createdAt || r.referredAt)}</td>
           <td class="nowrap" style="font-size:11px">${esc(committeeTypeLabel(r.type))}</td>
           <td><span class="cell-reason-preview">${esc(reason.split('\n')[0])}</span></td>
           <td class="nowrap tc" style="font-size:11px">${r.completedAt ? '완료' : '진행중'}</td>
@@ -2907,8 +2922,8 @@
             const fmtd = val ? fmt(val) : '-';
             if(!isAdmin) return `<td class="nowrap" style="font-size:11px;color:var(--sb)">${fmtd}</td>`;
             const iso = val ? String(val).slice(0,10) : '';
-            return `<td class="nowrap" onclick="event.stopPropagation()" style="min-width:130px">
-              <input type="date" class="edit-input" style="font-size:11px;padding:3px 6px;width:130px"
+            return `<td class="nowrap" onclick="event.stopPropagation()" style="min-width:0">
+              <input type="date" class="edit-input" style="font-size:11px;padding:2px 3px;width:100%;max-width:100%;min-width:0"
                 value="${iso}"
                 onchange="updateNoticeDateField('${esc(s.noticeKey||'')}','${field}',this.value)">
             </td>`;
@@ -3069,7 +3084,7 @@
             '<td class="nowrap tc">-'+esc(String(r.recoveryPoints||0))+'</td>'+
             '<td class="nowrap tc">'+esc(String(r.currentTotalAfter??r.currentTotalAtRecovery??'-'))+'</td>'+
             '<td class="nowrap tc">'+esc(String(r.overallTotalAtRecovery??'-'))+'</td>'+
-            '<td class="nowrap" onclick="event.stopPropagation()">'+(teacherRoles.includes('admin')  ? '<input type="date" class="edit-input" style="font-size:11px;padding:2px 5px;width:122px" value="'+(r.completedAt||'').slice(0,10)+'"'    +' onchange="updateRecoveryCompletedAt(\''+r.key+'\',this.value)">'  : fmt(r.completedAt))+'</td>'+            '<td class="nowrap tc" onclick="event.stopPropagation()">'+(canManageRecoveryLevel(level)?'<button class="btn btn-secondary btn-xs" onclick="cancelRecoveryCompletion(\''+r.key+'\')">완료취소</button>':'-')+'</td>'+
+            '<td class="nowrap" onclick="event.stopPropagation()">'+(teacherRoles.includes('admin')  ? '<input type="date" class="edit-input" style="font-size:11px;padding:2px 3px;width:100%;max-width:100%;min-width:0" value="'+(r.completedAt||'').slice(0,10)+'"'    +' onchange="updateRecoveryCompletedAt(\''+r.key+'\',this.value)">'  : fmt(r.completedAt))+'</td>'+            '<td class="nowrap tc" onclick="event.stopPropagation()">'+(canManageRecoveryLevel(level)?'<button class="btn btn-secondary btn-xs" onclick="cancelRecoveryCompletion(\''+r.key+'\')">완료취소</button>':'-')+'</td>'+
             '</tr>'+
             '<tr class="detail-row">'+
             '<td colspan="8"><div class="detail-box"><div class="detail-section">'+
