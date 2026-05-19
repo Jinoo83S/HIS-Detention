@@ -1424,7 +1424,7 @@
             notice:v,
             currentTotal:getStudentCurrentTotal(v.studentKey),
             overallTotal:getStudentOverallTotal(v.studentKey),
-            reasons:buildReasonText(v.studentKey)
+            reasons:(String(v.cycleViolationsSnapshot || '').trim() || buildNoticeReasonText(v.studentKey))
           };
         });
     }
@@ -2920,7 +2920,7 @@
           return `<tr class="summary-row" onclick="toggleNoticeRow('${level}','${esc(s.key)}_done')">
             <td class="nowrap">${esc(sName(s.name||'',s.englishName||''))}</td>
             <td class="nowrap tc">${esc(s.className||'')}</td>
-            <td><span class="cell-reason-preview">${esc(buildReasonPreview(s.key))}</span></td>
+            <td><span class="cell-reason-preview">${esc(String(s.reasons || '-').split('\n')[0])}</span></td>
             <td class="nowrap">${s.currentTotal}</td>
             <td class="nowrap">${s.overallTotal}</td>
             ${isAdmin
@@ -3711,7 +3711,7 @@
         : db.ref(NOTICE_DB_PATH);
       const sp = fixedNoticeKey||ao
         ? noticeRef.update({parentMailAt:new Date().toISOString()})
-        : noticeRef.push({studentKey,level,createdAt:new Date().toISOString(),parentMailAt:new Date().toISOString(),cycleViolationsSnapshot:buildCycleReasonText(studentKey)});
+        : noticeRef.push({studentKey,level,createdAt:new Date().toISOString(),parentMailAt:new Date().toISOString(),cycleViolationsSnapshot:buildNoticeReasonText(studentKey)});
       try{await openMailAfterSave('mailto:'+encodeURIComponent(to)+'?subject='+encodeURIComponent(subj)+'&body='+encodeURIComponent(body),sp);
         const slM=getSchoolLevel((students[studentKey]||{}).className||'');if(slM)try{await recalculateStudentState(studentKey,slM);}catch(e){}
         toast('학부모 메일 시간이 기록되었습니다.','ok');loadData();}catch(e){console.error(e);toast('메일 준비 중 오류.','err');}finally{delete _noticeInProgress[lockKey];}
@@ -3729,7 +3729,7 @@
       const body=buildStudentTeacherMailBody(student,level);
       const ao2=findActiveNotice(studentKey,level);
       const noticeRef3=fixedNoticeKey?db.ref(NOTICE_DB_PATH+'/'+fixedNoticeKey):ao2?db.ref(NOTICE_DB_PATH+'/'+ao2.key):db.ref(NOTICE_DB_PATH);
-      const sp=(fixedNoticeKey||ao2)?noticeRef3.update({studentTeacherMailAt:new Date().toISOString()}):noticeRef3.push({studentKey,level,createdAt:new Date().toISOString(),studentTeacherMailAt:new Date().toISOString(),cycleViolationsSnapshot:buildCycleReasonText(studentKey)});
+      const sp=(fixedNoticeKey||ao2)?noticeRef3.update({studentTeacherMailAt:new Date().toISOString()}):noticeRef3.push({studentKey,level,createdAt:new Date().toISOString(),studentTeacherMailAt:new Date().toISOString(),cycleViolationsSnapshot:buildNoticeReasonText(studentKey)});
       try{await openMailAfterSave('mailto:'+encodeURIComponent(to)+'?subject='+encodeURIComponent(subj)+'&body='+encodeURIComponent(body),sp);
         const slST=getSchoolLevel((students[String(studentKey||'')]||{}).className||'');if(slST)try{await recalculateStudentState(studentKey,slST);}catch(e){}
         toast('학생/교사 메일 시간이 기록되었습니다.','ok');loadData();}catch(e){console.error(e);toast('메일 준비 중 오류.','err');}finally{delete _noticeInProgress[lockKey];}
@@ -3738,8 +3738,8 @@
     async function completeNotice(studentKey,level){
       try{
         const ao=findActiveNotice(studentKey,level);
-        if(!ao){await db.ref(NOTICE_DB_PATH).push({studentKey,level,createdAt:new Date().toISOString(),completedAt:new Date().toISOString(),completedBy:teacher.name||'',completedByEmail:teacher.email||'',cycleViolationsSnapshot:buildCycleReasonText(studentKey)});}
-        else{await db.ref(NOTICE_DB_PATH+'/'+ao.key).update({completedAt:new Date().toISOString(),completedBy:teacher.name||'',completedByEmail:teacher.email||''});}
+        if(!ao){await db.ref(NOTICE_DB_PATH).push({studentKey,level,createdAt:new Date().toISOString(),completedAt:new Date().toISOString(),completedBy:teacher.name||'',completedByEmail:teacher.email||'',cycleViolationsSnapshot:buildNoticeReasonText(studentKey)});}
+        else{await db.ref(NOTICE_DB_PATH+'/'+ao.key).update({completedAt:new Date().toISOString(),completedBy:teacher.name||'',completedByEmail:teacher.email||'',cycleViolationsSnapshot:buildNoticeReasonText(studentKey)});}
         toast('알림 완료가 저장되었습니다.','ok');
         const sLevel2 = getSchoolLevel((students[String(studentKey||'')] || {}).className||'');
         if(sLevel2){ try{ await recalculateStudentState(String(studentKey||''), sLevel2); }catch(e){} }
