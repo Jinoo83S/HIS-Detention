@@ -200,7 +200,7 @@ async function recalculateAllStudentCycleStatesAfterImport(){
       String((c || {}).type || '') === 'manual_referral' && String((c || {}).studentKey || '') === sk && !(c || {}).completedAt
     );
     const hasManualEduPending = Object.values(committee).some(c =>
-      String((c || {}).type || '') === 'manual_edu' && String((c || {}).studentKey || '') === sk && !(c || {}).completedAt
+      ['manual_edu','edu'].includes(String((c || {}).type || '')) && String((c || {}).studentKey || '') === sk && !(c || {}).completedAt
     );
 
     let phase = 'clean';
@@ -237,10 +237,12 @@ async function recalculateAllStudentCycleStatesAfterImport(){
 
 let parsedRows = [];
 let convertedEntries = [];
-let sheetType = ''; // 'detention' | 'notice' | 'restore'
+let sheetType = ''; // 'detention' | 'notice' | 'restore' | 'committee'
 
 // ── Sheet type detection ──
 function detectSheetType(headers){
+  // 업로드용 위원회 TSV: 위원회종류/위원회완료일/사유스냅샷 중 하나가 있으면 committee로 인식
+  if(headers.includes('위원회종류') || headers.includes('위원회완료일') || headers.includes('사유스냅샷')) return 'committee';
   if(headers.includes('교육횟수') || headers.includes('회복점수')) return 'restore';
   if(headers.includes('알림날짜') || headers.includes('학부모알림완료')) return 'notice';
   return 'detention';
@@ -249,12 +251,14 @@ function detectSheetType(headers){
 const SHEET_LABELS = {
   detention:'디텐션 기록 (Detention)',
   notice:'알림 기록 (Notices)',
-  restore:'회복교육 (Recovery)'
+  restore:'회복교육 (Recovery)',
+  committee:'위원회 기록 (Committee)'
 };
 const SHEET_DB = {
   detention:'detentionEntries',
   notice:'detentionNotices',
-  restore:'recoveryEntries'
+  restore:'recoveryEntries',
+  committee:'committeeRecords'
 };
 
 // ── Drag & Drop ──
@@ -296,6 +300,8 @@ function parseTSV(text){
     convertedEntries = groupNoticeRows(parsedRows);
   } else if(sheetType === 'restore'){
     convertedEntries = expandRestoreRows(parsedRows);
+  } else if(sheetType === 'committee'){
+    convertedEntries = convertCommitteeRows(parsedRows);
   } else {
     convertedEntries = parsedRows.map(convertDetentionRow).filter(Boolean);
   }
@@ -326,6 +332,75 @@ function toISO(dateStr){
 
 function generateKey(){
   return '-imp'+Math.random().toString(36).substr(2,11);
+}
+
+function restoreEscapedNewlines(str){
+  return String(str || '')
+    .replace(/\\n/g, '\n')
+    .replace(/\s*\|\|\s*/g, '\n')
+    .trim();
+}
+
+function normalizeCommitteeType(typeText){
+  const t = String(typeText || '').trim();
+  if(!t) return 'edu';
+  if(['edu','manual_edu','edu_points','edu_overall','referral','manual_referral'].includes(t)) return t;
+  if(t.includes('선도') || t.includes('Disciplinary')) return 'referral';
+  if(t.includes('생활') || t.includes('Education')) return 'edu';
+  return t;
+}
+
+function committeeTypeDisplay(type){
+  const t = String(type || '');
+  if(t === 'referral' || t === 'manual_referral') return '선도위원회';
+  if(t === 'edu' || t === 'manual_edu' || t === 'edu_points' || t === 'edu_overall') return '생활교육위원회';
+  return t || '-';
+}
+
+// ── Converter: 위원회 기록 ──
+// 업로드용 TSV 권장 컬럼:
+// ID, 학생Key, 이름, 학년, 위원회종류, 생성일, 위원회완료일, 처리자, 처리자이메일, 연도, 사유스냅샷
+function convertCommitteeRows(rows){
+  return rows.map(row => {
+    const fullName = (row['이름'] || '').trim();
+    const { ko, en } = parseName(fullName);
+    const className = (row['학년'] || row['학반'] || '').trim();
+    const studentKey = (row['학생Key'] || row['studentKey'] || '').trim() || makeStudentKey(ko, className);
+    if(!studentKey) return null;
+
+    const rawType = (row['위원회종류'] || row['종류'] || row['type'] || '').trim();
+    const type = normalizeCommitteeType(rawType);
+    const createdDate = (row['생성일'] || row['날짜'] || row['createdAt'] || '').trim();
+    const completedDate = (row['위원회완료일'] || row['완료일'] || row['위원회완료'] || row['completedAt'] || '').trim();
+    const completedBy = (row['처리자'] || row['완료자'] || row['completedBy'] || '').trim();
+    const completedByEmail = (row['처리자이메일'] || row['completedByEmail'] || '').trim();
+    const year = Number(row['연도'] || row['year'] || (completedDate || createdDate || new Date().toISOString()).slice(0,4)) || new Date().getFullYear();
+    const reasonSnapshot = restoreEscapedNewlines(row['사유스냅샷'] || row['위원회사유'] || row['reasonSnapshot'] || row['reason'] || '');
+
+    const rec = {
+      _key: (row['ID'] || row['_key'] || '').trim() || generateKey(),
+      type,
+      studentKey,
+      studentName: ko || undefined,
+      englishName: en || undefined,
+      className: className || undefined,
+      level: gradeToLevel(className),
+      year,
+      createdAt: toISO(createdDate) || (completedDate ? toISO(completedDate) : new Date().toISOString()),
+      reasonSnapshot: reasonSnapshot || undefined,
+      importedAt: new Date().toISOString()
+    };
+    if(completedDate){
+      rec.completedAt = toISO(completedDate);
+      rec.completedBy = completedBy || '관리자';
+      rec.completedByEmail = completedByEmail || undefined;
+    } else {
+      rec.completedAt = undefined;
+      rec.completedBy = undefined;
+      rec.completedByEmail = undefined;
+    }
+    return rec;
+  }).filter(Boolean);
 }
 
 // ── Converter: 디텐션 기록 ──
@@ -579,7 +654,7 @@ function showPreview(){
       <td>${(r.parentMailAt||'').substr(0,10)||'-'}</td>
       <td>${(r.completedAt||'').substr(0,10)||'-'}</td></tr>`).join('');
 
-  } else { // restore
+  } else if(sheetType === 'restore'){
     const msCount = convertedEntries.filter(r=>r.level==='ms').length;
     const hsCount = convertedEntries.filter(r=>r.level==='hs').length;
     const uniqueStudents = new Set(convertedEntries.map(r=>r.studentKey)).size;
@@ -598,6 +673,26 @@ function showPreview(){
       <td>${(r.completedAt||'').substr(0,10)||'-'}</td>
       <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;color:#5b6888">${esc((r.reasonsSnapshot||'').split('\n')[0]||'-')}</td>
       </tr>`).join('');
+
+  } else { // committee
+    const completed = convertedEntries.filter(r=>r.completedAt).length;
+    const pending = convertedEntries.filter(r=>!r.completedAt).length;
+    const eduCount = convertedEntries.filter(r=>String(r.type||'').includes('edu')).length;
+    const referralCount = convertedEntries.filter(r=>String(r.type||'').includes('referral')).length;
+    statsHtml += `
+      <div class="stat"><div class="stat-num" style="color:#15803d">${completed}</div><div class="stat-lbl">완료</div></div>
+      <div class="stat"><div class="stat-num" style="color:#b45309">${pending}</div><div class="stat-lbl">진행 중</div></div>
+      <div class="stat"><div class="stat-num" style="color:#1b2f7a">${eduCount}</div><div class="stat-lbl">생활교육위원회</div></div>
+      <div class="stat"><div class="stat-num" style="color:#7c3aed">${referralCount}</div><div class="stat-lbl">선도위원회</div></div>`;
+    headHtml = `<tr><th>#</th><th>학생명</th><th>학반</th><th>위원회</th><th>생성일</th><th>완료일</th><th>상태</th><th>사유</th></tr>`;
+    bodyHtml = convertedEntries.slice(0,100).map((r,i)=>`
+      <tr><td>${i+1}</td><td>${esc(r.studentName)}</td><td>${esc(r.className)}</td>
+      <td><span class="badge badge-info">${esc(committeeTypeDisplay(r.type))}</span></td>
+      <td>${(r.createdAt||'').substr(0,10)||'-'}</td>
+      <td>${(r.completedAt||'').substr(0,10)||'-'}</td>
+      <td>${r.completedAt?'<span class="badge badge-ok">완료</span>':'<span class="badge badge-warn">진행 중</span>'}</td>
+      <td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;color:#5b6888">${esc((r.reasonSnapshot||'').split('\n')[0]||'-')}</td>
+      </tr>`).join('');
   }
 
   document.getElementById('statsGrid').innerHTML = statsHtml;
@@ -611,7 +706,8 @@ function showMapping(){
   const maps = {
     detention: ['ID→_key','이름→studentName+englishName','학년→className','날짜→createdAt','교사→teacherName','종류→category','상세→violation','최종점수→totalPoints','수동점수→manualPoints','메모→memo','확정+취소+확인날짜→status','경고(생활교육위원회)/이성교제→isReferral'],
     notice: ['그룹핑: (studentKey + 알림날짜) → 1개 notice 레코드','알림날짜→studentTeacherMailAt','학부모알림완료+학부모알림날짜→parentMailAt','완료=TRUE→completedAt','종류+상세+메모 누적→cycleViolationsSnapshot','알림날짜 없는 행은 skip'],
-    restore: ['완료=FALSE+완료날짜없음 → skip','날짜자르기/종류자르기/상세자르기: #분리 파싱','교사자르기→staffName(마지막)','회복점수→recoveryPoints','교육1~4→sessions[]','종류+상세+날짜 조합→reasonsSnapshot(위반행위)','완료날짜→completedAt']
+    restore: ['완료=FALSE+완료날짜없음 → skip','날짜자르기/종류자르기/상세자르기: #분리 파싱','교사자르기→staffName(마지막)','회복점수→recoveryPoints','교육1~4→sessions[]','종류+상세+날짜 조합→reasonsSnapshot(위반행위)','완료날짜→completedAt'],
+    committee: ['학생Key/이름+학년→studentKey','위원회종류→type(edu/referral)','생성일→createdAt','위원회완료일→completedAt','처리자→completedBy','사유스냅샷→reasonSnapshot','완료일이 비어 있으면 진행 중 기록으로 저장']
   };
   document.getElementById('mapNote').textContent = (maps[sheetType]||[]).join(' | ');
 }

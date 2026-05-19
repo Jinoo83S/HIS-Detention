@@ -1024,7 +1024,7 @@
       );
       // 수동 생활교육위원회 대기
       const hasManualEduPending = Object.values(fCommittee).some(c=>
-        c.type==='manual_edu'&&String(c.studentKey||'')===sk&&!c.completedAt
+        (c.type==='manual_edu'||c.type==='edu')&&String(c.studentKey||'')===sk&&!c.completedAt
       );
 
       // ── phase 결정 ──────────────────────────────────────────────
