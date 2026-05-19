@@ -409,16 +409,12 @@
             <thead>
               <tr>
                 <th style="width:32px">#</th>
-                <th style="width:95px">종류<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
-                <th style="width:150px">학생 Key<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
-                <th style="width:150px">항목 Key<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
-                <th style="width:170px">연결 항목 Keys<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
-                <th style="width:240px">사유/스냅샷<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
-                <th style="width:110px">생성일<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
-                <th style="width:110px">완료일<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
-                <th style="width:100px">처리자<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
-                <th style="width:58px">연도<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
-                <th style="width:46px">삭제</th>
+                <th style="width:100px">종류<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:180px">학생 Key<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:120px">완료일<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:120px">처리자<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:70px">연도<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:56px">삭제</th>
               </tr>
             </thead>
             <tbody id="committee-tbody"></tbody>
@@ -815,19 +811,8 @@
       const tbody=document.getElementById('committee-tbody');
       if(!tbody)return;
       const visible=committeeRows.filter(r=>!r._deleted);
-      if(!visible.length){tbody.innerHTML='<tr><td colspan="11" class="empty">기록이 없습니다.</td></tr>';return;}
+      if(!visible.length){tbody.innerHTML='<tr><td colspan="7" class="empty">기록이 없습니다.</td></tr>';return;}
       const rows=[];
-      function valueForTextarea(v){
-        if(Array.isArray(v)) return v.join('\n');
-        return v || '';
-      }
-      function writeTextareaValue(row, field, value){
-        if(field==='linkedEntryKeys'){
-          row[field]=String(value||'').split(/[\n,]+/).map(x=>x.trim()).filter(Boolean);
-        }else{
-          row[field]=value;
-        }
-      }
       visible.forEach(function(r){
         const idx=committeeRows.findIndex(function(x){return x.key===r.key;});
         const tr=document.createElement('tr');
@@ -853,27 +838,12 @@
           }
           td.appendChild(inp);tr.appendChild(td);
         }
-        function addTextarea(field){
-          const td=document.createElement('td');
-          const ta=document.createElement('textarea');
-          ta.className='edit-input';
-          ta.rows=2;
-          ta.style.width='100%';
-          ta.style.maxWidth='100%';
-          ta.style.minWidth='0';
-          ta.style.boxSizing='border-box';
-          ta.style.resize='vertical';
-          ta.value=valueForTextarea(r[field]);
-          ta.oninput=function(){writeTextareaValue(committeeRows[idx],field,this.value);checkCommitteeDirty();};
-          td.appendChild(ta);tr.appendChild(td);
-        }
 
+        // Firebase 위원회 기록에서 운영상 직접 수정이 필요한 핵심 항목만 표시합니다.
+        // entryKey, linkedEntryKeys, reasonSnapshot, createdAt 등은 화면에서 자동 추론/표시되므로
+        // DB 관리 화면에서는 불필요한 혼란을 줄이기 위해 숨깁니다. 저장 시 기존 값은 유지됩니다.
         addInput('type');
         addInput('studentKey');
-        addInput('entryKey');
-        addTextarea('linkedEntryKeys');
-        addTextarea('reasonSnapshot');
-        addInput('createdAt','date');
         addInput('completedAt','date');
         addInput('completedBy');
         addInput('year');
@@ -890,8 +860,7 @@
         td.appendChild(btn);tr.appendChild(td);
         rows.push(tr);
       });
-      tbody.innerHTML='';
-      rows.forEach(function(row){tbody.appendChild(row);});
+      tbody.innerHTML='';rows.forEach(function(tr){tbody.appendChild(tr);});
     }
 
     async function saveCommittee(){

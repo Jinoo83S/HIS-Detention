@@ -2570,23 +2570,18 @@
 
     function getCommitteeReasonText(record){
       record = record || {};
+      const linked = getCommitteeLinkedEntryList(record);
+      const fromLinked = linked.length
+        ? linked.map((e,i)=>'['+(i+1)+'] '+String(e.violation||'').trim()+(Number(e.totalPoints||0)?' ('+Number(e.totalPoints||0)+'점)':'')).join('\n\n')
+        : '';
       const stored = String(record.reason || record.reasonSnapshot || record.reasonsSnapshot || record.violationSnapshot || '').trim();
-      if(stored) return stored;
-      const linked = getCommitteeLinkedEntryList(record);
-      if(linked.length){
-        return linked.map((e,i)=>'['+(i+1)+'] '+String(e.violation||'').trim()+(Number(e.totalPoints||0)?' ('+Number(e.totalPoints||0)+'점)':'')).join('\n\n');
-      }
-      if(record.studentKey) return buildReasonTextWithPoints(record.studentKey);
-      return '-';
-    }
 
-    function getCommitteeLinkedText(record){
-      record = record || {};
-      const linked = getCommitteeLinkedEntryList(record);
-      if(linked.length){
-        return linked.map((e,i)=>'['+(i+1)+'] '+(e.key||'-')+' / '+String(e.violation||'').split('\n')[0].trim()+(Number(e.totalPoints||0)?' ('+Number(e.totalPoints||0)+'점)':'')).join('\n');
-      }
-      if(record.studentKey) return '학생 점수 기준 자동 회부: '+record.studentKey;
+      // 위원회 사유는 실제 위반 목록만 보여줍니다. key는 표시하지 않습니다.
+      // 여러 디텐션이 묶인 경우에는 저장된 요약보다 연결된 위반 목록을 우선 표시합니다.
+      if(linked.length > 1) return fromLinked;
+      if(stored) return stored;
+      if(fromLinked) return fromLinked;
+      if(record.studentKey) return buildReasonTextWithPoints(record.studentKey);
       return '-';
     }
 
@@ -2760,7 +2755,6 @@
       const committeeRows = committeeList.map((r,i) => {
         const rowId = `student-com-detail-${i}`;
         const reason = String(getCommitteeReasonText(r) || '-');
-        const linkedText = getCommitteeLinkedText(r);
         return `<tr class="summary-row" onclick="toggleStudentDetailRow('${rowId}')" style="cursor:pointer;">
           <td class="nowrap" style="font-size:11px">${fmt(committeeCreatedAt(r))}</td>
           <td class="nowrap" style="font-size:11px">${esc(committeeTypeLabel(r.type))}</td>
@@ -2774,10 +2768,6 @@
               <div class="detail-section">
                 <div class="detail-title">위원회 사유 | Committee Reason</div>
                 <div class="detail-content">${esc(reason)}</div>
-              </div>
-              <div class="detail-section">
-                <div class="detail-title">연결 디텐션 | Linked Detention Entries</div>
-                <div class="detail-content">${esc(linkedText)}</div>
               </div>
               <div class="detail-section">
                 <div class="detail-title">상세 | Detail</div>
