@@ -588,7 +588,7 @@
                 <option value="반려" ${row.status==='반려'?'selected':''}>반려</option>
               </select>
             </td>
-            <td><input class="edit-input" value="${esc(row.teacherName || '')}" oninput="entryRows[${idx}].teacherName=this.value"></td>
+            <td><input class="edit-input" value="${esc(row.teacherName || '')}" oninput="entryRows[${idx}].teacherName=this.value;checkEntryDirty()"></td>
             <td><input type="date" class="edit-input" value="${esc((row.createdAt||''). slice(0,10))}" onchange="entryRows[${idx}].createdAt=this.value?this.value+'T00:00:00':null;checkEntryDirty()"></td>
             <td><input type="date" class="edit-input" value="${esc((row.confirmedAt||''). slice(0,10))}" onchange="entryRows[${idx}].confirmedAt=this.value?this.value+'T00:00:00':null;checkEntryDirty()"></td>
             <td><textarea class="edit-textarea" style="min-height:32px" placeholder="메모" oninput="entryRows[${idx}].memo=this.value;checkEntryDirty()">${esc(row.memo || '')}</textarea></td>
