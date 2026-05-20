@@ -149,6 +149,17 @@
     tbody tr.row-even       { background:#f8f9fa !important; }
     tbody tr.row-odd:hover,
     tbody tr.row-even:hover { background:#e8f0fe !important; }
+    tbody tr.pending-delete,
+    tbody tr.pending-delete:hover{
+      background:#fff1f0 !important;
+      opacity:.72;
+    }
+    tbody tr.pending-delete input,
+    tbody tr.pending-delete textarea,
+    tbody tr.pending-delete select{
+      text-decoration:line-through;
+      color:#9ca3af;
+    }
 
     /* 행 번호 열 */
     td.row-num{
@@ -435,17 +446,45 @@
     let noticeRows = [];
     let recoveryRows = [];
     let _entrySnap = '', _noticeSnap = '', _recoverySnap = '';
+    let _entryOrig = {}, _noticeOrig = {}, _recoveryOrig = {}, _committeeOrig = {};
 
-    function _sig(rows){ return JSON.stringify(rows.map(r=>JSON.stringify(r))); }
+    function _stableStringify(value){
+      if (value === undefined) return 'null';
+      if (value === null || typeof value !== 'object') return JSON.stringify(value);
+      if (Array.isArray(value)) return '[' + value.map(_stableStringify).join(',') + ']';
+      return '{' + Object.keys(value).sort().map(k => JSON.stringify(k) + ':' + _stableStringify(value[k])).join(',') + '}';
+    }
+    function _payload(row){
+      const payload = {};
+      Object.keys(row || {}).forEach(k => {
+        if (k === 'key' || k === '_deleted') return;
+        const v = row[k];
+        if (v === undefined) return;
+        payload[k] = v;
+      });
+      return payload;
+    }
+    function _rowSig(row){ return _stableStringify(_payload(row)); }
+    function _origMap(rows){
+      const map = {};
+      (rows || []).forEach(row => { if (row && row.key) map[row.key] = _rowSig(row); });
+      return map;
+    }
+    function _rowChanged(row, orig){
+      if (!row || !row.key) return false;
+      if (row._deleted) return true;
+      return _rowSig(row) !== orig[row.key];
+    }
+    function _sig(rows){ return JSON.stringify((rows || []).map(r => _stableStringify({ key:r.key, deleted:!!r._deleted, data:_payload(r) }))); }
     function _setBtnState(id, dirty){
       const b=document.getElementById(id);
       if(!b)return;
       b.disabled=!dirty;b.style.opacity=dirty?'1':'0.4';b.style.cursor=dirty?'pointer':'not-allowed';
       b.textContent=dirty?'저장 | Save':'저장할 내용 없음';
     }
-    function checkEntryDirty(){ _setBtnState('btn-save-entries', _sig(entryRows)!==_entrySnap); }
-    function checkNoticeDirty(){ _setBtnState('btn-save-notices', _sig(noticeRows)!==_noticeSnap); }
-    function checkRecoveryDirty(){ _setBtnState('btn-save-recovery', _sig(recoveryRows)!==_recoverySnap); }
+    function checkEntryDirty(){ _setBtnState('btn-save-entries', entryRows.some(r => _rowChanged(r, _entryOrig))); }
+    function checkNoticeDirty(){ _setBtnState('btn-save-notices', noticeRows.some(r => _rowChanged(r, _noticeOrig))); }
+    function checkRecoveryDirty(){ _setBtnState('btn-save-recovery', recoveryRows.some(r => _rowChanged(r, _recoveryOrig))); }
 
     function dateInputValue(v){
       const raw = String(v || '').trim();
@@ -462,6 +501,45 @@
       toast('studentCycleState 재계산 중... | Recalculating state...', 'ok');
       const result = await recalculateAllStudentCycleStates({ updatedBy: reason || 'detention-admin' });
       return result;
+    }
+
+    async function saveRowsToFirebase({ rows, path, origMap, reason, labelKo, labelEn }){
+      const updates = {};
+      let updateCount = 0;
+      let deleteCount = 0;
+
+      (rows || []).forEach(row => {
+        if (!row || !row.key) return;
+        if (!_rowChanged(row, origMap)) return;
+        if (row._deleted) {
+          updates[path + '/' + row.key] = null;
+          deleteCount++;
+        } else {
+          updates[path + '/' + row.key] = _payload(row);
+          updateCount++;
+        }
+      });
+
+      const total = updateCount + deleteCount;
+      if (!total) {
+        toast('저장할 변경사항이 없습니다. | No changes to save.', 'ok');
+        return { saved:false, updateCount:0, deleteCount:0 };
+      }
+
+      toast('DB 저장 중... | Saving DB changes...', 'ok');
+      await db.ref('/').update(updates);
+
+      let recalcResult = null;
+      try {
+        recalcResult = await recalculateCycleStatesAfterAdminEdit(reason);
+        toast(`${labelKo} 저장 완료: 수정 ${updateCount}건, 삭제 ${deleteCount}건, 상태 재계산 ${((recalcResult && recalcResult.count) || 0)}명 | ${labelEn} saved.`, 'ok');
+      } catch (recalcErr) {
+        console.error('Saved, but recalculation failed:', recalcErr);
+        toast(`${labelKo} DB 저장은 완료됐지만 상태 재계산에 실패했습니다. 상단의 상태 재계산 버튼을 눌러주세요.`, 'err');
+      }
+
+      await loadAllData();
+      return { saved:true, updateCount, deleteCount, recalcResult };
     }
 
     async function manualRecalculateCycleStates(){
@@ -568,9 +646,14 @@
         _noticeSnap=_sig(noticeRows);
         _recoverySnap=_sig(recoveryRows);
         _committeeSnap=_sig(committeeRows);
+        _entryOrig=_origMap(entryRows);
+        _noticeOrig=_origMap(noticeRows);
+        _recoveryOrig=_origMap(recoveryRows);
+        _committeeOrig=_origMap(committeeRows);
         _setBtnState('btn-save-entries',false);
         _setBtnState('btn-save-notices',false);
         _setBtnState('btn-save-recovery',false);
+        _setBtnState('btn-save-committee',false);
 
         renderEntriesTable();
         renderNoticesTable();
@@ -593,7 +676,6 @@
       const status = document.getElementById('entry-status-filter').value || '';
 
       const filtered = entryRows.filter(row => {
-        if (row._deleted) return false;
         if (status && String(row.status || '') !== status) return false;
         if (!q) return true;
         return [
@@ -614,7 +696,7 @@
       tbody.innerHTML = filtered.map((row, rowNum) => {
         const idx = entryRows.findIndex(r => r.key === row.key);
         return `
-          <tr>
+          <tr class="${row._deleted ? 'pending-delete' : ''}">
             <td class="row-num">${rowNum+1}</td>
             <td><input class="edit-input" value="${esc(row.studentName || '')}" oninput="entryRows[${idx}].studentName=this.value;checkEntryDirty()"></td>
             <td><input class="edit-input" value="${esc(row.englishName || '')}" oninput="entryRows[${idx}].englishName=this.value;checkEntryDirty()"></td>
@@ -657,22 +739,17 @@
 
     async function saveEntries(){
       try{
-        for (const row of entryRows){
-          if (row._deleted){
-            await db.ref('detentionEntries/' + row.key).remove();
-            continue;
-          }
-          const payload = {...row};
-          delete payload.key;
-          delete payload._deleted;
-          await db.ref('detentionEntries/' + row.key).set(payload);
-        }
-        const result = await recalculateCycleStatesAfterAdminEdit('detention-admin-entries');
-        toast('디텐션 기록 저장 및 상태 재계산 완료: ' + ((result && result.count) || 0) + '명 | Entries saved.', 'ok');
-        await loadAllData();
+        await saveRowsToFirebase({
+          rows: entryRows,
+          path: 'detentionEntries',
+          origMap: _entryOrig,
+          reason: 'detention-admin-entries',
+          labelKo: '디텐션 기록',
+          labelEn: 'Entries'
+        });
       }catch(err){
         console.error(err);
-        toast('디텐션 기록 저장 실패 | Failed to save entries.', 'err');
+        toast('디텐션 기록 DB 저장 실패: ' + (err && err.message ? err.message : err), 'err');
       }
     }
 
@@ -681,7 +758,6 @@
       const q = (document.getElementById('notice-search').value || '').trim().toLowerCase();
 
       const filtered = noticeRows.filter(row => {
-        if (row._deleted) return false;
         if (!q) return true;
         return [row.key, row.studentKey, row.level].some(v => String(v || '').toLowerCase().includes(q));
       });
@@ -694,7 +770,7 @@
       tbody.innerHTML = filtered.map((row, rowNum) => {
         const idx = noticeRows.findIndex(r => r.key === row.key);
         return `
-          <tr>
+          <tr class="${row._deleted ? 'pending-delete' : ''}">
             <td class="row-num">${rowNum+1}</td>
             <td><input class="edit-input" value="${esc(row.studentKey || '')}" oninput="noticeRows[${idx}].studentKey=this.value;checkNoticeDirty()"></td>
             <td><input class="edit-input" value="${esc(row.level || '')}" oninput="noticeRows[${idx}].level=this.value;checkNoticeDirty()"></td>
@@ -718,22 +794,17 @@
 
     async function saveNotices(){
       try{
-        for (const row of noticeRows){
-          if (row._deleted){
-            await db.ref('detentionNotices/' + row.key).remove();
-            continue;
-          }
-          const payload = {...row};
-          delete payload.key;
-          delete payload._deleted;
-          await db.ref('detentionNotices/' + row.key).set(payload);
-        }
-        const result = await recalculateCycleStatesAfterAdminEdit('detention-admin-notices');
-        toast('알림 기록 저장 및 상태 재계산 완료: ' + ((result && result.count) || 0) + '명 | Notices saved.', 'ok');
-        await loadAllData();
+        await saveRowsToFirebase({
+          rows: noticeRows,
+          path: 'detentionNotices',
+          origMap: _noticeOrig,
+          reason: 'detention-admin-notices',
+          labelKo: '알림 기록',
+          labelEn: 'Notices'
+        });
       }catch(err){
         console.error(err);
-        toast('알림 기록 저장 실패 | Failed to save notices.', 'err');
+        toast('알림 기록 DB 저장 실패: ' + (err && err.message ? err.message : err), 'err');
       }
     }
 
@@ -742,7 +813,6 @@
       const q = (document.getElementById('recovery-search').value || '').trim().toLowerCase();
 
       const filtered = recoveryRows.filter(row => {
-        if (row._deleted) return false;
         if (!q) return true;
         return [
           row.studentName,
@@ -760,7 +830,7 @@
       tbody.innerHTML = filtered.map((row, rowNum) => {
         const idx = recoveryRows.findIndex(r => r.key === row.key);
         return `
-          <tr>
+          <tr class="${row._deleted ? 'pending-delete' : ''}">
             <td class="row-num">${rowNum+1}</td>
             <td><input class="edit-input" value="${esc(row.studentName || '')}" oninput="recoveryRows[${idx}].studentName=this.value;checkRecoveryDirty()"></td>
             <td><input class="edit-input" value="${esc(row.englishName || '')}" oninput="recoveryRows[${idx}].englishName=this.value;checkRecoveryDirty()"></td>
@@ -785,37 +855,33 @@
 
     async function saveRecovery(){
       try{
-        for (const row of recoveryRows){
-          if (row._deleted){
-            await db.ref('recoveryEntries/' + row.key).remove();
-            continue;
-          }
-          const payload = {...row};
-          delete payload.key;
-          delete payload._deleted;
-          await db.ref('recoveryEntries/' + row.key).set(payload);
-        }
-        const result = await recalculateCycleStatesAfterAdminEdit('detention-admin-recovery');
-        toast('회복교육 기록 저장 및 상태 재계산 완료: ' + ((result && result.count) || 0) + '명 | Recovery saved.', 'ok');
-        await loadAllData();
+        await saveRowsToFirebase({
+          rows: recoveryRows,
+          path: 'recoveryEntries',
+          origMap: _recoveryOrig,
+          reason: 'detention-admin-recovery',
+          labelKo: '회복교육 기록',
+          labelEn: 'Recovery'
+        });
       }catch(err){
         console.error(err);
-        toast('회복교육 기록 저장 실패 | Failed to save recovery.', 'err');
+        toast('회복교육 기록 DB 저장 실패: ' + (err && err.message ? err.message : err), 'err');
       }
     }
 
 
-    function checkCommitteeDirty(){ _setBtnState('btn-save-committee',_sig(committeeRows)!==_committeeSnap); }
+    function checkCommitteeDirty(){ _setBtnState('btn-save-committee', committeeRows.some(r => _rowChanged(r, _committeeOrig))); }
 
     function renderCommitteeTable(){
       const tbody=document.getElementById('committee-tbody');
       if(!tbody)return;
-      const visible=committeeRows.filter(r=>!r._deleted);
+      const visible=committeeRows;
       if(!visible.length){tbody.innerHTML='<tr><td colspan="7" class="empty">기록이 없습니다.</td></tr>';return;}
       const rows=[];
       visible.forEach(function(r){
         const idx=committeeRows.findIndex(function(x){return x.key===r.key;});
         const tr=document.createElement('tr');
+        if (r._deleted) tr.className = 'pending-delete';
         const noTd=document.createElement('td');
         noTd.textContent=String(idx+1);
         noTd.style.textAlign='center';
@@ -851,7 +917,7 @@
         const td=document.createElement('td');
         const btn=document.createElement('button');
         btn.className='btn btn-danger small-btn';
-        btn.textContent='삭제';
+        btn.textContent = r._deleted ? '복구' : '삭제';
         btn.onclick=function(){
           const key=r.key;
           const rec=committeeRows.find(function(x){return x.key===key;});
@@ -865,17 +931,18 @@
 
     async function saveCommittee(){
       try{
-        const updates={};
-        committeeRows.forEach(r=>{
-          if(r._deleted){updates['committeeRecords/'+r.key]=null;}
-          else{const {key,_deleted,...data}=r;updates['committeeRecords/'+r.key]=data;}
+        await saveRowsToFirebase({
+          rows: committeeRows,
+          path: 'committeeRecords',
+          origMap: _committeeOrig,
+          reason: 'detention-admin-committee',
+          labelKo: '위원회 기록',
+          labelEn: 'Committee'
         });
-        await db.ref('/').update(updates);
-        const result = await recalculateCycleStatesAfterAdminEdit('detention-admin-committee');
-        toast('위원회 기록 저장 및 상태 재계산 완료: ' + ((result && result.count) || 0) + '명', 'ok');
-        _committeeSnap=_sig(committeeRows);_setBtnState('btn-save-committee',false);
-        await loadAllData();
-      }catch(e){console.error(e);toast('저장 실패','err');}
+      }catch(e){
+        console.error(e);
+        toast('위원회 기록 DB 저장 실패: ' + (e && e.message ? e.message : e), 'err');
+      }
     }
 
 
