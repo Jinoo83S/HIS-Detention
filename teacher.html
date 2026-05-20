@@ -2429,10 +2429,36 @@
     }
 
     // 개요 → 스플릿 뷰 전환
+    let studentOverviewScrollState = { windowY: 0, overviewScrollTop: 0, gridScrollTop: 0 };
+
+    function captureStudentOverviewScroll(){
+      const ov = document.getElementById('student-overview-view');
+      const grid = document.getElementById('student-class-grid');
+      studentOverviewScrollState = {
+        windowY: window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0,
+        overviewScrollTop: ov ? ov.scrollTop : 0,
+        gridScrollTop: grid ? grid.scrollTop : 0
+      };
+    }
+
+    function restoreStudentOverviewScroll(){
+      const state = studentOverviewScrollState || {};
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          const ov = document.getElementById('student-overview-view');
+          const grid = document.getElementById('student-class-grid');
+          if(ov) ov.scrollTop = Number(state.overviewScrollTop || 0);
+          if(grid) grid.scrollTop = Number(state.gridScrollTop || 0);
+          window.scrollTo(0, Number(state.windowY || 0));
+        });
+      });
+    }
+
     function switchToSplitView(studentKey){
       const ov = document.getElementById('student-overview-view');
       const sp = document.getElementById('student-split-view');
       if(!ov||!sp) return;
+      captureStudentOverviewScroll();
       ov.style.display = 'none';
       sp.style.display = 'grid';
       renderStudentGrid();
@@ -2460,6 +2486,7 @@
       if(sp) sp.style.display = 'none';
       const backBtn = document.getElementById('btn-back-overview');
       if(backBtn) backBtn.style.display = 'none';
+      restoreStudentOverviewScroll();
     }
 
     function renderStudentGrid(){
