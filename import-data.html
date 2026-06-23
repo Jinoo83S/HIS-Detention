@@ -189,8 +189,28 @@ function parseTSV(text){
 
 // ── Shared helpers ──
 function parseName(fullName){
-  const m = fullName.match(/^([가-힣A-Z][가-힣A-Z\s]*?)\s+([A-Za-z].*)$/);
-  return m ? { ko: m[1].trim(), en: m[2].trim() } : { ko: fullName, en: '' };
+  const raw = String(fullName || '').replace(/\s+/g, ' ').trim();
+  if(!raw) return { ko: '', en: '' };
+
+  // 영문 이름만 있는 학생은 전체 이름을 studentName/studentKey 기준으로 사용한다.
+  // 예: "Saiyah Brown", "SAIYAH BROWN" → ko: 전체 이름, en: ''
+  if(!/[가-힣]/.test(raw)) return { ko: raw, en: '' };
+
+  // 한글명 + 괄호 영문명
+  // 예: "김사랑C (Sarah Kim)" → ko: 김사랑C, en: Sarah Kim
+  const bracket = raw.match(/^(.+?)\s*[\(\[]\s*([A-Za-z][A-Za-z\s.'-]*)\s*[\)\]]$/);
+  if(bracket && /[가-힣]/.test(bracket[1])){
+    return { ko: bracket[1].trim(), en: bracket[2].trim() };
+  }
+
+  // 한글명 + 공백 + 영문명
+  // 예: "김사랑C Sarah Kim" → ko: 김사랑C, en: Sarah Kim
+  const spaced = raw.match(/^(.+?[가-힣][가-힣A-Z0-9]*)\s+([A-Za-z][A-Za-z\s.'-]*)$/);
+  if(spaced){
+    return { ko: spaced[1].trim(), en: spaced[2].trim() };
+  }
+
+  return { ko: raw, en: '' };
 }
 
 function makeStudentKey(koreanName, className){
