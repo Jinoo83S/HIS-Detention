@@ -1191,7 +1191,7 @@
       return Object.values(recoveryEntries || {})
         .filter(r =>
           String(r.studentKey || '') === String(studentKey || '') &&
-          (!level || String(r.level || '') === String(level || '')) &&
+          (!level || isRecordInLevel(r, level)) &&
           isCurrentYearRecord(r, y)
         )
         .reduce((sum, r) => sum + Number(r.recoveryPoints || 0), 0);
@@ -1432,7 +1432,7 @@
       // ── STATE MACHINE 기반 ──
       // cycleStates에서 notice_needed 또는 notice_active 상태인 학생만 반환
       // 이전 타임스탬프 비교 로직을 완전 대체
-      return Object.entries(students||{}).map(([key,value])=>({key,...value}))
+      return getStudentCatalog()
         .filter(s=>getSchoolLevel(s.className)===level)
         .map(s=>{
           const state = getCycleState(s.key, level);
@@ -1484,7 +1484,7 @@
     function getRecoveryCandidates(level){
       // ── STATE MACHINE 기반 ──
       // in_recovery 상태인 학생만 반환
-      return Object.entries(students||{}).map(([key,value])=>({key,...value})).filter(s=>getSchoolLevel(s.className)===level).map(s=>{
+      return getStudentCatalog().filter(s=>getSchoolLevel(s.className)===level).map(s=>{
         const state = getCycleState(s.key, level);
         const recoveryPhases=['in_recovery','edu_in_recovery','edu_committee'];
         if(!recoveryPhases.includes(state.phase)) return null;

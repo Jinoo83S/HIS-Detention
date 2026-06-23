@@ -166,6 +166,20 @@ function readFileText(file, enc = 'utf-8') {
     return (String(studentKey || '') + '_' + String(level || '')).replace(/[.#$\[\]\/]/g, '_');
   }
 
+  function hisClassFromStudentKey(studentKey){
+    const key = String(studentKey || '').trim();
+    const m = key.match(/^(\d{1,2}[A-Z]?)[_\-\s]/i) || key.match(/^(\d{1,2}[A-Z]?)/i);
+    return m ? m[1].toUpperCase() : '';
+  }
+
+  function hisRecordLevel(record, fallbackLevel){
+    const r = record || {};
+    const raw = String(r.level || r.schoolLevel || r.division || '').trim().toLowerCase();
+    if (raw === 'ms' || raw === 'middle' || raw === 'middle school' || raw === '중등') return 'ms';
+    if (raw === 'hs' || raw === 'high' || raw === 'high school' || raw === '고등') return 'hs';
+    return hisLevelFromClassName(r.className || hisClassFromStudentKey(r.studentKey)) || String(fallbackLevel || '');
+  }
+
   function hisLatestEntryDate(v){
     return String((v && (v.confirmedAt || v.createdAt || v.completedAt)) || '');
   }
@@ -227,7 +241,7 @@ function readFileText(file, enc = 'utf-8') {
     const recoveredTotal = hisValues(recovery)
       .filter(r =>
         String((r || {}).studentKey || '') === sk &&
-        String((r || {}).level || '') === lv &&
+        hisRecordLevel(r, lv) === lv &&
         hisIsCurrentYearRecord(r, curYear)
       )
       .reduce((sum, r) => sum + Number((r || {}).recoveryPoints || 0), 0);
@@ -239,7 +253,7 @@ function readFileText(file, enc = 'utf-8') {
     const activeNoticeArr = hisEntries(notices)
       .filter(([, v]) =>
         String((v || {}).studentKey || '') === sk &&
-        String((v || {}).level || '') === lv &&
+        hisRecordLevel(v, lv) === lv &&
         !(v || {}).completedAt &&
         hisIsCurrentYearRecord(v, curYear)
       )
@@ -249,7 +263,7 @@ function readFileText(file, enc = 'utf-8') {
     const completedNoticeArr = hisEntries(notices)
       .filter(([, v]) =>
         String((v || {}).studentKey || '') === sk &&
-        String((v || {}).level || '') === lv &&
+        hisRecordLevel(v, lv) === lv &&
         !!(v || {}).completedAt &&
         hisIsCurrentYearRecord(v, curYear)
       )
@@ -409,9 +423,9 @@ function readFileText(file, enc = 'utf-8') {
 
     hisEntries(data.students || {}).forEach(([key, s]) => addTarget(key, hisLevelFromClassName(s && s.className), s && s.className));
     hisValues(data.entries || {}).forEach(r => addTarget(r && r.studentKey, r && r.schoolLevel, r && r.className));
-    hisValues(data.notices || {}).forEach(r => addTarget(r && r.studentKey, r && r.level, r && r.className));
-    hisValues(data.recovery || {}).forEach(r => addTarget(r && r.studentKey, r && r.level, r && r.className));
-    hisValues(data.committee || {}).forEach(r => addTarget(r && r.studentKey, r && r.level, r && r.className));
+    hisValues(data.notices || {}).forEach(r => addTarget(r && r.studentKey, hisRecordLevel(r), r && (r.className || hisClassFromStudentKey(r.studentKey))));
+    hisValues(data.recovery || {}).forEach(r => addTarget(r && r.studentKey, hisRecordLevel(r), r && (r.className || hisClassFromStudentKey(r.studentKey))));
+    hisValues(data.committee || {}).forEach(r => addTarget(r && r.studentKey, hisRecordLevel(r), r && (r.className || hisClassFromStudentKey(r.studentKey))));
     return Object.values(targets);
   }
 
@@ -436,6 +450,7 @@ function readFileText(file, enc = 'utf-8') {
   window.hisSafeStateKey = hisSafeStateKey;
   window.hisRecordYear = hisRecordYear;
   window.hisIsCurrentYearRecord = hisIsCurrentYearRecord;
+  window.hisRecordLevel = hisRecordLevel;
   window.calculateStudentCycleState = calculateStudentCycleState;
   window.recalculateStudentCycleState = recalculateStudentCycleState;
   window.recalculateAllStudentCycleStates = recalculateAllStudentCycleStates;
