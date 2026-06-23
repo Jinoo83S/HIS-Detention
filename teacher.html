@@ -930,6 +930,19 @@
     let expandedNoticeKeys = { ms:new Set(), hs:new Set() };
     let expandedRecoveryKeys = { ms:new Set(), hs:new Set() };
 
+    /* =============================================================
+     * teacher.html 구조 안내
+     * 1) 공통 유틸/날짜/상태 계산 브리지
+     * 2) 권한 판단 헬퍼
+     * 3) 점수/학생/알림/회복교육 데이터 조회 헬퍼
+     * 4) 화면 초기화와 실시간 동기화
+     * 5) 탭별 렌더링 함수
+     * 6) 저장/확정/메일/완료 처리 함수
+     *
+     * 실제 상태 계산 기준은 common.js에 두고, 이 파일은 화면과 사용자 액션을 담당한다.
+     * ============================================================= */
+
+    /* ---------- 1) 공통 유틸 / 날짜 헬퍼 ---------- */
     function fmt(v){
       if(!v) return '-';
       const raw = String(v || '').trim();
@@ -973,6 +986,8 @@
 
 
 
+    /* ---------- 1-2) 상태 계산 브리지 / 상태 캐시 헬퍼 ---------- */
+
     /* ══ STATE MACHINE (legacy helpers) ══════════════════════════════
      * studentCycleState: 학생별 현재 단계 명시적 저장
      * phase 값:
@@ -1001,7 +1016,7 @@
       return updated;
     }
 
-    /* studentCycleState 재계산 헬퍼 */
+    /* ---------- 2) 권한 판단 헬퍼 ---------- */
 
     function normalizeRoles(roles){
       if (Array.isArray(roles)) return roles.map(v=>String(v||'').trim().toLowerCase()).filter(Boolean);
@@ -1014,11 +1029,18 @@
     function isMasterRole(){ return teacherRoles.includes('master'); }
     function hasFullWorkRole(){ return isAdminRole() || isMasterRole(); }
     function hasRole(roleName){ return isAdminRole() || teacherRoles.includes(String(roleName || '').trim().toLowerCase()); }
+
+    // 전체 업무 권한: admin, master
     function canEditStandard(){ return hasFullWorkRole(); }
     function canConfirmDetention(){ return hasFullWorkRole(); }
     function canManageNoticeLevel(level){ return hasFullWorkRole() || hasRole(level === 'ms' ? 'ms_notice' : 'hs_notice'); }
     function canManageRecoveryLevel(level){ return hasFullWorkRole() || hasRole(level === 'ms' ? 'ms_restore' : 'hs_restore'); }
     function canManageCommittee(){ return hasFullWorkRole(); }
+
+    // admin 전용 권한: 날짜/DB 보정성 수정, 자동 벌점 기준 외 입력
+    function canOverrideAutoPoints(){ return isAdminRole(); }
+    function canEditRecordDate(){ return isAdminRole(); }
+    function canEditAdminNote(){ return isAdminRole(); }
     function getLevelForStudentKey(studentKey, fallbackLevel){
       const s = students[String(studentKey || '')] || {};
       return getSchoolLevel(s.className || '') || String(fallbackLevel || '');
@@ -1031,6 +1053,7 @@
       const status = String((record && record.status) || '임시저장');
       return status === '임시저장' && (hasFullWorkRole() || String((record && record.teacherEmail) || '') === String((teacher && teacher.email) || ''));
     }
+    /* ---------- 3) 점수 / 상태 표시 헬퍼 ---------- */
     function inferPointsAfterConfirmCancel(record){
       const cur = Number((record && (record.manualPoints || record.totalPoints)) || 0);
       if(cur > 0) return cur;
@@ -1111,6 +1134,7 @@
     }
 
     // 현재 학년도 원점수: 회복교육 차감 전 점수. 생활교육위원회 30점 초과 기준에 사용합니다.
+    /* ---------- 3-2) 학생별 점수 계산 헬퍼 ---------- */
     function getStudentYearRawTotal(studentKey, year){
       const y = String(year || getCurrentYear());
       return Object.values(entries || {})
@@ -1182,6 +1206,7 @@
       return '';
     }
 
+    /* ---------- 3-3) 학생/알림/회복교육 데이터 조회 헬퍼 ---------- */
     function sName(k,e){k=String(k||'').trim();e=String(e||'').trim();return e?k+' '+e:k;}
     function findActiveNotice(sKey,lvl){const hit=Object.entries(noticeEntries||{}).filter(([,v])=>String(v.studentKey||'')===String(sKey)&&String(v.level||'')===String(lvl)&&!v.completedAt).sort((a,b)=>String(b[1].createdAt||'').localeCompare(String(a[1].createdAt||'')));return hit.length?{key:hit[0][0],notice:hit[0][1]}:null;}
     function findLatestCompletedNotice(sKey,lvl){const hit=Object.entries(noticeEntries||{}).filter(([,v])=>String(v.studentKey||'')===String(sKey)&&String(v.level||'')===String(lvl)&&!!v.completedAt).sort((a,b)=>String(b[1].completedAt||'').localeCompare(String(a[1].completedAt||'')));return hit.length?{key:hit[0][0],notice:hit[0][1]}:null;}
@@ -1223,9 +1248,8 @@
 
     /** 이전 사이클 (마지막 회복 직전 사이클)의 확정 위반 항목 반환 */
     function getPreviousCycleEntries(sKey){
-      const level = getSchoolLevel((students[String(sKey||'')]||{}).className||'');
       const allRec=Object.values(recoveryEntries||{})
-        .filter(r=>String(r.studentKey||'')===String(sKey)&&(!level||String(r.level||'')===String(level))&&isCurrentYearRecord(r,getCurrentYear()))
+        .filter(r=>String(r.studentKey||'')===String(sKey))
         .sort((a,b)=>String(b.completedAt||'').localeCompare(String(a.completedAt||'')));
       if(!allRec.length) return [];
       const lastRec=allRec[0];
@@ -1424,7 +1448,7 @@
       const manualInput = document.getElementById('manual-points');
       const studentKey = selectedStudentKey || syncStudentSelectionWithoutUpdate();
       const std = getSelectedStandard();
-      const canOverride = teacherRoles.includes('admin'); // admin만, master 제외
+      const canOverride = canOverrideAutoPoints(); // admin 전용, master 제외
 
       if (!manualInput || !std){
         manualInput.disabled = false;
@@ -1495,6 +1519,8 @@
       wrap.style.display = hidden ? '' : 'none';
       if (btn) btn.textContent = hidden ? '▲ 접기' : '▼ 펼치기';
     }
+
+    /* ---------- 4) 화면 초기화 / 실시간 동기화 ---------- */
 
     // ── 실시간 동기화 리스너 ──
     // loadData 완료 후 한 번만 등록. 변경 감지 시 해당 데이터만 교체 후 화면 재렌더.
@@ -1619,6 +1645,7 @@
       btn.textContent = dirty ? '기준표 저장 | Save Standards' : '저장할 내용 없음 | No Changes';
     }
 
+    /* ---------- 5) 기준표 / 선택 UI 렌더링 ---------- */
     function renderCriteriaTable(){
       const tb = document.getElementById('criteria-tbody');
       const editable = window._standardEditMode === true && canEditStandard();
@@ -1945,6 +1972,7 @@
       }
     }
 
+    /* ---------- 5-2) 탭별 렌더링 ---------- */
     function renderRecentEntries(){
       const box = document.getElementById('recent-entry-list');
       const list = Object.entries(entries || {}).map(([key, value]) => ({ key, ...(value || {}) }))
@@ -2092,7 +2120,7 @@
           <td class="nowrap tc">${esc(String(r.currentTotalAfter??r.currentTotalAtRecovery??getStudentCurrentTotal(r.studentKey)))}</td>
           <td class="nowrap tc">${esc(String(r.overallTotalAtRecovery??getStudentOverallTotal(r.studentKey)))}</td>
           <td class="nowrap">${esc(r.staffName||'')}</td>
-          <td class="nowrap" onclick="event.stopPropagation()">${teacherRoles.includes('admin') ? `<input type="date" class="edit-input" style="font-size:11px;padding:2px 3px;width:100%;max-width:100%;min-width:0" value="${(r.completedAt||'').slice(0,10)}" onchange="updateRecoveryCompletedAt('${esc(r.key)}',this.value)">` : fmt(r.completedAt)}</td>
+          <td class="nowrap" onclick="event.stopPropagation()">${canEditRecordDate() ? `<input type="date" class="edit-input" style="font-size:11px;padding:2px 3px;width:100%;max-width:100%;min-width:0" value="${(r.completedAt||'').slice(0,10)}" onchange="updateRecoveryCompletedAt('${esc(r.key)}',this.value)">` : fmt(r.completedAt)}</td>
         </tr>
         <tr class="detail-row">
           <td colspan="9"><div class="detail-box"><div class="detail-section">
@@ -2173,7 +2201,7 @@
       // ── 확정/반려 행: 버튼은 펼쳤을 때만 표시 ──
       function renderProcessedRows(arr){
         if (!arr.length) return '<tr><td colspan="9" class="empty">해당 기록이 없습니다. | No matching records.</td></tr>';
-        const isAdminOnly = teacherRoles.includes('admin'); // master 제외
+        const canEditDate = canEditRecordDate(); // admin 전용, master 제외
         return arr.map(r => {
           const expanded     = expandedConfirmKeys.has(r.key);
           const canReject    = canManage && String(r.status||'')==='확정';
@@ -2183,7 +2211,7 @@
           // admin 전용 날짜 편집 인풋 생성
           function entryDateInput(val, field, label){
             const iso = val ? String(val).slice(0,10) : '';
-            if(!isAdminOnly) return `<span>${fmt(val)}</span>`;
+            if(!canEditDate) return `<span>${fmt(val)}</span>`;
             return `<input type="date" class="edit-input" style="font-size:11px;padding:2px 3px;width:100%;max-width:100%;min-width:0" value="${iso}" onchange="updateEntryDateField('${esc(r.key)}','${field}',this.value)">`;
           }
 
@@ -2206,7 +2234,7 @@
                 <div class="detail-section"><div class="detail-title">위반행위 | Violation</div><div class="detail-content">${esc(r.violation||'')}</div></div>
                 <div class="detail-section"><div class="detail-title">메모 | Memo</div><div class="detail-content">${esc(r.memo||'-')}</div></div>
                 <div class="detail-section">
-                  <div class="detail-title">처리 정보${isAdminOnly?' <span style="font-size:10px;color:var(--sb);font-weight:400">(admin: 날짜 편집 가능)</span>':''}</div>
+                  <div class="detail-title">처리 정보${canEditDate?' <span style="font-size:10px;color:var(--sb);font-weight:400">(admin: 날짜 편집 가능)</span>':''}</div>
                   <div class="detail-content" style="display:grid;grid-template-columns:auto 1fr;gap:2px 8px;align-items:center;white-space:normal">
                     <span style="color:var(--sb)">작성:</span>${entryDateInput(r.createdAt,   'createdAt',   '')}
                     <span style="color:var(--sb)">확정:</span>${entryDateInput(r.confirmedAt,'confirmedAt','')}
@@ -2233,7 +2261,7 @@
     }
     // admin 전용: 관리자 노트 즉시 저장 (blur 시)
     async function saveAdminNote(entryKey, value){
-      if(!teacherRoles.includes('admin')) return;
+      if(!canEditAdminNote()) return;
       try{
         await db.ref(DETENTION_DB_PATH+'/'+entryKey+'/adminNote').set(value||null);
         if(entries[entryKey]) entries[entryKey].adminNote = value;
@@ -2242,7 +2270,7 @@
 
     // admin 전용 (master 제외): 디텐션 확정 테이블 날짜 즉시 저장
     async function updateEntryDateField(entryKey, field, dateValue){
-      if(!teacherRoles.includes('admin')) return;
+      if(!canEditRecordDate()) return;
       const isoVal = dateValue ? dateValue + 'T00:00:00' : null;
       if(entries[entryKey]) entries[entryKey][field] = isoVal;
       try{
@@ -2956,7 +2984,7 @@
         doneTb.innerHTML = '<tr><td colspan="9" class="empty">해당 학생이 없습니다. | No matching students.</td></tr>';
       } else {
       // _doneNoticeMap은 renderNotifyTables()에서 일괄 초기화
-        const isAdmin = teacherRoles.includes('admin'); // master 제외
+        const canEditDate = canEditRecordDate(); // admin 전용, master 제외
         doneTb.innerHTML = doneList.map((s,doneIdx) => {
           const expanded = expandedNoticeKeys[level] && expandedNoticeKeys[level].has(s.key+'_done');
           const doneMapKey = level+'_done_'+doneIdx;
@@ -2965,7 +2993,7 @@
           // 날짜 셀: admin은 date input, 일반은 텍스트
           function dateCell(val, field){
             const fmtd = val ? fmt(val) : '-';
-            if(!isAdmin) return `<td class="nowrap" style="font-size:11px;color:var(--sb)">${fmtd}</td>`;
+            if(!canEditDate) return `<td class="nowrap" style="font-size:11px;color:var(--sb)">${fmtd}</td>`;
             const iso = val ? String(val).slice(0,10) : '';
             return `<td class="nowrap" onclick="event.stopPropagation()" style="min-width:0">
               <input type="date" class="edit-input" style="font-size:11px;padding:2px 3px;width:100%;max-width:100%;min-width:0"
@@ -3034,7 +3062,7 @@
 
     // admin 전용: 회복교육 완료시간 수정
     async function updateRecoveryCompletedAt(key, dateValue){
-      if(!teacherRoles.includes('admin')) return;
+      if(!canEditRecordDate()) return;
       if(!key) return;
       const isoVal = dateValue ? dateValue + 'T00:00:00' : null;
       try{
@@ -3130,7 +3158,7 @@
             '<td class="nowrap tc">-'+esc(String(r.recoveryPoints||0))+'</td>'+
             '<td class="nowrap tc">'+esc(String(r.currentTotalAfter??r.currentTotalAtRecovery??'-'))+'</td>'+
             '<td class="nowrap tc">'+esc(String(r.overallTotalAtRecovery??'-'))+'</td>'+
-            '<td class="nowrap" onclick="event.stopPropagation()">'+(teacherRoles.includes('admin')  ? '<input type="date" class="edit-input" style="font-size:11px;padding:2px 3px;width:100%;max-width:100%;min-width:0" value="'+(r.completedAt||'').slice(0,10)+'"'    +' onchange="updateRecoveryCompletedAt(\''+r.key+'\',this.value)">'  : fmt(r.completedAt))+'</td>'+            '<td class="nowrap tc"><span style="font-size:11px;color:var(--sb)">상세</span></td>'+
+            '<td class="nowrap" onclick="event.stopPropagation()">'+(canEditRecordDate()  ? '<input type="date" class="edit-input" style="font-size:11px;padding:2px 3px;width:100%;max-width:100%;min-width:0" value="'+(r.completedAt||'').slice(0,10)+'"'    +' onchange="updateRecoveryCompletedAt(\''+r.key+'\',this.value)">'  : fmt(r.completedAt))+'</td>'+            '<td class="nowrap tc"><span style="font-size:11px;color:var(--sb)">상세</span></td>'+
             '</tr>'+
             '<tr class="detail-row">'+
             '<td colspan="8"><div class="detail-box"><div class="detail-section">'+
@@ -3271,7 +3299,7 @@
       try{
         // 기존 pending 기록 찾아서 업데이트 (새 push 대신)
         const pendingEntry=Object.entries(committeeEntries||{}).find(([,c])=>{
-          if(!!c.completedAt || !isCurrentYearRecord(c, yr)) return false;
+          if(!!c.completedAt) return false;
           const typeMatch=c.type===type||c.type==='manual_'+type.replace('referral','referral').replace('edu','edu');
           const keyMatch=(entryKey&&entryKey!==''&&c.entryKey===entryKey)||(studentKey&&studentKey!==''&&String(c.studentKey||'')===String(studentKey||''));
           return typeMatch&&keyMatch;
@@ -3284,7 +3312,6 @@
           completedByEmail:teacher.email||'',
           reasonSnapshot: reasonSnapshot || null,
           linkedEntryKeys: linkedEntryKeys.length ? linkedEntryKeys : null,
-          year: yr,
           createdAt: (pendingEntry && pendingEntry[1] && pendingEntry[1].createdAt) ? pendingEntry[1].createdAt : now
         };
         if(pendingEntry){
@@ -3472,6 +3499,7 @@
       }catch(e){ console.error(e); toast('처리 취소 실패', 'err'); }
     }
 
+    /* ---------- 6) 저장 / 확정 / 반려 / 메일 / 완료 처리 ---------- */
     async function saveDetention(){
       const studentKey = syncStudentSelection();
       const category = document.getElementById('category-select').value;
@@ -3516,7 +3544,7 @@
         const rangeMatch = apRaw.match(/^(\d+)-(\d+)$/);
         // 선택형: "1,3"
         const choiceMatch = apRaw.match(/^[\d]+(,[\d]+)+$/);
-        const canOverride = teacherRoles.includes('admin'); // admin만, master 제외
+        const canOverride = canOverrideAutoPoints(); // admin 전용, master 제외
         if (rangeMatch && !canOverride){
           const [, minP, maxP] = rangeMatch.map(Number);
           if (manualPoints < minP || manualPoints > maxP){
