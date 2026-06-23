@@ -1241,9 +1241,40 @@
       return '';
     }
 
+    // 기록 완료 목록은 원자료(notice/recovery)에 className/level이 빠진 경우가 있습니다.
+    // students 명단 값 → record 값 → studentKey 추론 순서로 보정해서 완료 목록 누락을 막습니다.
+    function getRecordStudentKey(record){
+      return normalizeStudentKeyText(record && (record.studentKey || record.key || ''));
+    }
+
+    function getRecordStudentProfile(record){
+      record = record || {};
+      const studentKey = getRecordStudentKey(record);
+      const roster = students[String(studentKey || '')] || {};
+      const className = String(record.className || roster.className || inferClassNameFromStudentKey(studentKey) || '').trim();
+      return {
+        key: studentKey,
+        name: String(record.studentName || roster.name || studentKey || '').trim(),
+        englishName: String(record.englishName || roster.englishName || '').trim(),
+        className
+      };
+    }
+
+    function getRecordLevel(record){
+      record = record || {};
+      const raw = String(record.level || record.schoolLevel || record.division || '').trim().toLowerCase();
+      if(raw === 'ms' || raw === 'middle' || raw === 'middle school' || raw === '중등') return 'ms';
+      if(raw === 'hs' || raw === 'high' || raw === 'high school' || raw === '고등') return 'hs';
+      return getSchoolLevel(getRecordStudentProfile(record).className);
+    }
+
+    function isRecordInLevel(record, level){
+      return String(getRecordLevel(record) || '') === String(level || '');
+    }
+
     function sName(k,e){k=String(k||'').trim();e=String(e||'').trim();return e?k+' '+e:k;}
-    function findActiveNotice(sKey,lvl){const yr=getCurrentYear();const hit=Object.entries(noticeEntries||{}).filter(([,v])=>String(v.studentKey||'')===String(sKey)&&String(v.level||'')===String(lvl)&&!v.completedAt&&isCurrentYearRecord(v,yr)).sort((a,b)=>String(b[1].createdAt||'').localeCompare(String(a[1].createdAt||'')));return hit.length?{key:hit[0][0],notice:hit[0][1]}:null;}
-    function findLatestCompletedNotice(sKey,lvl){const yr=getCurrentYear();const hit=Object.entries(noticeEntries||{}).filter(([,v])=>String(v.studentKey||'')===String(sKey)&&String(v.level||'')===String(lvl)&&!!v.completedAt&&isCurrentYearRecord(v,yr)).sort((a,b)=>String(b[1].completedAt||'').localeCompare(String(a[1].completedAt||'')));return hit.length?{key:hit[0][0],notice:hit[0][1]}:null;}
+    function findActiveNotice(sKey,lvl){const yr=getCurrentYear();const hit=Object.entries(noticeEntries||{}).filter(([,v])=>String(v.studentKey||'')===String(sKey)&&isRecordInLevel(v,lvl)&&!v.completedAt&&isCurrentYearRecord(v,yr)).sort((a,b)=>String(b[1].createdAt||'').localeCompare(String(a[1].createdAt||'')));return hit.length?{key:hit[0][0],notice:hit[0][1]}:null;}
+    function findLatestCompletedNotice(sKey,lvl){const yr=getCurrentYear();const hit=Object.entries(noticeEntries||{}).filter(([,v])=>String(v.studentKey||'')===String(sKey)&&isRecordInLevel(v,lvl)&&!!v.completedAt&&isCurrentYearRecord(v,yr)).sort((a,b)=>String(b[1].completedAt||'').localeCompare(String(a[1].completedAt||'')));return hit.length?{key:hit[0][0],notice:hit[0][1]}:null;}
     function getViolationCount(sKey,vId){
       const curYear = getCurrentYear();
       return Object.values(entries||{}).filter(r=>
@@ -1422,25 +1453,29 @@
         .sort((a,b)=>String(b.latestConfirmedAt||'').localeCompare(String(a.latestConfirmedAt||'')));
     }
 
-    /** 완료된 알림 조회하기 (currentTotal 무관, 시간순) */
+    /** 완료된 알림 조회하기 (currentTotal 무관, 시간순)
+     * 완료 목록은 학생 명단이 아니라 detentionNotices 원자료 기준으로 표시합니다.
+     * import/수기입력 데이터에 level이 빠져도 className/studentKey에서 중고등을 보정합니다.
+     */
     function getCompletedNoticeList(level){
+      const yr = getCurrentYear();
       return Object.entries(noticeEntries||{})
         .map(([key,v])=>({noticeKey:key,...v}))
-        .filter(v=>String(v.level||'')===String(level)&&!!v.completedAt)
+        .filter(v=>isRecordInLevel(v, level) && !!v.completedAt && isCurrentYearRecord(v, yr))
         .sort((a,b)=>String(b.completedAt||'').localeCompare(String(a.completedAt||'')))
         .map(v=>{
-          const s=students[v.studentKey]||{};
-          const savedReason = String(v.cycleViolationsSnapshot || '').trim();
-          const liveReason = buildNoticeReasonText(v.studentKey);
+          const profile = getRecordStudentProfile(v);
+          const savedReason = String(v.cycleViolationsSnapshot || v.reasonsSnapshot || '').trim();
+          const liveReason = buildNoticeReasonText(profile.key);
           return{
-            key:v.studentKey,
+            key:profile.key,
             noticeKey:v.noticeKey,
-            name:s.name||v.studentKey,
-            englishName:s.englishName||'',
-            className:s.className||'',
+            name:profile.name,
+            englishName:profile.englishName,
+            className:profile.className,
             notice:v,
-            currentTotal:getStudentCurrentTotal(v.studentKey),
-            overallTotal:getStudentOverallTotal(v.studentKey),
+            currentTotal:getStudentCurrentTotal(profile.key, level),
+            overallTotal:getStudentOverallTotal(profile.key),
             reasons:(liveReason.includes('위원회 완료') ? liveReason : (savedReason || liveReason))
           };
         });
@@ -1459,16 +1494,17 @@
         // getStudentPoints: cycleState 캐시 우선, 없으면 직접 계산
         const _pts = getStudentPoints(s.key, level);
         const verifiedCurrent = _pts.current, verifiedOverall = _pts.overall;
-        const recoveryList=Object.entries(recoveryEntries||{}).map(([key,value])=>({key,...value})).filter(r=>String(r.studentKey||'')===String(s.key)&&String(r.level||'')===String(level)).sort((a,b)=>String(b.completedAt||'').localeCompare(String(a.completedAt||'')));
+        const recoveryList=Object.entries(recoveryEntries||{}).map(([key,value])=>({key,...value})).filter(r=>String(r.studentKey||'')===String(s.key)&&isRecordInLevel(r,level)&&!!r.completedAt).sort((a,b)=>String(b.completedAt||'').localeCompare(String(a.completedAt||'')));
         const noticedAt = completedNoticeObj.notice.completedAt || '';
         return{...s,state,currentTotal:verifiedCurrent,overallTotal:verifiedOverall,reasons,recoveryList,completedRecoveryCount:recoveryList.length,completedNotice:completedNoticeObj.notice,noticedAt};
       }).filter(Boolean).sort((a,b)=>String(b.noticedAt||'').localeCompare(String(a.noticedAt||'')));
     }
 
     function getRecoveryHistoryRows(level){
+      const yr = getCurrentYear();
       return Object.entries(recoveryEntries || {})
         .map(([key, value]) => ({ key, ...value }))
-        .filter(r => String(r.level || '') === String(level))
+        .filter(r => isRecordInLevel(r, level) && !!r.completedAt && isCurrentYearRecord(r, yr))
         .sort((a,b)=>String(b.completedAt || '').localeCompare(String(a.completedAt || '')));
     }
 
@@ -1591,7 +1627,8 @@
     }
 
     function setRecoveryDonePage(level, page){
-      recoveryDonePages[level] = clampPage(page, Object.keys(recoveryEntries || {}).length, PAGE_SIZE);
+      const count = getRecoveryHistoryRows(level).length;
+      recoveryDonePages[level] = clampPage(page, count, PAGE_SIZE);
       renderRecoveryTableByLevel(level);
     }
 
@@ -3365,10 +3402,11 @@
           const expanded = _histExpandedKeys.has(rowKey);
           const reasonText = String(r.reasonsSnapshot || '-');
           const reasonPreview = reasonText.split('\n')[0];
+          const profile = getRecordStudentProfile(r);
           rows.push(
             '<tr class="summary-row" style="cursor:pointer;">'+
-            '<td class="nowrap">'+esc(sName(r.studentName,r.englishName))+'</td>'+
-            '<td class="nowrap">'+esc(r.className||'')+'</td>'+
+            '<td class="nowrap">'+esc(sName(profile.name,profile.englishName))+'</td>'+
+            '<td class="nowrap">'+esc(profile.className||'')+'</td>'+
             '<td><span class="cell-reason-preview">'+esc(reasonPreview)+'</span></td>'+
             '<td class="nowrap tc">-'+esc(String(r.recoveryPoints||0))+'</td>'+
             '<td class="nowrap tc">'+esc(String(r.currentTotalAfter??r.currentTotalAtRecovery??'-'))+'</td>'+
@@ -3379,7 +3417,7 @@
             '<td colspan="8"><div class="detail-box"><div class="detail-section">'+
             '<div class="detail-title">위반 행위 | Violations</div>'+
             '<div class="detail-content">'+esc(reasonText)+'</div>'+
-            '</div>'+(()=>{ const memos=getConfirmedEntriesForStudent(r.studentKey).filter(e=>e.memo||e.adminNote).map((e,i)=>'['+(i+1)+'] '+(e.memo?'메모: '+e.memo:'')+(e.memo&&e.adminNote?' / ':'')+(e.adminNote?'관리자: '+e.adminNote:'')).join('\n'); return memos?'<div class="detail-section"><div class="detail-title">메모 | Notes</div><div class="detail-content">'+esc(memos)+'</div></div>':''; })()+
+            '</div>'+(()=>{ const memos=getConfirmedEntriesForStudent(profile.key).filter(e=>e.memo||e.adminNote).map((e,i)=>'['+(i+1)+'] '+(e.memo?'메모: '+e.memo:'')+(e.memo&&e.adminNote?' / ':'')+(e.adminNote?'관리자: '+e.adminNote:'')).join('\n'); return memos?'<div class="detail-section"><div class="detail-title">메모 | Notes</div><div class="detail-content">'+esc(memos)+'</div></div>':''; })()+
             (canManageRecoveryLevel(level)?'<div class="detail-section"><div class="detail-title">취소 | Cancel</div><button class="btn btn-secondary btn-xs" onclick="event.stopPropagation();cancelRecoveryCompletion(\''+r.key+'\')">완료취소</button></div>':'')+
             '</div></td></tr>'
           );
