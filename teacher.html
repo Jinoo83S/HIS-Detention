@@ -1134,7 +1134,6 @@
     }
 
     // 현재 학년도 원점수: 회복교육 차감 전 점수. 생활교육위원회 30점 초과 기준에 사용합니다.
-    /* ---------- 3-2) 학생별 점수 계산 헬퍼 ---------- */
     function getStudentYearRawTotal(studentKey, year){
       const y = String(year || getCurrentYear());
       return Object.values(entries || {})
@@ -1206,10 +1205,91 @@
       return '';
     }
 
-    /* ---------- 3-3) 학생/알림/회복교육 데이터 조회 헬퍼 ---------- */
     function sName(k,e){k=String(k||'').trim();e=String(e||'').trim();return e?k+' '+e:k;}
-    function findActiveNotice(sKey,lvl){const hit=Object.entries(noticeEntries||{}).filter(([,v])=>String(v.studentKey||'')===String(sKey)&&String(v.level||'')===String(lvl)&&!v.completedAt).sort((a,b)=>String(b[1].createdAt||'').localeCompare(String(a[1].createdAt||'')));return hit.length?{key:hit[0][0],notice:hit[0][1]}:null;}
-    function findLatestCompletedNotice(sKey,lvl){const hit=Object.entries(noticeEntries||{}).filter(([,v])=>String(v.studentKey||'')===String(sKey)&&String(v.level||'')===String(lvl)&&!!v.completedAt).sort((a,b)=>String(b[1].completedAt||'').localeCompare(String(a[1].completedAt||'')));return hit.length?{key:hit[0][0],notice:hit[0][1]}:null;}
+
+    function safeDbKeyPart(value){
+      const raw = String(value ?? '').trim();
+      const safe = raw.replace(/[.#$/\[\]\s:]/g, '_').replace(/_+/g, '_').replace(/^_+|_+$/g, '');
+      return (safe || 'none').slice(0, 180);
+    }
+
+    function findActiveNoticeIn(sourceNotices, sKey, lvl, year){
+      const y = String(year || getCurrentYear());
+      const hit = Object.entries(sourceNotices || {})
+        .filter(([, v]) =>
+          String((v || {}).studentKey || '') === String(sKey) &&
+          String((v || {}).level || '') === String(lvl) &&
+          !(v || {}).completedAt &&
+          isCurrentYearRecord(v || {}, y)
+        )
+        .sort((a, b) => String((b[1] || {}).createdAt || '').localeCompare(String((a[1] || {}).createdAt || '')));
+      return hit.length ? { key: hit[0][0], notice: hit[0][1] || {} } : null;
+    }
+
+    function findLatestCompletedNoticeIn(sourceNotices, sKey, lvl, year){
+      const y = String(year || getCurrentYear());
+      const hit = Object.entries(sourceNotices || {})
+        .filter(([, v]) =>
+          String((v || {}).studentKey || '') === String(sKey) &&
+          String((v || {}).level || '') === String(lvl) &&
+          !!(v || {}).completedAt &&
+          isCurrentYearRecord(v || {}, y)
+        )
+        .sort((a, b) => String((b[1] || {}).completedAt || '').localeCompare(String((a[1] || {}).completedAt || '')));
+      return hit.length ? { key: hit[0][0], notice: hit[0][1] || {} } : null;
+    }
+
+    function findActiveNotice(sKey,lvl){ return findActiveNoticeIn(noticeEntries, sKey, lvl, getCurrentYear()); }
+    function findLatestCompletedNotice(sKey,lvl){ return findLatestCompletedNoticeIn(noticeEntries, sKey, lvl, getCurrentYear()); }
+
+    function getLatestConfirmedEntryForCycle(studentKey, sourceEntries, year){
+      const y = String(year || getCurrentYear());
+      const hit = Object.entries(sourceEntries || entries || {})
+        .filter(([, r]) =>
+          String((r || {}).studentKey || '') === String(studentKey || '') &&
+          String((r || {}).status || '') === '확정' &&
+          isCurrentYearRecord(r || {}, y)
+        )
+        .sort((a, b) => String((b[1] || {}).confirmedAt || (b[1] || {}).createdAt || '').localeCompare(String((a[1] || {}).confirmedAt || (a[1] || {}).createdAt || '')));
+      return hit.length ? { key: hit[0][0], entry: hit[0][1] || {} } : null;
+    }
+
+    function makeNoticeCycleKey(studentKey, level, sourceEntries, year){
+      const y = String(year || getCurrentYear());
+      const latest = getLatestConfirmedEntryForCycle(studentKey, sourceEntries, y);
+      const seed = latest ? (latest.key + '_' + String(latest.entry.confirmedAt || latest.entry.createdAt || '')) : 'no_confirmed_entry';
+      return ['notice', studentKey, level, y, seed].map(safeDbKeyPart).join('_');
+    }
+
+    async function resolveNoticeWriteTarget(studentKey, level, fixedNoticeKey){
+      if (fixedNoticeKey) {
+        return { key: fixedNoticeKey, ref: db.ref(NOTICE_DB_PATH + '/' + fixedNoticeKey), isNew: false, isFixed: true };
+      }
+      const [freshNoticeSnap, freshEntrySnap] = await Promise.all([
+        db.ref(NOTICE_DB_PATH).once('value'),
+        db.ref(DETENTION_DB_PATH).once('value')
+      ]);
+      const freshNotices = freshNoticeSnap.val() || {};
+      const freshEntries = freshEntrySnap.val() || {};
+      const active = findActiveNoticeIn(freshNotices, studentKey, level, getCurrentYear());
+      if (active && active.key) {
+        return { key: active.key, ref: db.ref(NOTICE_DB_PATH + '/' + active.key), isNew: false, notice: active.notice };
+      }
+      const cycleKey = makeNoticeCycleKey(studentKey, level, freshEntries, getCurrentYear());
+      return { key: cycleKey, ref: db.ref(NOTICE_DB_PATH + '/' + cycleKey), isNew: !freshNotices[cycleKey], notice: freshNotices[cycleKey] || null };
+    }
+
+    function makeRecoveryGuardKey(studentKey, level, latestNoticeKey, currentTotalBefore, recoveryTotal, year){
+      return [
+        'recovery',
+        studentKey,
+        level,
+        year || getCurrentYear(),
+        latestNoticeKey || 'no_notice',
+        'before_' + String(currentTotalBefore),
+        'recovered_' + String(recoveryTotal)
+      ].map(safeDbKeyPart).join('_');
+    }
     function getViolationCount(sKey,vId){
       const curYear = getCurrentYear();
       return Object.values(entries||{}).filter(r=>
@@ -3836,78 +3916,122 @@
       return normalizeMailList([student.fatherEmail, student.motherEmail].filter(Boolean).join(','));
     }
     async function sendParentMail(studentKey,level,fixedNoticeKey){
-      const lockKey = studentKey + '_' + level;
+      const lockKey = 'parent_mail_' + studentKey + '_' + level;
       const student={key:studentKey,...(students[studentKey]||{})};
       const to=getParentNoticeMailTo(student);
       if(!to) return toast('학부모 이메일이 없습니다.','err');
       if (_noticeInProgress[lockKey]) return toast('처리 중입니다. 잠시 후 다시 시도해 주세요.', 'warn');
       _noticeInProgress[lockKey] = true;
-      const subj='[HIS - 학생부 : 디텐션 포인트 알림] [STL : Regarding detention point]';
-      const body=buildParentMailBody(student);
-      const ao=findActiveNotice(studentKey,level);
-      // fixedNoticeKey: 완료 목록에서 특정 notice를 직접 업데이트
-      const noticeRef = fixedNoticeKey
-        ? db.ref(NOTICE_DB_PATH+'/'+fixedNoticeKey)
-        : ao ? db.ref(NOTICE_DB_PATH+'/'+ao.key)
-        : db.ref(NOTICE_DB_PATH);
-      const sp = fixedNoticeKey||ao
-        ? noticeRef.update({parentMailAt:new Date().toISOString()})
-        : noticeRef.push({studentKey,level,year:getCurrentYear(),createdAt:new Date().toISOString(),parentMailAt:new Date().toISOString(),cycleViolationsSnapshot:buildNoticeReasonText(studentKey)});
-      try{await openMailAfterSave('mailto:'+encodeURIComponent(to)+'?subject='+encodeURIComponent(subj)+'&body='+encodeURIComponent(body),sp);
+      try{
+        const subj='[HIS - 학생부 : 디텐션 포인트 알림] [STL : Regarding detention point]';
+        const body=buildParentMailBody(student);
+        const now = new Date().toISOString();
+        const target = await resolveNoticeWriteTarget(studentKey, level, fixedNoticeKey);
+        const basePayload = target.isNew ? {
+          studentKey,
+          level,
+          year:getCurrentYear(),
+          createdAt:now,
+          noticeCycleKey: target.key
+        } : {};
+        const sp = target.ref.update({
+          ...basePayload,
+          parentMailAt: now,
+          cycleViolationsSnapshot: buildNoticeReasonText(studentKey)
+        });
+        await openMailAfterSave('mailto:'+encodeURIComponent(to)+'?subject='+encodeURIComponent(subj)+'&body='+encodeURIComponent(body),sp);
         const slM=getSchoolLevel((students[studentKey]||{}).className||'');if(slM)try{await recalculateStudentState(studentKey,slM);}catch(e){}
-        toast('학부모 메일 시간이 기록되었습니다.','ok');loadData();}catch(e){console.error(e);toast('메일 준비 중 오류.','err');}finally{delete _noticeInProgress[lockKey];}
+        toast('학부모 메일 시간이 기록되었습니다.','ok');loadData();
+      }catch(e){console.error(e);toast('메일 준비 중 오류.','err');}finally{delete _noticeInProgress[lockKey];}
     }
 
     async function sendStudentTeacherMail(studentKey,level,fixedNoticeKey){
-      const lockKey = studentKey + '_' + level;
+      const lockKey = 'student_teacher_mail_' + studentKey + '_' + level;
       const student={key:studentKey,...(students[studentKey]||{})};
       const re2=level==='ms'?getTeacherEmailsByRole('ms_restore'):getTeacherEmailsByRole('hs_restore');
       const to=[student.selfEmail,student.homeroomTeacherEmail,...re2].filter(Boolean).join(',');
       if(!to) return toast('학생/교사 이메일이 없습니다.','err');
       if (_noticeInProgress[lockKey]) return toast('처리 중입니다. 잠시 후 다시 시도해 주세요.', 'warn');
       _noticeInProgress[lockKey] = true;
-      const subj='[HIS - 학생부 : 디텐션 포인트 알림] [STL : Regarding detention point]';
-      const body=buildStudentTeacherMailBody(student,level);
-      const ao2=findActiveNotice(studentKey,level);
-      const noticeRef3=fixedNoticeKey?db.ref(NOTICE_DB_PATH+'/'+fixedNoticeKey):ao2?db.ref(NOTICE_DB_PATH+'/'+ao2.key):db.ref(NOTICE_DB_PATH);
-      const sp=(fixedNoticeKey||ao2)?noticeRef3.update({studentTeacherMailAt:new Date().toISOString()}):noticeRef3.push({studentKey,level,year:getCurrentYear(),createdAt:new Date().toISOString(),studentTeacherMailAt:new Date().toISOString(),cycleViolationsSnapshot:buildNoticeReasonText(studentKey)});
-      try{await openMailAfterSave('mailto:'+encodeURIComponent(to)+'?subject='+encodeURIComponent(subj)+'&body='+encodeURIComponent(body),sp);
+      try{
+        const subj='[HIS - 학생부 : 디텐션 포인트 알림] [STL : Regarding detention point]';
+        const body=buildStudentTeacherMailBody(student,level);
+        const now = new Date().toISOString();
+        const target = await resolveNoticeWriteTarget(studentKey, level, fixedNoticeKey);
+        const basePayload = target.isNew ? {
+          studentKey,
+          level,
+          year:getCurrentYear(),
+          createdAt:now,
+          noticeCycleKey: target.key
+        } : {};
+        const sp = target.ref.update({
+          ...basePayload,
+          studentTeacherMailAt: now,
+          cycleViolationsSnapshot: buildNoticeReasonText(studentKey)
+        });
+        await openMailAfterSave('mailto:'+encodeURIComponent(to)+'?subject='+encodeURIComponent(subj)+'&body='+encodeURIComponent(body),sp);
         const slST=getSchoolLevel((students[String(studentKey||'')]||{}).className||'');if(slST)try{await recalculateStudentState(studentKey,slST);}catch(e){}
-        toast('학생/교사 메일 시간이 기록되었습니다.','ok');loadData();}catch(e){console.error(e);toast('메일 준비 중 오류.','err');}finally{delete _noticeInProgress[lockKey];}
+        toast('학생/교사 메일 시간이 기록되었습니다.','ok');loadData();
+      }catch(e){console.error(e);toast('메일 준비 중 오류.','err');}finally{delete _noticeInProgress[lockKey];}
     }
 
     async function completeNotice(studentKey,level){
+      const lockKey = 'complete_notice_' + studentKey + '_' + level;
+      if (_noticeInProgress[lockKey]) return toast('처리 중입니다. 잠시 후 다시 시도해 주세요.', 'warn');
+      _noticeInProgress[lockKey] = true;
       try{
-        const ao=findActiveNotice(studentKey,level);
-        if(!ao){await db.ref(NOTICE_DB_PATH).push({studentKey,level,year:getCurrentYear(),createdAt:new Date().toISOString(),completedAt:new Date().toISOString(),completedBy:teacher.name||'',completedByEmail:teacher.email||'',cycleViolationsSnapshot:buildNoticeReasonText(studentKey)});}
-        else{await db.ref(NOTICE_DB_PATH+'/'+ao.key).update({completedAt:new Date().toISOString(),completedBy:teacher.name||'',completedByEmail:teacher.email||'',cycleViolationsSnapshot:buildNoticeReasonText(studentKey)});}
+        const now = new Date().toISOString();
+        const target = await resolveNoticeWriteTarget(studentKey, level);
+        const basePayload = target.isNew ? {
+          studentKey,
+          level,
+          year:getCurrentYear(),
+          createdAt:now,
+          noticeCycleKey: target.key
+        } : {};
+        await target.ref.update({
+          ...basePayload,
+          completedAt: now,
+          completedBy:teacher.name||'',
+          completedByEmail:teacher.email||'',
+          cycleViolationsSnapshot:buildNoticeReasonText(studentKey)
+        });
         toast('알림 완료가 저장되었습니다.','ok');
         const sLevel2 = getSchoolLevel((students[String(studentKey||'')] || {}).className||'');
         if(sLevel2){ try{ await recalculateStudentState(String(studentKey||''), sLevel2); }catch(e){} }
         loadData();
       }catch(e){console.error(e);toast('알림 완료 저장 실패','err');}
+      finally{ delete _noticeInProgress[lockKey]; }
     }
 
     async function completeRecovery(studentKey, level){
       const student = students[studentKey];
       if (!student) return;
 
-      // 중복 클릭 방지
-      const lockKey = 'recovery_' + studentKey;
+      // 중복 클릭/다중 탭 저장 방지
+      const lockKey = 'recovery_' + studentKey + '_' + level;
       if (_noticeInProgress[lockKey]) return toast('처리 중입니다. 잠시 후 다시 시도해 주세요.', 'warn');
       _noticeInProgress[lockKey] = true;
 
       try{
         // 레이스 컨디션 방지: DB에서 최신 데이터를 직접 읽어 점수 계산
-        const [freshEntrySnap, freshRecoverySnap] = await Promise.all([
+        const [freshEntrySnap, freshRecoverySnap, freshNoticeSnap] = await Promise.all([
           db.ref(DETENTION_DB_PATH).once('value'),
-          db.ref(RECOVERY_DB_PATH).once('value')
+          db.ref(RECOVERY_DB_PATH).once('value'),
+          db.ref(NOTICE_DB_PATH).once('value')
         ]);
 
         const freshEntries = freshEntrySnap.val() || {};
         const freshRecovery = freshRecoverySnap.val() || {};
+        const freshNotices = freshNoticeSnap.val() || {};
 
         const curYear = getCurrentYear();
+        const latestNotice = findLatestCompletedNoticeIn(freshNotices, studentKey, level, curYear);
+        if (!latestNotice || !latestNotice.key){
+          return toast('완료된 알림 기록이 없어 회복교육을 저장할 수 없습니다.\nComplete the notice first.', 'warn');
+        }
+
         const overallTotal = Object.values(freshEntries)
           .filter(r =>
             String(r.studentKey||'') === String(studentKey) &&
@@ -3938,24 +4062,36 @@
           return toast('회복교육 대상 점수가 아닙니다. (3점 미만)\nNot enough points for recovery session.', 'warn');
         }
 
+        const recoveryGuardKey = makeRecoveryGuardKey(studentKey, level, latestNotice.key, currentTotalBefore, recoveryTotal, curYear);
+        const completedAt = new Date().toISOString();
         const payload = {
           studentKey,
           studentName: student.name || '',
           englishName: student.englishName || '',
           className: student.className || '',
           level,
-          year: getCurrentYear(),
+          year: curYear,
           recoveryPoints,
+          noticeKey: latestNotice.key,
+          recoveryGuardKey,
           reasonsSnapshot: buildCycleReasonTextWithPoints(studentKey), // 회복교육 대상 사이클의 위반 목록 저장
           overallTotalAtRecovery: overallTotal,
           currentTotalBefore,
           currentTotalAfter: Math.max(0, currentTotalBefore - recoveryPoints),
           staffName: teacher.name || '',
           staffEmail: teacher.email || '',
-          completedAt: new Date().toISOString()
+          completedAt
         };
 
-        await db.ref(RECOVERY_DB_PATH).push(payload);
+        const tx = await db.ref(RECOVERY_DB_PATH + '/' + recoveryGuardKey).transaction(current => {
+          if (current) return;
+          return payload;
+        });
+
+        if (!tx || tx.committed === false){
+          return toast('이미 저장된 회복교육 기록입니다. 새로고침 후 확인해 주세요.\nRecovery was already saved.', 'warn');
+        }
+
         toast('회복교육 완료가 저장되었습니다.\nRecovery completion saved.', 'ok');
         // recalculateStudentState: 생활교육위원회 상태 보존하면서 회복교육 처리
         try{ await recalculateStudentState(studentKey, level); }catch(e){ console.error(e); }
