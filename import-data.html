@@ -188,8 +188,29 @@ function parseTSV(text){
 }
 
 // ── Shared helpers ──
-function parseName(fullName){
+function normalizeImportedName(fullName){
   const raw = String(fullName || '').replace(/\s+/g, ' ').trim();
+  if(!raw) return '';
+
+  // 영문명만 있는 구글시트 데이터에서 같은 이름이 2번 붙은 오류 보정
+  // 예: "Saiyah Brown Saiyah Brown" → "Saiyah Brown"
+  // 예: "CHEN YANG Chen Yang" → "CHEN YANG"
+  if(!/[가-힣]/.test(raw)){
+    const tokens = raw.split(' ').filter(Boolean);
+    if(tokens.length >= 2 && tokens.length % 2 === 0){
+      const half = tokens.length / 2;
+      const left = tokens.slice(0, half).join(' ');
+      const right = tokens.slice(half).join(' ');
+      const canon = v => v.toLowerCase().replace(/[^a-z0-9]/g, '');
+      if(canon(left) && canon(left) === canon(right)) return left;
+    }
+  }
+
+  return raw;
+}
+
+function parseName(fullName){
+  const raw = normalizeImportedName(fullName);
   if(!raw) return { ko: '', en: '' };
 
   // 영문 이름만 있는 학생은 전체 이름을 studentName/studentKey 기준으로 사용한다.
@@ -214,7 +235,20 @@ function parseName(fullName){
 }
 
 function makeStudentKey(koreanName, className){
-  return [className, koreanName].filter(Boolean).join('_').replace(/[.#$/\[\]\s]/g,'_');
+  return [className, normalizeImportedName(koreanName)].filter(Boolean).join('_').replace(/[.#$/\[\]\s]/g,'_');
+}
+
+function getFirstDateValue(...values){
+  for(const value of values){
+    const raw = String(value || '').trim();
+    if(!raw) continue;
+    const match = raw.match(/\d{4}-\d{1,2}-\d{1,2}/);
+    if(match){
+      const [y,m,d] = match[0].split('-');
+      return [y, String(m).padStart(2,'0'), String(d).padStart(2,'0')].join('-');
+    }
+  }
+  return '';
 }
 
 function gradeToLevel(className){
@@ -293,17 +327,20 @@ function groupNoticeRows(rows){
     const sKey = makeStudentKey(ko, className);
     const level = gradeToLevel(className);
 
-    const noticeDate = (row['알림날짜']||'').trim();
+    const noticeDate = getFirstDateValue(row['알림날짜']);
     const parentDone = (row['학부모알림완료']||'').toUpperCase()==='TRUE';
-    const parentDate = (row['학부모알림날짜']||'').trim();
+    const parentDate = getFirstDateValue(row['학부모알림날짜']);
     const isDone = (row['완료']||'').toUpperCase()==='TRUE';
-    const baseDate = (row['날짜']||'').trim();
+    const baseDate = getFirstDateValue(row['날짜'], row['날짜줄바꿈']);
 
-    // 알림날짜가 없으면 아직 알림 안 간 건 → 사이클 미생성 (skip)
-    if(!noticeDate) return;
+    // 최초 전체 이동용 보정:
+    // 알림날짜가 비어 있어도 학부모알림날짜가 있거나 완료된 행의 위반일이 있으면 기록으로 가져온다.
+    // 날짜가 전혀 없는 완료행은 임의 날짜를 넣지 않고 skip하여 연도/상태 계산 왜곡을 방지한다.
+    const effectiveNoticeDate = noticeDate || parentDate || ((isDone || parentDone) ? baseDate : '');
+    if(!effectiveNoticeDate) return;
 
-    // 그룹 키: studentKey + 알림날짜
-    const groupKey = sKey + '__' + noticeDate;
+    // 그룹 키: studentKey + 유효 알림날짜
+    const groupKey = sKey + '__' + effectiveNoticeDate;
 
     if(!cycleMap[groupKey]){
       cycleMap[groupKey] = {
@@ -313,8 +350,8 @@ function groupNoticeRows(rows){
         englishName: en,
         className,
         level,
-        createdAt: toISO(baseDate) || new Date().toISOString(),
-        studentTeacherMailAt: toISO(noticeDate),
+        createdAt: toISO(baseDate || effectiveNoticeDate) || new Date().toISOString(),
+        studentTeacherMailAt: toISO(noticeDate || effectiveNoticeDate),
         parentMailAt: undefined,
         completedAt: undefined,
         cycleViolationsSnapshot: '',
@@ -332,7 +369,7 @@ function groupNoticeRows(rows){
 
     // 완료: 하나라도 완료=TRUE면 completedAt 설정
     if(isDone && !rec.completedAt){
-      rec.completedAt = toISO(parentDate || noticeDate || baseDate);
+      rec.completedAt = toISO(parentDate || noticeDate || baseDate || effectiveNoticeDate);
     }
 
     // 위반 행위 스냅샷 누적 (cycleViolationsSnapshot)
@@ -515,8 +552,8 @@ function showPreview(){
 function showMapping(){
   const maps = {
     detention: ['ID→_key','이름→studentName+englishName','학년→className','날짜→createdAt','교사→teacherName','종류→category','상세→violation','최종점수→totalPoints','수동점수→manualPoints','메모→memo','확정+취소+확인날짜→status','경고(생활교육위원회)/이성교제→isReferral'],
-    notice: ['그룹핑: (studentKey + 알림날짜) → 1개 notice 레코드','알림날짜→studentTeacherMailAt','학부모알림완료+학부모알림날짜→parentMailAt','완료=TRUE→completedAt','종류+상세+메모 누적→cycleViolationsSnapshot','알림날짜 없는 행은 skip'],
-    restore: ['완료=FALSE+완료날짜없음 → skip','날짜자르기/종류자르기/상세자르기: #분리 파싱','교사자르기→staffName(마지막)','회복점수→recoveryPoints','교육1~4→sessions[]','종류+상세+날짜 조합→reasonsSnapshot(위반행위)','완료날짜→completedAt']
+    notice: ['그룹핑: (studentKey + 유효 알림날짜) → 1개 notice 레코드','알림날짜 우선, 없으면 학부모알림날짜, 완료행은 위반일로 보정','학부모알림완료+학부모알림날짜→parentMailAt','완료=TRUE→completedAt','종류+상세+메모 누적→cycleViolationsSnapshot','날짜가 전혀 없는 행만 skip'],
+    restore: ['교육1~4 날짜가 있으면 회복교육 세션으로 가져옴','완료=FALSE라도 교육일이 있으면 최초 이전 기록으로 인정','날짜자르기/종류자르기/상세자르기: #분리 파싱','교사자르기→staffName(마지막)','회복점수→recoveryPoints','교육1~4→sessions[]','종류+상세+날짜 조합→reasonsSnapshot(위반행위)']
   };
   document.getElementById('mapNote').textContent = (maps[sheetType]||[]).join(' | ');
 }
