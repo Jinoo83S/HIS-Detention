@@ -267,11 +267,19 @@ function readFileText(file, enc = 'utf-8') {
     });
     const hasActiveReferral = referralEntries.length > 0 && !referralCompleted;
 
-    const eduCompletedThisYear = hisValues(committee).some(c =>
-      ['edu_points', 'edu_overall', 'manual_edu', 'edu'].includes(String((c || {}).type || '')) &&
-      String((c || {}).studentKey || '') === sk &&
-      !!(c || {}).completedAt &&
-      hisIsCurrentYearRecord(c, curYear)
+    const completedCommitteeArr = hisValues(committee)
+      .filter(c =>
+        String((c || {}).studentKey || '') === sk &&
+        !!(c || {}).completedAt &&
+        hisIsCurrentYearRecord(c, curYear)
+      )
+      .sort((a, b) => String((b || {}).completedAt || '').localeCompare(String((a || {}).completedAt || '')));
+    const latestCommitteeCompletedAt = completedCommitteeArr.length ? String((completedCommitteeArr[0] || {}).completedAt || '') : '';
+    const latestConfirmedEntryAt = confirmedEntries.length ? hisLatestEntryDate(confirmedEntries[0][1]) : '';
+    const committeeCoversLatestEntry = !!latestCommitteeCompletedAt && (!latestConfirmedEntryAt || latestCommitteeCompletedAt >= latestConfirmedEntryAt);
+
+    const eduCompletedThisYear = completedCommitteeArr.some(c =>
+      ['edu_points', 'edu_overall', 'manual_edu', 'edu'].includes(String((c || {}).type || ''))
     );
 
     const needsEduCommittee = !eduCompletedThisYear && (currentPoints >= 12 || yearRawPoints > 30);
@@ -291,6 +299,9 @@ function readFileText(file, enc = 'utf-8') {
     let phase = 'clean';
     if (hasActiveReferral || hasManualReferralPending) {
       phase = 'referral';
+    } else if (committeeCoversLatestEntry && currentPoints >= 3) {
+      // 위원회 완료 후에는 같은 위반 묶음에 대해 알림 단계로 되돌리지 않고 회복교육 단계로 보냅니다.
+      phase = 'in_recovery';
     } else if (activeNotice) {
       phase = (activeNotice.notice.parentMailAt || activeNotice.notice.studentTeacherMailAt) ? 'notice_active' : 'notice_needed';
     } else if (lastCompletedNotice && currentPoints >= 3) {
@@ -332,7 +343,9 @@ function readFileText(file, enc = 'utf-8') {
         hasManualReferralPending,
         hasManualEduPending,
         needsEduCommittee,
-        eduCompletedThisYear
+        eduCompletedThisYear,
+        latestCommitteeCompletedAt,
+        committeeCoversLatestEntry
       }
     };
   }
