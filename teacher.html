@@ -3458,7 +3458,8 @@
       const eduTb=document.getElementById('discipline-education-tbody');
       const eduDoneTb=document.getElementById('discipline-education-done-tbody');
       if(!referralTb||!eduTb)return;
-      if(!Object.keys(students||{}).length){
+      const catalog = getStudentCatalog();
+      if(!catalog.length && !Object.keys(entries||{}).length && !Object.keys(committeeEntries||{}).length){
         [referralTb,referralDoneTb,eduTb,eduDoneTb].forEach(t=>{if(t)t.innerHTML='<tr><td colspan="8" class="empty">로딩 중...</td></tr>';});
         return;
       }
@@ -3507,15 +3508,17 @@
       const manualEduStudents = new Set(
         Object.values(committeeEntries||{}).filter(c=>(c.type==='manual_edu'||c.type==='edu')&&!c.completedAt&&isCurrentYearRecord(c, yr)).map(c=>c.studentKey)
       );
-      const allEdu=Object.entries(students||{}).map(([k,v])=>Object.assign({},v,{key:k}))
+      const allEdu=catalog
         .filter(s=>{
           if(!getSchoolLevel(s.className||'')) return false;
-          const cst2=getCycleState(s.key,getSchoolLevel(s.className||''));
-          return getStudentCurrentTotal(s.key)>=12||getStudentOverallTotal(s.key)>30||manualEduStudents.has(s.key)||cst2.committeeStatus==='pending_edu';
+          const eduLevel = getSchoolLevel(s.className||'');
+          const cst2=getCycleState(s.key,eduLevel);
+          return getStudentCurrentTotal(s.key,eduLevel)>=12||getStudentOverallTotal(s.key,yr)>30||manualEduStudents.has(s.key)||cst2.committeeStatus==='pending_edu';
         })
-        .sort((a,b)=>getStudentOverallTotal(b.key)-getStudentOverallTotal(a.key));
+        .sort((a,b)=>getStudentOverallTotal(b.key,yr)-getStudentOverallTotal(a.key,yr));
       const mkEduRow=(s,done)=>{
-        const cur=getStudentCurrentTotal(s.key),ovr=getStudentOverallTotal(s.key);
+        const eduLevel = getSchoolLevel(s.className||'');
+        const cur=getStudentCurrentTotal(s.key,eduLevel),ovr=getStudentOverallTotal(s.key,yr);
         const did='ed_'+String(s.key||'').replace(/\W/g,'_');
         const trig=(cur>=12?'현재 미해소 '+cur+'점 이상':'')+(cur>=12&&ovr>30?' / ':'')+(ovr>30?'연간 원점수 '+ovr+'점 초과':'');
         return '<tr class="summary-row" onclick="toggleDetailDiv(\''+did+'\')" style="cursor:pointer;">'+
@@ -3580,9 +3583,13 @@
         const effSK=studentKey||'';
         if(!effSK&&entryKey){
           const e=entries[entryKey];
-          if(e)await recalculateStudentState(String(e.studentKey||''),getSchoolLevel((students[String(e.studentKey||'')]||{}).className||''));
+          if(e){
+            const eProfile = getStudentProfile(String(e.studentKey||'')) || {};
+            await recalculateStudentState(String(e.studentKey||''),getSchoolLevel(eProfile.className||e.className||''));
+          }
         } else {
-          const cLevel=getSchoolLevel((students[String(effSK)]||{}).className||'');
+          const effProfile = getStudentProfile(String(effSK)) || {};
+          const cLevel=getSchoolLevel((effProfile||{}).className||'');
           if(effSK&&cLevel) await recalculateStudentState(String(effSK),cLevel);
         }
         await loadData();
@@ -3643,7 +3650,7 @@
           createdBy: teacher.name||'', createdByEmail: teacher.email||''
         };
         await db.ref(COMMITTEE_DB_PATH).push(payload);
-        const sLevel4 = getSchoolLevel((students[studentKey]||{}).className||'');
+        const sLevel4 = getSchoolLevel(((getStudentProfile(studentKey)||students[studentKey]||{}).className)||'');
         if(sLevel4){ try{ await recalculateStudentState(studentKey, sLevel4); }catch(e){} }
         closeManualCommittee();
         toast('위원회 수동 회부 완료', 'ok');
@@ -3663,7 +3670,7 @@
       // committeeRecords 미완료
       Object.values(committeeEntries||{}).forEach(c=>{
         if(c.completedAt || !isCurrentYearRecord(c, yr)) return;
-        const sk=String(c.studentKey||'');const sv=students[sk]||{};
+        const sk=String(c.studentKey||'');const sv=getStudentProfile(sk)||students[sk]||{};
         const nm=(sv.name||sk)+(sv.englishName?' '+sv.englishName:'');
         if(c.type==='referral'||c.type==='manual_referral') addP(nm,'위원회');
         else if(['edu','manual_edu','edu_points','edu_overall'].includes(c.type)) addP(nm,'위원회');
@@ -3672,10 +3679,11 @@
       Object.values(entries||{}).forEach(r=>{
         if(r.isReferral!==true||String(r.status||'')!=='확정'||!isCurrentYearRecord(r, yr)) return;
         const done=Object.values(committeeEntries||{}).some(c=>c.entryKey===r.key&&!!c.completedAt&&(c.type==='referral'||c.type==='manual_referral')&&isCurrentYearRecord(c, yr));
-        if(!done){const sv=students[String(r.studentKey||'')]||{};addP((sv.name||r.studentName||'')+(sv.englishName?' '+sv.englishName:''),'위원회');}
+        if(!done){const sv=getStudentProfile(String(r.studentKey||''))||students[String(r.studentKey||'')]||{};addP((sv.name||r.studentName||'')+(sv.englishName?' '+sv.englishName:''),'위원회');}
       });
       // 점수 조건 직접 체크 (cycleState 미갱신 방어)
-      Object.entries(students||{}).forEach(([sk,sv])=>{
+      getStudentCatalog().forEach(sv=>{
+        const sk=String(sv.key||'');
         const lv=getSchoolLevel(sv.className||'');if(!lv) return;
         const _p=getStudentPoints(sk,lv);const cur=_p.current,ovr=_p.overall;
         if(cur>=12||ovr>30){
@@ -3697,14 +3705,15 @@
       const isDefaultOnly = teacherRoles.length===0||(teacherRoles.length===1&&teacherRoles[0]==='default');
       const yr30=getCurrentYear();
       // cycleState 기반 경고 (edu_committee 상태인 학생)
-      const o30=isDefaultOnly?[]:Object.keys(students||{}).filter(k=>{
-        if(!getSchoolLevel((students[k]||{}).className||''))return false;
-        const level3=getSchoolLevel((students[k]||{}).className||'');
+      const o30=isDefaultOnly?[]:getStudentCatalog().filter(s=>{
+        const k=String(s.key||'');
+        if(!getSchoolLevel((s||{}).className||''))return false;
+        const level3=getSchoolLevel((s||{}).className||'');
         const st=getCycleState(k,level3);
-        return ['edu_committee','edu_notice_needed','edu_notice_active','edu_in_recovery'].includes(st.phase)||getStudentCurrentTotal(k)>=12||getStudentOverallTotal(k)>30;
+        return ['edu_committee','edu_notice_needed','edu_notice_active','edu_in_recovery'].includes(st.phase)||getStudentCurrentTotal(k,level3)>=12||getStudentOverallTotal(k,yr30)>30;
       });
       let wb=document.getElementById('disc-warn');if(!wb){wb=document.createElement('div');wb.id='disc-warn';wb.style.cssText='margin:8px 0;padding:10px 14px;border-radius:10px;background:#fde8e8;border:1px solid #fca5a5;color:#7f1d1d;font-size:13px;font-weight:700;';const sc=document.getElementById('today-count');if(sc&&sc.closest('.card'))sc.closest('.card').after(wb);}
-      if(o30.length){wb.style.display='';wb.innerHTML='<b>위원회 대상:</b> '+o30.map(k=>{const s=students[k]||{};return esc(s.name||'')+' '+esc(s.englishName||'')+' '+esc(s.className||'')+' (미해소 '+getStudentCurrentTotal(k)+'점 / 원점수 '+getStudentOverallTotal(k)+'점)';}).join(' / ');}else{wb.style.display='none';}
+      if(o30.length){wb.style.display='';wb.innerHTML='<b>위원회 대상:</b> '+o30.map(s=>{const k=String(s.key||'');const level3=getSchoolLevel((s||{}).className||'');return esc(s.name||'')+' '+esc(s.englishName||'')+' '+esc(s.className||'')+' (미해소 '+getStudentCurrentTotal(k,level3)+'점 / 원점수 '+getStudentOverallTotal(k,yr30)+'점)';}).join(' / ');}else{wb.style.display='none';}
     }
 
 
