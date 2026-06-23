@@ -218,22 +218,6 @@
     .modal-stat .num{font-size:22px;font-weight:800;color:var(--nv)}
     .modal-stat .lbl{font-size:11px;color:var(--sb);margin-top:2px}
     .modal-section-title{font-weight:800;font-size:13px;color:var(--nv);margin:14px 0 6px;padding-bottom:4px;border-bottom:2px solid var(--bd)}
-
-
-    /* 메일 미리보기/수정 모달 */
-    #mail-preview-overlay{position:fixed;inset:0;background:rgba(0,0,0,.48);z-index:10000;display:none;align-items:center;justify-content:center;padding:16px}
-    #mail-preview-overlay.open{display:flex}
-    #mail-preview-modal{background:#fff;border-radius:16px;width:min(880px,100%);max-height:92vh;overflow:hidden;box-shadow:0 10px 45px rgba(0,0,0,.24);display:flex;flex-direction:column}
-    .mail-preview-header{background:linear-gradient(120deg,var(--nv),var(--nv2));color:#fff;padding:14px 18px;display:flex;justify-content:space-between;align-items:center;gap:10px}
-    .mail-preview-header h2{margin:0;font-size:16px;line-height:1.35}
-    .mail-preview-body{padding:16px;overflow:auto;display:grid;gap:10px}
-    .mail-preview-field label{display:block;font-size:12px;color:var(--sb);font-weight:800;margin-bottom:4px}
-    .mail-preview-field input,.mail-preview-field textarea{width:100%;box-sizing:border-box;border:1px solid var(--bd);border-radius:10px;padding:9px 10px;font-family:inherit;font-size:13px;line-height:1.5;outline:none;background:#fff}
-    .mail-preview-field textarea{min-height:300px;resize:vertical;white-space:pre-wrap}
-    .mail-preview-field input:focus,.mail-preview-field textarea:focus{border-color:var(--nv2);box-shadow:0 0 0 2px rgba(27,47,122,.08)}
-    .mail-preview-actions{display:flex;justify-content:flex-end;gap:8px;padding:12px 16px;border-top:1px solid var(--bd);background:#f8fbff;flex-wrap:wrap}
-    .mail-preview-note{font-size:12px;color:var(--sb);line-height:1.5;background:#f7faff;border:1px solid var(--bd);border-radius:10px;padding:8px 10px}
-
   </style>
 </head>
 <body>
@@ -268,8 +252,8 @@
       <div style="margin-bottom:12px;">
         <div style="font-size:12px;color:var(--sb);margin-bottom:4px;">위원회 종류 | Committee Type</div>
         <select id="modal-committee-type" class="edit-input">
-          <option value="manual_referral">선도위원회 (수동)</option>
-          <option value="manual_edu">생활교육위원회 (수동)</option>
+          <option value="manual_referral">위원회 (수동)</option>
+          <option value="manual_edu">위원회 (수동)</option>
         </select>
       </div>
       <div style="margin-bottom:16px;">
@@ -283,34 +267,30 @@
     </div>
   </div>
 
-  <!-- 메일 미리보기/수정 모달 -->
-  <div id="mail-preview-overlay" onclick="if(event.target===this)cancelMailPreview()">
-    <div id="mail-preview-modal" onclick="event.stopPropagation()">
-      <div class="mail-preview-header">
-        <h2 id="mail-preview-title">메일 미리보기 | Mail Preview</h2>
-        <button class="modal-close" onclick="cancelMailPreview()">✕</button>
+
+  <!-- 메일 미리보기 / 수정 모달 -->
+  <div id="modal-mail-preview" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;padding:14px;">
+    <div style="background:#fff;border-radius:16px;padding:22px;min-width:420px;max-width:780px;width:min(780px,96vw);max-height:92vh;overflow:auto;box-shadow:0 8px 32px rgba(0,0,0,.2);">
+      <div style="font-size:16px;font-weight:800;color:var(--nv);margin-bottom:14px;">메일 미리보기 및 수정 | Mail Preview & Edit</div>
+      <div class="notice" style="margin-bottom:12px;">
+        <div>메일 앱을 열기 전에 수신자, 제목, 본문을 확인하고 수정할 수 있습니다.</div>
+        <div>You may review and edit the recipient, subject, and body before opening the mail app.</div>
       </div>
-      <div class="mail-preview-body">
-        <div class="mail-preview-note">
-          메일 앱을 열기 전에 수신자, 제목, 본문을 확인하고 수정할 수 있습니다.<br>
-          You may review and edit the recipients, subject, and body before opening the mail app.
-        </div>
-        <div class="mail-preview-field">
-          <label for="mail-preview-to">수신자 | To</label>
-          <input id="mail-preview-to" type="text" autocomplete="off" placeholder="email@example.com, email2@example.com">
-        </div>
-        <div class="mail-preview-field">
-          <label for="mail-preview-subject">제목 | Subject</label>
-          <input id="mail-preview-subject" type="text" autocomplete="off">
-        </div>
-        <div class="mail-preview-field">
-          <label for="mail-preview-body">본문 | Body</label>
-          <textarea id="mail-preview-body" spellcheck="false"></textarea>
-        </div>
+      <div style="margin-bottom:10px;">
+        <div class="label">수신자 | To</div>
+        <input id="mail-preview-to" class="edit-input" placeholder="recipient@example.com">
       </div>
-      <div class="mail-preview-actions">
+      <div style="margin-bottom:10px;">
+        <div class="label">제목 | Subject</div>
+        <input id="mail-preview-subject" class="edit-input">
+      </div>
+      <div style="margin-bottom:14px;">
+        <div class="label">본문 | Body</div>
+        <textarea id="mail-preview-body" class="edit-input" rows="16" style="resize:vertical;white-space:pre-wrap;font-family:inherit;"></textarea>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;">
         <button class="btn btn-secondary" onclick="cancelMailPreview()">취소 | Cancel</button>
-        <button class="btn btn-primary" onclick="confirmMailPreview()">메일 앱 열기 | Open Mail App</button>
+        <button id="mail-preview-open-btn" class="btn btn-primary" onclick="submitMailPreview()">메일 앱 열기 | Open Mail App</button>
       </div>
     </div>
   </div>
@@ -320,11 +300,10 @@
       <button class="tab-btn" data-tab="standard">디텐션 기준표 | Standards</button>
       <button class="tab-btn" data-tab="all">디텐션 전체보기 | All Records</button>
       <button class="tab-btn role-only" data-role="master" data-tab="confirm">디텐션 확정 | Confirm</button>
-      <button class="tab-btn role-only" data-role="ms_notice" data-tab="notify-ms">중등 디텐션 알림 | MS Notice</button>
-      <button class="tab-btn role-only" data-role="hs_notice" data-tab="notify-hs">고등 디텐션 알림 | HS Notice</button>
-      <button class="tab-btn role-only" data-role="ms_restore" data-tab="recovery-ms">중등 회복교육 | MS Restore</button>
-      <button class="tab-btn role-only" data-role="hs_restore" data-tab="recovery-hs">고등 회복교육 | HS Restore</button>
-      <button class="tab-btn" data-tab="students">전체 학생관리 | Students</button>
+      <button class="tab-btn role-only" data-role="ms_notice,hs_notice" data-tab="notify">디텐션 알림 | Detention Notice</button>
+      <button class="tab-btn role-only" data-role="ms_restore" data-tab="recovery-ms">중등 회복교육 | MS Restorative Education</button>
+      <button class="tab-btn role-only" data-role="hs_restore" data-tab="recovery-hs">고등 회복교육 | HS Restorative Education</button>
+      <button class="tab-btn" data-tab="students">조회 | Search</button>
       <button class="tab-btn role-only" data-role="master" data-tab="discipline">위원회 | Committee</button>
     </div>
     <div id="committee-pending-banner" style="display:none;background:#fff3cd;border:1px solid #f0c040;border-radius:8px;padding:8px 16px;margin:var(--ui-gap) 0 var(--ui-gap);font-size:12px;color:#5a3e00;font-weight:600;"></div>
@@ -441,8 +420,8 @@
         </div>
 
         <div class="notice" style="margin-top:12px;border-color:#d8dded;background:#f0f4ff;color:#1f2d6b;">
-          <div>※위반 행동의 정도가 심한 경우 및 상기 기준 외의 것은 생활교육위원회의 심의를 거쳐 결정할 수 있다.</div>
-          <div style="margin-top:4px">※Regarding highly serious violations and matters not stipulated above, decisions can be separately made after deliberation by the Life Education Committee.</div>
+          <div>※위반 행동의 정도가 심한 경우 및 상기 기준 외의 것은 위원회의 심의를 거쳐 결정할 수 있다.</div>
+          <div style="margin-top:4px">※Regarding highly serious violations and matters not stipulated above, decisions can be separately made after deliberation by the Committee.</div>
         </div>
       </div>
     </div>
@@ -463,7 +442,7 @@
         </div>
 
         <div class="section-title-row">
-          <span class="stitle">디텐션 기록</span>
+          <span class="stitle">디텐션 기록 | Detention Records</span>
           <div class="section-btn-group">
             <button class="btn btn-secondary btn-xs" onclick="setAllExpanded(true)">전체 펼침</button>
             <button class="btn btn-secondary btn-xs" onclick="setAllExpanded(false)">전체 접기</button>
@@ -478,8 +457,8 @@
                 <th class="nowrap" style="width:9%;">구분<span class="th-en">Category</span></th>
                 <th style="width:26%;">위반행위<span class="th-en">Violation</span></th>
                 <th class="nowrap" style="width:5%;">점수<span class="th-en">Points</span></th>
-                <th class="nowrap" style="width:8%;">현재미해소<span class="th-en">Current</span></th>
-                <th class="nowrap" style="width:8%;">연간원점수<span class="th-en">Year Raw</span></th>
+                <th class="nowrap" style="width:8%;">잔여 디텐션점수<span class="th-en">Current</span></th>
+                <th class="nowrap" style="width:8%;">누적디텐션점수<span class="th-en">Year Raw</span></th>
                 <th class="nowrap" style="width:8%;">교사<span class="th-en">Teacher</span></th>
                 <th class="nowrap" style="width:10%;">일시<span class="th-en">Date/Time</span></th>
               </tr>
@@ -499,8 +478,8 @@
                 <th class="nowrap">구분</th>
                 <th>사유</th>
                 <th class="nowrap tc">점수</th>
-                <th class="nowrap tc">현재</th>
-                <th class="nowrap tc">전체</th>
+                <th class="nowrap tc">잔여</th>
+                <th class="nowrap tc">누적</th>
                 <th class="nowrap">교사</th>
                 <th class="nowrap">완료시간</th>
               </tr>
@@ -581,13 +560,14 @@
       </div>
     </div>
 
-    <!-- MS NOTICE -->
-    <div id="tab-notify-ms" class="tab-panel">
+    <!-- NOTICE -->
+    <div id="tab-notify" class="tab-panel">
       <div class="card">
-        <div class="card-title">중등 디텐션 알림 | MS Detention Notice</div>
+        <div class="card-title">디텐션 알림 | Detention Notice</div>
+        <div class="section-title-row" style="margin-top:6px;"><span class="stitle">중등 | Middle School</span></div>
         <div class="notice">
-          <div>현재 누적점수가 3점 이상인 중등 학생 목록입니다.</div>
-          <div>This list shows middle school students whose current total is 3 points or more.</div>
+          <div>현재 잔여 디텐션점수가 3점 이상인 중등 학생 목록입니다.</div>
+          <div>This list shows middle school students whose remaining detention points is 3 points or more.</div>
         </div>
 
         <div class="section-title-row" style="margin-top:6px;">
@@ -604,8 +584,8 @@
                 <th class="nowrap" style="width:16%;">학생</th>
                 <th class="nowrap tc" style="width:6%;">학반</th>
                 <th style="width:22%;">사유</th>
-                <th class="nowrap tc" style="width:7%;">현재</th>
-                <th class="nowrap tc" style="width:7%;">전체</th>
+                <th class="nowrap tc" style="width:7%;">잔여</th>
+                <th class="nowrap tc" style="width:7%;">누적</th>
                 <th class="nowrap" style="width:13%;">학부모 메일</th>
                 <th class="nowrap" style="width:13%;">학생/교사 메일</th>
                 <th class="nowrap tc" style="width:9%;">위원회</th>
@@ -624,8 +604,8 @@
                 <th class="nowrap" style="width:16%">학생</th>
                 <th class="nowrap tc" style="width:6%">학반</th>
                 <th style="width:23%">사유</th>
-                <th class="nowrap tc" style="width:6%">현재</th>
-                <th class="nowrap tc" style="width:6%">전체</th>
+                <th class="nowrap tc" style="width:6%">잔여</th>
+                <th class="nowrap tc" style="width:6%">누적</th>
                 <th class="nowrap" style="width:13%">학부모 메일</th>
                 <th class="nowrap" style="width:13%">학생/교사 메일</th>
                 <th class="nowrap tc" style="width:10%">완료</th>
@@ -636,15 +616,11 @@
           </table>
         </div>
       </div>
-    </div>
-
-    <!-- HS NOTICE -->
-    <div id="tab-notify-hs" class="tab-panel">
-      <div class="card">
-        <div class="card-title">고등 디텐션 알림 | HS Detention Notice</div>
+      <div class="card" style="margin-top:16px;">
+        <div class="card-title">고등 | High School</div>
         <div class="notice">
-          <div>현재 누적점수가 3점 이상인 고등 학생 목록입니다.</div>
-          <div>This list shows high school students whose current total is 3 points or more.</div>
+          <div>현재 잔여 디텐션점수가 3점 이상인 고등 학생 목록입니다.</div>
+          <div>This list shows high school students whose remaining detention points is 3 points or more.</div>
         </div>
 
         <div class="section-title-row" style="margin-top:6px;">
@@ -661,8 +637,8 @@
                 <th class="nowrap" style="width:16%;">학생</th>
                 <th class="nowrap tc" style="width:6%;">학반</th>
                 <th style="width:22%;">사유</th>
-                <th class="nowrap tc" style="width:7%;">현재</th>
-                <th class="nowrap tc" style="width:7%;">전체</th>
+                <th class="nowrap tc" style="width:7%;">잔여</th>
+                <th class="nowrap tc" style="width:7%;">누적</th>
                 <th class="nowrap" style="width:13%;">학부모 메일</th>
                 <th class="nowrap" style="width:13%;">학생/교사 메일</th>
                 <th class="nowrap tc" style="width:9%;">위원회</th>
@@ -681,8 +657,8 @@
                 <th class="nowrap" style="width:16%">학생</th>
                 <th class="nowrap tc" style="width:6%">학반</th>
                 <th style="width:23%">사유</th>
-                <th class="nowrap tc" style="width:6%">현재</th>
-                <th class="nowrap tc" style="width:6%">전체</th>
+                <th class="nowrap tc" style="width:6%">잔여</th>
+                <th class="nowrap tc" style="width:6%">누적</th>
                 <th class="nowrap" style="width:13%">학부모 메일</th>
                 <th class="nowrap" style="width:13%">학생/교사 메일</th>
                 <th class="nowrap tc" style="width:10%">완료</th>
@@ -700,7 +676,7 @@
       <div class="card">
         <div class="card-title">중등 회복교육 | MS Restorative Education</div>
         <div class="notice">
-          <div>중등 디텐션 알림이 완료된 학생들의 회복교육 목록입니다.</div>
+          <div>중등 디텐션 알림 절차가 완료된 학생들의 회복교육 목록입니다.</div>
           <div>This list shows middle school students whose detention notice has been completed.</div>
         </div>
 
@@ -717,8 +693,8 @@
               <tr>
                 <th class="nowrap" style="width:22%;">학생</th>
                 <th class="nowrap tc" style="width:6%;">학반</th>
-                <th class="nowrap tc" style="width:6%;">현재</th>
-                <th class="nowrap tc" style="width:6%;">전체</th>
+                <th class="nowrap tc" style="width:6%;">잔여</th>
+                <th class="nowrap tc" style="width:6%;">누적</th>
                 <th style="width:28%;">위반 행위</th>
                 <th class="nowrap tc" style="width:12%;">알림완료</th>
                 <th class="nowrap tc" style="width:10%;">완료점수</th>
@@ -739,7 +715,7 @@
                 <th style="width:30%;">위반 행위</th>
                 <th class="nowrap tc" style="width:9%;">회복점수</th>
                 <th class="nowrap tc" style="width:9%;">잔여점수</th>
-                <th class="nowrap tc" style="width:9%;">연간원점수</th>
+                <th class="nowrap tc" style="width:9%;">누적디텐션점수</th>
                 <th class="nowrap" style="width:12%;">완료시간</th>
                 <th class="nowrap tc" style="width:8%;">처리</th>
               </tr>
@@ -756,7 +732,7 @@
       <div class="card">
         <div class="card-title">고등 회복교육 | HS Restorative Education</div>
         <div class="notice">
-          <div>고등 디텐션 알림이 완료된 학생들의 회복교육 목록입니다.</div>
+          <div>고등 디텐션 알림 절차가 완료된 학생들의 회복교육 목록입니다.</div>
           <div>This list shows high school students whose detention notice has been completed.</div>
         </div>
 
@@ -773,8 +749,8 @@
               <tr>
                 <th class="nowrap" style="width:22%;">학생</th>
                 <th class="nowrap tc" style="width:6%;">학반</th>
-                <th class="nowrap tc" style="width:6%;">현재</th>
-                <th class="nowrap tc" style="width:6%;">전체</th>
+                <th class="nowrap tc" style="width:6%;">잔여</th>
+                <th class="nowrap tc" style="width:6%;">누적</th>
                 <th style="width:28%;">위반 행위</th>
                 <th class="nowrap tc" style="width:12%;">알림완료</th>
                 <th class="nowrap tc" style="width:10%;">완료점수</th>
@@ -795,7 +771,7 @@
                 <th style="width:30%;">위반 행위</th>
                 <th class="nowrap tc" style="width:9%;">회복점수</th>
                 <th class="nowrap tc" style="width:9%;">잔여점수</th>
-                <th class="nowrap tc" style="width:9%;">연간원점수</th>
+                <th class="nowrap tc" style="width:9%;">누적디텐션점수</th>
                 <th class="nowrap" style="width:12%;">완료시간</th>
                 <th class="nowrap tc" style="width:8%;">처리</th>
               </tr>
@@ -813,17 +789,18 @@
       <div class="card" style="padding:0;overflow:hidden">
         <!-- 헤더 -->
         <div style="padding:10px 14px;border-bottom:1px solid var(--bd);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
-          <span style="font-weight:800;font-size:15px;color:var(--nv)">전체 학생관리 | Student Management</span>
+          <span style="font-weight:800;font-size:15px;color:var(--nv)">조회 | Search</span>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-            <input id="student-mgmt-search" class="edit-input" style="width:150px;font-size:12px" placeholder="이름 검색" oninput="renderStudentOverview()">
-            <select id="student-mgmt-level" class="edit-input" style="width:100px;font-size:12px" onchange="renderStudentOverview()">
+            <input id="student-mgmt-search" class="edit-input" style="width:150px;font-size:12px" placeholder="이름 검색 / Search name" oninput="refreshStudentLookup()">
+            <select id="student-mgmt-level" class="edit-input" style="width:100px;font-size:12px" onchange="refreshStudentLookup()">
               <option value="">전체 학년</option>
               <option value="ms">중등 (7-9)</option>
               <option value="hs">고등 (10-12)</option>
             </select>
-            <select id="student-mgmt-class" class="edit-input" style="width:80px;font-size:12px" onchange="renderStudentOverview()">
+            <select id="student-mgmt-class" class="edit-input" style="width:80px;font-size:12px" onchange="refreshStudentLookup()">
               <option value="">전체 반</option>
             </select>
+            <button class="btn btn-secondary" style="font-size:12px;padding:5px 10px;" onclick="resetStudentOverview()">조회하기</button>
           </div>
         </div>
 
@@ -870,7 +847,7 @@
               <tbody id="modal-detention-tbody"></tbody>
             </table>
           </div>
-          <div class="modal-section-title" style="margin-top:18px">회복교육 기록 | Recovery Records</div>
+          <div class="modal-section-title" style="margin-top:18px">회복교육 기록 | Restorative Education Records</div>
           <div class="tbl-wrap">
             <table style="table-layout:fixed;width:100%">
               <thead><tr>
@@ -890,27 +867,27 @@
     <div id="tab-discipline" class="tab-panel">
       <div class="card">
         <div class="card-title">위원회 관리 | Committee Management</div>
-        <div class="card-title notice-divider" style="margin-top:8px;">🔴 선도위원회 회부 진행 중</div>
-        <div class="notice">이성교제·흡연 2회차 이상 적발로 선도위원회 회부된 항목입니다.</div>
+        <div class="card-title notice-divider" style="margin-top:8px;">🔴 위원회 진행 중</div>
+        <div class="notice">위원회 회부가 필요한 항목입니다.</div>
         <div class="tbl-wrap"><table><thead><tr>
           <th>학생</th><th class="tc">학반</th><th>위반행위</th><th class="tc">횟수</th>
           <th class="tc">교사</th><th class="tc">일시</th><th class="tc">상태</th><th class="tc">처리</th>
         </tr></thead><tbody id="discipline-referral-tbody"></tbody></table></div>
-        <div class="card-title notice-divider" style="margin-top:14px;">✅ 선도위원회 완료</div>
+        <div class="card-title notice-divider" style="margin-top:14px;">✅ 위원회 완료</div>
         <div class="tbl-wrap"><table><thead><tr>
           <th>학생</th><th class="tc">학반</th><th>위반행위</th><th class="tc">횟수</th>
           <th class="tc">교사</th><th class="tc">회부일시</th><th class="tc">상태</th><th class="tc">완료시간</th>
         </tr></thead><tbody id="discipline-referral-done-tbody"></tbody></table></div>
-        <div class="card-title notice-divider" style="margin-top:18px;">⚠️ 생활교육위원회 진행 중</div>
-        <div class="notice">현재 미해소 12점 이상 또는 연간 원점수 30점 초과 (연간 1회 적용).</div>
+        <div class="card-title notice-divider" style="margin-top:18px;">⚠️ 위원회 진행 중</div>
+        <div class="notice">잔여 디텐션점수 12점 이상 또는 누적디텐션점수 30점 초과 (연간 1회 적용).</div>
         <div class="tbl-wrap"><table><thead><tr>
-          <th>학생</th><th class="tc">학반</th><th class="tc">현재미해소</th>
-          <th class="tc">연간원점수</th><th>사유</th><th class="tc">처리</th><th class="tc">완료</th>
+          <th>학생</th><th class="tc">학반</th><th class="tc">잔여 디텐션점수</th>
+          <th class="tc">누적디텐션점수</th><th>사유</th><th class="tc">처리</th><th class="tc">완료</th>
         </tr></thead><tbody id="discipline-education-tbody"></tbody></table></div>
-        <div class="card-title notice-divider" style="margin-top:14px;">✅ 생활교육위원회 완료</div>
+        <div class="card-title notice-divider" style="margin-top:14px;">✅ 위원회 완료</div>
         <div class="tbl-wrap"><table><thead><tr>
-          <th>학생</th><th class="tc">학반</th><th class="tc">현재미해소</th>
-          <th class="tc">연간원점수</th><th>사유</th><th class="tc">완료시간</th><th></th>
+          <th>학생</th><th class="tc">학반</th><th class="tc">잔여 디텐션점수</th>
+          <th class="tc">누적디텐션점수</th><th>사유</th><th class="tc">완료시간</th><th></th>
         </tr></thead><tbody id="discipline-education-done-tbody"></tbody></table></div>
       </div>
     </div>
@@ -961,8 +938,8 @@
       { category:'시설 및 기물 Facility & Property', violation:'한동대학교에서 출입 제한한 건물 및 시설 사용으로 신고가 접수된 경우 If the student is reported for using buildings and facilities that Handong University has restricted access to', autoPoints:'3', note:'' },
       { category:'시설 및 기물 Facility & Property', violation:'교내의 출입금지 시간 무단 위반 Violation of school no-entry time', autoPoints:'9-12', note:'' },
       { category:'시설 및 기물 Facility & Property', violation:'일과 중 무단 이탈 Unauthorized departure during the school day', autoPoints:'9-18', note:'' },
-      { category:'이성교제 Dating', violation:'이성교제 규정 1회 위반 1st violation of dating regulation', autoPoints:'12-15', note:'2회 이상 적발된 경우 선도위원회 회부\nIn cases of two or more violations, the matter will be referred to the Disciplinary Committee.' },
-      { category:'흡연 Smoking', violation:'담배 소지 또는 흡연 1차 적발 1st detection of possession or smoking of cigarettes', autoPoints:'12-15', note:'금연 및 이에 준한 교육에 의무적으로 참여하여야 함\nMandatory participation in anti-smoking or equivalent education\n2회 이상 적발된 경우 선도위원회 회부\nIn cases of two or more violations, the matter will be referred to the Disciplinary Committee.' },
+      { category:'이성교제 Dating', violation:'이성교제 규정 1회 위반 1st violation of dating regulation', autoPoints:'12-15', note:'2회 이상 적발된 경우 위원회 회부\nIn cases of two or more violations, the matter will be referred to the Committee.' },
+      { category:'흡연 Smoking', violation:'담배 소지 또는 흡연 1차 적발 1st detection of possession or smoking of cigarettes', autoPoints:'12-15', note:'금연 및 이에 준한 교육에 의무적으로 참여하여야 함\nMandatory participation in anti-smoking or equivalent education\n2회 이상 적발된 경우 위원회 회부\nIn cases of two or more violations, the matter will be referred to the Committee.' },
       { category:'교외 생활 Off-campus Life', violation:'전동 킥보드 탑승 Riding an electric scooter', autoPoints:'12-15', note:'' },
       { category:'그 외 Others', violation:"상기 항목에 속하지 않으나 학생 본분에 어긋나는 위반 사항 Violations that do not fall under the aforementioned categories but are deemed inappropriate for a student's conduct", autoPoints:'1-15', note:'' }
     ];
@@ -1054,8 +1031,8 @@
      *   notice_needed  - 3점 이상, 알림 필요
      *   notice_active  - 알림 진행 중 (메일 발송됨)
      *   in_recovery    - 회복교육 진행 중
-     *   referral       - 선도위원회 회부
-     *   edu_committee  - 생활교육위원회 대상
+     *   referral       - 위원회 회부
+     *   edu_committee  - 위원회 대상
      * ═══════════════════════════════════════════════════════════════ */
     function getCycleStateKey(studentKey, level){ return String(studentKey||'')+'_'+String(level||''); }
     function getCycleState(studentKey, level){
@@ -1192,7 +1169,7 @@
       return getRecordYear(record, y) === y;
     }
 
-    // 현재 학년도 원점수: 회복교육 차감 전 점수. 생활교육위원회 30점 초과 기준에 사용합니다.
+    // 현재 학년도 원점수: 회복교육 차감 전 점수. 위원회 30점 초과 기준에 사용합니다.
     function getStudentYearRawTotal(studentKey, year){
       const y = String(year || getCurrentYear());
       return Object.values(entries || {})
@@ -1265,8 +1242,8 @@
     }
 
     function sName(k,e){k=String(k||'').trim();e=String(e||'').trim();return e?k+' '+e:k;}
-    function findActiveNotice(sKey,lvl){const hit=Object.entries(noticeEntries||{}).filter(([,v])=>String(v.studentKey||'')===String(sKey)&&String(v.level||'')===String(lvl)&&!v.completedAt).sort((a,b)=>String(b[1].createdAt||'').localeCompare(String(a[1].createdAt||'')));return hit.length?{key:hit[0][0],notice:hit[0][1]}:null;}
-    function findLatestCompletedNotice(sKey,lvl){const hit=Object.entries(noticeEntries||{}).filter(([,v])=>String(v.studentKey||'')===String(sKey)&&String(v.level||'')===String(lvl)&&!!v.completedAt).sort((a,b)=>String(b[1].completedAt||'').localeCompare(String(a[1].completedAt||'')));return hit.length?{key:hit[0][0],notice:hit[0][1]}:null;}
+    function findActiveNotice(sKey,lvl){const yr=getCurrentYear();const hit=Object.entries(noticeEntries||{}).filter(([,v])=>String(v.studentKey||'')===String(sKey)&&String(v.level||'')===String(lvl)&&!v.completedAt&&isCurrentYearRecord(v,yr)).sort((a,b)=>String(b[1].createdAt||'').localeCompare(String(a[1].createdAt||'')));return hit.length?{key:hit[0][0],notice:hit[0][1]}:null;}
+    function findLatestCompletedNotice(sKey,lvl){const yr=getCurrentYear();const hit=Object.entries(noticeEntries||{}).filter(([,v])=>String(v.studentKey||'')===String(sKey)&&String(v.level||'')===String(lvl)&&!!v.completedAt&&isCurrentYearRecord(v,yr)).sort((a,b)=>String(b[1].completedAt||'').localeCompare(String(a[1].completedAt||'')));return hit.length?{key:hit[0][0],notice:hit[0][1]}:null;}
     function getViolationCount(sKey,vId){
       const curYear = getCurrentYear();
       return Object.values(entries||{}).filter(r=>
@@ -1331,7 +1308,7 @@
       let idx=1;
       if(residual>0){
         const prevEntries=getPreviousCycleEntries(sKey);
-        let residualText='[이전 잔여 '+residual+'점] 이전 사이클 회복교육 후 잔여 점수 ('+residual+'점)';
+        let residualText='이전 회복교육 후 남은 점수: '+residual+'점';
         if(prevEntries.length){
           residualText+='\n'+prevEntries.map(r=>{
             const pts=Number(r.totalPoints||0);
@@ -1344,7 +1321,7 @@
       cycleEntries.forEach(r=>{
         const pts=Number(r.totalPoints||0);
         const cLabel=getCommitteeCompletedLabelForEntry(r);
-        parts.push('['+idx+'] '+String(r.violation||'').trim()+(pts?' ('+pts+'점)':'')+(cLabel?' · '+cLabel:''));
+        parts.push('위반 '+idx+'. '+String(r.violation||'').trim()+(pts?' ('+pts+'점)':'')+(cLabel?' · '+cLabel:''));
         idx++;
       });
       return parts.length ? parts.join('\n\n') : '-';
@@ -1394,7 +1371,7 @@
       return entries.map((r, i) => {
         const pts = Number(r.totalPoints || 0);
         const cLabel = getCommitteeCompletedLabelForEntry(r);
-        return '['+String(i+1)+'] '+String(r.violation||'').trim()+(pts?' ('+pts+'점)':'')+(cLabel?' · '+cLabel:'');
+        return '위반 '+String(i+1)+'. '+String(r.violation||'').trim()+(pts?' ('+pts+'점)':'')+(cLabel?' · '+cLabel:'');
       }).join('\n\n');
     }
 
@@ -1406,13 +1383,13 @@
     function buildReasonText(studentKey){
       const reasons = buildReasonLines(studentKey);
       if (!reasons.length) return '-';
-      return reasons.map((reason, i) => `[${i+1}] ${reason}`).join('\n\n');
+      return reasons.map((reason, i) => `위반 ${i+1}. ${reason}`).join('\n\n');
     }
 
     function buildReasonPreview(studentKey){
       const reasons = buildReasonLines(studentKey);
       if (!reasons.length) return '-';
-      return `[1] ${reasons[0]}`;
+      return `위반 1. ${reasons[0]}`;
     }
 
     function getLatestConfirmedAt(studentKey){
@@ -1428,7 +1405,7 @@
         .filter(s=>getSchoolLevel(s.className)===level)
         .map(s=>{
           const state = getCycleState(s.key, level);
-          // 선도위원회 회부(referral) 중이면 알림 목록 제외
+          // 위원회 회부(referral) 중이면 알림 목록 제외
           const noticePhases=['notice_needed','notice_active','edu_notice_needed','edu_notice_active'];
           if(!noticePhases.includes(state.phase)) return null;
           const pts = getStudentPoints(s.key, level);
@@ -1445,7 +1422,7 @@
         .sort((a,b)=>String(b.latestConfirmedAt||'').localeCompare(String(a.latestConfirmedAt||'')));
     }
 
-    /** 완료된 알림 전체 목록 (currentTotal 무관, 시간순) */
+    /** 완료된 알림 조회하기 (currentTotal 무관, 시간순) */
     function getCompletedNoticeList(level){
       return Object.entries(noticeEntries||{})
         .map(([key,v])=>({noticeKey:key,...v}))
@@ -1492,13 +1469,7 @@
       return Object.entries(recoveryEntries || {})
         .map(([key, value]) => ({ key, ...value }))
         .filter(r => String(r.level || '') === String(level))
-        .sort((a,b)=>{
-          // 알림 완료 날짜 기준 오름차순 (먼저 완료된 알림이 위)
-          const aT=a.completedNotice?String(a.completedNotice.completedAt||''):'9999';
-          const bT=b.completedNotice?String(b.completedNotice.completedAt||''):'9999';
-          const cmp=aT.localeCompare(bT);
-          return cmp!==0?cmp:String(a.key||'').localeCompare(String(b.key||''));
-        });
+        .sort((a,b)=>String(b.completedAt || '').localeCompare(String(a.completedAt || '')));
     }
 
     function updateManualPointsMode(){
@@ -2018,6 +1989,16 @@
       });
     }
 
+    async function refreshData(){
+      try{
+        await loadData();
+        toast('새로고침 완료 | Refreshed', 'ok');
+      }catch(e){
+        console.error(e);
+        toast('새로고침 실패 | Refresh failed', 'err');
+      }
+    }
+
     async function loadData(){
       try{
         const [teacherSnap, studentSnap, entrySnap, standardSnap, metaSnap, recoverySnap, noticeSnap, committeeSnap, cycleSnap] = await Promise.all([
@@ -2084,16 +2065,6 @@
       }
     }
 
-    async function refreshData(){
-      try{
-        await loadData();
-        toast('새로고침이 완료되었습니다.\nData refreshed.', 'ok');
-      }catch(e){
-        console.error(e);
-        toast('새로고침 중 오류가 발생했습니다.\nFailed to refresh data.', 'err');
-      }
-    }
-
     /* ---------- 5-2) 탭별 렌더링 ---------- */
     function renderRecentEntries(){
       const box = document.getElementById('recent-entry-list');
@@ -2115,7 +2086,7 @@
               <div class="recent-entry-meta">
                 <span class="recent-chip">${esc(r.className || '-')}</span>
                 <span class="recent-chip">${esc(r.category || '')}</span>
-                ${r.isReferral ? '<span class="recent-chip" style="background:#fde8e8;color:#7f1d1d;font-weight:700;">선도위원회 회부</span>' : ''}
+                ${r.isReferral ? '<span class="recent-chip" style="background:#fde8e8;color:#7f1d1d;font-weight:700;">위원회 회부</span>' : ''}
               </div>
               <div class="recent-entry-violation">${esc(r.violation || '')}</div>
             </div>
@@ -2169,15 +2140,15 @@
         const _eduDone = Object.values(committeeEntries||{}).some(c=>
           _EDU_TYPES.includes(c.type)&&String(c.studentKey||'')===String(r.studentKey||'')&&!!c.completedAt&&isCurrentYearRecord(c, _curYr)
         );
-        const _curEdu = (!_eduDone && _cur>=12) ? '<br><span style="color:#b45309;font-size:10px;font-weight:700;">생활교육위원회</span>' : '';
-        const _ovrEdu = (!_eduDone && _ovr>30) ? '<br><span style="color:#b45309;font-size:10px;font-weight:700;">생활교육위원회</span>' : '';
+        const _curEdu = (!_eduDone && _cur>=12) ? '<br><span style="color:#b45309;font-size:10px;font-weight:700;">위원회</span>' : '';
+        const _ovrEdu = (!_eduDone && _ovr>30) ? '<br><span style="color:#b45309;font-size:10px;font-weight:700;">위원회</span>' : '';
         return `
           <tr class="summary-row" onclick="toggleAllRow('${esc(r.key)}')">
             <td class="nowrap">${esc(sName(r.studentName||'',r.englishName||''))}</td>
             <td class="nowrap tc">${esc(r.className || '-')}</td>
             <td class="nowrap">${esc(r.category || '')}</td>
             <td><span class="cell-reason-preview">${esc(String(r.violation || '').split('\n')[0])}</span></td>
-            <td class="nowrap tc">${esc(String(r.manualPoints || r.totalPoints || 0))}${(r.isReferral===true||r.isReferral==='true')?'<br><span style="color:var(--rd);font-size:10px;font-weight:700;">선도위원회</span>':''}</td>
+            <td class="nowrap tc">${esc(String(r.manualPoints || r.totalPoints || 0))}${(r.isReferral===true||r.isReferral==='true')?'<br><span style="color:var(--rd);font-size:10px;font-weight:700;">위원회</span>':''}</td>
             <td class="nowrap tc">${_cur}${_curEdu}</td>
             <td class="nowrap tc">${_ovr}${_ovrEdu}</td>
             <td class="nowrap">${esc(r.teacherName || '')}</td>
@@ -2246,7 +2217,7 @@
         return `<tr class="summary-row" onclick="this.nextElementSibling.classList.toggle('show')" style="cursor:pointer;">
           <td class="nowrap">${esc(sName(r.studentName,r.englishName))}</td>
           <td class="nowrap">${esc(r.className||'')}</td>
-          <td class="nowrap">회복교육 | Recovery</td>
+          <td class="nowrap">회복교육 | Restorative Education</td>
           <td><span class="cell-reason-preview">${reasonPreview}</span></td>
           <td class="nowrap tc">-${esc(String(r.recoveryPoints||0))}</td>
           <td class="nowrap tc">${esc(String(r.currentTotalAfter??r.currentTotalAtRecovery??getStudentCurrentTotal(r.studentKey)))}</td>
@@ -2353,7 +2324,7 @@
               <td class="nowrap tc">${esc(r.className||'-')}</td>
               <td class="nowrap">${esc(r.category||'')}</td>
               <td><span class="cell-reason-preview">${esc(String(r.violation||'').split('\n')[0])}</span></td>
-              <td class="nowrap tc">${esc(String(r.totalPoints||0))}${isReferral?'<br><span style="color:var(--rd);font-size:10px;font-weight:700;">선도위원회</span>':''}</td>
+              <td class="nowrap tc">${esc(String(r.totalPoints||0))}${isReferral?'<br><span style="color:var(--rd);font-size:10px;font-weight:700;">위원회</span>':''}</td>
               <td class="nowrap">${esc(r.teacherName||'')}</td>
               <td class="nowrap">${statusBadge(r.status||'임시저장')}</td>
               ${noteTd(r)}
@@ -2461,6 +2432,29 @@
       sel.innerHTML = '<option value="">전체 반</option>' + classes.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');
     }
 
+
+    function refreshStudentLookup(){
+      renderStudentOverview();
+      const sp = document.getElementById('student-split-view');
+      if(sp && sp.style.display !== 'none') renderStudentGrid();
+    }
+
+    function resetStudentOverview(){
+      const search = document.getElementById('student-mgmt-search');
+      const level = document.getElementById('student-mgmt-level');
+      const cls = document.getElementById('student-mgmt-class');
+      if(search) search.value = '';
+      if(level) level.value = '';
+      if(cls) cls.value = '';
+      const ov = document.getElementById('student-overview-view');
+      const sp = document.getElementById('student-split-view');
+      if(ov) ov.style.display = '';
+      if(sp) sp.style.display = 'none';
+      const backBtn = document.getElementById('btn-back-overview');
+      if(backBtn) backBtn.style.display = 'none';
+      renderStudentOverview();
+    }
+
     // 개요 뷰 (기본)
     function renderStudentOverview(){
       const grid = document.getElementById('student-class-grid');
@@ -2518,8 +2512,8 @@
               <tr style="background:#dce6f7">
                 <th style="font-size:11px;padding:4px 8px;text-align:left;width:34%">이름</th>
                 <th style="font-size:11px;padding:4px 8px;text-align:left;width:34%">영문명</th>
-                <th style="font-size:11px;padding:4px;text-align:center;width:10%">현재</th>
-                <th style="font-size:11px;padding:4px;text-align:center;width:10%">전체</th>
+                <th style="font-size:11px;padding:4px;text-align:center;width:10%">잔여</th>
+                <th style="font-size:11px;padding:4px;text-align:center;width:10%">누적</th>
                 <th style="font-size:11px;padding:4px 2px;text-align:center;width:12%"></th>
               </tr>
             </thead>
@@ -2572,7 +2566,7 @@
         backBtn.id = 'btn-back-overview';
         backBtn.className = 'btn btn-secondary';
         backBtn.style.cssText = 'font-size:12px;padding:5px 12px';
-        backBtn.textContent = '← 전체 목록';
+        backBtn.textContent = '← 조회하기';
         backBtn.onclick = backToOverview;
         const header = document.querySelector('#tab-students .card > div:first-child');
         if(header) header.appendChild(backBtn);
@@ -2581,13 +2575,7 @@
     }
 
     function backToOverview(){
-      const ov = document.getElementById('student-overview-view');
-      const sp = document.getElementById('student-split-view');
-      if(ov) ov.style.display = '';
-      if(sp) sp.style.display = 'none';
-      const backBtn = document.getElementById('btn-back-overview');
-      if(backBtn) backBtn.style.display = 'none';
-      restoreStudentOverviewScroll();
+      resetStudentOverview();
     }
 
     function renderStudentGrid(){
@@ -2659,10 +2647,7 @@
     }
 
     function committeeTypeLabel(type){
-      const t = String(type || '');
-      if (t === 'referral' || t === 'manual_referral') return '선도위원회 | Disciplinary Committee';
-      if (t === 'edu' || t === 'manual_edu' || t === 'edu_points' || t === 'edu_overall') return '생활교육위원회 | Education Committee';
-      return t || '-';
+      return '위원회 | Committee';
     }
 
     const EDU_COMMITTEE_TYPES = ['edu','manual_edu','edu_points','edu_overall'];
@@ -2700,7 +2685,7 @@
       record = record || {};
       const linked = getCommitteeLinkedEntryList(record);
       const fromLinked = linked.length
-        ? linked.map((e,i)=>'['+(i+1)+'] '+String(e.violation||'').trim()+(Number(e.totalPoints||0)?' ('+Number(e.totalPoints||0)+'점)':'')).join('\n\n')
+        ? linked.map((e,i)=>'위반 '+(i+1)+'. '+String(e.violation||'').trim()+(Number(e.totalPoints||0)?' ('+Number(e.totalPoints||0)+'점)':'')).join('\n\n')
         : '';
       const stored = String(record.reason || record.reasonSnapshot || record.reasonsSnapshot || record.violationSnapshot || '').trim();
 
@@ -2731,7 +2716,7 @@
         return false;
       });
       if(!found) return '';
-      return EDU_COMMITTEE_TYPES.includes(String(found.type||'')) ? '생활교육위원회 완료' : '선도위원회 완료';
+      return '위원회 완료';
     }
 
     function committeeCreatedAt(record){
@@ -2863,7 +2848,7 @@
           <td colspan="5">
             <div class="detail-box">
               <div class="detail-section">
-                <div class="detail-title">회복교육 사유 | Recovery Reasons</div>
+                <div class="detail-title">회복교육 사유 | Restorative Education Reasons</div>
                 <div class="detail-content">${esc(reason)}</div>
               </div>
               <div class="detail-section">
@@ -2925,8 +2910,8 @@
         </div>
 
         <!-- 집계 -->
-        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:14px">
-          ${[['전체', 'var(--nv)', detList.length], ['확정', 'var(--gn)', detList.filter(r=>r.status==='확정').length], ['누적벌점', 'var(--rd)', confirmedPts], ['회복점수', '#7c3aed', recoveredPts], ['잔여', 'var(--nv)', currentPts]]
+        <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:14px">
+          ${[['디텐션 횟수 | Detention Count', 'var(--nv)', detList.filter(r=>r.status==='확정').length], ['누적디텐션점수 | Total Detention Points', 'var(--rd)', confirmedPts], ['회복교육횟수 | Restorative Education Count', '#2563eb', recList.length], ['회복점수 | Restorative Points', '#7c3aed', recoveredPts], ['잔여 디텐션점수 | Remaining Detention Points', 'var(--nv)', currentPts], ['위원회회부 | Committee Referral', '#b45309', committeeList.length]]
             .map(([l,c,v])=>`<div style="background:#eef3ff;border-radius:8px;padding:8px;text-align:center"><div style="font-size:20px;font-weight:800;color:${c}">${v}</div><div style="font-size:10px;color:var(--sb)">${l}</div></div>`).join('')}
         </div>
 
@@ -2971,7 +2956,7 @@
 
         <!-- 회복교육 기록 -->
         <div class="section-title-row" style="margin-bottom:6px">
-          <span class="stitle">회복교육 기록 | Recovery Records</span>
+          <span class="stitle">회복교육 기록 | Restorative Education Records</span>
         </div>
         <div class="tbl-wrap" style="margin-bottom:16px">
           <table style="table-layout:fixed;width:100%">
@@ -3063,9 +3048,9 @@
           // 위원회 상태 표시
           const cs = s.state && s.state.committeeStatus;
           const committeeCell = cs === 'pending_referral'
-            ? '<span style="display:inline-block;padding:3px 7px;border-radius:6px;font-size:11px;font-weight:700;background:#fde8e8;color:#7f1d1d;">선도위원회</span>'
+            ? '<span style="display:inline-block;padding:3px 7px;border-radius:6px;font-size:11px;font-weight:700;background:#fde8e8;color:#7f1d1d;">위원회</span>'
             : cs === 'pending_edu'
-            ? '<span style="display:inline-block;padding:3px 7px;border-radius:6px;font-size:11px;font-weight:700;background:#fff3cd;color:#5a3e00;">생활교육위원회</span>'
+            ? '<span style="display:inline-block;padding:3px 7px;border-radius:6px;font-size:11px;font-weight:700;background:#fff3cd;color:#5a3e00;">위원회</span>'
             : '-';
           return `
             <tr class="summary-row" onclick="toggleNoticeRow('${level}','${esc(s.key)}')">
@@ -3242,7 +3227,7 @@
               </td>
               <td class="nowrap tc" onclick="event.stopPropagation()">
                 ${(s.state && s.state.committeeStatus === 'pending_referral')
-                  ? '<button class="btn btn-xs" style="background:#fde8e8;color:#7f1d1d;border:1px solid #fca5a5;cursor:not-allowed;line-height:1.3;" disabled>선도위원회 회부<br>회복 일시정지</button>'
+                  ? '<button class="btn btn-xs" style="background:#fde8e8;color:#7f1d1d;border:1px solid #fca5a5;cursor:not-allowed;line-height:1.3;" disabled>위원회 회부<br>회복 일시정지</button>'
                   : `<button class="btn btn-primary btn-xs" onclick="completeRecovery('${esc(s.key)}','${level}')">회복교육 완료</button>`
                 }
               </td>
@@ -3262,8 +3247,8 @@
                     return memos ? `<div class="detail-section"><div class="detail-title">메모 | Notes</div><div class="detail-content">${esc(memos)}</div></div>` : '';
                   })()}
                   <div class="detail-section">
-                    <div class="detail-title">회복교육 완료 이력 | Completed Recovery History</div>
-                    <div class="detail-content">${s.recoveryList.length ? esc(s.recoveryList.map((r, i) => `[${i+1}] ${fmt(r.completedAt)} / -${r.recoveryPoints} / 교육 후 미해소 ${r.currentTotalAfter ?? r.currentTotalAtRecovery ?? '-'}`).join('\n')) : '-'}</div>
+                    <div class="detail-title">회복교육 완료 이력 | Completed Restorative Education History</div>
+                    <div class="detail-content">${s.recoveryList.length ? esc(s.recoveryList.map((r, i) => `회복 ${i+1}. ${fmt(r.completedAt)} / -${r.recoveryPoints} / 교육 후 잔여 ${r.currentTotalAfter ?? r.currentTotalAtRecovery ?? '-'}`).join('\n')) : '-'}</div>
                   </div>
                 </div>
               </td>
@@ -3348,7 +3333,7 @@
       }
       const yr=getCurrentYear();
       const completedRefKeys=new Set(Object.values(committeeEntries||{}).filter(r=>(r.type==='referral'||r.type==='manual_referral')&&r.completedAt&&isCurrentYearRecord(r, yr)).map(r=>r.entryKey));
-      // 선도위원회: isReferral=true 항목 + manual_referral entryKey 기준
+      // 위원회: isReferral=true 항목 + manual_referral entryKey 기준
       const manualReferralEntryKeys = new Set(
         Object.values(committeeEntries||{}).filter(c=>c.type==='manual_referral'&&!c.completedAt&&isCurrentYearRecord(c, yr)).map(c=>c.entryKey)
       );
@@ -3364,7 +3349,7 @@
           '<td class="tc">'+esc(String(r.violationCount||'-'))+'회차</td>'+
           '<td class="tc">'+esc(r.teacherName||'')+'</td>'+
           '<td class="tc">'+fmt(r.confirmedAt||r.createdAt)+'</td>'+
-          '<td class="tc">'+(done ? statusBadge(r.status) : '<span style="background:#fde8e8;color:#7f1d1d;padding:4px 8px;border-radius:8px;font-size:11px;font-weight:700;">선도위원회 회부</span>')+'</td>'+
+          '<td class="tc">'+(done ? statusBadge(r.status) : '<span style="background:#fde8e8;color:#7f1d1d;padding:4px 8px;border-radius:8px;font-size:11px;font-weight:700;">위원회 회부</span>')+'</td>'+
           (done
             ? '<td class="tc" style="font-size:11px;"><div style="color:var(--gn);font-weight:700;">&#10003; '+fmt(r.committeeCompletedAt)+'</div></td>'
             : '<td class="tc"><button class="btn btn-primary" style="font-size:11px;padding:4px 8px;" onclick="event.stopPropagation();completeCommittee(\'referral\',\''+esc(r.key||'')+'\',\''+esc(r.studentKey||'')+'\',\'\')">완료</button></td>')+
@@ -3382,12 +3367,12 @@
         const rec=recEntry&&recEntry[1];
         return Object.assign({},r,{committeeCompletedAt:rec&&rec.completedAt,committeeKey:recEntry&&recEntry[0]});
       });
-      referralTb.innerHTML=activeRef.length?activeRef.map(r=>mkRefRow(r,false)).join(''):'<tr><td colspan="8" class="empty">선도위원회 회부 내역이 없습니다.</td></tr>';
+      referralTb.innerHTML=activeRef.length?activeRef.map(r=>mkRefRow(r,false)).join(''):'<tr><td colspan="8" class="empty">위원회 회부 내역이 없습니다.</td></tr>';
       if(referralDoneTb)referralDoneTb.innerHTML=doneRef.length?doneRef.map(r=>mkRefRow(r,true)).join(''):'<tr><td colspan="8" class="empty">완료된 내역이 없습니다.</td></tr>';
 
       const EDU_TYPES = ['edu', 'manual_edu', 'edu_points', 'edu_overall'];
       const doneEduKeysYr=new Set(Object.values(committeeEntries||{}).filter(r=>EDU_TYPES.includes(r.type)&&r.completedAt&&isCurrentYearRecord(r, yr)).map(r=>r.studentKey));
-      // 생활교육위원회: 12점 이상 or >30 or manual_edu 회부 학생
+      // 위원회: 12점 이상 or >30 or manual_edu 회부 학생
       const manualEduStudents = new Set(
         Object.values(committeeEntries||{}).filter(c=>(c.type==='manual_edu'||c.type==='edu')&&!c.completedAt&&isCurrentYearRecord(c, yr)).map(c=>c.studentKey)
       );
@@ -3549,14 +3534,14 @@
         if(c.completedAt || !isCurrentYearRecord(c, yr)) return;
         const sk=String(c.studentKey||'');const sv=students[sk]||{};
         const nm=(sv.name||sk)+(sv.englishName?' '+sv.englishName:'');
-        if(c.type==='referral'||c.type==='manual_referral') addP(nm,'선도위원회');
-        else if(['edu','manual_edu','edu_points','edu_overall'].includes(c.type)) addP(nm,'생활교육위원회');
+        if(c.type==='referral'||c.type==='manual_referral') addP(nm,'위원회');
+        else if(['edu','manual_edu','edu_points','edu_overall'].includes(c.type)) addP(nm,'위원회');
       });
       // entries isReferral 미완료
       Object.values(entries||{}).forEach(r=>{
         if(r.isReferral!==true||String(r.status||'')!=='확정'||!isCurrentYearRecord(r, yr)) return;
         const done=Object.values(committeeEntries||{}).some(c=>c.entryKey===r.key&&!!c.completedAt&&(c.type==='referral'||c.type==='manual_referral')&&isCurrentYearRecord(c, yr));
-        if(!done){const sv=students[String(r.studentKey||'')]||{};addP((sv.name||r.studentName||'')+(sv.englishName?' '+sv.englishName:''),'선도위원회');}
+        if(!done){const sv=students[String(r.studentKey||'')]||{};addP((sv.name||r.studentName||'')+(sv.englishName?' '+sv.englishName:''),'위원회');}
       });
       // 점수 조건 직접 체크 (cycleState 미갱신 방어)
       Object.entries(students||{}).forEach(([sk,sv])=>{
@@ -3564,7 +3549,7 @@
         const _p=getStudentPoints(sk,lv);const cur=_p.current,ovr=_p.overall;
         if(cur>=12||ovr>30){
           const done=Object.values(committeeEntries||{}).some(c=>(['edu','manual_edu','edu_points','edu_overall'].includes(c.type))&&String(c.studentKey||'')===sk&&!!c.completedAt&&isCurrentYearRecord(c, yr));
-          if(!done) addP((sv.name||'')+(sv.englishName?' '+sv.englishName:''),'생활교육위원회');
+          if(!done) addP((sv.name||'')+(sv.englishName?' '+sv.englishName:''),'위원회');
         }
       });
       if(pending.length>0){
@@ -3588,7 +3573,7 @@
         return ['edu_committee','edu_notice_needed','edu_notice_active','edu_in_recovery'].includes(st.phase)||getStudentCurrentTotal(k)>=12||getStudentOverallTotal(k)>30;
       });
       let wb=document.getElementById('disc-warn');if(!wb){wb=document.createElement('div');wb.id='disc-warn';wb.style.cssText='margin:8px 0;padding:10px 14px;border-radius:10px;background:#fde8e8;border:1px solid #fca5a5;color:#7f1d1d;font-size:13px;font-weight:700;';const sc=document.getElementById('today-count');if(sc&&sc.closest('.card'))sc.closest('.card').after(wb);}
-      if(o30.length){wb.style.display='';wb.innerHTML='<b>생활교육위원회 대상:</b> '+o30.map(k=>{const s=students[k]||{};return esc(s.name||'')+' '+esc(s.englishName||'')+' '+esc(s.className||'')+' (미해소 '+getStudentCurrentTotal(k)+'점 / 원점수 '+getStudentOverallTotal(k)+'점)';}).join(' / ');}else{wb.style.display='none';}
+      if(o30.length){wb.style.display='';wb.innerHTML='<b>위원회 대상:</b> '+o30.map(k=>{const s=students[k]||{};return esc(s.name||'')+' '+esc(s.englishName||'')+' '+esc(s.className||'')+' (미해소 '+getStudentCurrentTotal(k)+'점 / 원점수 '+getStudentOverallTotal(k)+'점)';}).join(' / ');}else{wb.style.display='none';}
     }
 
 
@@ -3750,13 +3735,13 @@
       }
 
       try{
-        // 선도위원회 회부 판별: 2회차+ AND 비고에 "선도위원회" 포함
+        // 위원회 회부 판별: 2회차+ AND 비고에 "위원회" 포함
         const std = detentionStandards.find(d=>
           String(d.category||'')===String(record.category||'') &&
           String(d.violation||'')===String(record.violation||'')
         );
         const noteText = String(std ? std.note : '');
-        const hasCommitteeNote = noteText.includes('선도위원회') || noteText.includes('Disciplinary Committee');
+        const hasCommitteeNote = noteText.includes('위원회') || noteText.includes('Committee');
 
         // violationId 없는 구버전 entries도 category+violation으로 매칭
         const computedViolationId = (String(record.category||'')+'|||'+String(record.violation||'')).replace(/\s+/g,' ').trim();
@@ -3775,7 +3760,7 @@
         ).length;
         const isReferral = hasCommitteeNote && prevConfirmedCount >= 1;
 
-        // isReferral이면 점수 0으로 처리 (선도위원회 회부)
+        // isReferral이면 점수 0으로 처리 (위원회 회부)
         const updatePayload = {
           status:'확정',
           adminNote:String(record.adminNote || ''),
@@ -3814,7 +3799,7 @@
         }
 
         if (isReferral) {
-          toast('⚠️ 선도위원회 회부 처리됨 (0점) | Referred to Disciplinary Committee (0 pts)', 'warn');
+          toast('⚠️ 위원회 회부 처리됨 (0점) | Referred to Committee (0 pts)', 'warn');
         } else {
           toast('디텐션이 확정되었습니다.\nDetention entry confirmed.', 'ok');
         }
@@ -3917,6 +3902,95 @@
       ].join('\n');
     }
 
+    function safeDbKey(value){
+      return String(value || '').replace(/[.#$/\[\]]/g, '_');
+    }
+
+    function getNoticeCycleKey(studentKey, level){
+      const latestDate = String(getLatestConfirmedAt(studentKey) || '').slice(0,10).replace(/\D/g,'') || 'nodate';
+      return ['notice', safeDbKey(studentKey), safeDbKey(level), getCurrentYear(), latestDate].join('_');
+    }
+
+    async function upsertNoticeEntry(studentKey, level, fields, fixedNoticeKey){
+      const base = {
+        studentKey,
+        level,
+        year:getCurrentYear(),
+        createdAt:new Date().toISOString(),
+        cycleViolationsSnapshot:buildNoticeReasonText(studentKey)
+      };
+      if(fixedNoticeKey){
+        await db.ref(NOTICE_DB_PATH+'/'+fixedNoticeKey).update(Object.assign({}, fields));
+        return fixedNoticeKey;
+      }
+      const ao = findActiveNotice(studentKey, level);
+      if(ao && ao.key){
+        await db.ref(NOTICE_DB_PATH+'/'+ao.key).update(Object.assign({}, fields));
+        return ao.key;
+      }
+      const key = getNoticeCycleKey(studentKey, level);
+      await db.ref(NOTICE_DB_PATH+'/'+key).transaction(current => {
+        const cur = current || base;
+        return Object.assign({}, cur, fields, {
+          studentKey, level, year:getCurrentYear(),
+          cycleViolationsSnapshot: fields.cycleViolationsSnapshot || cur.cycleViolationsSnapshot || base.cycleViolationsSnapshot
+        });
+      });
+      return key;
+    }
+
+    let _mailPreviewAction = null;
+
+    function openMailPreview(config){
+      _mailPreviewAction = config || null;
+      const modal = document.getElementById('modal-mail-preview');
+      const to = document.getElementById('mail-preview-to');
+      const subj = document.getElementById('mail-preview-subject');
+      const body = document.getElementById('mail-preview-body');
+      const btn = document.getElementById('mail-preview-open-btn');
+      if(to) to.value = (config && config.to) || '';
+      if(subj) subj.value = (config && config.subject) || '';
+      if(body) body.value = (config && config.body) || '';
+      if(btn){ btn.disabled = false; btn.textContent = '메일 앱 열기 | Open Mail App'; }
+      if(modal) modal.style.display = 'flex';
+    }
+
+    function cancelMailPreview(){
+      const action = _mailPreviewAction;
+      _mailPreviewAction = null;
+      const modal = document.getElementById('modal-mail-preview');
+      if(modal) modal.style.display = 'none';
+      if(action && typeof action.onCancel === 'function') action.onCancel();
+    }
+
+    async function submitMailPreview(){
+      const action = _mailPreviewAction;
+      if(!action || typeof action.onSend !== 'function') return cancelMailPreview();
+      const to = (document.getElementById('mail-preview-to')?.value || '').trim();
+      const subject = document.getElementById('mail-preview-subject')?.value || '';
+      const body = document.getElementById('mail-preview-body')?.value || '';
+      if(!to) return toast('수신자를 입력해 주세요. | Please enter a recipient.', 'err');
+      const btn = document.getElementById('mail-preview-open-btn');
+      if(btn){ btn.disabled = true; btn.textContent = '처리 중... | Processing...'; }
+      try{
+        await action.onSend({to, subject, body});
+        _mailPreviewAction = null;
+        const modal = document.getElementById('modal-mail-preview');
+        if(modal) modal.style.display = 'none';
+      }catch(e){
+        console.error(e);
+        toast('메일 처리 중 오류가 발생했습니다. | Mail processing failed.', 'err');
+      }finally{
+        if(btn){ btn.disabled = false; btn.textContent = '메일 앱 열기 | Open Mail App'; }
+        if(action && typeof action.onFinish === 'function') action.onFinish();
+      }
+    }
+
+    function openMailWindow(to, subject, body){
+      const url = 'mailto:' + encodeURIComponent(to) + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+      try{ window.open(url, '_blank', 'noopener,noreferrer'); }catch(e){ console.error('mail open error:', e); }
+    }
+
     async function openMailAfterSave(url, savePromise){
       // DB 저장과 메일 열기를 병렬 처리: 사용자 액션 컨텍스트에서 즉시 열어야 팝업 차단 방지
       savePromise.catch(e => console.error('Notice save error:', e));
@@ -3924,57 +3998,6 @@
         window.open(url, '_blank', 'noopener,noreferrer');
       }catch(e){ console.error('mail open error:', e); }
       await savePromise;
-    }
-
-
-    let _mailPreviewResolve = null;
-    function buildMailtoUrl(to, subject, body){
-      return 'mailto:' + encodeURIComponent(normalizeMailList(to)) +
-        '?subject=' + encodeURIComponent(String(subject || '')) +
-        '&body=' + encodeURIComponent(String(body || ''));
-    }
-    function openMailPreviewDraft(draft){
-      return new Promise(resolve => {
-        _mailPreviewResolve = resolve;
-        const overlay = document.getElementById('mail-preview-overlay');
-        const titleEl = document.getElementById('mail-preview-title');
-        const toEl = document.getElementById('mail-preview-to');
-        const subjectEl = document.getElementById('mail-preview-subject');
-        const bodyEl = document.getElementById('mail-preview-body');
-        if(titleEl) titleEl.textContent = (draft && draft.title) || '메일 미리보기 | Mail Preview';
-        if(toEl) toEl.value = (draft && draft.to) || '';
-        if(subjectEl) subjectEl.value = (draft && draft.subject) || '';
-        if(bodyEl) bodyEl.value = (draft && draft.body) || '';
-        if(overlay) overlay.classList.add('open');
-        setTimeout(() => { try{ if(bodyEl) bodyEl.focus(); }catch(e){} }, 0);
-      });
-    }
-    function closeMailPreviewOverlay(){
-      const overlay = document.getElementById('mail-preview-overlay');
-      if(overlay) overlay.classList.remove('open');
-    }
-    function cancelMailPreview(){
-      closeMailPreviewOverlay();
-      if(_mailPreviewResolve){
-        const resolve = _mailPreviewResolve;
-        _mailPreviewResolve = null;
-        resolve(null);
-      }
-    }
-    function confirmMailPreview(){
-      const to = normalizeMailList(document.getElementById('mail-preview-to')?.value || '');
-      const subject = document.getElementById('mail-preview-subject')?.value || '';
-      const body = document.getElementById('mail-preview-body')?.value || '';
-      if(!to){
-        toast('수신자 이메일이 없습니다.\nRecipient email is required.', 'err');
-        return;
-      }
-      closeMailPreviewOverlay();
-      if(_mailPreviewResolve){
-        const resolve = _mailPreviewResolve;
-        _mailPreviewResolve = null;
-        resolve({to, subject, body});
-      }
     }
 
     function sendParentMailForDone(studentKey, level, doneMapKey){
@@ -4024,7 +4047,7 @@
       return normalizeMailList([student.fatherEmail, student.motherEmail].filter(Boolean).join(','));
     }
     async function sendParentMail(studentKey,level,fixedNoticeKey){
-      const lockKey = studentKey + '_' + level + '_parent';
+      const lockKey = 'parent_mail_' + studentKey + '_' + level;
       const student={key:studentKey,...(students[studentKey]||{})};
       const to=getParentNoticeMailTo(student);
       if(!to) return toast('학부모 이메일이 없습니다.','err');
@@ -4032,56 +4055,60 @@
       _noticeInProgress[lockKey] = true;
       const subj='[HIS - 학생부 : 디텐션 포인트 알림] [STL : Regarding detention point]';
       const body=buildParentMailBody(student);
-      try{
-        const draft = await openMailPreviewDraft({
-          title:'학부모 메일 미리보기 | Parent Mail Preview',
-          to, subject:subj, body
-        });
-        if(!draft){ toast('메일 보내기가 취소되었습니다.','warn'); return; }
-        const ao=findActiveNotice(studentKey,level);
-        const noticeRef = fixedNoticeKey
-          ? db.ref(NOTICE_DB_PATH+'/'+fixedNoticeKey)
-          : ao ? db.ref(NOTICE_DB_PATH+'/'+ao.key)
-          : db.ref(NOTICE_DB_PATH);
-        const sp = fixedNoticeKey||ao
-          ? noticeRef.update({parentMailAt:new Date().toISOString()})
-          : noticeRef.push({studentKey,level,year:getCurrentYear(),createdAt:new Date().toISOString(),parentMailAt:new Date().toISOString(),cycleViolationsSnapshot:buildNoticeReasonText(studentKey)});
-        await openMailAfterSave(buildMailtoUrl(draft.to,draft.subject,draft.body),sp);
-        const slM=getSchoolLevel((students[studentKey]||{}).className||'');if(slM)try{await recalculateStudentState(studentKey,slM);}catch(e){}
-        toast('학부모 메일 시간이 기록되었습니다.','ok');loadData();
-      }catch(e){console.error(e);toast('메일 준비 중 오류.','err');}finally{delete _noticeInProgress[lockKey];}
+      openMailPreview({
+        to, subject:subj, body,
+        onCancel:()=>{ delete _noticeInProgress[lockKey]; },
+        onFinish:()=>{ delete _noticeInProgress[lockKey]; },
+        onSend: async ({to, subject, body}) => {
+          await upsertNoticeEntry(studentKey, level, {
+            parentMailAt:new Date().toISOString(),
+            cycleViolationsSnapshot:buildNoticeReasonText(studentKey)
+          }, fixedNoticeKey);
+          openMailWindow(to, subject, body);
+          const slM=getSchoolLevel((students[studentKey]||{}).className||'');
+          if(slM) try{ await recalculateStudentState(studentKey,slM); }catch(e){}
+          toast('학부모 메일 시간이 기록되었습니다.','ok');
+          await loadData();
+        }
+      });
     }
 
     async function sendStudentTeacherMail(studentKey,level,fixedNoticeKey){
-      const lockKey = studentKey + '_' + level + '_student_teacher';
+      const lockKey = 'student_teacher_mail_' + studentKey + '_' + level;
       const student={key:studentKey,...(students[studentKey]||{})};
       const re2=level==='ms'?getTeacherEmailsByRole('ms_restore'):getTeacherEmailsByRole('hs_restore');
-      const to=normalizeMailList([student.selfEmail,student.homeroomTeacherEmail,...re2].filter(Boolean).join(','));
+      const to=[student.selfEmail,student.homeroomTeacherEmail,...re2].filter(Boolean).join(',');
       if(!to) return toast('학생/교사 이메일이 없습니다.','err');
       if (_noticeInProgress[lockKey]) return toast('처리 중입니다. 잠시 후 다시 시도해 주세요.', 'warn');
       _noticeInProgress[lockKey] = true;
       const subj='[HIS - 학생부 : 디텐션 포인트 알림] [STL : Regarding detention point]';
       const body=buildStudentTeacherMailBody(student,level);
-      try{
-        const draft = await openMailPreviewDraft({
-          title:'학생/교사 메일 미리보기 | Student/Teacher Mail Preview',
-          to, subject:subj, body
-        });
-        if(!draft){ toast('메일 보내기가 취소되었습니다.','warn'); return; }
-        const ao2=findActiveNotice(studentKey,level);
-        const noticeRef3=fixedNoticeKey?db.ref(NOTICE_DB_PATH+'/'+fixedNoticeKey):ao2?db.ref(NOTICE_DB_PATH+'/'+ao2.key):db.ref(NOTICE_DB_PATH);
-        const sp=(fixedNoticeKey||ao2)?noticeRef3.update({studentTeacherMailAt:new Date().toISOString()}):noticeRef3.push({studentKey,level,year:getCurrentYear(),createdAt:new Date().toISOString(),studentTeacherMailAt:new Date().toISOString(),cycleViolationsSnapshot:buildNoticeReasonText(studentKey)});
-        await openMailAfterSave(buildMailtoUrl(draft.to,draft.subject,draft.body),sp);
-        const slST=getSchoolLevel((students[String(studentKey||'')]||{}).className||'');if(slST)try{await recalculateStudentState(studentKey,slST);}catch(e){}
-        toast('학생/교사 메일 시간이 기록되었습니다.','ok');loadData();
-      }catch(e){console.error(e);toast('메일 준비 중 오류.','err');}finally{delete _noticeInProgress[lockKey];}
+      openMailPreview({
+        to, subject:subj, body,
+        onCancel:()=>{ delete _noticeInProgress[lockKey]; },
+        onFinish:()=>{ delete _noticeInProgress[lockKey]; },
+        onSend: async ({to, subject, body}) => {
+          await upsertNoticeEntry(studentKey, level, {
+            studentTeacherMailAt:new Date().toISOString(),
+            cycleViolationsSnapshot:buildNoticeReasonText(studentKey)
+          }, fixedNoticeKey);
+          openMailWindow(to, subject, body);
+          const slST=getSchoolLevel((students[String(studentKey||'')]||{}).className||'');
+          if(slST) try{ await recalculateStudentState(studentKey,slST); }catch(e){}
+          toast('학생/교사 메일 시간이 기록되었습니다.','ok');
+          await loadData();
+        }
+      });
     }
 
     async function completeNotice(studentKey,level){
       try{
-        const ao=findActiveNotice(studentKey,level);
-        if(!ao){await db.ref(NOTICE_DB_PATH).push({studentKey,level,year:getCurrentYear(),createdAt:new Date().toISOString(),completedAt:new Date().toISOString(),completedBy:teacher.name||'',completedByEmail:teacher.email||'',cycleViolationsSnapshot:buildNoticeReasonText(studentKey)});}
-        else{await db.ref(NOTICE_DB_PATH+'/'+ao.key).update({completedAt:new Date().toISOString(),completedBy:teacher.name||'',completedByEmail:teacher.email||'',cycleViolationsSnapshot:buildNoticeReasonText(studentKey)});}
+        await upsertNoticeEntry(studentKey, level, {
+          completedAt:new Date().toISOString(),
+          completedBy:teacher.name||'',
+          completedByEmail:teacher.email||'',
+          cycleViolationsSnapshot:buildNoticeReasonText(studentKey)
+        });
         toast('알림 완료가 저장되었습니다.','ok');
         const sLevel2 = getSchoolLevel((students[String(studentKey||'')] || {}).className||'');
         if(sLevel2){ try{ await recalculateStudentState(String(studentKey||''), sLevel2); }catch(e){} }
@@ -4156,9 +4183,16 @@
           completedAt: new Date().toISOString()
         };
 
-        await db.ref(RECOVERY_DB_PATH).push(payload);
-        toast('회복교육 완료가 저장되었습니다.\nRecovery completion saved.', 'ok');
-        // recalculateStudentState: 생활교육위원회 상태 보존하면서 회복교육 처리
+        const completedNoticeObj = findLatestCompletedNotice(studentKey, level);
+        const noticeKeyForRecovery = completedNoticeObj ? completedNoticeObj.key : 'no_notice';
+        const recoveryKey = ['recovery', safeDbKey(studentKey), safeDbKey(level), curYear, safeDbKey(noticeKeyForRecovery), String(currentTotalBefore), String(recoveryTotal)].join('_');
+        const txResult = await db.ref(RECOVERY_DB_PATH + '/' + recoveryKey).transaction(current => current || payload);
+        if(!txResult || txResult.committed === false){
+          toast('이미 저장된 회복교육 기록입니다.\nThis restorative education record is already saved.', 'warn');
+        } else {
+          toast('회복교육 완료가 저장되었습니다.\nRestorative Education completion saved.', 'ok');
+        }
+        // recalculateStudentState: 위원회 상태 보존하면서 회복교육 처리
         try{ await recalculateStudentState(studentKey, level); }catch(e){ console.error(e); }
         loadData();
       }catch(e){
