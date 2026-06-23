@@ -364,6 +364,7 @@
     <div class="inline-actions">
       <button class="btn btn-secondary" onclick="loadAllData()">새로고침 | Refresh</button>
       <button class="btn btn-secondary" onclick="manualRecalculateCycleStates()">상태 재계산 | Recalculate State</button>
+      <button class="btn btn-secondary" onclick="exportAdminJson()">JSON 내보내기 | Export JSON</button>
       <button class="btn btn-danger" onclick="confirmResetDB()" style="background:#dc2626;color:#fff;font-weight:700;">DB 초기화 | Reset DB</button>
       <a href="admin.html" class="btn btn-secondary" style="text-decoration:none;display:inline-flex;align-items:center;">관리자 메인 | Admin</a>
       <button class="btn btn-danger" onclick="logoutAdmin()">로그아웃 | Logout</button>
@@ -395,6 +396,7 @@
           <input id="student-data-search" class="edit-input" placeholder="예: 김사랑 / Saiyah / 7A_김사랑 / 10B | Search student">
           <button class="btn btn-primary" onclick="runStudentDataSearch()">검색 | Search</button>
           <button class="btn btn-secondary" onclick="clearStudentDataSearch()">비우기 | Clear</button>
+          <button class="btn btn-secondary" onclick="exportStudentDataJson()">검색결과 JSON | Export Result</button>
           <button id="btn-save-student-data" class="btn btn-primary" onclick="saveStudentDataChanges()" disabled style="opacity:.4;cursor:not-allowed;">저장할 내용 없음</button>
         </div>
         <div id="student-data-result" class="student-data-empty">
@@ -725,6 +727,117 @@
     document.getElementById('student-data-search')?.addEventListener('input', function(){
       if (!String(this.value || '').trim()) clearStudentDataSearch(false);
     });
+
+
+    function cleanAdminRowsForExport(rows){
+      return (rows || []).map(function(row){
+        return _payload(row);
+      });
+    }
+
+    function keyedAdminRows(rows){
+      const out = {};
+      (rows || []).forEach(function(row){
+        if (!row || !row.key) return;
+        out[row.key] = _payload(row);
+      });
+      return out;
+    }
+
+    function downloadJsonFile(filename, data){
+      const text = JSON.stringify(data, null, 2);
+      const blob = new Blob([text], { type: 'application/json;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+    }
+
+    function safeFilePart(text){
+      return String(text || '')
+        .trim()
+        .replace(/[^0-9A-Za-z가-힣_\-]+/g, '_')
+        .replace(/_+/g, '_')
+        .replace(/^_|_$/g, '')
+        .slice(0, 80) || 'data';
+    }
+
+    function makeAdminExportData(){
+      return {
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        source: 'detention-admin',
+        paths: {
+          detentionEntries: keyedAdminRows(entryRows),
+          detentionNotices: keyedAdminRows(noticeRows),
+          recoveryEntries: keyedAdminRows(recoveryRows),
+          committeeRecords: keyedAdminRows(committeeRows),
+          studentCycleState: keyedAdminRows(cycleRows)
+        },
+        counts: {
+          detentionEntries: (entryRows || []).length,
+          detentionNotices: (noticeRows || []).length,
+          recoveryEntries: (recoveryRows || []).length,
+          committeeRecords: (committeeRows || []).length,
+          studentCycleState: (cycleRows || []).length
+        }
+      };
+    }
+
+    function exportAdminJson(){
+      try{
+        const data = makeAdminExportData();
+        const stamp = new Date().toISOString().slice(0,19).replace(/[:T]/g,'-');
+        downloadJsonFile('his-detention-db-' + stamp + '.json', data);
+        toast('JSON 내보내기 완료 | JSON exported.', 'ok');
+      }catch(err){
+        console.error(err);
+        toast('JSON 내보내기 실패: ' + (err && err.message ? err.message : err), 'err');
+      }
+    }
+
+    function exportStudentDataJson(){
+      try{
+        const input = document.getElementById('student-data-search');
+        const query = String(studentDataLastQuery || (input && input.value) || '').trim();
+        if(!query){
+          toast('먼저 학생을 검색해 주세요. | Search a student first.', 'err');
+          return;
+        }
+        const matched = getStudentDataMatches(query);
+        const data = {
+          version: 1,
+          exportedAt: new Date().toISOString(),
+          source: 'detention-admin-student-data',
+          query: query,
+          matchedStudentKeys: matched.keys,
+          paths: {
+            detentionEntries: keyedAdminRows(matched.entries),
+            detentionNotices: keyedAdminRows(matched.notices),
+            recoveryEntries: keyedAdminRows(matched.recovery),
+            committeeRecords: keyedAdminRows(matched.committee),
+            studentCycleState: keyedAdminRows(matched.states)
+          },
+          counts: {
+            detentionEntries: matched.entries.length,
+            detentionNotices: matched.notices.length,
+            recoveryEntries: matched.recovery.length,
+            committeeRecords: matched.committee.length,
+            studentCycleState: matched.states.length
+          }
+        };
+        const stamp = new Date().toISOString().slice(0,19).replace(/[:T]/g,'-');
+        downloadJsonFile('his-detention-student-' + safeFilePart(query) + '-' + stamp + '.json', data);
+        toast('검색 결과 JSON 내보내기 완료 | Search result JSON exported.', 'ok');
+      }catch(err){
+        console.error(err);
+        toast('검색 결과 JSON 내보내기 실패: ' + (err && err.message ? err.message : err), 'err');
+      }
+    }
 
     async function loadAllData(){
       try{

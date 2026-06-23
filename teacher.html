@@ -1847,12 +1847,7 @@
     }
 
     function renderStudentOptions(){
-      const list = Object.entries(students)
-        .map(([key, v]) => ({ key, ...v }))
-        .sort((a,b) =>
-          String(a.className || '').localeCompare(String(b.className || ''), 'ko', { numeric:true }) ||
-          String(a.name || '').localeCompare(String(b.name || ''), 'ko')
-        );
+      const list = getStudentCatalog();
 
       const dataList = document.getElementById('student-list');
       studentSearchMap = {};
@@ -1864,12 +1859,7 @@
     }
 
     function renderAllStudentSearchOptions(){
-      const list = Object.entries(students)
-        .map(([key, v]) => ({ key, ...v }))
-        .sort((a,b) =>
-          String(a.className || '').localeCompare(String(b.className || ''), 'ko', { numeric:true }) ||
-          String(a.name || '').localeCompare(String(b.name || ''), 'ko')
-        );
+      const list = getStudentCatalog();
 
       const dataList = document.getElementById('all-student-list');
       if (!dataList) return;
@@ -2421,13 +2411,104 @@
       }
     }
 
+
+    // ── 조회 탭 학생 목록 보정 ──
+    // 학생 명단(students)에 없더라도 디텐션/알림/회복교육/상태 기록에 남아 있는 학생은
+    // 조회 화면에서 확인할 수 있도록 임시 학생 프로필을 구성한다.
+    function normalizeStudentKeyText(value){
+      return String(value || '').trim();
+    }
+
+    function inferClassNameFromStudentKey(studentKey){
+      const key = normalizeStudentKeyText(studentKey);
+      const m = key.match(/^(\d{1,2}[A-Z]?)[_\-\s]/i) || key.match(/^(\d{1,2}[A-Z]?)/i);
+      return m ? m[1].toUpperCase() : '';
+    }
+
+    function inferNameFromStudentKey(studentKey, className){
+      let key = normalizeStudentKeyText(studentKey);
+      const cls = normalizeStudentKeyText(className || inferClassNameFromStudentKey(key));
+      if(cls && key.toUpperCase().startsWith(cls.toUpperCase())){
+        key = key.slice(cls.length).replace(/^[_\-\s]+/, '');
+      }
+      return key.replace(/_/g, ' ').replace(/\s+/g, ' ').trim();
+    }
+
+    function mergeStudentProfile(base, patch){
+      base = base || {};
+      patch = patch || {};
+      ['name','englishName','className','parentEmail','studentEmail','key'].forEach(function(field){
+        const v = patch[field];
+        if((base[field] === undefined || base[field] === null || String(base[field]).trim() === '') && v !== undefined && v !== null && String(v).trim() !== ''){
+          base[field] = v;
+        }
+      });
+      base.fromRecords = !!(base.fromRecords || patch.fromRecords);
+      return base;
+    }
+
+    function getStudentCatalog(){
+      const map = {};
+      Object.entries(students || {}).forEach(function([key, value]){
+        map[key] = { key:key, ...(value || {}), fromRecords:false };
+      });
+
+      function addRecordStudent(record){
+        record = record || {};
+        const key = normalizeStudentKeyText(record.studentKey || (record.studentName || record.className ? studentKey(record.studentName || '', record.className || '') : ''));
+        if(!key) return;
+        const cls = normalizeStudentKeyText(record.className || inferClassNameFromStudentKey(key));
+        const profile = {
+          key:key,
+          name: normalizeStudentKeyText(record.studentName || record.name || inferNameFromStudentKey(key, cls)),
+          englishName: normalizeStudentKeyText(record.englishName || ''),
+          className: cls,
+          parentEmail: normalizeStudentKeyText(record.parentEmail || ''),
+          studentEmail: normalizeStudentKeyText(record.studentEmail || ''),
+          fromRecords:true
+        };
+        map[key] = mergeStudentProfile(map[key] || { key:key, fromRecords:true }, profile);
+      }
+
+      Object.values(entries || {}).forEach(addRecordStudent);
+      Object.values(recoveryEntries || {}).forEach(addRecordStudent);
+      Object.values(noticeEntries || {}).forEach(addRecordStudent);
+      Object.values(committeeEntries || {}).forEach(function(record){
+        record = record || {};
+        if(record.studentKey){
+          addRecordStudent(record);
+        }else if(record.entryKey && entries && entries[record.entryKey]){
+          addRecordStudent(entries[record.entryKey]);
+        }
+      });
+      Object.entries(cycleStates || {}).forEach(function([stateKey, state]){
+        const studentPart = String(stateKey || '').replace(/_(ms|hs)$/i, '');
+        if(studentPart) addRecordStudent({ studentKey: studentPart, ...(state || {}) });
+      });
+
+      return Object.values(map)
+        .filter(function(s){ return s && s.key && (s.name || s.className || s.fromRecords); })
+        .sort(function(a,b){
+          return String(a.className || '').localeCompare(String(b.className || ''), 'ko', { numeric:true }) ||
+                 String(a.name || '').localeCompare(String(b.name || ''), 'ko') ||
+                 String(a.key || '').localeCompare(String(b.key || ''), 'ko');
+        });
+    }
+
+    function getStudentProfile(studentKey){
+      const key = normalizeStudentKeyText(studentKey);
+      if(!key) return null;
+      if(students && students[key]) return { key:key, ...(students[key] || {}), fromRecords:false };
+      return getStudentCatalog().find(function(s){ return String(s.key) === key; }) || null;
+    }
+
     // ── 전체 학생관리 탭 ──
 
     // 학반 필터 옵션 구성
     function renderStudentClassFilter(){
       const sel = document.getElementById('student-mgmt-class');
       if(!sel) return;
-      const classes = [...new Set(Object.values(students).map(s=>String(s.className||'').trim()).filter(Boolean))]
+      const classes = [...new Set(getStudentCatalog().map(s=>String(s.className||'').trim()).filter(Boolean))]
         .sort((a,b)=>a.localeCompare(b,'ko',{numeric:true}));
       sel.innerHTML = '<option value="">전체 반</option>' + classes.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');
     }
@@ -2465,16 +2546,17 @@
 
       // 학반별로 그룹핑
       const classMap = {};
-      Object.entries(students||{}).forEach(([key, s]) => {
+      getStudentCatalog().forEach(s => {
         if(!s||!s.name) return;
+        const key = s.key;
         const cls   = String(s.className||'').trim();
         const grade = parseInt(cls)||0;
         if(level==='ms' && grade>=10) return;
         if(level==='hs' && grade<10) return;
         if(clsFilter && cls!==clsFilter) return;
-        if(q && ![s.name,s.englishName].some(v=>String(v||'').toLowerCase().includes(q))) return;
+        if(q && ![s.name,s.englishName,s.className,s.key,s.parentEmail,s.studentEmail].some(v=>String(v||'').toLowerCase().includes(q))) return;
         if(!classMap[cls]) classMap[cls]=[];
-        classMap[cls].push({key,...s});
+        classMap[cls].push(s);
       });
 
       const sortedClasses = Object.keys(classMap).sort((a,b)=>a.localeCompare(b,'ko',{numeric:true}));
@@ -2493,7 +2575,7 @@
           const bg = i%2===0?'#fff':'#f7faff';
           return `<tr style="background:${bg}">
             <td style="font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.name||'')}</td>
-            <td style="font-size:11px;color:var(--sb);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.englishName||'')}</td>
+            <td style="font-size:11px;color:var(--sb);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.englishName||'')}${s.fromRecords ? '<span style="margin-left:4px;color:#b45309;font-size:10px">기록</span>' : ''}</td>
             <td style="text-align:center;font-weight:800;font-size:13px;color:${ptColor};white-space:nowrap">${current}</td>
             <td style="text-align:center;font-size:11px;color:var(--sb);white-space:nowrap">${overall}</td>
             <td style="text-align:center;padding:0 2px;white-space:nowrap">
@@ -2586,16 +2668,17 @@
       const clsFilter = (document.getElementById('student-mgmt-class')?.value||'');
 
       const classMap = {};
-      Object.entries(students||{}).forEach(([key, s]) => {
+      getStudentCatalog().forEach(s => {
         if(!s||!s.className) return;
+        const key = s.key;
         const cls   = String(s.className).trim();
         const grade = parseInt(cls)||0;
         if(level==='ms' && grade>=10) return;
         if(level==='hs' && grade<10) return;
         if(clsFilter && cls!==clsFilter) return;
-        if(q && ![s.name,s.englishName].some(v=>String(v||'').toLowerCase().includes(q))) return;
+        if(q && ![s.name,s.englishName,s.className,s.key,s.parentEmail,s.studentEmail].some(v=>String(v||'').toLowerCase().includes(q))) return;
         if(!classMap[cls]) classMap[cls]=[];
-        classMap[cls].push({key,...s});
+        classMap[cls].push(s);
       });
 
       const sortedClasses = Object.keys(classMap).sort((a,b)=>a.localeCompare(b,'ko',{numeric:true}));
@@ -2726,10 +2809,17 @@
 
     function renderStudentDetail(studentKey){
       const panel = document.getElementById('student-detail-panel');
-      const s = students[studentKey];
+      const s = getStudentProfile(studentKey);
       if(!s || !panel) return;
 
-      const matchStudent = r => String(r.studentKey||'')===String(studentKey) || String(r.studentName||'')===String(s.name||'');
+      const norm = v => String(v || '').trim().toLowerCase().replace(/[_\s]+/g, ' ');
+      const selectedKeyNorm = norm(studentKey);
+      const selectedNameNorm = norm(s.name);
+      const matchStudent = r => {
+        const rKey = norm(r.studentKey);
+        const rName = norm(r.studentName || r.name);
+        return rKey === selectedKeyNorm || (!!selectedNameNorm && rName === selectedNameNorm) || (!!selectedNameNorm && rKey.includes(selectedNameNorm));
+      };
 
       const detList = Object.entries(entries||{})
         .map(([key, value]) => ({ key, ...value }))
@@ -2981,7 +3071,7 @@
         </div>`;
     }
     function goToDetentionEntry(studentKey){
-      const s = students[studentKey];
+      const s = getStudentProfile(studentKey);
       if(!s) return;
       const label = `${String(s.className||'-')} · ${String(s.name||'')} · ${String(s.englishName||'')}`;
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
