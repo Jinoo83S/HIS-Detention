@@ -564,110 +564,59 @@
     <div id="tab-notify" class="tab-panel">
       <div class="card">
         <div class="card-title">디텐션 알림 | Detention Notice</div>
-        <div class="section-title-row" style="margin-top:6px;"><span class="stitle">중등 | Middle School</span></div>
         <div class="notice">
-          <div>현재 잔여 디텐션점수가 3점 이상인 중등 학생 목록입니다.</div>
-          <div>This list shows middle school students whose remaining detention points is 3 points or more.</div>
+          <div>현재 잔여 디텐션점수가 3점 이상인 학생 목록입니다.</div>
+          <div>This list shows students whose remaining detention points is 3 points or more.</div>
         </div>
 
         <div class="section-title-row" style="margin-top:6px;">
           <span class="stitle">진행 중 | Active</span>
           <div class="section-btn-group">
-            <button class="btn btn-secondary btn-xs" onclick="setNoticeExpanded('ms', true)">전체 펼침</button>
-            <button class="btn btn-secondary btn-xs" onclick="setNoticeExpanded('ms', false)">전체 접기</button>
+            <button class="btn btn-secondary btn-xs" onclick="setNoticeExpanded('all', true)">전체 펼침</button>
+            <button class="btn btn-secondary btn-xs" onclick="setNoticeExpanded('all', false)">전체 접기</button>
           </div>
         </div>
         <div class="tbl-wrap">
           <table style="table-layout:fixed;">
             <thead>
               <tr>
-                <th class="nowrap" style="width:16%;">학생</th>
+                <th class="nowrap" style="width:15%;">학생</th>
                 <th class="nowrap tc" style="width:6%;">학반</th>
-                <th style="width:22%;">사유</th>
-                <th class="nowrap tc" style="width:7%;">잔여</th>
-                <th class="nowrap tc" style="width:7%;">누적</th>
+                <th class="nowrap tc" style="width:6%;">구분</th>
+                <th style="width:21%;">사유</th>
+                <th class="nowrap tc" style="width:6%;">잔여</th>
+                <th class="nowrap tc" style="width:6%;">누적</th>
                 <th class="nowrap" style="width:13%;">학부모 메일</th>
                 <th class="nowrap" style="width:13%;">학생/교사 메일</th>
-                <th class="nowrap tc" style="width:9%;">위원회</th>
+                <th class="nowrap tc" style="width:7%;">위원회</th>
                 <th class="nowrap tc" style="width:7%;">완료</th>
               </tr>
             </thead>
-            <tbody id="notify-ms-active-tbody"></tbody>
+            <tbody id="notify-active-tbody"></tbody>
           </table>
         </div>
 
         <div class="section-title-row notice-divider"><span class="stitle">완료 | Completed</span></div>
-        <div class="tbl-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th class="nowrap" style="width:16%">학생</th>
-                <th class="nowrap tc" style="width:6%">학반</th>
-                <th style="width:23%">사유</th>
-                <th class="nowrap tc" style="width:6%">잔여</th>
-                <th class="nowrap tc" style="width:6%">누적</th>
-                <th class="nowrap" style="width:13%">학부모 메일</th>
-                <th class="nowrap" style="width:13%">학생/교사 메일</th>
-                <th class="nowrap tc" style="width:10%">완료</th>
-                <th class="nowrap tc" style="width:7%">처리</th>
-              </tr>
-            </thead>
-            <tbody id="notify-ms-done-tbody"></tbody>
-          </table>
-        </div>
-      </div>
-      <div class="card" style="margin-top:16px;">
-        <div class="card-title">고등 | High School</div>
-        <div class="notice">
-          <div>현재 잔여 디텐션점수가 3점 이상인 고등 학생 목록입니다.</div>
-          <div>This list shows high school students whose remaining detention points is 3 points or more.</div>
-        </div>
-
-        <div class="section-title-row" style="margin-top:6px;">
-          <span class="stitle">진행 중 | Active</span>
-          <div class="section-btn-group">
-            <button class="btn btn-secondary btn-xs" onclick="setNoticeExpanded('hs', true)">전체 펼침</button>
-            <button class="btn btn-secondary btn-xs" onclick="setNoticeExpanded('hs', false)">전체 접기</button>
-          </div>
-        </div>
         <div class="tbl-wrap">
           <table style="table-layout:fixed;">
             <thead>
               <tr>
-                <th class="nowrap" style="width:16%;">학생</th>
-                <th class="nowrap tc" style="width:6%;">학반</th>
-                <th style="width:22%;">사유</th>
-                <th class="nowrap tc" style="width:7%;">잔여</th>
-                <th class="nowrap tc" style="width:7%;">누적</th>
-                <th class="nowrap" style="width:13%;">학부모 메일</th>
-                <th class="nowrap" style="width:13%;">학생/교사 메일</th>
-                <th class="nowrap tc" style="width:9%;">위원회</th>
-                <th class="nowrap tc" style="width:7%;">완료</th>
-              </tr>
-            </thead>
-            <tbody id="notify-hs-active-tbody"></tbody>
-          </table>
-        </div>
-
-        <div class="section-title-row notice-divider"><span class="stitle">완료 | Completed</span></div>
-        <div class="tbl-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th class="nowrap" style="width:16%">학생</th>
+                <th class="nowrap" style="width:15%">학생</th>
                 <th class="nowrap tc" style="width:6%">학반</th>
-                <th style="width:23%">사유</th>
+                <th class="nowrap tc" style="width:6%">구분</th>
+                <th style="width:22%">사유</th>
                 <th class="nowrap tc" style="width:6%">잔여</th>
                 <th class="nowrap tc" style="width:6%">누적</th>
-                <th class="nowrap" style="width:13%">학부모 메일</th>
-                <th class="nowrap" style="width:13%">학생/교사 메일</th>
-                <th class="nowrap tc" style="width:10%">완료</th>
-                <th class="nowrap tc" style="width:7%">처리</th>
+                <th class="nowrap" style="width:12%">학부모 메일</th>
+                <th class="nowrap" style="width:12%">학생/교사 메일</th>
+                <th class="nowrap tc" style="width:9%">완료</th>
+                <th class="nowrap tc" style="width:6%">처리</th>
               </tr>
             </thead>
-            <tbody id="notify-hs-done-tbody"></tbody>
+            <tbody id="notify-done-tbody"></tbody>
           </table>
         </div>
+        <div id="notify-done-pager" class="pager"></div>
       </div>
     </div>
 
@@ -965,6 +914,7 @@
     let allRecordsPage = 1;
     let allRecoveryPage = 1;
     let recoveryDonePages = { ms: 1, hs: 1 };
+    let noticeDonePage = 1;
 
     /* =============================================================
      * teacher.html 구조 안내
@@ -1965,15 +1915,19 @@
     }
 
     function toggleNoticeRow(level, key){
+      if(!expandedNoticeKeys[level]) expandedNoticeKeys[level] = new Set();
       if (expandedNoticeKeys[level].has(key)) expandedNoticeKeys[level].delete(key);
       else expandedNoticeKeys[level].add(key);
-      renderNotifyTableByLevel(level);
+      renderNotifyTables();
     }
 
     function setNoticeExpanded(level, expanded){
-      const list = getNoticeCandidates(level);
-      expandedNoticeKeys[level] = expanded ? new Set(list.map(s => s.key)) : new Set();
-      renderNotifyTableByLevel(level);
+      const levels = level === 'all' ? getVisibleNoticeLevels() : [level];
+      levels.forEach(lv => {
+        const activeKeys = getNoticeActiveListByLevel(lv).map(s => s.key);
+        expandedNoticeKeys[lv] = expanded ? new Set(activeKeys) : new Set();
+      });
+      renderNotifyTables();
     }
 
     function toggleRecoveryRow(level, key){
@@ -2423,8 +2377,7 @@
 
     function stripeAll(){
       ['confirm-pending-tbody','confirm-processed-tbody',
-       'notify-ms-active-tbody','notify-ms-done-tbody',
-       'notify-hs-active-tbody','notify-hs-done-tbody',
+       'notify-active-tbody','notify-done-tbody',
        'recovery-ms-active-tbody','recovery-ms-done-tbody',
        'recovery-hs-active-tbody','recovery-hs-done-tbody',
        'all-records-tbody','all-recovery-tbody',
@@ -3131,51 +3084,67 @@
 
     document.addEventListener('keydown', e => { if(e.key==='Escape') closeStudentModal(); });
 
-    function renderNotifyTables(){
-      window._doneNoticeMap = {};
-      renderNotifyTableByLevel('ms');
-      renderNotifyTableByLevel('hs');
-      stripeAll();
+    function getVisibleNoticeLevels(){
+      const levels = ['ms','hs'].filter(level => canManageNoticeLevel(level));
+      return levels.length ? levels : ['ms','hs'];
     }
 
-    function renderNotifyTableByLevel(level){
-      const activeTb = document.getElementById(level === 'ms' ? 'notify-ms-active-tbody' : 'notify-hs-active-tbody');
-      const doneTb = document.getElementById(level === 'ms' ? 'notify-ms-done-tbody' : 'notify-hs-done-tbody');
+    function getNoticeActiveListByLevel(level){
       const candidates = getNoticeCandidates(level);
-      // active: 미완료 notice 있는 학생
       const activeList = candidates.filter(s => !!s.noticeDocKey && !s.notice.completedAt);
-      // pending: active notice 없는데 새 notice가 필요한 학생
-      // 핵심 판별: 마지막 확정 entry의 시간이 마지막 notice완료 AND 마지막 recovery완료보다 이후
       const pendingNewList = candidates.filter(s => {
-        if (s.noticeDocKey) return false; // active notice 이미 있음
+        if (s.noticeDocKey) return false;
         const completedObj = findLatestCompletedNotice(s.key, level);
-        if (!completedObj) return true; // 처음 알림이 필요한 신규
-        
-        // 가장 최근 확정 entry 시간
+        if (!completedObj) return true;
+
         const lastConfirmed = getConfirmedEntriesForStudent(s.key)[0];
         if (!lastConfirmed) return false;
         const lastConfirmedAt = String(lastConfirmed.confirmedAt || lastConfirmed.createdAt || '');
         const lastNoticeAt = String(completedObj.notice.completedAt || '');
-        
-        // 마지막 recovery 시간
+
         const allRecoveries = Object.values(recoveryEntries||{})
-          .filter(r => String(r.studentKey||'') === String(s.key) && String(r.level||'') === level)
+          .filter(r => String(r.studentKey||'') === String(s.key) && isRecordInLevel(r, level))
           .sort((a,b) => String(b.completedAt||'').localeCompare(String(a.completedAt||'')));
         const lastRecoveryAt = allRecoveries.length ? String(allRecoveries[0].completedAt||'') : '';
-        
-        // 신규 사이클: 마지막 확정 entry가 notice완료 이후에 생성됨 AND 현재 점수 >= 3
-        const isNewCycle = lastConfirmedAt > lastNoticeAt;
+        const baselineAt = [lastNoticeAt, lastRecoveryAt].filter(Boolean).sort().pop() || lastNoticeAt;
+        const isNewCycle = lastConfirmedAt > baselineAt;
         return isNewCycle && s.currentTotal >= 3;
       });
-      const finalActiveList = [...activeList, ...pendingNewList];
-      const doneList = getCompletedNoticeList(level);
+      return [...activeList, ...pendingNewList]
+        .map(s => ({...s, _level:level, _levelLabel:level==='ms'?'중등':'고등'}));
+    }
 
-      function renderRows(arr){
-        if (!arr.length) return `<tr><td colspan="9" class="empty">해당 학생이 없습니다. | No matching students.</td></tr>`;
+    function getAllNoticeActiveList(){
+      return getVisibleNoticeLevels()
+        .flatMap(level => getNoticeActiveListByLevel(level))
+        .sort((a,b)=>{
+          const ad = String(a.notice?.completedAt || a.notice?.parentMailAt || a.latestConfirmedAt || '');
+          const bd = String(b.notice?.completedAt || b.notice?.parentMailAt || b.latestConfirmedAt || '');
+          return bd.localeCompare(ad) || String(a.className||'').localeCompare(String(b.className||'')) || String(a.name||'').localeCompare(String(b.name||''));
+        });
+    }
+
+    function getAllCompletedNoticeList(){
+      return getVisibleNoticeLevels()
+        .flatMap(level => getCompletedNoticeList(level).map(s => ({...s, _level:level, _levelLabel:level==='ms'?'중등':'고등'})))
+        .sort((a,b)=>String(b.notice?.completedAt||'').localeCompare(String(a.notice?.completedAt||'')) || String(a.className||'').localeCompare(String(b.className||'')));
+    }
+
+    function renderNotifyTables(){
+      window._doneNoticeMap = {};
+      const activeTb = document.getElementById('notify-active-tbody');
+      const doneTb = document.getElementById('notify-done-tbody');
+      if(!activeTb || !doneTb) return;
+
+      const finalActiveList = getAllNoticeActiveList();
+      const doneList = getAllCompletedNoticeList();
+
+      function renderActiveRows(arr){
+        if (!arr.length) return `<tr><td colspan="10" class="empty">해당 학생이 없습니다. | No matching students.</td></tr>`;
 
         return arr.map(s => {
-          const expanded = expandedNoticeKeys[level].has(s.key);
-          // 위원회 상태 표시
+          const level = s._level || getSchoolLevel(s.className || '') || 'ms';
+          const expanded = expandedNoticeKeys[level] && expandedNoticeKeys[level].has(s.key);
           const cs = s.state && s.state.committeeStatus;
           const committeeCell = cs === 'pending_referral'
             ? '<span style="display:inline-block;padding:3px 7px;border-radius:6px;font-size:11px;font-weight:700;background:#fde8e8;color:#7f1d1d;">위원회</span>'
@@ -3186,6 +3155,7 @@
             <tr class="summary-row" onclick="toggleNoticeRow('${level}','${esc(s.key)}')">
               <td class="nowrap">${esc(sName(s.name||'',s.englishName||''))}</td>
               <td class="nowrap tc">${esc(s.className || '')}</td>
+              <td class="nowrap tc">${esc(s._levelLabel || (level==='ms'?'중등':'고등'))}</td>
               <td><span class="cell-reason-preview">${esc(buildNoticeReasonText(s.key).split('\n')[0])}</span></td>
               <td class="nowrap tc">${s.currentTotal}</td>
               <td class="nowrap tc">${s.overallTotal}</td>
@@ -3204,7 +3174,7 @@
               </td>
             </tr>
             <tr class="detail-row ${expanded ? 'show' : ''}">
-              <td colspan="9">
+              <td colspan="10">
                 <div class="detail-box">
                   <div class="detail-section">
                     <div class="detail-title">사유 | Reasons</div>
@@ -3212,7 +3182,8 @@
                   </div>
                   <div class="detail-section">
                     <div class="detail-title">알림 상태 | Notice Status</div>
-                    <div class="detail-content">최신 확정 시간: ${fmt(s.latestConfirmedAt)}
+                    <div class="detail-content">구분: ${esc(s._levelLabel || (level==='ms'?'중등':'고등'))}
+최신 확정 시간: ${fmt(s.latestConfirmedAt)}
 학부모 메일: ${s.notice.parentMailAt ? fmt(s.notice.parentMailAt) : '-'}
 학생/교사 메일: ${s.notice.studentTeacherMailAt ? fmt(s.notice.studentTeacherMailAt) : '-'}
 완료 시간: ${s.notice.completedAt ? fmt(s.notice.completedAt) : '-'}
@@ -3225,19 +3196,22 @@
         }).join('');
       }
 
-      activeTb.innerHTML = renderRows(finalActiveList);
-      // 완료된 목록: 완료 버튼 없음, 메일도 재발송 불필요
+      activeTb.innerHTML = renderActiveRows(finalActiveList);
+
       if (!doneList.length){
-        doneTb.innerHTML = '<tr><td colspan="9" class="empty">해당 학생이 없습니다. | No matching students.</td></tr>';
+        doneTb.innerHTML = '<tr><td colspan="10" class="empty">해당 학생이 없습니다. | No matching students.</td></tr>';
+        renderPager('notify-done-pager', 0, 1, 'setNoticeDonePage');
       } else {
-      // _doneNoticeMap은 renderNotifyTables()에서 일괄 초기화
-        const canEditDate = canEditRecordDate(); // admin 전용, master 제외
-        doneTb.innerHTML = doneList.map((s,doneIdx) => {
+        noticeDonePage = clampPage(noticeDonePage, doneList.length, PAGE_SIZE);
+        const pageData = slicePage(doneList, noticeDonePage, PAGE_SIZE);
+        renderPager('notify-done-pager', doneList.length, pageData.page, 'setNoticeDonePage');
+        const canEditDate = canEditRecordDate();
+        doneTb.innerHTML = pageData.rows.map((s,doneIdx) => {
+          const level = s._level || getSchoolLevel(s.className || '') || 'ms';
           const expanded = expandedNoticeKeys[level] && expandedNoticeKeys[level].has(s.key+'_done');
-          const doneMapKey = level+'_done_'+doneIdx;
+          const doneMapKey = 'done_'+String(s.noticeKey||((pageData.page-1)*PAGE_SIZE+doneIdx));
           window._doneNoticeMap[doneMapKey] = s.noticeKey||'';
 
-          // 날짜 셀: admin은 date input, 일반은 텍스트
           function dateCell(val, field){
             const fmtd = val ? fmt(val) : '-';
             if(!canEditDate) return `<td class="nowrap" style="font-size:11px;color:var(--sb)">${fmtd}</td>`;
@@ -3255,9 +3229,10 @@
           return `<tr class="summary-row" onclick="toggleNoticeRow('${level}','${esc(s.key)}_done')">
             <td class="nowrap">${esc(sName(s.name||'',s.englishName||''))}</td>
             <td class="nowrap tc">${esc(s.className||'')}</td>
+            <td class="nowrap tc">${esc(s._levelLabel || (level==='ms'?'중등':'고등'))}</td>
             <td><span class="cell-reason-preview">${esc(String(s.reasons || '-').split('\n')[0])}</span></td>
-            <td class="nowrap">${s.currentTotal}</td>
-            <td class="nowrap">${s.overallTotal}</td>
+            <td class="nowrap tc">${s.currentTotal}</td>
+            <td class="nowrap tc">${s.overallTotal}</td>
             ${canEditDate
               ? dateCell(s.notice.parentMailAt,        'parentMailAt')
               : `<td class="nowrap" style="font-size:11px;">${s.notice.parentMailAt ? '<span style="color:var(--sb)">'+fmt(s.notice.parentMailAt)+'</span>' : '<button class="btn-mail" onclick="event.stopPropagation();sendParentMailForDone(\''+esc(s.key)+'\',\''+level+'\',\''+doneMapKey+'\')">메일 보내기</button>'}</td>`
@@ -3268,23 +3243,33 @@
             }
             ${canEditDate
               ? dateCell(s.notice.completedAt,         'completedAt')
-              : `<td class="nowrap" style="font-size:11px;${completedColor}">${completedText}</td>`
+              : `<td class="nowrap tc" style="font-size:11px;${completedColor}">${completedText}</td>`
             }
             <td class="nowrap tc">
               <span style="font-size:11px;color:var(--sb)">${expanded?'▲':'▼'}</span>
             </td>
           </tr>
           <tr class="detail-row ${expanded ? 'show' : ''}">
-            <td colspan="9"><div class="detail-box">
+            <td colspan="10"><div class="detail-box">
               <div class="detail-section"><div class="detail-title">사유 | Reasons</div><div class="detail-content">${esc(s.reasons||'-')}</div></div>
-              <div class="detail-section"><div class="detail-title">알림 상태 | Notice Status</div><div class="detail-content">학부모 메일: ${s.notice.parentMailAt ? fmt(s.notice.parentMailAt) : '-'}\n학생/교사 메일: ${s.notice.studentTeacherMailAt ? fmt(s.notice.studentTeacherMailAt) : '-'}\n완료일: ${s.notice.completedAt ? fmt(s.notice.completedAt) : '-'}\n완료자: ${esc(s.notice.completedBy || '-')} ${s.notice.completedByEmail ? '('+esc(s.notice.completedByEmail)+')' : ''}</div></div>
+              <div class="detail-section"><div class="detail-title">알림 상태 | Notice Status</div><div class="detail-content">구분: ${esc(s._levelLabel || (level==='ms'?'중등':'고등'))}
+학부모 메일: ${s.notice.parentMailAt ? fmt(s.notice.parentMailAt) : '-'}\n학생/교사 메일: ${s.notice.studentTeacherMailAt ? fmt(s.notice.studentTeacherMailAt) : '-'}\n완료일: ${s.notice.completedAt ? fmt(s.notice.completedAt) : '-'}\n완료자: ${esc(s.notice.completedBy || '-')} ${s.notice.completedByEmail ? '('+esc(s.notice.completedByEmail)+')' : ''}</div></div>
               ${s.noticeKey ? `<div class="detail-section"><div class="detail-title">취소 | Cancel</div><button class="btn btn-secondary btn-xs" onclick="event.stopPropagation();cancelNoticeCompletion('${esc(s.noticeKey||'')}','${esc(s.key)}','${level}')">완료취소</button></div>` : ''}
             </div></td>
           </tr>`;
         }).join('');
       }
+      stripeAll();
     }
 
+    function renderNotifyTableByLevel(level){
+      renderNotifyTables();
+    }
+
+    function setNoticeDonePage(page){
+      noticeDonePage = clampPage(page, getAllCompletedNoticeList().length, PAGE_SIZE);
+      renderNotifyTables();
+    }
 
     async function cancelNoticeCompletion(noticeKey, studentKey, level){
       if(!noticeKey) return toast('알림 기록을 찾을 수 없습니다.', 'err');
