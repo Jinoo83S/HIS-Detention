@@ -174,6 +174,22 @@ function readFileText(file, enc = 'utf-8') {
     return String(new Date().getFullYear());
   }
 
+  function hisRecordYear(record, fallbackYear){
+    const r = record || {};
+    const direct = r.year || r.schoolYear || r.academicYear;
+    if (direct !== undefined && direct !== null && String(direct).trim() !== '') {
+      return String(direct).trim();
+    }
+    const dt = String(r.confirmedAt || r.createdAt || r.completedAt || '').trim();
+    const m = dt.match(/^(\d{4})/);
+    if (m) return m[1];
+    return String(fallbackYear || hisCurrentYear());
+  }
+
+  function hisIsCurrentYearRecord(record, currentYear){
+    return hisRecordYear(record, currentYear) === String(currentYear || hisCurrentYear());
+  }
+
   function hisValues(obj){
     return Object.values(obj || {});
   }
@@ -195,26 +211,48 @@ function readFileText(file, enc = 'utf-8') {
     const curYear = String(options.year || hisCurrentYear());
 
     const confirmedEntries = hisEntries(entries)
-      .filter(([, r]) => String((r || {}).studentKey || '') === sk && String((r || {}).status || '') === '확정')
+      .filter(([, r]) =>
+        String((r || {}).studentKey || '') === sk &&
+        String((r || {}).status || '') === '확정' &&
+        hisIsCurrentYearRecord(r, curYear)
+      )
       .sort((a, b) => hisLatestEntryDate(b[1]).localeCompare(hisLatestEntryDate(a[1])));
 
-    // yearRawPoints: 현재 학년도 판단용 원점수입니다. 현재 DB 운용은 1년 단위 초기화를 전제로 하므로
-    // 기존 호환 필드 overallPoints에도 같은 값을 저장합니다.
+    // yearRawPoints: 현재 학년도 위원회 판단용 원점수입니다.
+    // 회복교육으로 차감하지 않고, 30점 초과 기준에 사용합니다.
+    // 기존 화면 호환을 위해 overallPoints에도 같은 값을 저장합니다.
     const yearRawPoints = confirmedEntries.reduce((sum, [, r]) => sum + Number((r || {}).totalPoints || 0), 0);
 
+    // recoveredTotal: 현재 학년도 + 같은 학년군(level)의 회복교육 차감점수입니다.
     const recoveredTotal = hisValues(recovery)
-      .filter(r => String((r || {}).studentKey || '') === sk && String((r || {}).level || '') === lv)
+      .filter(r =>
+        String((r || {}).studentKey || '') === sk &&
+        String((r || {}).level || '') === lv &&
+        hisIsCurrentYearRecord(r, curYear)
+      )
       .reduce((sum, r) => sum + Number((r || {}).recoveryPoints || 0), 0);
 
+    // currentPoints: 현재 미해소 점수입니다.
+    // 3점 이상 알림/회복교육, 12점 이상 생활교육위원회 기준에 사용합니다.
     const currentPoints = Math.max(0, yearRawPoints - recoveredTotal);
 
     const activeNoticeArr = hisEntries(notices)
-      .filter(([, v]) => String((v || {}).studentKey || '') === sk && String((v || {}).level || '') === lv && !(v || {}).completedAt)
+      .filter(([, v]) =>
+        String((v || {}).studentKey || '') === sk &&
+        String((v || {}).level || '') === lv &&
+        !(v || {}).completedAt &&
+        hisIsCurrentYearRecord(v, curYear)
+      )
       .sort((a, b) => String((b[1] || {}).createdAt || '').localeCompare(String((a[1] || {}).createdAt || '')));
     const activeNotice = activeNoticeArr.length ? { key: activeNoticeArr[0][0], notice: activeNoticeArr[0][1] || {} } : null;
 
     const completedNoticeArr = hisEntries(notices)
-      .filter(([, v]) => String((v || {}).studentKey || '') === sk && String((v || {}).level || '') === lv && !!(v || {}).completedAt)
+      .filter(([, v]) =>
+        String((v || {}).studentKey || '') === sk &&
+        String((v || {}).level || '') === lv &&
+        !!(v || {}).completedAt &&
+        hisIsCurrentYearRecord(v, curYear)
+      )
       .sort((a, b) => String((b[1] || {}).completedAt || '').localeCompare(String((a[1] || {}).completedAt || '')));
     const lastCompletedNotice = completedNoticeArr.length ? { key: completedNoticeArr[0][0], notice: completedNoticeArr[0][1] || {} } : null;
 
@@ -223,7 +261,8 @@ function readFileText(file, enc = 'utf-8') {
       return hisValues(committee).some(c =>
         ((c || {}).type === 'referral' || (c || {}).type === 'manual_referral') &&
         (((c || {}).entryKey === refKey) || String((c || {}).studentKey || '') === sk) &&
-        !!(c || {}).completedAt
+        !!(c || {}).completedAt &&
+        hisIsCurrentYearRecord(c, curYear)
       );
     });
     const hasActiveReferral = referralEntries.length > 0 && !referralCompleted;
@@ -232,19 +271,21 @@ function readFileText(file, enc = 'utf-8') {
       ['edu_points', 'edu_overall', 'manual_edu', 'edu'].includes(String((c || {}).type || '')) &&
       String((c || {}).studentKey || '') === sk &&
       !!(c || {}).completedAt &&
-      String((c || {}).year || '') === curYear
+      hisIsCurrentYearRecord(c, curYear)
     );
 
     const needsEduCommittee = !eduCompletedThisYear && (currentPoints >= 12 || yearRawPoints > 30);
     const hasManualReferralPending = hisValues(committee).some(c =>
       String((c || {}).type || '') === 'manual_referral' &&
       String((c || {}).studentKey || '') === sk &&
-      !(c || {}).completedAt
+      !(c || {}).completedAt &&
+      hisIsCurrentYearRecord(c, curYear)
     );
     const hasManualEduPending = hisValues(committee).some(c =>
       String((c || {}).type || '') === 'manual_edu' &&
       String((c || {}).studentKey || '') === sk &&
-      !(c || {}).completedAt
+      !(c || {}).completedAt &&
+      hisIsCurrentYearRecord(c, curYear)
     );
 
     let phase = 'clean';
@@ -275,6 +316,7 @@ function readFileText(file, enc = 'utf-8') {
       currentPoints,
       yearRawPoints,
       recoveryPoints: recoveredTotal,
+      currentYear: curYear,
       committeeStatus,
       updatedAt: new Date().toISOString(),
       updatedBy: options.updatedBy || 'system_recalculate'
@@ -379,6 +421,8 @@ function readFileText(file, enc = 'utf-8') {
 
   window.hisLevelFromClassName = hisLevelFromClassName;
   window.hisSafeStateKey = hisSafeStateKey;
+  window.hisRecordYear = hisRecordYear;
+  window.hisIsCurrentYearRecord = hisIsCurrentYearRecord;
   window.calculateStudentCycleState = calculateStudentCycleState;
   window.recalculateStudentCycleState = recalculateStudentCycleState;
   window.recalculateAllStudentCycleStates = recalculateAllStudentCycleStates;

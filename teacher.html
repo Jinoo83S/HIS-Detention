@@ -427,8 +427,8 @@
                 <th class="nowrap" style="width:9%;">구분<span class="th-en">Category</span></th>
                 <th style="width:26%;">위반행위<span class="th-en">Violation</span></th>
                 <th class="nowrap" style="width:5%;">점수<span class="th-en">Points</span></th>
-                <th class="nowrap" style="width:8%;">현재누적<span class="th-en">Current</span></th>
-                <th class="nowrap" style="width:8%;">전체누적<span class="th-en">Overall</span></th>
+                <th class="nowrap" style="width:8%;">현재미해소<span class="th-en">Current</span></th>
+                <th class="nowrap" style="width:8%;">연간원점수<span class="th-en">Year Raw</span></th>
                 <th class="nowrap" style="width:8%;">교사<span class="th-en">Teacher</span></th>
                 <th class="nowrap" style="width:10%;">일시<span class="th-en">Date/Time</span></th>
               </tr>
@@ -686,7 +686,7 @@
                 <th style="width:30%;">위반 행위</th>
                 <th class="nowrap tc" style="width:9%;">회복점수</th>
                 <th class="nowrap tc" style="width:9%;">잔여점수</th>
-                <th class="nowrap tc" style="width:9%;">전체점수</th>
+                <th class="nowrap tc" style="width:9%;">연간원점수</th>
                 <th class="nowrap" style="width:12%;">완료시간</th>
                 <th class="nowrap tc" style="width:8%;">처리</th>
               </tr>
@@ -741,7 +741,7 @@
                 <th style="width:30%;">위반 행위</th>
                 <th class="nowrap tc" style="width:9%;">회복점수</th>
                 <th class="nowrap tc" style="width:9%;">잔여점수</th>
-                <th class="nowrap tc" style="width:9%;">전체점수</th>
+                <th class="nowrap tc" style="width:9%;">연간원점수</th>
                 <th class="nowrap" style="width:12%;">완료시간</th>
                 <th class="nowrap tc" style="width:8%;">처리</th>
               </tr>
@@ -847,15 +847,15 @@
           <th class="tc">교사</th><th class="tc">회부일시</th><th class="tc">상태</th><th class="tc">완료시간</th>
         </tr></thead><tbody id="discipline-referral-done-tbody"></tbody></table></div>
         <div class="card-title notice-divider" style="margin-top:18px;">⚠️ 생활교육위원회 진행 중</div>
-        <div class="notice">현재누적 12점 이상 또는 전체누적 30점 초과 (연간 1회 적용).</div>
+        <div class="notice">현재 미해소 12점 이상 또는 연간 원점수 30점 초과 (연간 1회 적용).</div>
         <div class="tbl-wrap"><table><thead><tr>
-          <th>학생</th><th class="tc">학반</th><th class="tc">현재누적</th>
-          <th class="tc">전체누적</th><th>사유</th><th class="tc">처리</th><th class="tc">완료</th>
+          <th>학생</th><th class="tc">학반</th><th class="tc">현재미해소</th>
+          <th class="tc">연간원점수</th><th>사유</th><th class="tc">처리</th><th class="tc">완료</th>
         </tr></thead><tbody id="discipline-education-tbody"></tbody></table></div>
         <div class="card-title notice-divider" style="margin-top:14px;">✅ 생활교육위원회 완료</div>
         <div class="tbl-wrap"><table><thead><tr>
-          <th>학생</th><th class="tc">학반</th><th class="tc">현재누적</th>
-          <th class="tc">전체누적</th><th>사유</th><th class="tc">완료시간</th><th></th>
+          <th>학생</th><th class="tc">학반</th><th class="tc">현재미해소</th>
+          <th class="tc">연간원점수</th><th>사유</th><th class="tc">완료시간</th><th></th>
         </tr></thead><tbody id="discipline-education-done-tbody"></tbody></table></div>
       </div>
     </div>
@@ -1088,42 +1088,86 @@
       ).length;
     }
 
-    function getStudentOverallTotal(studentKey){
+    function getCurrentYear(){
+      return String(new Date().getFullYear());
+    }
+
+    function getRecordYear(record, fallbackYear){
+      if (typeof window.hisRecordYear === 'function') {
+        return window.hisRecordYear(record, fallbackYear || getCurrentYear());
+      }
+      const r = record || {};
+      const direct = r.year || r.schoolYear || r.academicYear;
+      if (direct !== undefined && direct !== null && String(direct).trim() !== '') return String(direct).trim();
+      const dt = String(r.confirmedAt || r.createdAt || r.completedAt || '').trim();
+      const m = dt.match(/^(\d{4})/);
+      return m ? m[1] : String(fallbackYear || getCurrentYear());
+    }
+
+    function isCurrentYearRecord(record, year){
+      const y = String(year || getCurrentYear());
+      if (typeof window.hisIsCurrentYearRecord === 'function') return window.hisIsCurrentYearRecord(record, y);
+      return getRecordYear(record, y) === y;
+    }
+
+    // 현재 학년도 원점수: 회복교육 차감 전 점수. 생활교육위원회 30점 초과 기준에 사용합니다.
+    function getStudentYearRawTotal(studentKey, year){
+      const y = String(year || getCurrentYear());
       return Object.values(entries || {})
-        .filter(r => String(r.studentKey || '') === String(studentKey || '') && String(r.status || '') === '확정')
+        .filter(r =>
+          String(r.studentKey || '') === String(studentKey || '') &&
+          String(r.status || '') === '확정' &&
+          isCurrentYearRecord(r, y)
+        )
         .reduce((sum, r) => sum + Number(r.totalPoints || 0), 0);
     }
 
-    function getStudentRecoveryTotal(studentKey){
+    // 기존 호출 호환성 wrapper: overallTotal은 이제 현재 학년도 원점수(yearRawPoints)를 의미합니다.
+    function getStudentOverallTotal(studentKey, year){
+      return getStudentYearRawTotal(studentKey, year);
+    }
+
+    function getStudentRecoveryTotal(studentKey, level, year){
+      const y = String(year || getCurrentYear());
       return Object.values(recoveryEntries || {})
-        .filter(r => String(r.studentKey || '') === String(studentKey || ''))
+        .filter(r =>
+          String(r.studentKey || '') === String(studentKey || '') &&
+          (!level || String(r.level || '') === String(level || '')) &&
+          isCurrentYearRecord(r, y)
+        )
         .reduce((sum, r) => sum + Number(r.recoveryPoints || 0), 0);
     }
 
     // ── 점수 계산 단일 진입점 ──
-    // cycleState에 캐시된 값이 있으면 사용, 없으면 entries에서 직접 계산 (fallback)
-    function getStudentPoints(studentKey, level){
+    // current: 현재 미해소 점수 / yearRaw: 현재 학년도 원점수 / overall: 기존 호환 별칭(yearRaw와 동일)
+    function getStudentPoints(studentKey, level, year){
+      const y = String(year || getCurrentYear());
       const state = level
         ? getCycleState(studentKey, level)
         : (getCycleState(studentKey,'ms').phase !== 'clean'
             ? getCycleState(studentKey,'ms')
             : getCycleState(studentKey,'hs'));
-      if(state && typeof state.overallPoints === 'number'){
-        return {
-          overall: state.overallPoints,
-          current: typeof state.cyclePoints === 'number'
-            ? state.cyclePoints
-            : (state.overallPoints - getStudentRecoveryTotal(studentKey))
-        };
+
+      if(state && (typeof state.yearRawPoints === 'number' || typeof state.overallPoints === 'number')){
+        const yearRaw = Number(
+          typeof state.yearRawPoints === 'number' ? state.yearRawPoints : state.overallPoints
+        ) || 0;
+        const current = Math.max(0, Number(
+          typeof state.currentPoints === 'number' ? state.currentPoints :
+          (typeof state.cyclePoints === 'number' ? state.cyclePoints : yearRaw - getStudentRecoveryTotal(studentKey, level, y))
+        ) || 0);
+        return { overall: yearRaw, yearRaw, current };
       }
-      const overall = getStudentOverallTotal(studentKey);
-      const current = overall - getStudentRecoveryTotal(studentKey);
-      return { overall, current };
+
+      const yearRaw = getStudentYearRawTotal(studentKey, y);
+      const current = Math.max(0, yearRaw - getStudentRecoveryTotal(studentKey, level, y));
+      return { overall: yearRaw, yearRaw, current };
     }
 
     // 기존 호출 호환성 wrapper
-    function getStudentCurrentTotal(studentKey){
-      return Math.max(0, getStudentOverallTotal(studentKey) - getStudentRecoveryTotal(studentKey));
+    function getStudentCurrentTotal(studentKey, level, year){
+      const inferredLevel = level || getSchoolLevel((students[String(studentKey||'')]||{}).className||'');
+      return getStudentPoints(studentKey, inferredLevel, year).current;
     }
 
     function getGradeNumber(className){
@@ -1142,16 +1186,23 @@
     function findActiveNotice(sKey,lvl){const hit=Object.entries(noticeEntries||{}).filter(([,v])=>String(v.studentKey||'')===String(sKey)&&String(v.level||'')===String(lvl)&&!v.completedAt).sort((a,b)=>String(b[1].createdAt||'').localeCompare(String(a[1].createdAt||'')));return hit.length?{key:hit[0][0],notice:hit[0][1]}:null;}
     function findLatestCompletedNotice(sKey,lvl){const hit=Object.entries(noticeEntries||{}).filter(([,v])=>String(v.studentKey||'')===String(sKey)&&String(v.level||'')===String(lvl)&&!!v.completedAt).sort((a,b)=>String(b[1].completedAt||'').localeCompare(String(a[1].completedAt||'')));return hit.length?{key:hit[0][0],notice:hit[0][1]}:null;}
     function getViolationCount(sKey,vId){
-      const curYear = new Date().getFullYear();
+      const curYear = getCurrentYear();
       return Object.values(entries||{}).filter(r=>
         String(r.studentKey||'')===String(sKey) &&
         String(r.violationId||'')===String(vId) &&
         String(r.status||'')==='확정' &&
-        // 반려 제외 + 연 기준 (confirmedAt 연도 기준)
-        String(r.confirmedAt||r.createdAt||'').startsWith(String(curYear))
+        isCurrentYearRecord(r, curYear)
       ).length;
     }
-    function getCurrentCycleEntries(sKey){const conf=getConfirmedEntriesForStudent(sKey);const lr=Object.values(recoveryEntries||{}).filter(r=>String(r.studentKey||'')===String(sKey)).sort((a,b)=>String(b.completedAt||'').localeCompare(String(a.completedAt||'')))[0];const since=lr?String(lr.completedAt||''):'';return since?conf.filter(r=>String(r.confirmedAt||'')>since):conf;}
+    function getCurrentCycleEntries(sKey){
+      const level = getSchoolLevel((students[String(sKey||'')]||{}).className||'');
+      const conf=getConfirmedEntriesForStudent(sKey);
+      const lr=Object.values(recoveryEntries||{})
+        .filter(r=>String(r.studentKey||'')===String(sKey)&&(!level||String(r.level||'')===String(level))&&isCurrentYearRecord(r,getCurrentYear()))
+        .sort((a,b)=>String(b.completedAt||'').localeCompare(String(a.completedAt||'')))[0];
+      const since=lr?String(lr.completedAt||''):'';
+      return since?conf.filter(r=>String(r.confirmedAt||r.createdAt||'')>since):conf;
+    }
     function buildCycleReasonText(sKey){
       const entries=getCurrentCycleEntries(sKey);
       if(!entries.length)return '-';
@@ -1163,16 +1214,18 @@
 
     /** 마지막 회복교육에서 남은 잔여 점수를 반환 */
     function getResidualFromLastRecovery(sKey){
+      const level = getSchoolLevel((students[String(sKey||'')]||{}).className||'');
       const last=Object.values(recoveryEntries||{})
-        .filter(r=>String(r.studentKey||'')===String(sKey))
+        .filter(r=>String(r.studentKey||'')===String(sKey)&&(!level||String(r.level||'')===String(level))&&isCurrentYearRecord(r,getCurrentYear()))
         .sort((a,b)=>String(b.completedAt||'').localeCompare(String(a.completedAt||'')))[0];
       return last ? Number(last.currentTotalAfter??0) : 0;
     }
 
     /** 이전 사이클 (마지막 회복 직전 사이클)의 확정 위반 항목 반환 */
     function getPreviousCycleEntries(sKey){
+      const level = getSchoolLevel((students[String(sKey||'')]||{}).className||'');
       const allRec=Object.values(recoveryEntries||{})
-        .filter(r=>String(r.studentKey||'')===String(sKey))
+        .filter(r=>String(r.studentKey||'')===String(sKey)&&(!level||String(r.level||'')===String(level))&&isCurrentYearRecord(r,getCurrentYear()))
         .sort((a,b)=>String(b.completedAt||'').localeCompare(String(a.completedAt||'')));
       if(!allRec.length) return [];
       const lastRec=allRec[0];
@@ -1228,10 +1281,15 @@
       return getTeacherEmailsByRole(roleKey)[0] || '';
     }
 
-    function getConfirmedEntriesForStudent(studentKey){
+    function getConfirmedEntriesForStudent(studentKey, year){
+      const y = String(year || getCurrentYear());
       return Object.entries(entries || {})
         .map(([key, value]) => ({ key, ...value }))
-        .filter(r => String(r.studentKey || '') === String(studentKey || '') && String(r.status || '') === '확정')
+        .filter(r =>
+          String(r.studentKey || '') === String(studentKey || '') &&
+          String(r.status || '') === '확정' &&
+          isCurrentYearRecord(r, y)
+        )
         .sort((a,b) => String(b.confirmedAt || b.createdAt || '').localeCompare(String(a.confirmedAt || a.createdAt || '')));
     }
 
@@ -1948,13 +2006,13 @@
       }
 
       const _EDU_TYPES = ['edu','manual_edu','edu_points','edu_overall'];
-      const _curYr = String(new Date().getFullYear());
+      const _curYr = getCurrentYear();
       tb.innerHTML = list.map(r => {
         const expanded = expandedAllKeys.has(r.key);
         const _cur = getStudentCurrentTotal(r.studentKey);
         const _ovr = getStudentOverallTotal(r.studentKey);
         const _eduDone = Object.values(committeeEntries||{}).some(c=>
-          _EDU_TYPES.includes(c.type)&&String(c.studentKey||'')===String(r.studentKey||'')&&!!c.completedAt&&String(c.year||'')===_curYr
+          _EDU_TYPES.includes(c.type)&&String(c.studentKey||'')===String(r.studentKey||'')&&!!c.completedAt&&isCurrentYearRecord(c, _curYr)
         );
         const _curEdu = (!_eduDone && _cur>=12) ? '<br><span style="color:#b45309;font-size:10px;font-weight:700;">생활교육위원회</span>' : '';
         const _ovrEdu = (!_eduDone && _ovr>30) ? '<br><span style="color:#b45309;font-size:10px;font-weight:700;">생활교육위원회</span>' : '';
@@ -2654,7 +2712,7 @@
 회복점수: -${esc(String(r.recoveryPoints || 0))}
 교육 전 현재점수: ${esc(String(r.currentTotalBefore ?? '-'))}
 교육 후 현재점수: ${esc(String(r.currentTotalAfter ?? r.currentTotalAtRecovery ?? '-'))}
-당시 전체점수: ${esc(String(r.overallTotalAtRecovery ?? '-'))}
+당시 연간 원점수: ${esc(String(r.overallTotalAtRecovery ?? '-'))}
 담당자: ${esc(r.staffName || '-')} ${r.staffEmail ? '('+esc(r.staffEmail)+')' : ''}</div>
               </div>
             </div>
@@ -3044,7 +3102,7 @@
                   })()}
                   <div class="detail-section">
                     <div class="detail-title">회복교육 완료 이력 | Completed Recovery History</div>
-                    <div class="detail-content">${s.recoveryList.length ? esc(s.recoveryList.map((r, i) => `[${i+1}] ${fmt(r.completedAt)} / -${r.recoveryPoints} / 교육 후 현재누적 ${r.currentTotalAfter ?? r.currentTotalAtRecovery ?? '-'}`).join('\n')) : '-'}</div>
+                    <div class="detail-content">${s.recoveryList.length ? esc(s.recoveryList.map((r, i) => `[${i+1}] ${fmt(r.completedAt)} / -${r.recoveryPoints} / 교육 후 미해소 ${r.currentTotalAfter ?? r.currentTotalAtRecovery ?? '-'}`).join('\n')) : '-'}</div>
                   </div>
                 </div>
               </td>
@@ -3123,14 +3181,14 @@
         [referralTb,referralDoneTb,eduTb,eduDoneTb].forEach(t=>{if(t)t.innerHTML='<tr><td colspan="8" class="empty">로딩 중...</td></tr>';});
         return;
       }
-      const yr=new Date().getFullYear();
-      const completedRefKeys=new Set(Object.values(committeeEntries||{}).filter(r=>(r.type==='referral'||r.type==='manual_referral')&&r.completedAt).map(r=>r.entryKey));
+      const yr=getCurrentYear();
+      const completedRefKeys=new Set(Object.values(committeeEntries||{}).filter(r=>(r.type==='referral'||r.type==='manual_referral')&&r.completedAt&&isCurrentYearRecord(r, yr)).map(r=>r.entryKey));
       // 선도위원회: isReferral=true 항목 + manual_referral entryKey 기준
       const manualReferralEntryKeys = new Set(
-        Object.values(committeeEntries||{}).filter(c=>c.type==='manual_referral'&&!c.completedAt).map(c=>c.entryKey)
+        Object.values(committeeEntries||{}).filter(c=>c.type==='manual_referral'&&!c.completedAt&&isCurrentYearRecord(c, yr)).map(c=>c.entryKey)
       );
       const allRef=Object.values(entries||{}).filter(r=>
-        (r.isReferral===true||manualReferralEntryKeys.has(r.key))&&String(r.status||'')==='확정'
+        (r.isReferral===true||manualReferralEntryKeys.has(r.key))&&String(r.status||'')==='확정'&&isCurrentYearRecord(r, yr)
       ).sort((a,b)=>String(b.confirmedAt||b.createdAt||'').localeCompare(String(a.confirmedAt||a.createdAt||'')));
       const mkRefRow=(r,done)=>{
         const did='rd_'+String(r.key||'').replace(/\W/g,'_');
@@ -3155,7 +3213,7 @@
       };
       const activeRef=allRef.filter(r=>!completedRefKeys.has(r.key));
       const doneRef=allRef.filter(r=>completedRefKeys.has(r.key)).map(r=>{
-        const recEntry=Object.entries(committeeEntries||{}).find(([,c])=>c.entryKey===r.key&&(c.type==='referral'||c.type==='manual_referral'));
+        const recEntry=Object.entries(committeeEntries||{}).find(([,c])=>c.entryKey===r.key&&(c.type==='referral'||c.type==='manual_referral')&&isCurrentYearRecord(c, yr));
         const rec=recEntry&&recEntry[1];
         return Object.assign({},r,{committeeCompletedAt:rec&&rec.completedAt,committeeKey:recEntry&&recEntry[0]});
       });
@@ -3163,10 +3221,10 @@
       if(referralDoneTb)referralDoneTb.innerHTML=doneRef.length?doneRef.map(r=>mkRefRow(r,true)).join(''):'<tr><td colspan="8" class="empty">완료된 내역이 없습니다.</td></tr>';
 
       const EDU_TYPES = ['edu', 'manual_edu', 'edu_points', 'edu_overall'];
-      const doneEduKeysYr=new Set(Object.values(committeeEntries||{}).filter(r=>EDU_TYPES.includes(r.type)&&r.completedAt&&String(r.year||'')===String(yr)).map(r=>r.studentKey));
+      const doneEduKeysYr=new Set(Object.values(committeeEntries||{}).filter(r=>EDU_TYPES.includes(r.type)&&r.completedAt&&isCurrentYearRecord(r, yr)).map(r=>r.studentKey));
       // 생활교육위원회: 12점 이상 or >30 or manual_edu 회부 학생
       const manualEduStudents = new Set(
-        Object.values(committeeEntries||{}).filter(c=>(c.type==='manual_edu'||c.type==='edu')&&!c.completedAt).map(c=>c.studentKey)
+        Object.values(committeeEntries||{}).filter(c=>(c.type==='manual_edu'||c.type==='edu')&&!c.completedAt&&isCurrentYearRecord(c, yr)).map(c=>c.studentKey)
       );
       const allEdu=Object.entries(students||{}).map(([k,v])=>Object.assign({},v,{key:k}))
         .filter(s=>{
@@ -3178,7 +3236,7 @@
       const mkEduRow=(s,done)=>{
         const cur=getStudentCurrentTotal(s.key),ovr=getStudentOverallTotal(s.key);
         const did='ed_'+String(s.key||'').replace(/\W/g,'_');
-        const trig=(cur>=12?'현재'+cur+'점 이상':'')+(cur>=12&&ovr>30?' / ':'')+(ovr>30?'전체'+ovr+'점 이상':'');
+        const trig=(cur>=12?'현재 미해소 '+cur+'점 이상':'')+(cur>=12&&ovr>30?' / ':'')+(ovr>30?'연간 원점수 '+ovr+'점 초과':'');
         return '<tr class="summary-row" onclick="toggleDetailDiv(\''+did+'\')" style="cursor:pointer;">'+
           '<td>'+esc(sName(s.name,s.englishName))+'</td>'+
           '<td class="tc">'+esc(s.className||'')+'</td>'+
@@ -3199,7 +3257,7 @@
       };
       const activeEdu=allEdu.filter(s=>!doneEduKeysYr.has(s.key));
       const doneEdu=allEdu.filter(s=>doneEduKeysYr.has(s.key)).map(s=>{
-        const recEntry=Object.entries(committeeEntries||{}).find(([,c])=>EDU_TYPES.includes(c.type)&&String(c.studentKey||'')===String(s.key||'')&&String(c.year||'')===String(yr));
+        const recEntry=Object.entries(committeeEntries||{}).find(([,c])=>EDU_TYPES.includes(c.type)&&String(c.studentKey||'')===String(s.key||'')&&isCurrentYearRecord(c, yr));
         const rec=recEntry&&recEntry[1];
         return Object.assign({},s,{committeeCompletedAt:rec&&rec.completedAt,committeeKey:recEntry&&recEntry[0]});
       });
@@ -3209,11 +3267,11 @@
 
     async function completeCommittee(type,entryKey,studentKey){
       const now=new Date().toISOString();
-      const yr=new Date().getFullYear();
+      const yr=getCurrentYear();
       try{
         // 기존 pending 기록 찾아서 업데이트 (새 push 대신)
         const pendingEntry=Object.entries(committeeEntries||{}).find(([,c])=>{
-          if(!!c.completedAt) return false;
+          if(!!c.completedAt || !isCurrentYearRecord(c, yr)) return false;
           const typeMatch=c.type===type||c.type==='manual_'+type.replace('referral','referral').replace('edu','edu');
           const keyMatch=(entryKey&&entryKey!==''&&c.entryKey===entryKey)||(studentKey&&studentKey!==''&&String(c.studentKey||'')===String(studentKey||''));
           return typeMatch&&keyMatch;
@@ -3226,6 +3284,7 @@
           completedByEmail:teacher.email||'',
           reasonSnapshot: reasonSnapshot || null,
           linkedEntryKeys: linkedEntryKeys.length ? linkedEntryKeys : null,
+          year: yr,
           createdAt: (pendingEntry && pendingEntry[1] && pendingEntry[1].createdAt) ? pendingEntry[1].createdAt : now
         };
         if(pendingEntry){
@@ -3299,7 +3358,7 @@
           reasonSnapshot: reason,
           linkedEntryKeys: entryKey ? [entryKey] : getCurrentCycleEntries(studentKey).map(r=>r.key).filter(Boolean),
           completedAt: null,
-          year: new Date().getFullYear(),
+          year: getCurrentYear(),
           createdAt: new Date().toISOString(),
           createdBy: teacher.name||'', createdByEmail: teacher.email||''
         };
@@ -3318,12 +3377,12 @@
     function renderCommitteePendingBanner(){
       const banner = document.getElementById('committee-pending-banner');
       if(!banner) return;
-      const yr=String(new Date().getFullYear());
+      const yr=getCurrentYear();
       const seen=new Set(); const pending=[];
       function addP(nm,type){const k=nm+'|'+type;if(!seen.has(k)){seen.add(k);pending.push({name:nm,type});}}
       // committeeRecords 미완료
       Object.values(committeeEntries||{}).forEach(c=>{
-        if(c.completedAt) return;
+        if(c.completedAt || !isCurrentYearRecord(c, yr)) return;
         const sk=String(c.studentKey||'');const sv=students[sk]||{};
         const nm=(sv.name||sk)+(sv.englishName?' '+sv.englishName:'');
         if(c.type==='referral'||c.type==='manual_referral') addP(nm,'선도위원회');
@@ -3331,8 +3390,8 @@
       });
       // entries isReferral 미완료
       Object.values(entries||{}).forEach(r=>{
-        if(r.isReferral!==true||String(r.status||'')!=='확정') return;
-        const done=Object.values(committeeEntries||{}).some(c=>c.entryKey===r.key&&!!c.completedAt&&(c.type==='referral'||c.type==='manual_referral'));
+        if(r.isReferral!==true||String(r.status||'')!=='확정'||!isCurrentYearRecord(r, yr)) return;
+        const done=Object.values(committeeEntries||{}).some(c=>c.entryKey===r.key&&!!c.completedAt&&(c.type==='referral'||c.type==='manual_referral')&&isCurrentYearRecord(c, yr));
         if(!done){const sv=students[String(r.studentKey||'')]||{};addP((sv.name||r.studentName||'')+(sv.englishName?' '+sv.englishName:''),'선도위원회');}
       });
       // 점수 조건 직접 체크 (cycleState 미갱신 방어)
@@ -3340,7 +3399,7 @@
         const lv=getSchoolLevel(sv.className||'');if(!lv) return;
         const _p=getStudentPoints(sk,lv);const cur=_p.current,ovr=_p.overall;
         if(cur>=12||ovr>30){
-          const done=Object.values(committeeEntries||{}).some(c=>(['edu','manual_edu','edu_points','edu_overall'].includes(c.type))&&String(c.studentKey||'')===sk&&!!c.completedAt&&String(c.year||'')===yr);
+          const done=Object.values(committeeEntries||{}).some(c=>(['edu','manual_edu','edu_points','edu_overall'].includes(c.type))&&String(c.studentKey||'')===sk&&!!c.completedAt&&isCurrentYearRecord(c, yr));
           if(!done) addP((sv.name||'')+(sv.englishName?' '+sv.englishName:''),'생활교육위원회');
         }
       });
@@ -3356,7 +3415,7 @@
       document.getElementById('pending-count').textContent=String(el.filter(r=>String(r.status||'임시저장')==='임시저장').length);
       document.getElementById('total-count').textContent=String(el.length);
       const isDefaultOnly = teacherRoles.length===0||(teacherRoles.length===1&&teacherRoles[0]==='default');
-      const yr30=new Date().getFullYear();
+      const yr30=getCurrentYear();
       // cycleState 기반 경고 (edu_committee 상태인 학생)
       const o30=isDefaultOnly?[]:Object.keys(students||{}).filter(k=>{
         if(!getSchoolLevel((students[k]||{}).className||''))return false;
@@ -3365,7 +3424,7 @@
         return ['edu_committee','edu_notice_needed','edu_notice_active','edu_in_recovery'].includes(st.phase)||getStudentCurrentTotal(k)>=12||getStudentOverallTotal(k)>30;
       });
       let wb=document.getElementById('disc-warn');if(!wb){wb=document.createElement('div');wb.id='disc-warn';wb.style.cssText='margin:8px 0;padding:10px 14px;border-radius:10px;background:#fde8e8;border:1px solid #fca5a5;color:#7f1d1d;font-size:13px;font-weight:700;';const sc=document.getElementById('today-count');if(sc&&sc.closest('.card'))sc.closest('.card').after(wb);}
-      if(o30.length){wb.style.display='';wb.innerHTML='<b>생활교육위원회 대상 (누적 30점 이상):</b> '+o30.map(k=>{const s=students[k]||{};return esc(s.name||'')+' '+esc(s.englishName||'')+' '+esc(s.className||'')+' ('+getStudentOverallTotal(k)+'점)';}).join(' / ');}else{wb.style.display='none';}
+      if(o30.length){wb.style.display='';wb.innerHTML='<b>생활교육위원회 대상:</b> '+o30.map(k=>{const s=students[k]||{};return esc(s.name||'')+' '+esc(s.englishName||'')+' '+esc(s.className||'')+' (미해소 '+getStudentCurrentTotal(k)+'점 / 원점수 '+getStudentOverallTotal(k)+'점)';}).join(' / ');}else{wb.style.display='none';}
     }
 
 
@@ -3488,6 +3547,7 @@
         englishName: s.englishName || '',
         className: s.className || '',
         schoolLevel,
+        year: getCurrentYear(),
         category,
         violation,
         violationId,
@@ -3535,12 +3595,12 @@
 
         // violationId 없는 구버전 entries도 category+violation으로 매칭
         const computedViolationId = (String(record.category||'')+'|||'+String(record.violation||'')).replace(/\s+/g,' ').trim();
-        const confirmYear = new Date().getFullYear();
+        const confirmYear = getCurrentYear();
         const prevConfirmedCount = Object.entries(entries||{}).filter(([entryKey, r])=>
           entryKey !== key &&
           String(r.studentKey||'')===String(record.studentKey||'') &&
           String(r.status||'')==='확정' &&
-          String(r.confirmedAt||r.createdAt||'').startsWith(String(confirmYear)) &&
+          isCurrentYearRecord(r, confirmYear) &&
           (
             (r.violationId && String(r.violationId||'')===computedViolationId) ||
             (!r.violationId &&
@@ -3764,7 +3824,7 @@
         : db.ref(NOTICE_DB_PATH);
       const sp = fixedNoticeKey||ao
         ? noticeRef.update({parentMailAt:new Date().toISOString()})
-        : noticeRef.push({studentKey,level,createdAt:new Date().toISOString(),parentMailAt:new Date().toISOString(),cycleViolationsSnapshot:buildNoticeReasonText(studentKey)});
+        : noticeRef.push({studentKey,level,year:getCurrentYear(),createdAt:new Date().toISOString(),parentMailAt:new Date().toISOString(),cycleViolationsSnapshot:buildNoticeReasonText(studentKey)});
       try{await openMailAfterSave('mailto:'+encodeURIComponent(to)+'?subject='+encodeURIComponent(subj)+'&body='+encodeURIComponent(body),sp);
         const slM=getSchoolLevel((students[studentKey]||{}).className||'');if(slM)try{await recalculateStudentState(studentKey,slM);}catch(e){}
         toast('학부모 메일 시간이 기록되었습니다.','ok');loadData();}catch(e){console.error(e);toast('메일 준비 중 오류.','err');}finally{delete _noticeInProgress[lockKey];}
@@ -3782,7 +3842,7 @@
       const body=buildStudentTeacherMailBody(student,level);
       const ao2=findActiveNotice(studentKey,level);
       const noticeRef3=fixedNoticeKey?db.ref(NOTICE_DB_PATH+'/'+fixedNoticeKey):ao2?db.ref(NOTICE_DB_PATH+'/'+ao2.key):db.ref(NOTICE_DB_PATH);
-      const sp=(fixedNoticeKey||ao2)?noticeRef3.update({studentTeacherMailAt:new Date().toISOString()}):noticeRef3.push({studentKey,level,createdAt:new Date().toISOString(),studentTeacherMailAt:new Date().toISOString(),cycleViolationsSnapshot:buildNoticeReasonText(studentKey)});
+      const sp=(fixedNoticeKey||ao2)?noticeRef3.update({studentTeacherMailAt:new Date().toISOString()}):noticeRef3.push({studentKey,level,year:getCurrentYear(),createdAt:new Date().toISOString(),studentTeacherMailAt:new Date().toISOString(),cycleViolationsSnapshot:buildNoticeReasonText(studentKey)});
       try{await openMailAfterSave('mailto:'+encodeURIComponent(to)+'?subject='+encodeURIComponent(subj)+'&body='+encodeURIComponent(body),sp);
         const slST=getSchoolLevel((students[String(studentKey||'')]||{}).className||'');if(slST)try{await recalculateStudentState(studentKey,slST);}catch(e){}
         toast('학생/교사 메일 시간이 기록되었습니다.','ok');loadData();}catch(e){console.error(e);toast('메일 준비 중 오류.','err');}finally{delete _noticeInProgress[lockKey];}
@@ -3791,7 +3851,7 @@
     async function completeNotice(studentKey,level){
       try{
         const ao=findActiveNotice(studentKey,level);
-        if(!ao){await db.ref(NOTICE_DB_PATH).push({studentKey,level,createdAt:new Date().toISOString(),completedAt:new Date().toISOString(),completedBy:teacher.name||'',completedByEmail:teacher.email||'',cycleViolationsSnapshot:buildNoticeReasonText(studentKey)});}
+        if(!ao){await db.ref(NOTICE_DB_PATH).push({studentKey,level,year:getCurrentYear(),createdAt:new Date().toISOString(),completedAt:new Date().toISOString(),completedBy:teacher.name||'',completedByEmail:teacher.email||'',cycleViolationsSnapshot:buildNoticeReasonText(studentKey)});}
         else{await db.ref(NOTICE_DB_PATH+'/'+ao.key).update({completedAt:new Date().toISOString(),completedBy:teacher.name||'',completedByEmail:teacher.email||'',cycleViolationsSnapshot:buildNoticeReasonText(studentKey)});}
         toast('알림 완료가 저장되었습니다.','ok');
         const sLevel2 = getSchoolLevel((students[String(studentKey||'')] || {}).className||'');
@@ -3819,15 +3879,24 @@
         const freshEntries = freshEntrySnap.val() || {};
         const freshRecovery = freshRecoverySnap.val() || {};
 
+        const curYear = getCurrentYear();
         const overallTotal = Object.values(freshEntries)
-          .filter(r => String(r.studentKey||'') === String(studentKey) && String(r.status||'') === '확정')
+          .filter(r =>
+            String(r.studentKey||'') === String(studentKey) &&
+            String(r.status||'') === '확정' &&
+            isCurrentYearRecord(r, curYear)
+          )
           .reduce((s, r) => s + Number(r.totalPoints || 0), 0);
 
         const recoveryTotal = Object.values(freshRecovery)
-          .filter(r => String(r.studentKey||'') === String(studentKey))
+          .filter(r =>
+            String(r.studentKey||'') === String(studentKey) &&
+            String(r.level||'') === String(level||'') &&
+            isCurrentYearRecord(r, curYear)
+          )
           .reduce((s, r) => s + Number(r.recoveryPoints || 0), 0);
 
-        const currentTotalBefore = overallTotal - recoveryTotal;
+        const currentTotalBefore = Math.max(0, overallTotal - recoveryTotal);
 
         // 완료점수: 입력값 우선, 없으면 기본 3점 (최대 currentTotalBefore)
         const rpInput = document.getElementById('rp-' + studentKey);
@@ -3847,6 +3916,7 @@
           englishName: student.englishName || '',
           className: student.className || '',
           level,
+          year: getCurrentYear(),
           recoveryPoints,
           reasonsSnapshot: buildCycleReasonTextWithPoints(studentKey), // 회복교육 대상 사이클의 위반 목록 저장
           overallTotalAtRecovery: overallTotal,
