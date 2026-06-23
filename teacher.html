@@ -269,7 +269,7 @@
 
 
   <!-- 메일 미리보기 / 수정 모달 -->
-  <div id="modal-mail-preview" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;padding:14px;">
+  <div id="modal-mail-preview" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;padding:14px;" onclick="if(event.target===this)cancelMailPreview()" onwheel="event.stopPropagation()" ontouchmove="event.stopPropagation()">
     <div style="background:#fff;border-radius:16px;padding:22px;min-width:420px;max-width:780px;width:min(780px,96vw);max-height:92vh;overflow:auto;box-shadow:0 8px 32px rgba(0,0,0,.2);">
       <div style="font-size:16px;font-weight:800;color:var(--nv);margin-bottom:14px;">메일 미리보기 및 수정 | Mail Preview & Edit</div>
       <div class="notice" style="margin-bottom:12px;">
@@ -557,6 +557,7 @@
             <tbody id="confirm-processed-tbody"></tbody>
           </table>
         </div>
+        <div id="confirm-processed-pager" class="pager"></div>
       </div>
     </div>
 
@@ -915,6 +916,7 @@
     let allRecoveryPage = 1;
     let recoveryDonePages = { ms: 1, hs: 1 };
     let noticeDonePage = 1;
+    let confirmProcessedPage = 1;
 
     /* =============================================================
      * teacher.html 구조 안내
@@ -1576,6 +1578,12 @@
       renderAllRecoveryEntries();
     }
 
+    function setConfirmProcessedPage(page){
+      const processedCount = Object.values(entries || {}).filter(r => String((r && r.status) || '임시저장') !== '임시저장').length;
+      confirmProcessedPage = clampPage(page, processedCount, PAGE_SIZE);
+      renderConfirmEntries();
+    }
+
     function setRecoveryDonePage(level, page){
       const count = getRecoveryHistoryRows(level).length;
       recoveryDonePages[level] = clampPage(page, count, PAGE_SIZE);
@@ -1957,8 +1965,8 @@
         renderAllRecoveryEntries();
       });
 
-      document.getElementById('confirm-status-filter').addEventListener('change', renderConfirmEntries);
-      document.getElementById('confirm-search').addEventListener('input', renderConfirmEntries);
+      document.getElementById('confirm-status-filter').addEventListener('change', () => { confirmProcessedPage = 1; renderConfirmEntries(); });
+      document.getElementById('confirm-search').addEventListener('input', () => { confirmProcessedPage = 1; renderConfirmEntries(); });
 
       document.addEventListener('click', e => {
         const btn = e.target.closest('.tab-btn');
@@ -2339,8 +2347,16 @@
         }).join('');
       }
 
-      pendingTb.innerHTML   = renderPendingRows(pendingList);
-      processedTb.innerHTML = renderProcessedRows(processedList);
+      pendingTb.innerHTML = renderPendingRows(pendingList);
+      if(!processedList.length){
+        processedTb.innerHTML = renderProcessedRows([]);
+        renderPager('confirm-processed-pager', 0, 1, 'setConfirmProcessedPage');
+      }else{
+        confirmProcessedPage = clampPage(confirmProcessedPage, processedList.length, PAGE_SIZE);
+        const processedPageData = slicePage(processedList, confirmProcessedPage, PAGE_SIZE);
+        processedTb.innerHTML = renderProcessedRows(processedPageData.rows);
+        renderPager('confirm-processed-pager', processedList.length, processedPageData.page, 'setConfirmProcessedPage');
+      }
       stripeAll();
     }
     // admin 전용: 관리자 노트 즉시 저장 (blur 시)
@@ -2377,7 +2393,8 @@
 
     function stripeAll(){
       ['confirm-pending-tbody','confirm-processed-tbody',
-       'notify-active-tbody','notify-done-tbody',
+       'notify-ms-active-tbody','notify-ms-done-tbody',
+       'notify-hs-active-tbody','notify-hs-done-tbody',
        'recovery-ms-active-tbody','recovery-ms-done-tbody',
        'recovery-hs-active-tbody','recovery-hs-done-tbody',
        'all-records-tbody','all-recovery-tbody',
@@ -2407,6 +2424,11 @@
     // 조회 화면에서 확인할 수 있도록 임시 학생 프로필을 구성한다.
     function normalizeStudentKeyText(value){
       return String(value || '').trim();
+    }
+
+    function isStudentHiddenFromList(profile){
+      profile = profile || {};
+      return profile.hiddenFromList === true || profile.listHidden === true || profile.inactive === true || String(profile.studentStatus || '').trim() === 'hidden';
     }
 
     function inferClassNameFromStudentKey(studentKey){
@@ -2443,6 +2465,7 @@
     function getStudentCatalog(){
       const map = {};
       Object.entries(students || {}).forEach(function([key, value]){
+        if(isStudentHiddenFromList(value)) return;
         map[key] = { key:key, ...(value || {}), fromRecords:false };
       });
 
@@ -2450,6 +2473,7 @@
         record = record || {};
         const key = normalizeStudentKeyText(record.studentKey || (record.studentName || record.className ? studentKey(record.studentName || '', record.className || '') : ''));
         if(!key) return;
+        if(students && students[key] && isStudentHiddenFromList(students[key])) return;
         const cls = normalizeStudentKeyText(record.className || inferClassNameFromStudentKey(key));
         const profile = {
           key:key,
@@ -2491,7 +2515,10 @@
     function getStudentProfile(studentKey){
       const key = normalizeStudentKeyText(studentKey);
       if(!key) return null;
-      if(students && students[key]) return { key:key, ...(students[key] || {}), fromRecords:false };
+      if(students && students[key]){
+        if(isStudentHiddenFromList(students[key])) return null;
+        return { key:key, ...(students[key] || {}), fromRecords:false };
+      }
       return getStudentCatalog().find(function(s){ return String(s.key) === key; }) || null;
     }
 
@@ -2989,6 +3016,7 @@
             <button class="btn btn-secondary btn-xs" onclick="setStudentDetailExpanded(true)">전체 펼침</button>
             <button class="btn btn-secondary btn-xs" onclick="setStudentDetailExpanded(false)">전체 접기</button>
             <button class="btn-det" onclick="goToDetentionEntry('${esc(studentKey)}')">디텐션 입력</button>
+            ${hasFullWorkRole() && students[studentKey] ? `<button class="btn btn-danger btn-xs" style="background:#fff;color:var(--rd);border:1px solid #fca5a5" onclick="hideStudentFromList('${esc(studentKey)}')">학생 삭제</button>` : ''}
           </div>
         </div>
 
@@ -3063,6 +3091,42 @@
           </table>
         </div>`;
     }
+    async function hideStudentFromList(studentKey){
+      if(!hasFullWorkRole()) return toast('학생 삭제 권한이 없습니다. | Permission denied.', 'err');
+      const s = students[String(studentKey || '')];
+      if(!s) return toast('학생 명단에 있는 학생만 숨김 처리할 수 있습니다. | Only roster students can be hidden.', 'err');
+      const pick = prompt('학생 리스트에서 숨김 처리할 사유를 선택해 주세요.\n1 = 전출\n2 = 정원외\n\n데이터는 삭제되지 않고 학생 리스트에서만 보이지 않게 됩니다.');
+      if(pick === null) return;
+      const code = String(pick || '').trim();
+      const reasonMap = { '1': '전출', '2': '정원외', '전출': '전출', '정원외': '정원외' };
+      const reason = reasonMap[code];
+      if(!reason) return toast('전출 또는 정원외 중 하나를 선택해 주세요. | Please choose transfer or out-of-roster.', 'err');
+      const label = `${s.className || ''} ${s.name || ''}${s.englishName ? ' ('+s.englishName+')' : ''}`.trim();
+      if(!confirm(`${label} 학생을 학생 리스트에서 숨김 처리합니다.\n사유: ${reason}\n\n디텐션/알림/회복교육/위원회 데이터는 삭제되지 않습니다.\n계속하시겠습니까?`)) return;
+      const payload = {
+        hiddenFromList: true,
+        listHidden: true,
+        inactive: true,
+        inactiveReason: reason,
+        inactiveReasonCode: reason === '전출' ? 'transfer' : 'out_of_roster',
+        inactiveAt: new Date().toISOString(),
+        inactiveBy: teacher ? (teacher.name || '') : '',
+        inactiveByEmail: teacher ? (teacher.email || '') : '',
+        studentStatus: 'hidden'
+      };
+      try{
+        await db.ref('students/'+studentKey).update(payload);
+        if(students[studentKey]) Object.assign(students[studentKey], payload);
+        toast('학생 리스트에서 숨김 처리했습니다. | Student hidden from list.', 'ok');
+        backToOverview();
+        renderStudentClassFilter();
+        renderStudentOverview();
+      }catch(e){
+        console.error(e);
+        toast('학생 숨김 처리 실패 | Failed to hide student.', 'err');
+      }
+    }
+
     function goToDetentionEntry(studentKey){
       const s = getStudentProfile(studentKey);
       if(!s) return;
@@ -4078,6 +4142,8 @@
       if(body) body.value = (config && config.body) || '';
       if(btn){ btn.disabled = false; btn.textContent = '메일 앱 열기 | Open Mail App'; }
       if(modal) modal.style.display = 'flex';
+      document.body.dataset.prevOverflow = document.body.style.overflow || '';
+      document.body.style.overflow = 'hidden';
     }
 
     function cancelMailPreview(){
@@ -4085,6 +4151,8 @@
       _mailPreviewAction = null;
       const modal = document.getElementById('modal-mail-preview');
       if(modal) modal.style.display = 'none';
+      document.body.style.overflow = document.body.dataset.prevOverflow || '';
+      delete document.body.dataset.prevOverflow;
       if(action && typeof action.onCancel === 'function') action.onCancel();
     }
 
@@ -4102,6 +4170,8 @@
         _mailPreviewAction = null;
         const modal = document.getElementById('modal-mail-preview');
         if(modal) modal.style.display = 'none';
+        document.body.style.overflow = document.body.dataset.prevOverflow || '';
+        delete document.body.dataset.prevOverflow;
       }catch(e){
         console.error(e);
         toast('메일 처리 중 오류가 발생했습니다. | Mail processing failed.', 'err');
