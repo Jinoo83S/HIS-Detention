@@ -3258,15 +3258,15 @@
             <td><span class="cell-reason-preview">${esc(String(s.reasons || '-').split('\n')[0])}</span></td>
             <td class="nowrap">${s.currentTotal}</td>
             <td class="nowrap">${s.overallTotal}</td>
-            ${isAdmin
+            ${canEditDate
               ? dateCell(s.notice.parentMailAt,        'parentMailAt')
               : `<td class="nowrap" style="font-size:11px;">${s.notice.parentMailAt ? '<span style="color:var(--sb)">'+fmt(s.notice.parentMailAt)+'</span>' : '<button class="btn-mail" onclick="event.stopPropagation();sendParentMailForDone(\''+esc(s.key)+'\',\''+level+'\',\''+doneMapKey+'\')">메일 보내기</button>'}</td>`
             }
-            ${isAdmin
+            ${canEditDate
               ? dateCell(s.notice.studentTeacherMailAt,'studentTeacherMailAt')
               : `<td class="nowrap" style="font-size:11px;">${s.notice.studentTeacherMailAt ? '<span style="color:var(--sb)">'+fmt(s.notice.studentTeacherMailAt)+'</span>' : '<button class="btn-mail" onclick="event.stopPropagation();sendStudentTeacherMailForDone(\''+esc(s.key)+'\',\''+level+'\',\''+doneMapKey+'\')">메일 보내기</button>'}</td>`
             }
-            ${isAdmin
+            ${canEditDate
               ? dateCell(s.notice.completedAt,         'completedAt')
               : `<td class="nowrap" style="font-size:11px;${completedColor}">${completedText}</td>`
             }
