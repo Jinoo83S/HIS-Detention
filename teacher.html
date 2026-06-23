@@ -1130,12 +1130,15 @@
       return [];
     }
 
-    function hasRole(roleName){ return teacherRoles.includes('admin') || teacherRoles.includes(roleName); }
-    function canEditStandard(){ return teacherRoles.includes('admin') || teacherRoles.includes('master'); }
-    function canConfirmDetention(){ return hasRole('master'); }
-    function canManageNoticeLevel(level){ return hasRole(level === 'ms' ? 'ms_notice' : 'hs_notice'); }
-    function canManageRecoveryLevel(level){ return hasRole(level === 'ms' ? 'ms_restore' : 'hs_restore'); }
-    function canManageCommittee(){ return hasRole('master'); }
+    function isAdminRole(){ return teacherRoles.includes('admin'); }
+    function isMasterRole(){ return teacherRoles.includes('master'); }
+    function hasFullWorkRole(){ return isAdminRole() || isMasterRole(); }
+    function hasRole(roleName){ return isAdminRole() || teacherRoles.includes(String(roleName || '').trim().toLowerCase()); }
+    function canEditStandard(){ return hasFullWorkRole(); }
+    function canConfirmDetention(){ return hasFullWorkRole(); }
+    function canManageNoticeLevel(level){ return hasFullWorkRole() || hasRole(level === 'ms' ? 'ms_notice' : 'hs_notice'); }
+    function canManageRecoveryLevel(level){ return hasFullWorkRole() || hasRole(level === 'ms' ? 'ms_restore' : 'hs_restore'); }
+    function canManageCommittee(){ return hasFullWorkRole(); }
     function getLevelForStudentKey(studentKey, fallbackLevel){
       const s = students[String(studentKey || '')] || {};
       return getSchoolLevel(s.className || '') || String(fallbackLevel || '');
@@ -1146,7 +1149,7 @@
     }
     function canCancelDraftDetention(record){
       const status = String((record && record.status) || '임시저장');
-      return status === '임시저장' && (hasRole('master') || String((record && record.teacherEmail) || '') === String((teacher && teacher.email) || ''));
+      return status === '임시저장' && (hasFullWorkRole() || String((record && record.teacherEmail) || '') === String((teacher && teacher.email) || ''));
     }
     function inferPointsAfterConfirmCancel(record){
       const cur = Number((record && (record.manualPoints || record.totalPoints)) || 0);
@@ -1635,10 +1638,10 @@
     }
 
     function setupRoleVisibility(){
-      const isMaster = hasRole('master');
+      const hasFullAccess = hasFullWorkRole();
       document.querySelectorAll('.role-only').forEach(el => {
         const roles = String(el.dataset.role || '').split(',').map(v => v.trim()).filter(Boolean);
-        const visible = isMaster || roles.some(role => hasRole(role));
+        const visible = hasFullAccess || roles.some(role => hasRole(role));
         el.classList.toggle('role-show', visible);
       });
 
@@ -2007,7 +2010,7 @@
     function renderRecentEntries(){
       const box = document.getElementById('recent-entry-list');
       const list = Object.entries(entries || {}).map(([key, value]) => ({ key, ...(value || {}) }))
-        .filter(r => String(r.teacherEmail || '') === String(teacher.email || '') || hasRole('master'))
+        .filter(r => String(r.teacherEmail || '') === String(teacher.email || '') || hasFullWorkRole())
         .sort((a,b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')))
         .slice(0, 10);
 
@@ -3541,7 +3544,7 @@
       const memo = (document.getElementById('memo').value || '').trim();
 
       // 교사/날짜 (admin·master만 변경 가능)
-      const canEditTeacher = hasRole('admin') || hasRole('master');
+      const canEditTeacher = hasFullWorkRole();
       const selectedTeacher = canEditTeacher ? syncEntryTeacher() : null;
       const entryTeacher     = selectedTeacher ? selectedTeacher.name  : teacher.name || '';
       const entryTeacherEmail= selectedTeacher ? (selectedTeacher.email || teacher.email || '') : teacher.email || '';
@@ -3991,7 +3994,7 @@
     let entryTeacherMap = {};
 
     function renderEntryTeacherList(){
-      const canEdit = hasRole('admin') || hasRole('master');
+      const canEdit = hasFullWorkRole();
       const dl = document.getElementById('entry-teacher-list');
       if(!dl) return;
       entryTeacherMap = {};
@@ -4017,7 +4020,7 @@
     function localDateStr(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
 
     function initEntryFormMeta(){
-      const canEdit = hasRole('admin') || hasRole('master');
+      const canEdit = hasFullWorkRole();
 
       const teacherInput = document.getElementById('entry-teacher');
       teacherInput.value = teacher.name || '';

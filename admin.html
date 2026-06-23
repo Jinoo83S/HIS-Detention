@@ -193,7 +193,7 @@
         <div class="card">
           <div class="card-title">교사 계정 CSV 업로드 | Teacher CSV Upload</div>
           <div class="notice">CSV 첫 줄 | Header: name,email,password,homeroom,roles</div>
-          <div class="small" style="margin-bottom:10px;">roles 예시 | Example: master|ms_notice|hs_notice|ms_restore|hs_restore</div>
+          <div class="small" style="margin-bottom:10px;">roles 예시 | Example: admin|master|ms_notice|hs_notice|ms_restore|hs_restore|default</div>
           <div class="filter-bar">
             <select id="teacher-csv-enc" class="edit-input">
               <option value="utf-8">UTF-8</option>
@@ -215,6 +215,7 @@
   <script>
     let ADMIN_PW = '1751'; // RTDB에서 로드됨
     const ROLE_OPTIONS = [
+      { key: 'admin', label: 'Admin' },
       { key: 'master', label: 'Master' },
       { key: 'ms_notice', label: 'MS Notice' },
       { key: 'hs_notice', label: 'HS Notice' },
