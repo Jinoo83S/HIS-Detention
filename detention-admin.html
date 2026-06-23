@@ -542,6 +542,7 @@
     let noticeRows = [];
     let recoveryRows = [];
     let cycleRows = [];
+    let studentRows = [];
     let studentDataLastQuery = '';
     let _entrySnap = '', _noticeSnap = '', _recoverySnap = '';
     let _entryOrig = {}, _noticeOrig = {}, _recoveryOrig = {}, _committeeOrig = {};
@@ -776,14 +777,16 @@
           detentionNotices: keyedAdminRows(noticeRows),
           recoveryEntries: keyedAdminRows(recoveryRows),
           committeeRecords: keyedAdminRows(committeeRows),
-          studentCycleState: keyedAdminRows(cycleRows)
+          studentCycleState: keyedAdminRows(cycleRows),
+          students: keyedAdminRows(studentRows)
         },
         counts: {
           detentionEntries: (entryRows || []).length,
           detentionNotices: (noticeRows || []).length,
           recoveryEntries: (recoveryRows || []).length,
           committeeRecords: (committeeRows || []).length,
-          studentCycleState: (cycleRows || []).length
+          studentCycleState: (cycleRows || []).length,
+          students: (studentRows || []).length
         }
       };
     }
@@ -820,14 +823,16 @@
             detentionNotices: keyedAdminRows(matched.notices),
             recoveryEntries: keyedAdminRows(matched.recovery),
             committeeRecords: keyedAdminRows(matched.committee),
-            studentCycleState: keyedAdminRows(matched.states)
+            studentCycleState: keyedAdminRows(matched.states),
+            students: keyedAdminRows(matched.students)
           },
           counts: {
             detentionEntries: matched.entries.length,
             detentionNotices: matched.notices.length,
             recoveryEntries: matched.recovery.length,
             committeeRecords: matched.committee.length,
-            studentCycleState: matched.states.length
+            studentCycleState: matched.states.length,
+            students: matched.students.length
           }
         };
         const stamp = new Date().toISOString().slice(0,19).replace(/[:T]/g,'-');
@@ -841,13 +846,18 @@
 
     async function loadAllData(){
       try{
-        const [entriesSnap, noticesSnap, recoverySnap, committeeAdminSnap, cycleSnap] = await Promise.all([
+        const [entriesSnap, noticesSnap, recoverySnap, committeeAdminSnap, cycleSnap, studentsSnap] = await Promise.all([
           db.ref('detentionEntries').once('value'),
           db.ref('detentionNotices').once('value'),
           db.ref('recoveryEntries').once('value'),
           db.ref('committeeRecords').once('value'),
-          db.ref('studentCycleState').once('value')
+          db.ref('studentCycleState').once('value'),
+          db.ref('students').once('value')
         ]);
+
+        studentRows = Object.entries((studentsSnap && studentsSnap.val()) || {}).map(([key, value]) => ({
+          key, ...(value || {})
+        })).sort((a,b) => String(a.className||'').localeCompare(String(b.className||''), 'ko', { numeric:true }) || String(a.name||'').localeCompare(String(b.name||''), 'ko'));
 
         entryRows = Object.entries(entriesSnap.val() || {}).map(([key, value]) => ({
           key, _deleted: false, ...value
@@ -952,12 +962,17 @@
         if (k) keys.add(k);
       }
 
+      studentRows.forEach(function(r){ if (dbAdminMatches(r, q)) addKey(r.key); });
       entryRows.forEach(function(r){ if (dbAdminMatches(r, q)) addKey(dbAdminRowStudentKey(r)); });
       recoveryRows.forEach(function(r){ if (dbAdminMatches(r, q)) addKey(dbAdminRowStudentKey(r)); });
       noticeRows.forEach(function(r){ if (dbAdminMatches(r, q)) addKey(r.studentKey); });
       committeeRows.forEach(function(r){ if (dbAdminMatches(r, q)) addKey(r.studentKey); });
       cycleRows.forEach(function(r){ if (dbAdminMatches(r, q)) addKey(dbAdminStateStudentKey(r)); });
 
+      const studentsMatched = studentRows.filter(function(r){
+        const k = String(r.key || '');
+        return keys.has(k) || dbAdminMatches(r, q);
+      });
       const entries = entryRows.filter(function(r){
         const k = dbAdminRowStudentKey(r);
         return keys.has(k) || dbAdminMatches(r, q);
@@ -979,7 +994,7 @@
         return keys.has(k) || dbAdminMatches(r, q);
       });
 
-      return { q:q, keys:Array.from(keys), entries, notices, recovery, committee, states };
+      return { q:q, keys:Array.from(keys), students:studentsMatched, entries, notices, recovery, committee, states };
     }
 
     function studentDataSection(title, count, innerHtml){

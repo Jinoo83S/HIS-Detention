@@ -2437,13 +2437,16 @@
     function mergeStudentProfile(base, patch){
       base = base || {};
       patch = patch || {};
+      const isRosterStudent = base.fromRecords === false;
       ['name','englishName','className','parentEmail','studentEmail','key'].forEach(function(field){
         const v = patch[field];
         if((base[field] === undefined || base[field] === null || String(base[field]).trim() === '') && v !== undefined && v !== null && String(v).trim() !== ''){
           base[field] = v;
         }
       });
-      base.fromRecords = !!(base.fromRecords || patch.fromRecords);
+      // 중요: students 명단에서 온 학생은 기록 DB에도 존재하더라도 "기록 기반"으로 바꾸지 않는다.
+      // fromRecords는 students 명단에는 없고 detention/notice/recovery/state 기록에서만 발견된 학생에게만 true.
+      base.fromRecords = isRosterStudent ? false : !!(base.fromRecords || patch.fromRecords);
       return base;
     }
 
@@ -2574,8 +2577,8 @@
           const ptColor = current>=9?'var(--rd)':current>=6?'#b45309':current>=3?'#1d4ed8':'#9ca3af';
           const bg = i%2===0?'#fff':'#f7faff';
           return `<tr style="background:${bg}">
-            <td style="font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.name||'')}</td>
-            <td style="font-size:11px;color:var(--sb);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.englishName||'')}${s.fromRecords ? '<span style="margin-left:4px;color:#b45309;font-size:10px">기록</span>' : ''}</td>
+            <td style="font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.name||'')}${s.fromRecords ? '<span title="students 명단에는 없고 기록 DB에서만 발견된 학생입니다." style="margin-left:4px;color:#b45309;font-size:10px">명단없음</span>' : ''}</td>
+            <td style="font-size:11px;color:var(--sb);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.englishName||'')}</td>
             <td style="text-align:center;font-weight:800;font-size:13px;color:${ptColor};white-space:nowrap">${current}</td>
             <td style="text-align:center;font-size:11px;color:var(--sb);white-space:nowrap">${overall}</td>
             <td style="text-align:center;padding:0 2px;white-space:nowrap">
@@ -2696,7 +2699,7 @@
           const ptColor = currentTotal>=9?'var(--rd)':currentTotal>=6?'#b45309':currentTotal>=3?'#1d4ed8':'#9ca3af';
           return `<div class="student-list-row" data-skey="${skey}" onclick="selectStudentInPanel('${skey}')">
             <div style="flex:1;min-width:0">
-              <div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(s.name||'')}</div>
+              <div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(s.name||'')}${s.fromRecords ? '<span title="students 명단에는 없고 기록 DB에서만 발견된 학생입니다." style="margin-left:4px;color:#b45309;font-size:10px">명단없음</span>' : ''}</div>
               <div style="font-size:11px;color:var(--sb);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(s.englishName||'')}</div>
             </div>
             <div style="display:flex;align-items:center;gap:4px;flex-shrink:0">
