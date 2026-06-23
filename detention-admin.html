@@ -418,6 +418,7 @@
             <option value="확정">확정 | Confirmed</option>
             <option value="반려">반려 | Rejected</option>
           </select>
+          <button class="btn btn-secondary" onclick="addEntryRow()">행 추가 | Add Row</button>
           <button id="btn-save-entries" class="btn btn-primary" onclick="saveEntries()" disabled style="opacity:.4;cursor:not-allowed;">저장할 내용 없음</button>
         </div>
         <div class="tbl-wrap">
@@ -425,9 +426,11 @@
             <thead>
               <tr>
                 <th style="width:32px">  #  </th>
+                <th style="width:130px">DB Key<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
                 <th style="width:90px" >학생<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
                 <th style="width:100px">영문명<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
                 <th style="width:48px" >학반<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:180px">studentKey<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
                 <th style="width:120px">구분<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
                 <th style="width:240px">위반행위<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
                 <th style="width:62px" >자동점수<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
@@ -438,6 +441,11 @@
                 <th style="width:96px" >작성일<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
                 <th style="width:96px" >확정일<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
                 <th style="width:140px">메모<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:70px">연도<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:140px">관리자메모<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:180px">학부모 Email<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:180px">학생 Email<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:180px">담임 Email<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
                 <th style="width:46px" >삭제</th>
               </tr>
             </thead>
@@ -453,6 +461,7 @@
         <div class="card-title">알림 기록 | Notice Records</div>
         <div class="toolbar">
           <input id="notice-search" class="edit-input" placeholder="studentKey / level 검색 | Search">
+          <button class="btn btn-secondary" onclick="addNoticeRow()">행 추가 | Add Row</button>
           <button id="btn-save-notices" class="btn btn-primary" onclick="saveNotices()" disabled style="opacity:.4;cursor:not-allowed;">저장할 내용 없음</button>
         </div>
         <div class="tbl-wrap">
@@ -460,12 +469,16 @@
             <thead>
               <tr>
                 <th style="width:32px">#</th>
+                <th style="width:130px">DB Key<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
                 <th style="width:180px">학생키<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
                 <th style="width:56px">구분<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
                 <th style="width:110px">학부모 알림일<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
                 <th style="width:110px">학생/교사 알림일<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
                 <th style="width:110px">완료일<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
                 <th style="width:90px">완료자<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:150px">완료자 이메일<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:70px">연도<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:220px">사유 스냅샷<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
                 <th style="width:46px">삭제</th>
               </tr>
             </thead>
@@ -481,6 +494,7 @@
         <div class="card-title">회복교육 기록 | Recovery Records</div>
         <div class="toolbar">
           <input id="recovery-search" class="edit-input" placeholder="학생/영문명/학반 검색 | Search">
+          <button class="btn btn-secondary" onclick="addRecoveryRow()">행 추가 | Add Row</button>
           <button id="btn-save-recovery" class="btn btn-primary" onclick="saveRecovery()" disabled style="opacity:.4;cursor:not-allowed;">저장할 내용 없음</button>
         </div>
         <div class="tbl-wrap">
@@ -488,13 +502,18 @@
             <thead>
               <tr>
                 <th style="width:32px">#</th>
+                <th style="width:130px">DB Key<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
                 <th style="width:90px">학생<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
                 <th style="width:100px">영문명<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
                 <th style="width:48px">학반<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:180px">studentKey<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
                 <th style="width:56px">구분<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
                 <th style="width:68px">회복점수<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
                 <th style="width:80px">담당자<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:150px">담당자 이메일<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
                 <th style="width:110px">완료일<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:70px">연도<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:220px">사유 스냅샷<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
                 <th style="width:46px">삭제</th>
               </tr>
             </thead>
@@ -509,6 +528,7 @@
       <div class="card">
         <div class="card-title">위원회 기록 | Committee Records</div>
         <div class="toolbar">
+          <button class="btn btn-secondary" onclick="addCommitteeRow()">행 추가 | Add Row</button>
           <button id="btn-save-committee" class="btn btn-primary" onclick="saveCommittee()" disabled style="opacity:.4;cursor:not-allowed;">저장할 내용 없음</button>
         </div>
         <div class="tbl-wrap">
@@ -516,10 +536,20 @@
             <thead>
               <tr>
                 <th style="width:32px">#</th>
-                <th style="width:100px">종류<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:130px">DB Key<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:120px">종류<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
                 <th style="width:180px">학생 Key<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:100px">학생<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:60px">학반<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:130px">entryKey<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:180px">linkedEntryKeys<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:240px">회부 사유<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:110px">생성일<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:100px">생성자<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:150px">생성자 이메일<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
                 <th style="width:120px">완료일<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
                 <th style="width:120px">처리자<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:150px">처리자 이메일<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
                 <th style="width:70px">연도<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
                 <th style="width:56px">삭제</th>
               </tr>
@@ -596,6 +626,79 @@
       const raw = String(v || '').trim();
       const m = raw.match(/^(\d{4}-\d{2}-\d{2})/);
       return m ? m[1] : '';
+    }
+
+
+    function todayIsoStart(){
+      return new Date().toISOString().slice(0,10) + 'T00:00:00';
+    }
+    function currentAdminYear(){
+      try { if (typeof getCurrentYear === 'function') return getCurrentYear(); } catch(e) {}
+      return new Date().getFullYear();
+    }
+    function makeAdminKey(prefix){
+      return String(prefix || 'row') + '_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,8);
+    }
+    function listText(v){
+      if (Array.isArray(v)) return v.join(', ');
+      if (v === null || v === undefined) return '';
+      return String(v);
+    }
+    function parseKeyList(text){
+      const items = String(text || '').split(/[\n,]+/).map(s => s.trim()).filter(Boolean);
+      return items.length ? items : null;
+    }
+    function addEntryRow(){
+      const now = todayIsoStart();
+      entryRows.unshift({
+        key: makeAdminKey('entry'),
+        studentName: '', englishName: '', className: '', studentKey: '',
+        category: '', violation: '', autoPoints: '', manualPoints: 0, totalPoints: 0,
+        status: '확정', teacherName: '', createdAt: now, confirmedAt: now,
+        memo: '', adminNote: '', year: currentAdminYear(),
+        parentEmail: '', studentEmail: '', homeroomEmail: ''
+      });
+      renderEntriesTable();
+      checkEntryDirty();
+      toast('디텐션 행이 추가되었습니다. 필요한 값을 입력한 뒤 저장하세요. | New detention row added.', 'ok');
+    }
+    function addNoticeRow(){
+      noticeRows.unshift({
+        key: makeAdminKey('notice'),
+        studentKey: '', level: 'hs', year: currentAdminYear(),
+        parentMailAt: null, studentTeacherMailAt: null, completedAt: null,
+        completedBy: '', completedByEmail: '', cycleViolationsSnapshot: ''
+      });
+      renderNoticesTable();
+      checkNoticeDirty();
+      toast('알림 행이 추가되었습니다. | New notice row added.', 'ok');
+    }
+    function addRecoveryRow(){
+      const now = todayIsoStart();
+      recoveryRows.unshift({
+        key: makeAdminKey('recovery'),
+        studentName: '', englishName: '', className: '', studentKey: '',
+        level: 'hs', year: currentAdminYear(), recoveryPoints: 3,
+        completedAt: now, staffName: '', staffEmail: '',
+        reasonsSnapshot: '', currentTotalBefore: '', currentTotalAfter: ''
+      });
+      renderRecoveryTable();
+      checkRecoveryDirty();
+      toast('회복교육 행이 추가되었습니다. | New restorative education row added.', 'ok');
+    }
+    function addCommitteeRow(){
+      const now = todayIsoStart();
+      committeeRows.unshift({
+        key: makeAdminKey('committee'),
+        type: 'manual_referral', studentKey: '', studentName: '', className: '',
+        entryKey: '', linkedEntryKeys: null,
+        reason: '', reasonSnapshot: '',
+        year: currentAdminYear(), createdAt: now, createdBy: '', createdByEmail: '',
+        completedAt: null, completedBy: '', completedByEmail: ''
+      });
+      renderCommitteeTable();
+      checkCommitteeDirty();
+      toast('위원회 행이 추가되었습니다. 수기 회부/완료 기록을 입력한 뒤 저장하세요. | New committee row added.', 'ok');
     }
 
 
@@ -1195,52 +1298,39 @@
       const tbody = document.getElementById('entries-tbody');
       const q = (document.getElementById('entry-search').value || '').trim().toLowerCase();
       const status = document.getElementById('entry-status-filter').value || '';
-
       const filtered = entryRows.filter(row => {
         if (status && String(row.status || '') !== status) return false;
         if (!q) return true;
-        return [
-          row.studentName,
-          row.englishName,
-          row.className,
-          row.category,
-          row.violation,
-          row.teacherName
-        ].some(v => String(v || '').toLowerCase().includes(q));
+        return [row.key,row.studentName,row.englishName,row.className,row.studentKey,row.category,row.violation,row.teacherName,row.memo,row.adminNote,row.parentEmail,row.studentEmail,row.homeroomEmail].some(v => String(v || '').toLowerCase().includes(q));
       });
-
-      if (!filtered.length){
-        tbody.innerHTML = `<tr><td colspan="15">기록이 없습니다. | No records found.</td></tr>`;
-        return;
-      }
-
+      if (!filtered.length){ tbody.innerHTML = `<tr><td colspan="21">기록이 없습니다. | No records found.</td></tr>`; return; }
       tbody.innerHTML = filtered.map((row, rowNum) => {
         const idx = entryRows.findIndex(r => r.key === row.key);
         return `
           <tr class="${row._deleted ? 'pending-delete' : ''}">
             <td class="row-num">${rowNum+1}</td>
+            <td><input class="edit-input" value="${esc(row.key || '')}" readonly></td>
             <td><input class="edit-input" value="${esc(row.studentName || '')}" oninput="entryRows[${idx}].studentName=this.value;checkEntryDirty()"></td>
             <td><input class="edit-input" value="${esc(row.englishName || '')}" oninput="entryRows[${idx}].englishName=this.value;checkEntryDirty()"></td>
             <td><input class="edit-input" value="${esc(row.className || '')}" oninput="entryRows[${idx}].className=this.value;checkEntryDirty()"></td>
+            <td><input class="edit-input" value="${esc(row.studentKey || '')}" oninput="entryRows[${idx}].studentKey=this.value;checkEntryDirty()"></td>
             <td><input class="edit-input" value="${esc(row.category || '')}" oninput="entryRows[${idx}].category=this.value;checkEntryDirty()"></td>
             <td><textarea class="edit-textarea" oninput="entryRows[${idx}].violation=this.value;checkEntryDirty()">${esc(row.violation || '')}</textarea></td>
             <td><input class="edit-input" value="${esc(String(row.autoPoints || ''))}" oninput="entryRows[${idx}].autoPoints=this.value;checkEntryDirty()"></td>
             <td><input class="edit-input" value="${esc(String(row.manualPoints || ''))}" oninput="entryRows[${idx}].manualPoints=Number(this.value||0);checkEntryDirty()"></td>
             <td><input class="edit-input" value="${esc(String(row.totalPoints || ''))}" oninput="entryRows[${idx}].totalPoints=Number(this.value||0);checkEntryDirty()"></td>
-            <td>
-              <select class="edit-input" onchange="entryRows[${idx}].status=this.value;checkEntryDirty()">
-                <option value="임시저장" ${row.status==='임시저장'?'selected':''}>대기</option>
-                <option value="확정" ${row.status==='확정'?'selected':''}>확정</option>
-                <option value="반려" ${row.status==='반려'?'selected':''}>반려</option>
-              </select>
-            </td>
+            <td><select class="edit-input" onchange="entryRows[${idx}].status=this.value;checkEntryDirty()"><option value="임시저장" ${row.status==='임시저장'?'selected':''}>대기</option><option value="확정" ${row.status==='확정'?'selected':''}>확정</option><option value="반려" ${row.status==='반려'?'selected':''}>반려</option></select></td>
             <td><input class="edit-input" value="${esc(row.teacherName || '')}" oninput="entryRows[${idx}].teacherName=this.value;checkEntryDirty()"></td>
-            <td><input type="date" class="edit-input" value="${esc((row.createdAt||''). slice(0,10))}" onchange="entryRows[${idx}].createdAt=this.value?this.value+'T00:00:00':null;checkEntryDirty()"></td>
-            <td><input type="date" class="edit-input" value="${esc((row.confirmedAt||''). slice(0,10))}" onchange="entryRows[${idx}].confirmedAt=this.value?this.value+'T00:00:00':null;checkEntryDirty()"></td>
+            <td><input type="date" class="edit-input" value="${esc(dateInputValue(row.createdAt))}" onchange="entryRows[${idx}].createdAt=this.value?this.value+'T00:00:00':null;checkEntryDirty()"></td>
+            <td><input type="date" class="edit-input" value="${esc(dateInputValue(row.confirmedAt))}" onchange="entryRows[${idx}].confirmedAt=this.value?this.value+'T00:00:00':null;checkEntryDirty()"></td>
             <td><textarea class="edit-textarea" style="min-height:32px" placeholder="메모" oninput="entryRows[${idx}].memo=this.value;checkEntryDirty()">${esc(row.memo || '')}</textarea></td>
+            <td><input class="edit-input" value="${esc(String(row.year || ''))}" oninput="entryRows[${idx}].year=this.value;checkEntryDirty()"></td>
+            <td><textarea class="edit-textarea" style="min-height:32px" placeholder="관리자 메모" oninput="entryRows[${idx}].adminNote=this.value;checkEntryDirty()">${esc(row.adminNote || '')}</textarea></td>
+            <td><input class="edit-input" value="${esc(row.parentEmail || '')}" oninput="entryRows[${idx}].parentEmail=this.value;checkEntryDirty()"></td>
+            <td><input class="edit-input" value="${esc(row.studentEmail || '')}" oninput="entryRows[${idx}].studentEmail=this.value;checkEntryDirty()"></td>
+            <td><input class="edit-input" value="${esc(row.homeroomEmail || '')}" oninput="entryRows[${idx}].homeroomEmail=this.value;checkEntryDirty()"></td>
             <td><button class="btn btn-danger small-btn" onclick="toggleEntryDeleted('${row.key}')">${row._deleted ? "복구" : "삭제"}</button></td>
-          </tr>
-        `;
+          </tr>`;
       }).join('');
     }
 
@@ -1277,31 +1367,25 @@
     function renderNoticesTable(){
       const tbody = document.getElementById('notices-tbody');
       const q = (document.getElementById('notice-search').value || '').trim().toLowerCase();
-
-      const filtered = noticeRows.filter(row => {
-        if (!q) return true;
-        return [row.key, row.studentKey, row.level].some(v => String(v || '').toLowerCase().includes(q));
-      });
-
-      if (!filtered.length){
-        tbody.innerHTML = `<tr><td colspan="8">기록이 없습니다. | No notice records found.</td></tr>`;
-        return;
-      }
-
+      const filtered = noticeRows.filter(row => !q || [row.key,row.studentKey,row.level,row.completedBy,row.completedByEmail,row.cycleViolationsSnapshot].some(v => String(v || '').toLowerCase().includes(q)));
+      if (!filtered.length){ tbody.innerHTML = `<tr><td colspan="12">기록이 없습니다. | No notice records found.</td></tr>`; return; }
       tbody.innerHTML = filtered.map((row, rowNum) => {
         const idx = noticeRows.findIndex(r => r.key === row.key);
         return `
           <tr class="${row._deleted ? 'pending-delete' : ''}">
             <td class="row-num">${rowNum+1}</td>
+            <td><input class="edit-input" value="${esc(row.key || '')}" readonly></td>
             <td><input class="edit-input" value="${esc(row.studentKey || '')}" oninput="noticeRows[${idx}].studentKey=this.value;checkNoticeDirty()"></td>
             <td><input class="edit-input" value="${esc(row.level || '')}" oninput="noticeRows[${idx}].level=this.value;checkNoticeDirty()"></td>
             <td><input type="date" class="edit-input" value="${esc(dateInputValue(row.parentMailAt))}" onchange="noticeRows[${idx}].parentMailAt=this.value?this.value+'T00:00:00':null;checkNoticeDirty()"></td>
             <td><input type="date" class="edit-input" value="${esc(dateInputValue(row.studentTeacherMailAt))}" onchange="noticeRows[${idx}].studentTeacherMailAt=this.value?this.value+'T00:00:00':null;checkNoticeDirty()"></td>
             <td><input type="date" class="edit-input" value="${esc(dateInputValue(row.completedAt))}" onchange="noticeRows[${idx}].completedAt=this.value?this.value+'T00:00:00':null;checkNoticeDirty()"></td>
             <td><input class="edit-input" value="${esc(row.completedBy || '')}" oninput="noticeRows[${idx}].completedBy=this.value;checkNoticeDirty()"></td>
+            <td><input class="edit-input" value="${esc(row.completedByEmail || '')}" oninput="noticeRows[${idx}].completedByEmail=this.value;checkNoticeDirty()"></td>
+            <td><input class="edit-input" value="${esc(String(row.year || ''))}" oninput="noticeRows[${idx}].year=this.value;checkNoticeDirty()"></td>
+            <td><textarea class="edit-textarea" style="min-height:32px" oninput="noticeRows[${idx}].cycleViolationsSnapshot=this.value;checkNoticeDirty()">${esc(row.cycleViolationsSnapshot || row.reasonSnapshot || '')}</textarea></td>
             <td><button class="btn btn-danger small-btn" onclick="(function(k){const r=noticeRows.find(x=>x.key===k);if(r){r._deleted=!r._deleted;renderNoticesTable();checkNoticeDirty();}})('${row.key}')">${row._deleted ? "복구" : "삭제"}</button></td>
-          </tr>
-        `;
+          </tr>`;
       }).join('');
     }
 
@@ -1332,37 +1416,27 @@
     function renderRecoveryTable(){
       const tbody = document.getElementById('recovery-tbody');
       const q = (document.getElementById('recovery-search').value || '').trim().toLowerCase();
-
-      const filtered = recoveryRows.filter(row => {
-        if (!q) return true;
-        return [
-          row.studentName,
-          row.englishName,
-          row.className,
-          row.staffName
-        ].some(v => String(v || '').toLowerCase().includes(q));
-      });
-
-      if (!filtered.length){
-        tbody.innerHTML = `<tr><td colspan="9">기록이 없습니다. | No recovery records found.</td></tr>`;
-        return;
-      }
-
+      const filtered = recoveryRows.filter(row => !q || [row.key,row.studentKey,row.studentName,row.englishName,row.className,row.staffName,row.staffEmail,row.reasonsSnapshot].some(v => String(v || '').toLowerCase().includes(q)));
+      if (!filtered.length){ tbody.innerHTML = `<tr><td colspan="14">기록이 없습니다. | No recovery records found.</td></tr>`; return; }
       tbody.innerHTML = filtered.map((row, rowNum) => {
         const idx = recoveryRows.findIndex(r => r.key === row.key);
         return `
           <tr class="${row._deleted ? 'pending-delete' : ''}">
             <td class="row-num">${rowNum+1}</td>
+            <td><input class="edit-input" value="${esc(row.key || '')}" readonly></td>
             <td><input class="edit-input" value="${esc(row.studentName || '')}" oninput="recoveryRows[${idx}].studentName=this.value;checkRecoveryDirty()"></td>
             <td><input class="edit-input" value="${esc(row.englishName || '')}" oninput="recoveryRows[${idx}].englishName=this.value;checkRecoveryDirty()"></td>
             <td><input class="edit-input" value="${esc(row.className || '')}" oninput="recoveryRows[${idx}].className=this.value;checkRecoveryDirty()"></td>
+            <td><input class="edit-input" value="${esc(row.studentKey || '')}" oninput="recoveryRows[${idx}].studentKey=this.value;checkRecoveryDirty()"></td>
             <td><input class="edit-input" value="${esc(row.level || '')}" oninput="recoveryRows[${idx}].level=this.value;checkRecoveryDirty()"></td>
             <td><input class="edit-input" value="${esc(String(row.recoveryPoints || row.points || ''))}" oninput="recoveryRows[${idx}].recoveryPoints=Number(this.value||0);checkRecoveryDirty()"></td>
             <td><input class="edit-input" value="${esc(row.staffName || '')}" oninput="recoveryRows[${idx}].staffName=this.value;checkRecoveryDirty()"></td>
-            <td><input type="date" class="edit-input" value="${esc((row.completedAt||'').slice(0,10))}" onchange="recoveryRows[${idx}].completedAt=this.value?this.value+'T00:00:00':null;checkRecoveryDirty()"></td>
+            <td><input class="edit-input" value="${esc(row.staffEmail || '')}" oninput="recoveryRows[${idx}].staffEmail=this.value;checkRecoveryDirty()"></td>
+            <td><input type="date" class="edit-input" value="${esc(dateInputValue(row.completedAt))}" onchange="recoveryRows[${idx}].completedAt=this.value?this.value+'T00:00:00':null;checkRecoveryDirty()"></td>
+            <td><input class="edit-input" value="${esc(String(row.year || ''))}" oninput="recoveryRows[${idx}].year=this.value;checkRecoveryDirty()"></td>
+            <td><textarea class="edit-textarea" style="min-height:32px" oninput="recoveryRows[${idx}].reasonsSnapshot=this.value;checkRecoveryDirty()">${esc(row.reasonsSnapshot || '')}</textarea></td>
             <td><button class="btn btn-danger small-btn" onclick="(function(k){const r=recoveryRows.find(x=>x.key===k);if(r){r._deleted=!r._deleted;renderRecoveryTable();checkRecoveryDirty();}})('${row.key}')">${row._deleted ? "복구" : "삭제"}</button></td>
-          </tr>
-        `;
+          </tr>`;
       }).join('');
     }
 
@@ -1397,57 +1471,45 @@
       const tbody=document.getElementById('committee-tbody');
       if(!tbody)return;
       const visible=committeeRows;
-      if(!visible.length){tbody.innerHTML='<tr><td colspan="7" class="empty">기록이 없습니다.</td></tr>';return;}
+      if(!visible.length){tbody.innerHTML='<tr><td colspan="17" class="empty">기록이 없습니다.</td></tr>';return;}
       const rows=[];
-      visible.forEach(function(r){
+      visible.forEach(function(r, rowNum){
         const idx=committeeRows.findIndex(function(x){return x.key===r.key;});
         const tr=document.createElement('tr');
         if (r._deleted) tr.className = 'pending-delete';
-        const noTd=document.createElement('td');
-        noTd.textContent=String(idx+1);
-        noTd.style.textAlign='center';
-        tr.appendChild(noTd);
-
+        const noTd=document.createElement('td'); noTd.textContent=String(rowNum+1); noTd.style.textAlign='center'; tr.appendChild(noTd);
         function addInput(field, type){
-          const td=document.createElement('td');
-          const inp=document.createElement('input');
-          inp.className='edit-input';
-          inp.style.width='100%';
-          inp.style.maxWidth='100%';
-          inp.style.boxSizing='border-box';
-          inp.type=type||'text';
-          if(type==='date'){
-            inp.value=dateInputValue(r[field]);
-            inp.onchange=function(){committeeRows[idx][field]=this.value?this.value+'T00:00:00':null;checkCommitteeDirty();};
-          }else{
-            inp.value=r[field]||'';
-            inp.oninput=function(){committeeRows[idx][field]=this.value;checkCommitteeDirty();};
-          }
-          td.appendChild(inp);tr.appendChild(td);
+          const td=document.createElement('td'); const inp=document.createElement('input');
+          inp.className='edit-input'; inp.style.width='100%'; inp.style.maxWidth='100%'; inp.style.boxSizing='border-box'; inp.type=type||'text';
+          if(type==='date'){ inp.value=dateInputValue(r[field]); inp.onchange=function(){committeeRows[idx][field]=this.value?this.value+'T00:00:00':null;checkCommitteeDirty();}; }
+          else{ inp.value=r[field]||''; inp.oninput=function(){committeeRows[idx][field]=this.value;checkCommitteeDirty();}; }
+          td.appendChild(inp);tr.appendChild(td); return inp;
         }
-
-        // Firebase 위원회 기록에서 운영상 직접 수정이 필요한 핵심 항목만 표시합니다.
-        // entryKey, linkedEntryKeys, reasonSnapshot, createdAt 등은 화면에서 자동 추론/표시되므로
-        // DB 관리 화면에서는 불필요한 혼란을 줄이기 위해 숨깁니다. 저장 시 기존 값은 유지됩니다.
-        addInput('type');
-        addInput('studentKey');
-        addInput('completedAt','date');
-        addInput('completedBy');
-        addInput('year');
-
-        const td=document.createElement('td');
-        const btn=document.createElement('button');
-        btn.className='btn btn-danger small-btn';
-        btn.textContent = r._deleted ? '복구' : '삭제';
-        btn.onclick=function(){
-          const key=r.key;
-          const rec=committeeRows.find(function(x){return x.key===key;});
-          if(rec){rec._deleted=!rec._deleted;renderCommitteeTable();checkCommitteeDirty();}
-        };
-        td.appendChild(btn);tr.appendChild(td);
-        rows.push(tr);
+        function addTextarea(getter, setter){
+          const td=document.createElement('td'); const ta=document.createElement('textarea'); ta.className='edit-textarea'; ta.style.minHeight='32px';
+          ta.value = getter(r); ta.oninput=function(){ setter(committeeRows[idx], this.value); checkCommitteeDirty(); };
+          td.appendChild(ta); tr.appendChild(td);
+        }
+        function addSelect(field, options){
+          const td=document.createElement('td'); const sel=document.createElement('select');
+          sel.className='edit-input'; sel.style.width='100%'; sel.style.boxSizing='border-box';
+          options.forEach(function(opt){ const o=document.createElement('option'); o.value=opt[0]; o.textContent=opt[1]; if(String(r[field]||'')===opt[0]) o.selected=true; sel.appendChild(o); });
+          if(!options.some(function(opt){return opt[0]===String(r[field]||'');}) && r[field]){ const o=document.createElement('option'); o.value=r[field]; o.textContent=r[field]; o.selected=true; sel.appendChild(o); }
+          sel.onchange=function(){ committeeRows[idx][field]=this.value; checkCommitteeDirty(); };
+          td.appendChild(sel); tr.appendChild(td);
+        }
+        const keyInput = addInput('key'); keyInput.readOnly=true;
+        addSelect('type', [['manual_referral','manual_referral: 디텐션 건 회부'],['manual_edu','manual_edu: 학생 위원회'],['referral','referral'],['edu','edu'],['edu_points','edu_points'],['edu_overall','edu_overall']]);
+        addInput('studentKey'); addInput('studentName'); addInput('className'); addInput('entryKey');
+        addTextarea(function(row){ return listText(row.linkedEntryKeys); }, function(row, val){ row.linkedEntryKeys = parseKeyList(val); });
+        addTextarea(function(row){ return row.reason || row.reasonSnapshot || ''; }, function(row, val){ row.reason=val; row.reasonSnapshot=val; });
+        addInput('createdAt','date'); addInput('createdBy'); addInput('createdByEmail'); addInput('completedAt','date'); addInput('completedBy'); addInput('completedByEmail'); addInput('year');
+        const td=document.createElement('td'); const btn=document.createElement('button');
+        btn.className='btn btn-danger small-btn'; btn.textContent = r._deleted ? '복구' : '삭제';
+        btn.onclick=function(){ const key=r.key; const rec=committeeRows.find(function(x){return x.key===key;}); if(rec){rec._deleted=!rec._deleted;renderCommitteeTable();checkCommitteeDirty();} };
+        td.appendChild(btn); tr.appendChild(td); rows.push(tr);
       });
-      tbody.innerHTML='';rows.forEach(function(tr){tbody.appendChild(tr);});
+      tbody.innerHTML=''; rows.forEach(function(tr){tbody.appendChild(tr);});
     }
 
     async function saveCommittee(){
