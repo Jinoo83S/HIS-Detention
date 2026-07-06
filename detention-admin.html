@@ -279,6 +279,50 @@
       margin-bottom:10px;
     }
 
+    .bulk-import-box{
+      border:1px solid #dbe3ef;
+      background:#f8fafc;
+      border-radius:4px;
+      padding:10px;
+      margin:8px 0 12px;
+    }
+    .bulk-import-box summary{
+      cursor:pointer;
+      font-weight:700;
+      color:#1e293b;
+      user-select:none;
+    }
+    .bulk-import-box .bulk-help{
+      margin:8px 0;
+      color:#475569;
+      font-size:12px;
+      line-height:1.55;
+    }
+    .bulk-import-box textarea{
+      width:100%;
+      min-height:180px;
+      resize:vertical;
+      box-sizing:border-box;
+      font-family:Consolas, 'Courier New', monospace;
+      font-size:12px;
+      line-height:1.4;
+      border:1px solid #cbd5e1;
+      border-radius:4px;
+      padding:8px;
+      background:#fff;
+    }
+    .bulk-preview{
+      margin-top:8px;
+      max-height:240px;
+      overflow:auto;
+      border:1px solid #e2e8f0;
+      border-radius:4px;
+      background:#fff;
+      font-size:12px;
+    }
+    .bulk-preview table{ min-width:900px; }
+    .bulk-preview th{ position:sticky; top:0; z-index:2; }
+
     /* 학생별 통합 조회/수정 */
     .student-data-empty{
       border:1px dashed #cbd5e1;
@@ -421,6 +465,22 @@
           <button class="btn btn-secondary" onclick="addEntryRow()">행 추가 | Add Row</button>
           <button id="btn-save-entries" class="btn btn-primary" onclick="saveEntries()" disabled style="opacity:.4;cursor:not-allowed;">저장할 내용 없음</button>
         </div>
+        <details class="bulk-import-box">
+          <summary>디텐션 일괄 입력 | Bulk Detention Import</summary>
+          <div class="bulk-help">
+            구글시트/TSV 행을 그대로 붙여넣은 뒤 <b>미리보기</b>로 확인하세요. DB Key가 이미 있으면 기존 행을 갱신하고, 없으면 새 행으로 추가합니다.<br>
+            Paste Google Sheet/TSV rows, preview them, then import. Existing DB keys are updated; new keys are added.
+          </div>
+          <textarea id="entry-bulk-text" placeholder="ID	이름	학년	날짜	교사	종류	상세 ... 형식의 TSV 데이터를 붙여넣으세요."></textarea>
+          <div class="toolbar" style="margin-top:8px;margin-bottom:0;">
+            <button class="btn btn-secondary" onclick="previewBulkEntries()">미리보기 | Preview</button>
+            <button class="btn btn-primary" onclick="applyBulkEntries(false)">목록에 반영 | Add to List</button>
+            <button class="btn btn-primary" onclick="applyBulkEntries(true)">일괄 입력 저장 | Import & Save</button>
+            <button class="btn btn-secondary" onclick="clearBulkEntries()">비우기 | Clear</button>
+          </div>
+          <div id="entry-bulk-summary" class="bulk-help">아직 미리보기 전입니다. | Not previewed yet.</div>
+          <div id="entry-bulk-preview" class="bulk-preview" style="display:none;"></div>
+        </details>
         <div class="tbl-wrap">
           <table style="table-layout:fixed">
             <thead>
@@ -576,6 +636,7 @@
     let studentDataLastQuery = '';
     let _entrySnap = '', _noticeSnap = '', _recoverySnap = '';
     let _entryOrig = {}, _noticeOrig = {}, _recoveryOrig = {}, _committeeOrig = {};
+    let bulkEntryPreviewRows = [];
 
     function _stableStringify(value){
       if (value === undefined) return 'null';
@@ -662,6 +723,204 @@
       checkEntryDirty();
       toast('디텐션 행이 추가되었습니다. 필요한 값을 입력한 뒤 저장하세요. | New detention row added.', 'ok');
     }
+    function _cleanBulkText(v){
+      return String(v || '').replace(/[\r\n\t]+/g, ' ').replace(/\s+/g, ' ').trim();
+    }
+    function _parseBool(v){ return String(v || '').trim().toUpperCase() === 'TRUE'; }
+    function _numOrUndefined(v){
+      const n = Number(String(v || '').trim());
+      return Number.isFinite(n) ? n : undefined;
+    }
+    function _isoDateFromBulk(v){
+      const s = String(v || '').trim();
+      const m = s.match(/^(\d{4}-\d{2}-\d{2})/);
+      return m ? (m[1] + 'T00:00:00') : undefined;
+    }
+    function _yearFromBulkDate(v){
+      const s = String(v || '').trim();
+      const m = s.match(/^(\d{4})/);
+      return m ? m[1] : String(currentAdminYear());
+    }
+    function parseBulkName(fullName){
+      const raw = _cleanBulkText(fullName);
+      if (!raw) return { studentName:'', englishName:'' };
+      const tokens = raw.split(/\s+/).filter(Boolean);
+      const hasHangul = /[가-힣ㄱ-ㅎㅏ-ㅣ]/.test(raw);
+      if (hasHangul) {
+        let split = tokens.findIndex(t => /^[A-Za-z][A-Za-z'\-]*$/.test(t));
+        if (split > 0) return { studentName:tokens.slice(0, split).join(' '), englishName:tokens.slice(split).join(' ') };
+        return { studentName:raw, englishName:'' };
+      }
+      if (tokens.length >= 4) {
+        let upperCount = 0;
+        while (upperCount < tokens.length && /^[A-Z][A-Z'\-]*$/.test(tokens[upperCount])) upperCount++;
+        if (upperCount >= 2 && upperCount < tokens.length) {
+          return { studentName:tokens.slice(0, upperCount).join(' '), englishName:tokens.slice(upperCount).join(' ') };
+        }
+      }
+      if (tokens.length % 2 === 0) {
+        const half = tokens.length / 2;
+        const a = tokens.slice(0, half).join(' ').toLowerCase();
+        const b = tokens.slice(half).join(' ').toLowerCase();
+        if (a && a === b) return { studentName:tokens.slice(0, half).join(' '), englishName:'' };
+      }
+      return { studentName:raw, englishName:'' };
+    }
+    function makeBulkStudentKey(studentName, className){
+      const c = _cleanBulkText(className).replace(/\s+/g, '');
+      const n = _cleanBulkText(studentName).replace(/\s+/g, '_');
+      return (c && n) ? (c + '_' + n) : '';
+    }
+    function parseBulkTsv(text){
+      const rows = [];
+      let row = [], field = '', inQuotes = false;
+      const src = String(text || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+      for (let i = 0; i < src.length; i++) {
+        const ch = src[i];
+        if (ch === '"') {
+          if (inQuotes && src[i+1] === '"') { field += '"'; i++; }
+          else inQuotes = !inQuotes;
+        } else if (ch === '\t' && !inQuotes) {
+          row.push(field); field = '';
+        } else if (ch === '\n' && !inQuotes) {
+          row.push(field); field = '';
+          if (row.some(v => String(v || '').trim() !== '')) rows.push(row);
+          row = [];
+        } else {
+          field += ch;
+        }
+      }
+      row.push(field);
+      if (row.some(v => String(v || '').trim() !== '')) rows.push(row);
+      return rows;
+    }
+    function convertBulkDetentionRow(cols, rowNo){
+      if (!cols || !cols.length) return null;
+      const id = _cleanBulkText(cols[0]);
+      const fullName = _cleanBulkText(cols[1]);
+      const className = _cleanBulkText(cols[2]);
+      if (!fullName || !className) return null;
+      const parsedName = parseBulkName(fullName);
+      const studentName = parsedName.studentName;
+      const englishName = parsedName.englishName;
+      const dateStr = _cleanBulkText(cols[3]);
+      const teacherName = _cleanBulkText(cols[4]);
+      const category = _cleanBulkText(cols[5]);
+      const violation = _cleanBulkText(cols[6]);
+      const autoPoints = _cleanBulkText(cols[7]);
+      const manualPoints = _numOrUndefined(cols[12]);
+      const totalPoints = _numOrUndefined(cols[13]) ?? _numOrUndefined(cols[12]) ?? _numOrUndefined(cols[9]) ?? 0;
+      const legacyCumulativePoints = _numOrUndefined(cols[14]);
+      const memo = _cleanBulkText(cols[15]);
+      const isConfirmed = _parseBool(cols[16]);
+      const isCancelled = _parseBool(cols[20]);
+      const confirmDate = _cleanBulkText(cols[23]);
+      const warning = _cleanBulkText(cols[11]);
+      const studentKey = makeBulkStudentKey(studentName, className);
+      const key = id || makeAdminKey('entrybulk');
+      let status = '임시저장';
+      if (isCancelled) status = '반려';
+      else if (isConfirmed) status = '확정';
+      return {
+        key,
+        _deleted:false,
+        studentKey,
+        studentName,
+        englishName,
+        className,
+        category,
+        violation,
+        totalPoints:Number(totalPoints || 0),
+        autoPoints:autoPoints || undefined,
+        manualPoints:manualPoints,
+        memo:memo || undefined,
+        adminNote:_cleanBulkText(cols[21]) || undefined,
+        teacherName,
+        status,
+        createdAt:_isoDateFromBulk(dateStr) || new Date().toISOString(),
+        confirmedAt:status === '확정' ? (_isoDateFromBulk(confirmDate) || _isoDateFromBulk(dateStr)) : undefined,
+        studentEmail:_cleanBulkText(cols[17]) || undefined,
+        parentEmail:_cleanBulkText(cols[18]) || undefined,
+        homeroomEmail:_cleanBulkText(cols[19]) || undefined,
+        year:_yearFromBulkDate(dateStr),
+        isReferral:(warning.includes('생활교육위원회') || category.startsWith('이성교제')) || undefined,
+        referralReason:warning || undefined,
+        legacySearchText:_cleanBulkText(cols[8]) || undefined,
+        legacyAutoPointText:_cleanBulkText(cols[10]) || undefined,
+        legacyCumulativePoints:legacyCumulativePoints,
+        legacyStudentDateTeacherKey:_cleanBulkText(cols[22]) || undefined,
+        bulkImportedAt:new Date().toISOString(),
+        bulkImportedBy:'detention-admin',
+        bulkSourceRow:rowNo
+      };
+    }
+    function getBulkEntriesFromTextarea(){
+      const el = document.getElementById('entry-bulk-text');
+      const rows = parseBulkTsv(el ? el.value : '');
+      const converted = [];
+      const errors = [];
+      rows.forEach((cols, i) => {
+        if (i === 0 && /^(id|ID)$/i.test(_cleanBulkText(cols[0])) && /이름|name/i.test(_cleanBulkText(cols[1]))) return;
+        if (cols.length < 7) { errors.push(`${i+1}행: 열 수 부족 (${cols.length})`); return; }
+        const rec = convertBulkDetentionRow(cols, i+1);
+        if (!rec) errors.push(`${i+1}행: 이름 또는 학반 누락`);
+        else converted.push(rec);
+      });
+      return { rows, converted, errors };
+    }
+    function previewBulkEntries(){
+      const result = getBulkEntriesFromTextarea();
+      bulkEntryPreviewRows = result.converted;
+      const existingKeys = new Set(entryRows.map(r => String(r.key || '')));
+      const updateCount = bulkEntryPreviewRows.filter(r => existingKeys.has(String(r.key))).length;
+      const newCount = bulkEntryPreviewRows.length - updateCount;
+      const confirmed = bulkEntryPreviewRows.filter(r => r.status === '확정').length;
+      const rejected = bulkEntryPreviewRows.filter(r => r.status === '반려').length;
+      const pending = bulkEntryPreviewRows.filter(r => r.status === '임시저장').length;
+      const summary = document.getElementById('entry-bulk-summary');
+      const preview = document.getElementById('entry-bulk-preview');
+      if (summary) summary.innerHTML = `파싱 ${result.rows.length}행 → 변환 ${bulkEntryPreviewRows.length}건 · 신규 ${newCount}건 · 갱신 ${updateCount}건 · 확정 ${confirmed}건 · 반려 ${rejected}건 · 대기 ${pending}건` + (result.errors.length ? `<br><span style="color:#b91c1c">오류/제외: ${esc(result.errors.join(' / '))}</span>` : '');
+      if (preview) {
+        preview.style.display = bulkEntryPreviewRows.length ? 'block' : 'none';
+        preview.innerHTML = bulkEntryPreviewRows.length ? '<table><thead><tr><th>#</th><th>DB Key</th><th>학생</th><th>영문명</th><th>학반</th><th>상태</th><th>점수</th><th>교사</th><th>날짜</th><th>위반</th></tr></thead><tbody>' +
+          bulkEntryPreviewRows.slice(0, 50).map((r, i) => `<tr><td>${i+1}</td><td>${esc(r.key)}</td><td>${esc(r.studentName)}</td><td>${esc(r.englishName||'')}</td><td>${esc(r.className)}</td><td>${esc(r.status)}</td><td>${esc(String(r.totalPoints))}</td><td>${esc(r.teacherName||'')}</td><td>${esc(dateInputValue(r.createdAt))}</td><td>${esc(r.violation||'')}</td></tr>`).join('') +
+          '</tbody></table>' + (bulkEntryPreviewRows.length > 50 ? `<div class="bulk-help">상위 50건만 표시합니다. 총 ${bulkEntryPreviewRows.length}건</div>` : '') : '';
+      }
+      toast(`일괄 입력 미리보기 완료: ${bulkEntryPreviewRows.length}건`, 'ok');
+      return result;
+    }
+    async function applyBulkEntries(saveNow){
+      if (!bulkEntryPreviewRows.length) previewBulkEntries();
+      if (!bulkEntryPreviewRows.length) return toast('반영할 데이터가 없습니다. | No bulk rows to import.', 'err');
+      const existingIndex = new Map();
+      entryRows.forEach((r, idx) => existingIndex.set(String(r.key || ''), idx));
+      let added = 0, updated = 0;
+      bulkEntryPreviewRows.forEach(row => {
+        const key = String(row.key || '');
+        if (existingIndex.has(key)) {
+          const idx = existingIndex.get(key);
+          entryRows[idx] = Object.assign({}, entryRows[idx], row, { _deleted:false });
+          updated++;
+        } else {
+          entryRows.unshift(row);
+          added++;
+        }
+      });
+      renderEntriesTable();
+      checkEntryDirty();
+      toast(`일괄 입력 반영 완료: 신규 ${added}건, 갱신 ${updated}건` + (saveNow ? ' · 저장 중...' : ''), 'ok');
+      if (saveNow) await saveEntries();
+    }
+    function clearBulkEntries(){
+      const el = document.getElementById('entry-bulk-text');
+      if (el) el.value = '';
+      bulkEntryPreviewRows = [];
+      const summary = document.getElementById('entry-bulk-summary');
+      if (summary) summary.textContent = '아직 미리보기 전입니다. | Not previewed yet.';
+      const preview = document.getElementById('entry-bulk-preview');
+      if (preview) { preview.style.display = 'none'; preview.innerHTML = ''; }
+    }
+
     function addNoticeRow(){
       noticeRows.unshift({
         key: makeAdminKey('notice'),
