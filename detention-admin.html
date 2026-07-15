@@ -1572,7 +1572,7 @@
       const filtered = entryRows.filter(row => {
         if (status && String(row.status || '') !== status) return false;
         if (!q) return true;
-        return [row.key,row.studentName,row.englishName,row.className,row.studentKey,row.category,row.violation,row.teacherName,row.memo,row.adminNote,row.parentEmail,row.studentEmail,row.homeroomEmail].some(v => String(v || '').toLowerCase().includes(q));
+        return [row.key,row.studentName,row.englishName,row.className,row.studentKey,row.category,row.violation,row.teacherName,row.parentEmail,row.studentEmail,row.homeroomEmail].some(v => String(v || '').toLowerCase().includes(q));
       });
       if (!filtered.length){ tbody.innerHTML = `<tr><td colspan="21">기록이 없습니다. | No records found.</td></tr>`; return; }
       tbody.innerHTML = filtered.map((row, rowNum) => {
@@ -1687,7 +1687,7 @@
     function renderRecoveryTable(){
       const tbody = document.getElementById('recovery-tbody');
       const q = (document.getElementById('recovery-search').value || '').trim().toLowerCase();
-      const filtered = recoveryRows.filter(row => !q || [row.key,row.studentKey,row.studentName,row.englishName,row.className,row.staffName,row.staffEmail,row.reasonsSnapshot].some(v => String(v || '').toLowerCase().includes(q)));
+      const filtered = recoveryRows.filter(row => !q || [row.key,row.studentKey,row.studentName,row.englishName,row.className,row.staffName,row.staffEmail].some(v => String(v || '').toLowerCase().includes(q)));
       if (!filtered.length){ tbody.innerHTML = `<tr><td colspan="14">기록이 없습니다. | No recovery records found.</td></tr>`; return; }
       tbody.innerHTML = filtered.map((row, rowNum) => {
         const idx = recoveryRows.findIndex(r => r.key === row.key);
