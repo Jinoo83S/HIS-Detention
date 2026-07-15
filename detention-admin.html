@@ -1290,6 +1290,18 @@
       }).join(' ').toLowerCase();
     }
 
+    // 학생 데이터 검색 전용: 신원 필드만 매칭 (adminNote/violation 등 자유 텍스트 제외)
+    function dbAdminIdentityMatches(row, q){
+      if (!q) return false;
+      row = row || {};
+      const fields = ['key', 'studentKey', 'studentName', 'englishName', 'className', 'name', 'koreanName'];
+      const text = fields.map(function(k){
+        const v = row[k];
+        return (v === null || v === undefined) ? '' : String(v);
+      }).join(' ').toLowerCase();
+      return text.includes(q);
+    }
+
     function dbAdminMatches(row, q){
       if (!q) return false;
       return dbAdminRowSearchText(row).includes(q);
@@ -1324,36 +1336,36 @@
         if (k) keys.add(k);
       }
 
-      studentRows.forEach(function(r){ if (dbAdminMatches(r, q)) addKey(r.key); });
-      entryRows.forEach(function(r){ if (dbAdminMatches(r, q)) addKey(dbAdminRowStudentKey(r)); });
-      recoveryRows.forEach(function(r){ if (dbAdminMatches(r, q)) addKey(dbAdminRowStudentKey(r)); });
-      noticeRows.forEach(function(r){ if (dbAdminMatches(r, q)) addKey(r.studentKey); });
-      committeeRows.forEach(function(r){ if (dbAdminMatches(r, q)) addKey(r.studentKey); });
-      cycleRows.forEach(function(r){ if (dbAdminMatches(r, q)) addKey(dbAdminStateStudentKey(r)); });
+      studentRows.forEach(function(r){ if (dbAdminIdentityMatches(r, q)) addKey(r.key); });
+      entryRows.forEach(function(r){ if (dbAdminIdentityMatches(r, q)) addKey(dbAdminRowStudentKey(r)); });
+      recoveryRows.forEach(function(r){ if (dbAdminIdentityMatches(r, q)) addKey(dbAdminRowStudentKey(r)); });
+      noticeRows.forEach(function(r){ if (dbAdminIdentityMatches(r, q)) addKey(r.studentKey); });
+      committeeRows.forEach(function(r){ if (dbAdminIdentityMatches(r, q)) addKey(r.studentKey); });
+      cycleRows.forEach(function(r){ if (dbAdminIdentityMatches(r, q)) addKey(dbAdminStateStudentKey(r)); });
 
       const studentsMatched = studentRows.filter(function(r){
         const k = String(r.key || '');
-        return keys.has(k) || dbAdminMatches(r, q);
+        return keys.has(k) || dbAdminIdentityMatches(r, q);
       });
       const entries = entryRows.filter(function(r){
         const k = dbAdminRowStudentKey(r);
-        return keys.has(k) || dbAdminMatches(r, q);
+        return keys.has(k) || dbAdminIdentityMatches(r, q);
       });
       const notices = noticeRows.filter(function(r){
         const k = String(r.studentKey || '');
-        return keys.has(k) || dbAdminMatches(r, q);
+        return keys.has(k) || dbAdminIdentityMatches(r, q);
       });
       const recovery = recoveryRows.filter(function(r){
         const k = dbAdminRowStudentKey(r);
-        return keys.has(k) || dbAdminMatches(r, q);
+        return keys.has(k) || dbAdminIdentityMatches(r, q);
       });
       const committee = committeeRows.filter(function(r){
         const k = String(r.studentKey || '');
-        return keys.has(k) || dbAdminMatches(r, q);
+        return keys.has(k) || dbAdminIdentityMatches(r, q);
       });
       const states = cycleRows.filter(function(r){
         const k = dbAdminStateStudentKey(r);
-        return keys.has(k) || dbAdminMatches(r, q);
+        return keys.has(k) || dbAdminIdentityMatches(r, q);
       });
 
       return { q:q, keys:Array.from(keys), students:studentsMatched, entries, notices, recovery, committee, states };
