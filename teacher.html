@@ -3158,21 +3158,12 @@
       const activeList = candidates.filter(s => !!s.noticeDocKey && !s.notice.completedAt);
       const pendingNewList = candidates.filter(s => {
         if (s.noticeDocKey) return false;
-        const completedObj = findLatestCompletedNotice(s.key, level);
-        if (!completedObj) return true;
-
-        const lastConfirmed = getConfirmedEntriesForStudent(s.key)[0];
-        if (!lastConfirmed) return false;
-        const lastConfirmedAt = String(lastConfirmed.confirmedAt || lastConfirmed.createdAt || '');
-        const lastNoticeAt = String(completedObj.notice.completedAt || '');
-
-        const allRecoveries = Object.values(recoveryEntries||{})
-          .filter(r => String(r.studentKey||'') === String(s.key) && isRecordInLevel(r, level))
-          .sort((a,b) => String(b.completedAt||'').localeCompare(String(a.completedAt||'')));
-        const lastRecoveryAt = allRecoveries.length ? String(allRecoveries[0].completedAt||'') : '';
-        const baselineAt = [lastNoticeAt, lastRecoveryAt].filter(Boolean).sort().pop() || lastNoticeAt;
-        const isNewCycle = lastConfirmedAt > baselineAt;
-        return isNewCycle && s.currentTotal >= 3;
+        // ── STATE MACHINE 신뢰 ──
+        // candidates는 이미 phase가 notice_needed/notice_active 계열인 학생만 포함됨.
+        // (calculateStudentCycleState가 최신 확정 기록 vs 마지막 알림 시점을 이미 판정)
+        // 기존 타임스탬프 휴리스틱(lastConfirmedAt > baselineAt)은 회복교육 completedAt이
+        // 새 위반 확정일보다 늦으면 새 사이클을 오판해 목록에서 누락시키므로 제거함.
+        return s.currentTotal >= 3;
       });
       return [...activeList, ...pendingNewList]
         .map(s => ({...s, _level:level, _levelLabel:level==='ms'?'중등':'고등'}));
