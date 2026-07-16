@@ -1720,8 +1720,12 @@
       setupSelectors();
       setupEvents();
       initEntryFormMeta();
-      await loadData();
-      setupRealtimeListeners();
+      try {
+        await loadData();
+        setupRealtimeListeners();
+      } catch (e) {
+        console.error('Detention screen initialization stopped:', e);
+      }
     }
 
     function setupRoleVisibility(){
@@ -1835,11 +1839,15 @@
         // 배열 대신 인덱스 키 객체로 저장 → Firebase에서 순서 보장
         const stdObj = {};
         cleaned.forEach((item, i) => { stdObj[String(i)] = item; });
-        await db.ref(DETENTION_STANDARD_PATH).set(stdObj);
-        await db.ref(DETENTION_STANDARD_PATH + '_meta').set({
-          savedAt,
-          savedBy:teacher.name || '',
-          savedByEmail:teacher.email || ''
+        // 기준표와 저장 메타데이터는 서로 다른 RTDB 최상위 경로입니다.
+        // 한 번의 다중 경로 업데이트로 함께 저장해 부분 저장을 방지합니다.
+        await db.ref('/').update({
+          [DETENTION_STANDARD_PATH]: stdObj,
+          [DETENTION_STANDARD_PATH + '_meta']: {
+            savedAt,
+            savedBy:teacher.name || '',
+            savedByEmail:teacher.email || ''
+          }
         });
 
         detentionStandards = cleaned;
@@ -2038,17 +2046,27 @@
 
     async function loadData(){
       try{
-        const [teacherSnap, studentSnap, entrySnap, standardSnap, metaSnap, recoverySnap, noticeSnap, committeeSnap, cycleSnap] = await Promise.all([
+        // 핵심 업무 데이터는 필수 로딩으로 처리합니다.
+        // 기준표와 기준표 메타데이터는 별도 경로이므로, 한 경로의 권한 오류가
+        // 학생/디텐션/위원회 전체 화면까지 중단시키지 않도록 분리해서 읽습니다.
+        const corePromise = Promise.all([
           db.ref(TEACHER_DB_PATH).once('value'),
           db.ref('students').once('value'),
           db.ref(DETENTION_DB_PATH).once('value'),
-          db.ref(DETENTION_STANDARD_PATH).once('value'),
-          db.ref(DETENTION_STANDARD_PATH + '_meta').once('value'),
           db.ref(RECOVERY_DB_PATH).once('value'),
           db.ref(NOTICE_DB_PATH).once('value'),
           db.ref(COMMITTEE_DB_PATH).once('value'),
           db.ref(CYCLE_STATE_PATH).once('value')
         ]);
+        const standardsPromise = Promise.allSettled([
+          db.ref(DETENTION_STANDARD_PATH).once('value'),
+          db.ref(DETENTION_STANDARD_PATH + '_meta').once('value')
+        ]);
+
+        const [coreSnaps, standardResults] = await Promise.all([corePromise, standardsPromise]);
+        const [teacherSnap, studentSnap, entrySnap, recoverySnap, noticeSnap, committeeSnap, cycleSnap] = coreSnaps;
+        const standardResult = standardResults[0];
+        const metaResult = standardResults[1];
 
         teachers = teacherSnap.val() || {};
         students = studentSnap.val() || {};
@@ -2061,21 +2079,34 @@
         noticeEntries = noticeSnap.val() || {};
         committeeEntries = committeeSnap ? (committeeSnap.val() || {}) : {};
         cycleStates = cycleSnap ? (cycleSnap.val() || {}) : {};
-        const dbStandards = standardSnap.val();
-        // 저장 형식: {0:{...}, 1:{...}} 또는 배열 모두 처리
-        if (dbStandards && typeof dbStandards === 'object') {
-          const converted = Object.keys(dbStandards)
-            .filter(k => !isNaN(Number(k)))
-            .sort((a, b) => Number(a) - Number(b))
-            .map(k => dbStandards[k])
-            .filter(Boolean);
-          if (converted.length) detentionStandards = converted;
-          else if (Array.isArray(dbStandards) && dbStandards.length) detentionStandards = dbStandards;
+
+        if (standardResult.status === 'fulfilled') {
+          const dbStandards = standardResult.value.val();
+          // 저장 형식: {0:{...}, 1:{...}} 또는 배열 모두 처리
+          if (dbStandards && typeof dbStandards === 'object') {
+            const converted = Object.keys(dbStandards)
+              .filter(k => !isNaN(Number(k)))
+              .sort((a, b) => Number(a) - Number(b))
+              .map(k => dbStandards[k])
+              .filter(Boolean);
+            if (converted.length) detentionStandards = converted;
+            else if (Array.isArray(dbStandards) && dbStandards.length) detentionStandards = dbStandards;
+          }
+        } else {
+          console.error('detentionStandards read failed:', standardResult.reason);
+          setStandardSaveStatus('기준표 DB 읽기 실패 · 내장 기준표 표시 | Standards DB unavailable');
         }
 
-        const meta = metaSnap.val() || {};
-        if (meta.savedAt) setStandardSaveStatus(`마지막 저장: ${fmt(meta.savedAt)} | Last saved: ${fmt(meta.savedAt)}`);
-        else setStandardSaveStatus('저장 이력 없음 | Not saved yet');
+        if (metaResult.status === 'fulfilled') {
+          const meta = metaResult.value.val() || {};
+          if (meta.savedAt) setStandardSaveStatus(`마지막 저장: ${fmt(meta.savedAt)} | Last saved: ${fmt(meta.savedAt)}`);
+          else if (standardResult.status === 'fulfilled') setStandardSaveStatus('저장 이력 없음 | Not saved yet');
+        } else {
+          console.error('detentionStandards_meta read failed:', metaResult.reason);
+          if (standardResult.status === 'fulfilled') {
+            setStandardSaveStatus('기준표 메타데이터 읽기 실패 | Standards metadata unavailable');
+          }
+        }
 
         renderStudentOptions();
         renderAllStudentSearchOptions();
@@ -2097,8 +2128,9 @@
         renderViolationOptions();
         updateManualPointsMode();
       }catch(e){
-        console.error(e);
-        toast('데이터를 불러오지 못했습니다.\nFailed to load data.', 'err');
+        console.error('Core detention data load failed:', e);
+        toast('핵심 데이터를 불러오지 못했습니다. Firebase 권한을 확인하세요.\nFailed to load core data. Check Firebase permissions.', 'err');
+        throw e;
       }
     }
 
