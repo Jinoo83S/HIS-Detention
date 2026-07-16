@@ -623,6 +623,7 @@
 
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="common.js"></script>
 
   <script>
@@ -1290,18 +1291,6 @@
       }).join(' ').toLowerCase();
     }
 
-    // 학생 데이터 검색 전용: 신원 필드만 매칭 (adminNote/violation 등 자유 텍스트 제외)
-    function dbAdminIdentityMatches(row, q){
-      if (!q) return false;
-      row = row || {};
-      const fields = ['key', 'studentKey', 'studentName', 'englishName', 'className', 'name', 'koreanName'];
-      const text = fields.map(function(k){
-        const v = row[k];
-        return (v === null || v === undefined) ? '' : String(v);
-      }).join(' ').toLowerCase();
-      return text.includes(q);
-    }
-
     function dbAdminMatches(row, q){
       if (!q) return false;
       return dbAdminRowSearchText(row).includes(q);
@@ -1336,36 +1325,36 @@
         if (k) keys.add(k);
       }
 
-      studentRows.forEach(function(r){ if (dbAdminIdentityMatches(r, q)) addKey(r.key); });
-      entryRows.forEach(function(r){ if (dbAdminIdentityMatches(r, q)) addKey(dbAdminRowStudentKey(r)); });
-      recoveryRows.forEach(function(r){ if (dbAdminIdentityMatches(r, q)) addKey(dbAdminRowStudentKey(r)); });
-      noticeRows.forEach(function(r){ if (dbAdminIdentityMatches(r, q)) addKey(r.studentKey); });
-      committeeRows.forEach(function(r){ if (dbAdminIdentityMatches(r, q)) addKey(r.studentKey); });
-      cycleRows.forEach(function(r){ if (dbAdminIdentityMatches(r, q)) addKey(dbAdminStateStudentKey(r)); });
+      studentRows.forEach(function(r){ if (dbAdminMatches(r, q)) addKey(r.key); });
+      entryRows.forEach(function(r){ if (dbAdminMatches(r, q)) addKey(dbAdminRowStudentKey(r)); });
+      recoveryRows.forEach(function(r){ if (dbAdminMatches(r, q)) addKey(dbAdminRowStudentKey(r)); });
+      noticeRows.forEach(function(r){ if (dbAdminMatches(r, q)) addKey(r.studentKey); });
+      committeeRows.forEach(function(r){ if (dbAdminMatches(r, q)) addKey(r.studentKey); });
+      cycleRows.forEach(function(r){ if (dbAdminMatches(r, q)) addKey(dbAdminStateStudentKey(r)); });
 
       const studentsMatched = studentRows.filter(function(r){
         const k = String(r.key || '');
-        return keys.has(k) || dbAdminIdentityMatches(r, q);
+        return keys.has(k) || dbAdminMatches(r, q);
       });
       const entries = entryRows.filter(function(r){
         const k = dbAdminRowStudentKey(r);
-        return keys.has(k) || dbAdminIdentityMatches(r, q);
+        return keys.has(k) || dbAdminMatches(r, q);
       });
       const notices = noticeRows.filter(function(r){
         const k = String(r.studentKey || '');
-        return keys.has(k) || dbAdminIdentityMatches(r, q);
+        return keys.has(k) || dbAdminMatches(r, q);
       });
       const recovery = recoveryRows.filter(function(r){
         const k = dbAdminRowStudentKey(r);
-        return keys.has(k) || dbAdminIdentityMatches(r, q);
+        return keys.has(k) || dbAdminMatches(r, q);
       });
       const committee = committeeRows.filter(function(r){
         const k = String(r.studentKey || '');
-        return keys.has(k) || dbAdminIdentityMatches(r, q);
+        return keys.has(k) || dbAdminMatches(r, q);
       });
       const states = cycleRows.filter(function(r){
         const k = dbAdminStateStudentKey(r);
-        return keys.has(k) || dbAdminIdentityMatches(r, q);
+        return keys.has(k) || dbAdminMatches(r, q);
       });
 
       return { q:q, keys:Array.from(keys), students:studentsMatched, entries, notices, recovery, committee, states };
@@ -1572,7 +1561,7 @@
       const filtered = entryRows.filter(row => {
         if (status && String(row.status || '') !== status) return false;
         if (!q) return true;
-        return [row.key,row.studentName,row.englishName,row.className,row.studentKey,row.category,row.violation,row.teacherName,row.parentEmail,row.studentEmail,row.homeroomEmail].some(v => String(v || '').toLowerCase().includes(q));
+        return [row.key,row.studentName,row.englishName,row.className,row.studentKey,row.category,row.violation,row.teacherName,row.memo,row.adminNote,row.parentEmail,row.studentEmail,row.homeroomEmail].some(v => String(v || '').toLowerCase().includes(q));
       });
       if (!filtered.length){ tbody.innerHTML = `<tr><td colspan="21">기록이 없습니다. | No records found.</td></tr>`; return; }
       tbody.innerHTML = filtered.map((row, rowNum) => {
@@ -1687,7 +1676,7 @@
     function renderRecoveryTable(){
       const tbody = document.getElementById('recovery-tbody');
       const q = (document.getElementById('recovery-search').value || '').trim().toLowerCase();
-      const filtered = recoveryRows.filter(row => !q || [row.key,row.studentKey,row.studentName,row.englishName,row.className,row.staffName,row.staffEmail].some(v => String(v || '').toLowerCase().includes(q)));
+      const filtered = recoveryRows.filter(row => !q || [row.key,row.studentKey,row.studentName,row.englishName,row.className,row.staffName,row.staffEmail,row.reasonsSnapshot].some(v => String(v || '').toLowerCase().includes(q)));
       if (!filtered.length){ tbody.innerHTML = `<tr><td colspan="14">기록이 없습니다. | No recovery records found.</td></tr>`; return; }
       tbody.innerHTML = filtered.map((row, rowNum) => {
         const idx = recoveryRows.findIndex(r => r.key === row.key);
@@ -1823,7 +1812,11 @@
       }catch(e){console.error(e);toast('초기화 실패: '+e.message,'err');}
     }
 
-    if (checkAdminSession()) loadAllData();
+    (async function initAdminDB(){
+      if (!checkAdminSession()) return;
+      await ensureFirebaseAuth();
+      await loadAllData();
+    })();
   </script>
 </body>
 </html>

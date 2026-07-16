@@ -118,6 +118,7 @@
 
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="common.js"></script>
 
   <script>
@@ -126,6 +127,7 @@
 
     async function init() {
       try {
+        await ensureFirebaseAuth();
         const snap = await db.ref('teachers').once('value');
         teachers = snap.val() || {};
         renderTeachers();
@@ -169,6 +171,7 @@
     }
 
     async function login() {
+      await ensureFirebaseAuth();
       const selectedEmail = syncTeacherSelection();
       const pw = (document.getElementById('pw').value || '').trim();
 

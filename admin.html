@@ -210,6 +210,7 @@
 
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="common.js"></script>
 
   <script>
@@ -427,7 +428,8 @@
     }
 
 
-    function checkAdmin() {
+    async function checkAdmin() {
+      await ensureFirebaseAuth();
       const pw = document.getElementById('admin-pw').value;
       if (pw !== ADMIN_PW) {
         document.getElementById('admin-pw').value = '';
@@ -861,6 +863,7 @@
 
     /* ── 세션 자동복원 ── */
     (async function initSession() {
+      await ensureFirebaseAuth();
       // RTDB에서 관리자 비밀번호 로드
       try{
         const snap = await db.ref('adminConfig/password').once('value');

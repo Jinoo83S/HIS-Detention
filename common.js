@@ -16,6 +16,41 @@ if (!firebase.apps.length) {
 const db = firebase.database();
 window.db = db;
 
+// Firebase Realtime Database 보안 규칙이 auth != null을 요구할 때,
+// 기존 교사/관리자 로그인 기능을 유지하기 위한 익명 Firebase Auth 세션입니다.
+const firebaseAuth = (typeof firebase.auth === 'function') ? firebase.auth() : null;
+window.firebaseAuth = firebaseAuth;
+let _firebaseAuthPromise = null;
+
+async function ensureFirebaseAuth() {
+  if (!firebaseAuth) return null;
+  if (firebaseAuth.currentUser) return firebaseAuth.currentUser;
+  if (_firebaseAuthPromise) return _firebaseAuthPromise;
+  _firebaseAuthPromise = new Promise((resolve, reject) => {
+    const unsubscribe = firebaseAuth.onAuthStateChanged(async user => {
+      if (user) {
+        try { unsubscribe(); } catch(_) {}
+        resolve(user);
+        return;
+      }
+      try {
+        const cred = await firebaseAuth.signInAnonymously();
+        try { unsubscribe(); } catch(_) {}
+        resolve(cred.user);
+      } catch (err) {
+        try { unsubscribe(); } catch(_) {}
+        console.error('Firebase anonymous auth failed:', err);
+        reject(err);
+      }
+    }, err => {
+      console.error('Firebase auth state failed:', err);
+      reject(err);
+    });
+  });
+  return _firebaseAuthPromise;
+}
+window.ensureFirebaseAuth = ensureFirebaseAuth;
+
 function toast(msg, type = '') {
   const el = document.getElementById('toast');
   if (!el) return alert(msg);
