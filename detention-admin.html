@@ -597,16 +597,21 @@
               <tr>
                 <th style="width:32px">#</th>
                 <th style="width:130px">DB Key<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
-                <th style="width:120px">종류<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:120px">내부 종류<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:120px">위원회 종류<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
                 <th style="width:180px">학생 Key<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
                 <th style="width:100px">학생<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
                 <th style="width:60px">학반<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
                 <th style="width:130px">entryKey<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
                 <th style="width:180px">linkedEntryKeys<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
                 <th style="width:240px">회부 사유<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:220px">위원회 메모<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
                 <th style="width:110px">생성일<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
                 <th style="width:100px">생성자<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
                 <th style="width:150px">생성자 이메일<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:170px">메모 작성자 ID<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:110px">메모 작성자<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
+                <th style="width:120px">메모 수정일<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
                 <th style="width:120px">완료일<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
                 <th style="width:120px">처리자<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
                 <th style="width:150px">처리자 이메일<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
@@ -950,9 +955,10 @@
       const now = todayIsoStart();
       committeeRows.unshift({
         key: makeAdminKey('committee'),
-        type: 'manual_referral', studentKey: '', studentName: '', className: '',
+        type: 'manual_referral', committeeCategory: 'referral', studentKey: '', studentName: '', className: '',
         entryKey: '', linkedEntryKeys: null,
-        reason: '', reasonSnapshot: '',
+        reason: '', reasonSnapshot: '', committeeNote: '',
+        committeeNoteAuthorId: '', committeeNoteAuthorName: '', committeeNoteUpdatedAt: null,
         year: currentAdminYear(), createdAt: now, createdBy: '', createdByEmail: '',
         completedAt: null, completedBy: '', completedByEmail: ''
       });
@@ -1459,19 +1465,23 @@
     function renderStudentCommitteeTable(rows){
       const body = rows.length ? rows.map(function(row, rowNum){
         const idx = committeeRows.findIndex(function(r){ return r.key === row.key; });
+        const cat = row.committeeCategory || (String(row.type||'').includes('referral') ? 'referral' : (String(row.type||'').includes('edu') ? 'edu' : 'other'));
         return '<tr class="' + (row._deleted ? 'pending-delete' : '') + '">' +
           '<td class="row-num">' + (rowNum+1) + '</td>' +
           '<td><input class="edit-input" value="' + esc(row.key || '') + '" readonly></td>' +
           '<td><input class="edit-input" value="' + esc(row.type || '') + '" oninput="committeeRows['+idx+'].type=this.value;markStudentPanelChanged(\'committee\')"></td>' +
+          '<td><select class="edit-input" onchange="committeeRows['+idx+'].committeeCategory=this.value;markStudentPanelChanged(\'committee\')"><option value="referral" '+(cat==='referral'?'selected':'')+'>선도위원회</option><option value="edu" '+(cat==='edu'?'selected':'')+'>생활교육위원회</option><option value="other" '+(cat==='other'?'selected':'')+'>기타</option></select></td>' +
           '<td><input class="edit-input" value="' + esc(row.studentKey || '') + '" oninput="committeeRows['+idx+'].studentKey=this.value;markStudentPanelChanged(\'committee\')"></td>' +
+          '<td><textarea class="edit-textarea" oninput="committeeRows['+idx+'].committeeNote=this.value;markStudentPanelChanged(\'committee\')">' + esc(row.committeeNote || '') + '</textarea></td>' +
+          '<td><input class="edit-input" value="' + esc(row.committeeNoteAuthorId || '') + '" oninput="committeeRows['+idx+'].committeeNoteAuthorId=this.value;markStudentPanelChanged(\'committee\')"></td>' +
           '<td><input type="date" class="edit-input" value="' + esc(dateInputValue(row.completedAt)) + '" onchange="committeeRows['+idx+'].completedAt=this.value?this.value+\'T00:00:00\':null;markStudentPanelChanged(\'committee\')"></td>' +
           '<td><input class="edit-input" value="' + esc(row.completedBy || '') + '" oninput="committeeRows['+idx+'].completedBy=this.value;markStudentPanelChanged(\'committee\')"></td>' +
           '<td><input class="edit-input" value="' + esc(row.year || '') + '" oninput="committeeRows['+idx+'].year=this.value;markStudentPanelChanged(\'committee\')"></td>' +
           '<td><button class="btn btn-danger small-btn" onclick="committeeRows['+idx+']._deleted=!committeeRows['+idx+']._deleted;markStudentPanelChanged(\'committee\');renderStudentDataSearch(true)">' + (row._deleted ? '복구' : '삭제') + '</button></td>' +
           '</tr>';
-      }).join('') : studentDataEmptyRow(8);
+      }).join('') : studentDataEmptyRow(11);
       return '<div class="tbl-wrap"><table><thead><tr>' +
-        '<th style="width:32px">#</th><th style="width:180px">DB Key</th><th>종류</th><th>studentKey</th><th>완료일</th><th>처리자</th><th>연도</th><th>삭제</th>' +
+        '<th style="width:32px">#</th><th style="width:180px">DB Key</th><th>내부 종류</th><th>위원회 종류</th><th>studentKey</th><th>메모</th><th>메모 작성자 ID</th><th>완료일</th><th>처리자</th><th>연도</th><th>삭제</th>' +
         '</tr></thead><tbody>' + body + '</tbody></table></div>';
     }
 
@@ -1743,7 +1753,7 @@
       const tbody=document.getElementById('committee-tbody');
       if(!tbody)return;
       const visible=committeeRows;
-      if(!visible.length){tbody.innerHTML='<tr><td colspan="17" class="empty">기록이 없습니다.</td></tr>';return;}
+      if(!visible.length){tbody.innerHTML='<tr><td colspan="22" class="empty">기록이 없습니다.</td></tr>';return;}
       const rows=[];
       visible.forEach(function(r, rowNum){
         const idx=committeeRows.findIndex(function(x){return x.key===r.key;});
@@ -1772,10 +1782,15 @@
         }
         const keyInput = addInput('key'); keyInput.readOnly=true;
         addSelect('type', [['manual_referral','manual_referral: 디텐션 건 회부'],['manual_edu','manual_edu: 학생 위원회'],['referral','referral'],['edu','edu'],['edu_points','edu_points'],['edu_overall','edu_overall']]);
+        if(!r.committeeCategory) r.committeeCategory = String(r.type||'').includes('referral') ? 'referral' : (String(r.type||'').includes('edu') ? 'edu' : 'other');
+        addSelect('committeeCategory', [['referral','선도위원회'],['edu','생활교육위원회'],['other','기타']]);
         addInput('studentKey'); addInput('studentName'); addInput('className'); addInput('entryKey');
         addTextarea(function(row){ return listText(row.linkedEntryKeys); }, function(row, val){ row.linkedEntryKeys = parseKeyList(val); });
         addTextarea(function(row){ return row.reason || row.reasonSnapshot || ''; }, function(row, val){ row.reason=val; row.reasonSnapshot=val; });
-        addInput('createdAt','date'); addInput('createdBy'); addInput('createdByEmail'); addInput('completedAt','date'); addInput('completedBy'); addInput('completedByEmail'); addInput('year');
+        addTextarea(function(row){ return row.committeeNote || ''; }, function(row, val){ row.committeeNote=val; });
+        addInput('createdAt','date'); addInput('createdBy'); addInput('createdByEmail');
+        addInput('committeeNoteAuthorId'); addInput('committeeNoteAuthorName'); addInput('committeeNoteUpdatedAt','date');
+        addInput('completedAt','date'); addInput('completedBy'); addInput('completedByEmail'); addInput('year');
         const td=document.createElement('td'); const btn=document.createElement('button');
         btn.className='btn btn-danger small-btn'; btn.textContent = r._deleted ? '복구' : '삭제';
         btn.onclick=function(){ const key=r.key; const rec=committeeRows.find(function(x){return x.key===key;}); if(rec){rec._deleted=!rec._deleted;renderCommitteeTable();checkCommitteeDirty();} };
