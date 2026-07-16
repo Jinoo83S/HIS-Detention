@@ -218,6 +218,37 @@
     .modal-stat .num{font-size:22px;font-weight:800;color:var(--nv)}
     .modal-stat .lbl{font-size:11px;color:var(--sb);margin-top:2px}
     .modal-section-title{font-weight:800;font-size:13px;color:var(--nv);margin:14px 0 6px;padding-bottom:4px;border-bottom:2px solid var(--bd)}
+
+    /* 위원회 표 전용 레이아웃: 열 압축 방지 + 노트 한 줄 입력 */
+    #discipline-active-table{min-width:1000px;table-layout:fixed}
+    #discipline-done-table{min-width:1100px;table-layout:fixed}
+    #discipline-active-table th,#discipline-active-table td,
+    #discipline-done-table th,#discipline-done-table td{vertical-align:middle}
+    #discipline-active-table th:nth-child(1){width:14%}
+    #discipline-active-table th:nth-child(2){width:5%}
+    #discipline-active-table th:nth-child(3){width:19%}
+    #discipline-active-table th:nth-child(4){width:7%}
+    #discipline-active-table th:nth-child(5){width:7%}
+    #discipline-active-table th:nth-child(6){width:7%}
+    #discipline-active-table th:nth-child(7){width:9%}
+    #discipline-active-table th:nth-child(8){width:12%}
+    #discipline-active-table th:nth-child(9){width:14%}
+    #discipline-active-table th:nth-child(10){width:6%}
+    #discipline-done-table th:nth-child(1){width:13%}
+    #discipline-done-table th:nth-child(2){width:5%}
+    #discipline-done-table th:nth-child(3){width:17%}
+    #discipline-done-table th:nth-child(4){width:7%}
+    #discipline-done-table th:nth-child(5){width:7%}
+    #discipline-done-table th:nth-child(6){width:6%}
+    #discipline-done-table th:nth-child(7){width:9%}
+    #discipline-done-table th:nth-child(8){width:9%}
+    #discipline-done-table th:nth-child(9){width:11%}
+    #discipline-done-table th:nth-child(10){width:10%}
+    #discipline-done-table th:nth-child(11){width:10%}
+    .committee-category-select{display:block;width:100%!important;min-width:0!important;height:30px;padding:3px 4px!important;font-size:11px!important;box-sizing:border-box}
+    .committee-note-input{display:block;width:100%!important;min-width:0!important;height:30px!important;padding:4px 7px!important;font-size:11px!important;line-height:20px!important;box-sizing:border-box}
+    .committee-action-btn{white-space:nowrap;padding:4px 7px!important;font-size:11px!important}
+    .committee-cell-text{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
   </style>
 </head>
 <body>
@@ -822,13 +853,13 @@
         <div class="card-title">위원회 관리 | Committee Management</div>
         <div class="card-title notice-divider" style="margin-top:8px;">🔴 위원회 진행 중</div>
         <div class="notice">선도위원회: 반복위반 회부 항목 · 생활교육위원회: 잔여 12점 이상 또는 누적 30점 초과 (연 1회). 처리: [회부확정] → [완료] 2단계.</div>
-        <div class="tbl-wrap"><table><thead><tr>
+        <div class="tbl-wrap"><table id="discipline-active-table"><thead><tr>
           <th>학생</th><th class="tc">학반</th><th>사유</th>
           <th class="tc">잔여디텐션<br><small>(12점이상)</small></th><th class="tc">누적디텐션<br><small>(30점이상)</small></th>
           <th class="tc">위원회 횟수</th><th class="tc">회부일시</th><th class="tc">위원회 종류</th><th>노트</th><th class="tc">처리</th>
         </tr></thead><tbody id="discipline-active-tbody"></tbody></table></div>
         <div class="card-title notice-divider" style="margin-top:18px;">✅ 위원회 완료</div>
-        <div class="tbl-wrap"><table><thead><tr>
+        <div class="tbl-wrap"><table id="discipline-done-table"><thead><tr>
           <th>학생</th><th class="tc">학반</th><th>사유</th>
           <th class="tc">잔여디텐션<br><small>(12점이상)</small></th><th class="tc">누적디텐션<br><small>(30점이상)</small></th>
           <th class="tc">위원회 횟수</th><th class="tc">회부일시</th><th class="tc">완료일시</th><th class="tc">위원회 종류</th><th>메모</th><th>작성자</th>
@@ -2891,18 +2922,15 @@
       return _committeeMetaDrafts[token];
     }
 
-    function committeeNotePayload(meta, previousRecord){
-      previousRecord = previousRecord || {};
+    function committeeNotePayload(meta){
       const note = String((meta && meta.committeeNote) || '').trim();
-      const previousNote = String(previousRecord.committeeNote || '').trim();
-      const noteChanged = note !== previousNote;
       const authorId = String((teacher && (teacher.email || teacher.id || teacher.uid || teacher.name)) || '').trim();
       return {
         committeeCategory: String((meta && meta.committeeCategory) || 'other'),
         committeeNote: note || null,
-        committeeNoteAuthorId: note ? (noteChanged ? authorId : (previousRecord.committeeNoteAuthorId || authorId)) : null,
-        committeeNoteAuthorName: note ? (noteChanged ? String((teacher && teacher.name) || '') : (previousRecord.committeeNoteAuthorName || String((teacher && teacher.name) || ''))) : null,
-        committeeNoteUpdatedAt: note ? (noteChanged ? new Date().toISOString() : (previousRecord.committeeNoteUpdatedAt || new Date().toISOString())) : null
+        committeeNoteAuthorId: note ? authorId : null,
+        committeeNoteAuthorName: note ? String((teacher && teacher.name) || '') : null,
+        committeeNoteUpdatedAt: note ? new Date().toISOString() : null
       };
     }
 
@@ -2918,7 +2946,7 @@
       const record = committeeEntries[String(committeeKey || '')] || {};
       const meta = captureCommitteeDraft(token, fallbackCategory, record);
       if(!committeeKey) return;
-      const payload = committeeNotePayload(meta, record);
+      const payload = committeeNotePayload(meta);
       try{
         await db.ref(COMMITTEE_DB_PATH + '/' + committeeKey).update(payload);
         if(committeeEntries[committeeKey]) Object.assign(committeeEntries[committeeKey], payload);
@@ -3742,7 +3770,7 @@
         const onchange = pendingKey
           ? "saveCommitteeMeta('"+esc(pendingKey)+"','"+token+"','"+esc(fallbackType)+"')"
           : "captureCommitteeDraft('"+token+"','"+esc(fallbackType)+"',null)";
-        return '<select id="committee-category-'+token+'" class="edit-input" style="min-width:116px;font-size:11px;padding:3px 4px;" onchange="'+onchange+'">'+
+        return '<select id="committee-category-'+token+'" class="edit-input committee-category-select" onchange="'+onchange+'">'+
           COMMITTEE_CATEGORY_OPTIONS.map(opt=>'<option value="'+opt[0]+'" '+(opt[0]===category?'selected':'')+'>'+opt[1]+'</option>').join('')+
           '</select>';
       };
@@ -3752,8 +3780,8 @@
         const note=String(record.committeeNote||'');
         const oninput="captureCommitteeDraft('"+token+"','"+esc(fallbackType)+"',"+(pendingKey?"committeeEntries['"+esc(pendingKey)+"']":"null")+")";
         const onblur=pendingKey?"saveCommitteeMeta('"+esc(pendingKey)+"','"+token+"','"+esc(fallbackType)+"')":"";
-        const author=(record.committeeNoteAuthorId||record.committeeNoteAuthorName)?'<div style="font-size:10px;color:var(--sb);margin-top:3px;white-space:normal;">'+esc(committeeNoteAuthorText(record))+'</div>':'';
-        return '<textarea id="committee-note-'+token+'" class="edit-textarea" rows="2" placeholder="위원회 메모" style="min-width:170px;min-height:46px;font-size:11px;line-height:1.35;resize:vertical;" oninput="'+oninput+'" '+(onblur?'onblur="'+onblur+'"':'')+'>'+esc(note)+'</textarea>'+author;
+        const oneLineNote=note.replace(/\s+/g,' ').trim();
+        return '<input type="text" id="committee-note-'+token+'" class="edit-input committee-note-input" placeholder="위원회 메모" value="'+esc(oneLineNote)+'" title="'+esc(oneLineNote)+'" oninput="'+oninput+'" '+(onblur?'onblur="'+onblur+'"':'')+'>';
       };
 
       const mkRow=(c,isDone)=>{
@@ -3761,9 +3789,8 @@
         const record=isDone?(c.done||{}):(c.pending||{});
         const commKey=String(record.committeeKey||'');
         const token=committeeEditorToken(c.type,c.entryKey,c.studentKey);
-        const displayRecord = isDone ? record : Object.assign({}, record, _committeeMetaDrafts[token] || {});
-        const category=getCommitteeCategory(displayRecord,c.type);
-        const note=String(displayRecord.committeeNote||'').trim();
+        const category=getCommitteeCategory(record,c.type);
+        const note=String(record.committeeNote||'').trim();
         const author=committeeNoteAuthorText(record);
         if(isDone){
           return '<tr class="summary-row" onclick="toggleDetailDiv(\''+did+'\')" style="cursor:pointer;">'+
@@ -3771,8 +3798,8 @@
             ptsCell(c.cur,12)+ptsCell(c.ovr,31)+'<td class="tc">'+cntLabel(c.studentKey)+'</td><td class="tc">'+fmt(c.referredAt)+'</td>'+
             '<td class="tc" style="font-size:11px;color:var(--gn);font-weight:700;">&#10003; '+fmt(record.completedAt)+'</td>'+
             '<td class="tc">'+committeeCategoryBadge(category)+'</td>'+
-            '<td class="wrap-cell" style="white-space:pre-wrap;min-width:170px;">'+esc(note||'-')+'</td>'+
-            '<td class="wrap-cell" style="font-size:11px;white-space:normal;min-width:150px;">'+esc(author)+'</td></tr>'+
+            '<td title="'+esc(note||'-')+'"><span class="committee-cell-text">'+esc((note||'-').replace(/\s+/g,' '))+'</span></td>'+
+            '<td title="'+esc(author)+'"><span class="committee-cell-text" style="font-size:11px;">'+esc(author)+'</span></td></tr>'+
             '<tr class="detail-row" id="'+did+'"><td colspan="11"><div class="detail-box">'+
             '<div class="detail-section"><div class="detail-title">전체 위반 내역</div><div class="detail-content">'+esc(buildReasonTextWithPoints(c.studentKey))+'</div></div>'+
             '<div class="detail-section"><div class="detail-title">위원회 메모 | Committee Note</div><div class="detail-content">'+esc(note||'-')+'</div><div class="small-muted" style="margin-top:6px;">작성자: '+esc(author)+' / 수정일: '+fmt(record.committeeNoteUpdatedAt||'')+'</div></div>'+
@@ -3785,10 +3812,10 @@
           '<td>'+esc(c.name)+'</td><td class="tc">'+esc(c.className)+'</td><td><span class="cell-reason-preview">'+esc(c.reason)+'</span></td>'+
           ptsCell(c.cur,12)+ptsCell(c.ovr,31)+'<td class="tc">'+cntLabel(c.studentKey)+'</td><td class="tc">'+fmt(c.referredAt)+'</td>'+
           '<td class="tc" onclick="event.stopPropagation()">'+categorySelectHtml(token,category,pendingKey,c.type)+'</td>'+
-          '<td class="wrap-cell" onclick="event.stopPropagation()">'+noteEditorHtml(token,displayRecord,pendingKey,c.type)+'</td>'+
+          '<td class="wrap-cell" onclick="event.stopPropagation()">'+noteEditorHtml(token,c.pending,pendingKey,c.type)+'</td>'+
           '<td class="tc" onclick="event.stopPropagation()">'+(c.pending
-            ? '<div style="font-size:10px;color:var(--mut);margin-bottom:2px;">회부확정됨</div><button class="btn btn-primary" style="font-size:11px;padding:4px 8px;" onclick="completeCommittee(\''+(c.type==='referral'?(c.pending.type||'referral'):(c.pending.type||'edu'))+'\',\''+esc(c.entryKey)+'\',\''+esc(c.studentKey)+'\',\''+esc(pendingKey)+'\',\''+token+'\')">완료</button>'
-            : '<button class="btn btn-secondary" style="font-size:11px;padding:4px 8px;" onclick="referCommitteeCase(\''+c.type+'\',\''+esc(c.entryKey)+'\',\''+esc(c.studentKey)+'\',\''+token+'\')">회부확정</button>')+'</td></tr>'+
+            ? '<div style="font-size:10px;color:var(--mut);margin-bottom:2px;">회부확정됨</div><button class="btn btn-primary committee-action-btn" onclick="completeCommittee(\''+(c.type==='referral'?(c.pending.type||'referral'):(c.pending.type||'edu'))+'\',\''+esc(c.entryKey)+'\',\''+esc(c.studentKey)+'\',\''+esc(pendingKey)+'\',\''+token+'\')">완료</button>'
+            : '<button class="btn btn-secondary committee-action-btn" onclick="referCommitteeCase(\''+c.type+'\',\''+esc(c.entryKey)+'\',\''+esc(c.studentKey)+'\',\''+token+'\')">회부확정</button>')+'</td></tr>'+
           '<tr class="detail-row" id="'+did+'"><td colspan="10"><div class="detail-box"><div class="detail-section"><div class="detail-title">전체 위반 내역</div><div class="detail-content">'+esc(buildReasonTextWithPoints(c.studentKey))+'</div></div></div></td></tr>';
       };
 
@@ -3820,7 +3847,7 @@
           completedAt:null, year:yr,
           createdAt:new Date().toISOString(),
           createdBy:teacher.name||'', createdByEmail:teacher.email||''
-        }, committeeNotePayload(meta, null)));
+        }, committeeNotePayload(meta)));
         if(lvl){ try{ await recalculateStudentState(sk,lvl); }catch(e){} }
         toast('위원회 회부가 확정되었습니다.','ok');
         await loadData();
@@ -3855,7 +3882,7 @@
           reasonSnapshot: reasonSnapshot || null,
           linkedEntryKeys: linkedEntryKeys.length ? linkedEntryKeys : null,
           createdAt: (pendingEntry && pendingEntry[1] && pendingEntry[1].createdAt) ? pendingEntry[1].createdAt : now
-        }, committeeNotePayload(meta, pendingRecord));
+        }, committeeNotePayload(meta));
         if(pendingEntry){
           await db.ref(COMMITTEE_DB_PATH+'/'+pendingEntry[0]).update(completePayload);
         } else {
