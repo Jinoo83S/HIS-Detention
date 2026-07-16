@@ -756,6 +756,9 @@
 
         <!-- 개요 뷰 (기본) - 학반별 테이블 그리드 -->
         <div id="student-overview-view" style="padding:12px">
+          <div id="student-roster-warning" class="notice" style="display:none;margin:0 0 10px 0;">
+            학생 명단 DB가 비어 있어 기록 데이터 기준으로 학생을 표시하고 있습니다. | The student roster DB is empty, so students are shown from records.
+          </div>
           <div id="student-class-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px"></div>
         </div>
 
@@ -845,8 +848,8 @@
   </div>
 
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="common.js"></script>
 
   <script>
@@ -1613,6 +1616,7 @@
         renderAllEntries();
         renderAllRecoveryEntries();
         renderStats();
+        renderDisciplineTab();
         renderCommitteePendingBanner();
         renderRecentEntries();
         renderStudentOverview();
@@ -1659,9 +1663,16 @@
     }
 
     async function init(){
-      await ensureFirebaseAuth();
       teacher = requireTeacherSession();
       if (!teacher) return;
+
+      try {
+        await ensureFirebaseAuth();
+      } catch (e) {
+        console.error(e);
+        toast('Firebase 인증에 실패했습니다. 익명 로그인을 확인하세요. | Firebase authentication failed.', 'err');
+        return;
+      }
 
       teacherRoles = normalizeRoles(teacher.roles || []);
       document.getElementById('teacher-info').innerHTML = `
@@ -1675,7 +1686,8 @@
       setupSelectors();
       setupEvents();
       initEntryFormMeta();
-      loadData().then(() => setupRealtimeListeners());
+      await loadData();
+      setupRealtimeListeners();
     }
 
     function setupRoleVisibility(){
@@ -2464,29 +2476,60 @@
       return base;
     }
 
+    function normalizeStudentIdentity(value){
+      return String(value || '').toLowerCase().replace(/[^0-9a-z가-힣]/g, '');
+    }
+
     function getStudentCatalog(){
       const map = {};
-      Object.entries(students || {}).forEach(function([key, value]){
-        if(isStudentHiddenFromList(value)) return;
-        map[key] = { key:key, ...(value || {}), fromRecords:false };
+      const rosterEntries = Object.entries(students || {}).filter(function([, value]){ return !isStudentHiddenFromList(value); });
+      const hasRoster = rosterEntries.length > 0;
+      const rosterAlias = [];
+      rosterEntries.forEach(function([key, value]){
+        const profile = { key:key, ...(value || {}), fromRecords:false };
+        map[key] = profile;
+        rosterAlias.push({
+          key:key,
+          className:normalizeStudentKeyText(profile.className),
+          name:normalizeStudentIdentity(profile.name),
+          englishName:normalizeStudentIdentity(profile.englishName),
+          studentEmail:normalizeStudentIdentity(profile.selfEmail || profile.studentEmail)
+        });
       });
+
+      function findRosterKey(record, proposedKey, cls, rawName){
+        if(proposedKey && map[proposedKey] && map[proposedKey].fromRecords === false) return proposedKey;
+        if(!hasRoster) return '';
+        const nameNorm = normalizeStudentIdentity(rawName);
+        const emailNorm = normalizeStudentIdentity(record.selfEmail || record.studentEmail);
+        const matches = rosterAlias.filter(function(item){
+          if(cls && item.className && String(item.className) !== String(cls)) return false;
+          if(emailNorm && item.studentEmail && emailNorm === item.studentEmail) return true;
+          if(!nameNorm || !item.name) return false;
+          return nameNorm === item.name || nameNorm.startsWith(item.name) || item.name.startsWith(nameNorm);
+        });
+        return matches.length === 1 ? matches[0].key : '';
+      }
 
       function addRecordStudent(record){
         record = record || {};
-        const key = normalizeStudentKeyText(record.studentKey || (record.studentName || record.className ? studentKey(record.studentName || '', record.className || '') : ''));
-        if(!key) return;
+        const proposedKey = normalizeStudentKeyText(record.studentKey || (record.studentName || record.className ? studentKey(record.studentName || '', record.className || '') : ''));
+        if(!proposedKey) return;
+        const cls = normalizeStudentKeyText(record.className || inferClassNameFromStudentKey(proposedKey));
+        const rawName = normalizeStudentKeyText(record.studentName || record.name || inferNameFromStudentKey(proposedKey, cls));
+        const rosterKey = findRosterKey(record, proposedKey, cls, rawName);
+        const key = rosterKey || proposedKey;
         if(students && students[key] && isStudentHiddenFromList(students[key])) return;
-        const cls = normalizeStudentKeyText(record.className || inferClassNameFromStudentKey(key));
         const profile = {
           key:key,
-          name: normalizeStudentKeyText(record.studentName || record.name || inferNameFromStudentKey(key, cls)),
+          name: rawName,
           englishName: normalizeStudentKeyText(record.englishName || ''),
           className: cls,
           parentEmail: normalizeStudentKeyText(record.parentEmail || ''),
           studentEmail: normalizeStudentKeyText(record.studentEmail || ''),
-          fromRecords:true
+          fromRecords: hasRoster && !rosterKey
         };
-        map[key] = mergeStudentProfile(map[key] || { key:key, fromRecords:true }, profile);
+        map[key] = mergeStudentProfile(map[key] || { key:key, fromRecords:profile.fromRecords }, profile);
       }
 
       Object.values(entries || {}).forEach(addRecordStudent);
@@ -2562,6 +2605,8 @@
     function renderStudentOverview(){
       const grid = document.getElementById('student-class-grid');
       if(!grid) return;
+      const rosterWarning = document.getElementById('student-roster-warning');
+      if(rosterWarning) rosterWarning.style.display = Object.keys(students || {}).length ? 'none' : 'block';
       const q         = (document.getElementById('student-mgmt-search')?.value||'').trim().toLowerCase();
       const level     = (document.getElementById('student-mgmt-level')?.value||'');
       const clsFilter = (document.getElementById('student-mgmt-class')?.value||'');

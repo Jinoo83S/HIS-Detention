@@ -107,8 +107,8 @@ tr:hover td{background:#edf3ff}
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script src="common.js"></script>
 <script>
 // ── studentCycleState 전체 재계산 ──
@@ -570,8 +570,14 @@ function resetAll(){
 
 // ── Import to Firebase ──
 async function startImport(){
-  await ensureFirebaseAuth();
   if(!convertedEntries.length){ alert('데이터가 없습니다.'); return; }
+  try {
+    await ensureFirebaseAuth();
+  } catch (e) {
+    console.error(e);
+    alert('Firebase 익명 인증에 실패했습니다. Authentication 설정과 배포 파일을 확인하세요.');
+    return;
+  }
   const dbPath = SHEET_DB[sheetType] || 'detentionEntries';
 
   const confirmed = confirm(

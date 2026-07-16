@@ -23,7 +23,9 @@ window.firebaseAuth = firebaseAuth;
 let _firebaseAuthPromise = null;
 
 async function ensureFirebaseAuth() {
-  if (!firebaseAuth) return null;
+  if (!firebaseAuth) {
+    throw new Error('Firebase Auth SDK가 로드되지 않았습니다. firebase-auth-compat.js를 확인하세요.');
+  }
   if (firebaseAuth.currentUser) return firebaseAuth.currentUser;
   if (_firebaseAuthPromise) return _firebaseAuthPromise;
   _firebaseAuthPromise = new Promise((resolve, reject) => {
@@ -40,10 +42,12 @@ async function ensureFirebaseAuth() {
       } catch (err) {
         try { unsubscribe(); } catch(_) {}
         console.error('Firebase anonymous auth failed:', err);
+        _firebaseAuthPromise = null;
         reject(err);
       }
     }, err => {
       console.error('Firebase auth state failed:', err);
+      _firebaseAuthPromise = null;
       reject(err);
     });
   });

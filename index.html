@@ -117,8 +117,8 @@
   </div>
 
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="common.js"></script>
 
   <script>
@@ -171,7 +171,6 @@
     }
 
     async function login() {
-      await ensureFirebaseAuth();
       const selectedEmail = syncTeacherSelection();
       const pw = (document.getElementById('pw').value || '').trim();
 

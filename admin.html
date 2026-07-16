@@ -209,8 +209,8 @@
   </div>
 
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="common.js"></script>
 
   <script>
@@ -429,7 +429,8 @@
 
 
     async function checkAdmin() {
-      await ensureFirebaseAuth();
+      try { await ensureFirebaseAuth(); }
+      catch (e) { console.error(e); return toast('Firebase 인증에 실패했습니다.\nFirebase authentication failed.', 'err'); }
       const pw = document.getElementById('admin-pw').value;
       if (pw !== ADMIN_PW) {
         document.getElementById('admin-pw').value = '';
@@ -438,7 +439,7 @@
       sessionStorage.setItem('his_admin_session', '1');
       document.getElementById('login-screen').classList.add('hidden');
       document.getElementById('admin-screen').classList.remove('hidden');
-      refreshAll();
+      await refreshAll();
     }
 
     function adminLogout() {
@@ -454,6 +455,7 @@
     }
 
     async function changeAdminPassword() {
+      await ensureFirebaseAuth();
       const currentPw = document.getElementById('current-admin-pw').value;
       const newPw = document.getElementById('new-admin-pw').value;
       const confirmPw = document.getElementById('new-admin-pw-confirm').value;
@@ -473,6 +475,7 @@
 
     async function refreshAll() {
       try {
+        await ensureFirebaseAuth();
         const [t, s] = await Promise.all([
           db.ref('teachers').once('value'),
           db.ref('students').once('value')
@@ -863,9 +866,9 @@
 
     /* ── 세션 자동복원 ── */
     (async function initSession() {
-      await ensureFirebaseAuth();
       // RTDB에서 관리자 비밀번호 로드
       try{
+        await ensureFirebaseAuth();
         const snap = await db.ref('adminConfig/password').once('value');
         if(snap.val()) ADMIN_PW = snap.val();
       }catch(e){ console.warn('adminConfig load failed, using default'); }
