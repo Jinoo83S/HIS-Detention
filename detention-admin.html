@@ -402,6 +402,17 @@
     }
     .admin-toolbar .admin-search{flex:1 1 320px;min-width:240px;height:30px}
     .admin-toolbar select{width:auto;min-width:128px;height:30px}
+    .notice-bulk-details{margin:8px 0 10px;border:1px solid #cbd5e1;border-radius:6px;background:#f8fafc}
+    .notice-bulk-details>summary{cursor:pointer;padding:8px 10px;font-size:12px;font-weight:700;color:#1e3a8a;list-style:none}
+    .notice-bulk-details>summary::-webkit-details-marker{display:none}
+    .notice-bulk-details>summary::before{content:'▶';display:inline-block;margin-right:6px;font-size:10px;transition:transform .15s}
+    .notice-bulk-details[open]>summary::before{transform:rotate(90deg)}
+    .notice-bulk-panel{display:grid;grid-template-columns:minmax(180px,1fr) minmax(180px,1fr) 150px auto;gap:8px;align-items:end;padding:0 10px 10px}
+    .notice-bulk-field label{display:block;margin-bottom:3px;font-size:10px;font-weight:700;color:#64748b}
+    .notice-bulk-field .edit-input{width:100%;height:30px;padding:4px 7px;font-size:11px}
+    .notice-bulk-help{grid-column:1/-1;font-size:11px;color:#475569;line-height:1.45;background:#fff;border:1px solid #e2e8f0;border-radius:5px;padding:7px 9px}
+    .notice-bulk-help strong{color:#1e3a8a}
+    .notice-bulk-warning{color:#b45309;font-weight:700}
     .admin-count-strip{display:flex;gap:6px;flex-wrap:wrap;margin:7px 0 9px}
     .admin-count-chip{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:999px;background:#eef3ff;border:1px solid #d8e2f5;color:#29457d;font-size:10px;font-weight:700}
     .admin-count-chip b{font-size:11px}
@@ -458,6 +469,8 @@
     .student-record-item .desc{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     @media(max-width:1180px){
       .admin-workspace{grid-template-columns:1fr}
+      .notice-bulk-panel{grid-template-columns:1fr}
+      .notice-bulk-help{grid-column:1}
       .admin-editor-pane{position:relative;top:auto;max-height:none}
       .admin-list-wrap{max-height:48vh}
     }
@@ -631,6 +644,16 @@
     <div id="panel-notices" class="panel"><div class="card">
       <div class="card-title"><span>알림 기록 | Notice Records</span><span id="notice-selection-label" style="font-size:11px;color:#64748b;font-weight:500;"></span></div><div class="notice">알림 진행 상태와 날짜를 목록에서 확인하고, 오른쪽에서 한 기록씩 수정합니다.</div>
       <div class="admin-toolbar"><input id="notice-search" class="edit-input admin-search" placeholder="학생명·학반·studentKey·DB Key 검색" oninput="renderNoticesTable()"><select id="notice-status-filter" class="edit-input" onchange="renderNoticesTable()"><option value="all">전체 상태</option><option value="active">진행 중</option><option value="done">완료</option><option value="deleted">삭제 표시</option></select><select id="notice-issue-filter" class="edit-input" onchange="renderNoticesTable()"><option value="all">전체 점검 상태</option><option value="problem">검토 필요</option><option value="missing">필수정보 누락</option><option value="date">날짜 오류</option><option value="clean">정상만</option></select><button class="btn btn-secondary" onclick="clearNoticeFilters()">필터 초기화</button><button class="btn btn-secondary" onclick="addNoticeRow()">행 추가</button><button id="btn-save-notices" class="btn btn-primary" onclick="saveNotices()" disabled style="opacity:.4;cursor:not-allowed;">저장할 내용 없음</button></div>
+      <details class="notice-bulk-details" id="notice-bulk-details">
+        <summary>완료자 일괄 입력 | Bulk Completion Assignee</summary>
+        <div class="notice-bulk-panel">
+          <div class="notice-bulk-field"><label>중등 담당자 · ms_notice</label><select id="notice-bulk-ms-teacher" class="edit-input" onchange="updateNoticeBulkPreview()"></select></div>
+          <div class="notice-bulk-field"><label>고등 담당자 · hs_notice</label><select id="notice-bulk-hs-teacher" class="edit-input" onchange="updateNoticeBulkPreview()"></select></div>
+          <div class="notice-bulk-field"><label>적용 범위</label><select id="notice-bulk-scope" class="edit-input" onchange="updateNoticeBulkPreview()"><option value="filtered">현재 검색 결과</option><option value="all">전체 완료 기록</option></select></div>
+          <button class="btn btn-primary" onclick="applyNoticeBulkAssignees()">누락 완료자 채우기</button>
+          <div id="notice-bulk-preview" class="notice-bulk-help">교사 계정을 불러오는 중입니다.</div>
+        </div>
+      </details>
       <div class="admin-count-strip"><span class="admin-count-chip">전체 <b id="notice-count-total">0</b></span><span class="admin-count-chip">진행 중 <b id="notice-count-active">0</b></span><span class="admin-count-chip">완료 <b id="notice-count-done">0</b></span><span class="admin-count-chip warn">검토 필요 <b id="notice-count-problem">0</b></span><span class="admin-count-chip">검색 결과 <b id="notice-count-visible">0</b></span></div>
       <div class="admin-workspace"><div class="admin-list-pane"><div class="admin-list-help">학생과 알림 단계가 한눈에 보이도록 요약합니다.</div><div class="tbl-wrap admin-list-wrap"><table class="admin-summary-table"><thead><tr><th style="width:32px">#</th><th style="width:62px">상태</th><th style="width:30%">학생 / Key</th><th style="width:48px">구분</th><th style="width:92px">학부모</th><th style="width:92px">학생/교사</th><th style="width:92px">완료</th><th>점검</th></tr></thead><tbody id="notices-tbody"></tbody></table></div></div><aside id="notices-editor-pane" class="admin-editor-pane"><div class="admin-editor-empty">왼쪽에서 수정할 알림 기록을 선택하세요.</div></aside></div>
     </div></div>
@@ -725,6 +748,7 @@
     let recoveryRows = [];
     let cycleRows = [];
     let studentRows = [];
+    let adminTeacherRows = [];
     let studentDataLastQuery = '';
     let _entrySnap = '', _noticeSnap = '', _recoverySnap = '';
     let _entryOrig = {}, _noticeOrig = {}, _recoveryOrig = {}, _committeeOrig = {};
@@ -1336,14 +1360,22 @@
 
     async function loadAllData(){
       try{
-        const [entriesSnap, noticesSnap, recoverySnap, committeeAdminSnap, cycleSnap, studentsSnap] = await Promise.all([
+        const [entriesSnap, noticesSnap, recoverySnap, committeeAdminSnap, cycleSnap, studentsSnap, teachersSnap] = await Promise.all([
           db.ref('detentionEntries').once('value'),
           db.ref('detentionNotices').once('value'),
           db.ref('recoveryEntries').once('value'),
           db.ref('committeeRecords').once('value'),
           db.ref('studentCycleState').once('value'),
-          db.ref('students').once('value')
+          db.ref('students').once('value'),
+          db.ref('teachers').once('value').catch(err => { console.warn('[teachers load failed]', err); return null; })
         ]);
+
+        adminTeacherRows = Object.entries((teachersSnap && teachersSnap.val()) || {}).map(([key, value]) => ({
+          key,
+          name: String((value && value.name) || ''),
+          email: String((value && value.email) || ''),
+          roles: normalizeAdminTeacherRoles((value && (value.roles || value.role)) || [])
+        })).filter(t => t.name || t.email).sort((a,b) => String(a.name||a.email).localeCompare(String(b.name||b.email), 'ko'));
 
         studentRows = Object.entries((studentsSnap && studentsSnap.val()) || {}).map(([key, value]) => ({
           key, ...(value || {})
@@ -1386,6 +1418,7 @@
 
         renderEntriesTable();
         renderNoticesTable();
+        renderNoticeBulkAssignees();
         renderRecoveryTable();
         renderCommitteeTable();
         renderStudentIndex();
@@ -1619,7 +1652,7 @@
       renderEntriesTable();
       toast(accepted?'동일 기록 묶음을 정상으로 확인했습니다. 저장 버튼을 눌러 DB에 반영하세요.':'중복 검토 완료 표시를 취소했습니다. 저장 버튼을 눌러 반영하세요.','ok');
     }
-    function noticeIssues(row){const a=[];if(!dbAdminRowStudentKey(row))a.push({type:'missing',level:'bad',text:'학생 Key 누락'});if(!['ms','hs'].includes(String(row.level||'').toLowerCase()))a.push({type:'missing',level:'warn',text:'구분 확인'});if(!row.parentMailAt&&!row.studentTeacherMailAt&&!row.completedAt)a.push({type:'missing',level:'warn',text:'알림 날짜 없음'});if(adminDateOrderBad(row.parentMailAt,row.completedAt)||adminDateOrderBad(row.studentTeacherMailAt,row.completedAt))a.push({type:'date',level:'bad',text:'완료일이 알림일보다 빠름'});if(row.completedAt&&!row.completedBy)a.push({type:'missing',level:'warn',text:'완료자 누락'});return a;}
+    function noticeIssues(row){const a=[];if(!dbAdminRowStudentKey(row))a.push({type:'missing',level:'bad',text:'학생 Key 누락'});if(!['ms','hs'].includes(String(row.level||'').toLowerCase()))a.push({type:'missing',level:'warn',text:'구분 확인'});if(!row.parentMailAt&&!row.studentTeacherMailAt&&!row.completedAt)a.push({type:'missing',level:'warn',text:'알림 날짜 없음'});if(adminDateOrderBad(row.parentMailAt,row.completedAt)||adminDateOrderBad(row.studentTeacherMailAt,row.completedAt))a.push({type:'date',level:'bad',text:'완료일이 알림일보다 빠름'});if(row.completedAt&&!String(row.completedBy||'').trim())a.push({type:'missing',level:'warn',text:'완료자 누락'});if(row.completedAt&&!String(row.completedByEmail||'').trim())a.push({type:'missing',level:'warn',text:'완료자 이메일 누락'});return a;}
     function recoveryIssues(row){const a=[];const p=adminProfileForRow(row);if(!p.studentKey)a.push({type:'missing',level:'bad',text:'학생 Key 누락'});if(!p.name||p.name==='학생 없음')a.push({type:'missing',level:'warn',text:'학생명 누락'});if(!p.className)a.push({type:'missing',level:'warn',text:'학반 누락'});if(!['ms','hs'].includes(String(row.level||'').toLowerCase()))a.push({type:'missing',level:'warn',text:'구분 확인'});if(!(Number(row.recoveryPoints||row.points)>0))a.push({type:'points',level:'bad',text:'회복점수 오류'});if(!dateInputValue(row.completedAt))a.push({type:'date',level:'warn',text:'완료일 누락'});if(row.currentTotalBefore!==''&&row.currentTotalAfter!==''&&Number(row.currentTotalAfter)>Number(row.currentTotalBefore))a.push({type:'points',level:'bad',text:'처리 후 점수가 더 큼'});return a;}
     function issueSummaryHtml(issues){if(!issues.length)return '<span class="admin-issue-pill ok">정상</span>';const bad=issues.some(x=>x.level==='bad');return '<span class="admin-issue-pill '+(bad?'bad':'warn')+'">'+(bad?'오류 ':'확인 ')+issues.length+'</span>';}
     function issueAlertHtml(issues){if(!issues.length)return '<div class="admin-editor-alert ok">현재 자동 점검에서 발견된 문제가 없습니다.</div>';const bad=issues.some(x=>x.level==='bad');return '<div class="admin-editor-alert '+(bad?'bad':'warn')+'"><b>데이터 점검 필요</b><br>'+issues.map(x=>'• '+esc(x.text)).join('<br>')+'</div>';}
@@ -1644,7 +1677,105 @@
     function markEntryDeleted(key){selectedEntryKey=key;toggleSelectedAdminDeleted('entry');}
     async function saveEntries(){try{await saveRowsToFirebase({rows:entryRows,path:'detentionEntries',origMap:_entryOrig,reason:'detention-admin-entries',labelKo:'디텐션 기록',labelEn:'Entries'});}catch(err){console.error(err);toast('디텐션 기록 DB 저장 실패: '+(err&&err.message?err.message:err),'err');}}
 
-    function renderNoticesTable(){const tb=document.getElementById('notices-tbody');if(!tb)return;const q=String((document.getElementById('notice-search')||{}).value||'').trim().toLowerCase();const status=String((document.getElementById('notice-status-filter')||{}).value||'all');const issueFilter=String((document.getElementById('notice-issue-filter')||{}).value||'all');const info=noticeRows.map(r=>({row:r,issues:noticeIssues(r)}));const filtered=info.filter(function(x){const r=x.row;if(status==='active'&&(r.completedAt||r._deleted))return false;if(status==='done'&&!r.completedAt)return false;if(status==='deleted'&&!r._deleted)return false;if(q&&!dbAdminRowSearchText(r).includes(q))return false;if(issueFilter==='problem'&&!x.issues.length)return false;if(issueFilter==='clean'&&x.issues.length)return false;if(!['all','problem','clean'].includes(issueFilter)&&!x.issues.some(i=>i.type===issueFilter))return false;return true;});countSet('notice-count-total',noticeRows.length);countSet('notice-count-active',noticeRows.filter(r=>!r.completedAt&&!r._deleted).length);countSet('notice-count-done',noticeRows.filter(r=>!!r.completedAt&&!r._deleted).length);countSet('notice-count-problem',info.filter(x=>x.issues.length).length);countSet('notice-count-visible',filtered.length);tb.innerHTML=filtered.length?filtered.map(function(x,i){const r=x.row,p=adminProfileForRow(r),st=r._deleted?'deleted':r.completedAt?'done':'active';return '<tr class="'+(r._deleted?'pending-delete ':'')+(selectedNoticeKey===r.key?'admin-selected':'')+'" data-row-key="'+esc(r.key)+'"><td class="row-num">'+(i+1)+'</td><td><span class="admin-status-badge '+st+'">'+(r._deleted?'삭제':r.completedAt?'완료':'진행 중')+'</span></td><td><span class="student-main">'+esc(p.name)+'</span><span class="student-sub">'+esc(p.studentKey||r.key)+'</span></td><td>'+esc(String(r.level||'-').toUpperCase())+'</td><td>'+esc(dateInputValue(r.parentMailAt)||'-')+'</td><td>'+esc(dateInputValue(r.studentTeacherMailAt)||'-')+'</td><td>'+esc(dateInputValue(r.completedAt)||'-')+'</td><td>'+issueSummaryHtml(x.issues)+'</td></tr>';}).join(''):'<tr><td colspan="8" class="empty">검색 결과가 없습니다.</td></tr>';bindAdminRows('notices-tbody','notice');renderNoticeEditor();}
+    function normalizeAdminTeacherRoles(roles){
+      if(Array.isArray(roles)) return roles.map(v=>String(v||'').trim().toLowerCase()).filter(Boolean);
+      if(typeof roles==='string') return roles.split(/[|,]/).map(v=>String(v||'').trim().toLowerCase()).filter(Boolean);
+      if(roles&&typeof roles==='object') return Object.keys(roles).sort((a,b)=>Number(a)-Number(b)).map(k=>String(roles[k]||'').trim().toLowerCase()).filter(Boolean);
+      return [];
+    }
+    function adminTeacherByKey(key){return adminTeacherRows.find(t=>String(t.key)===String(key))||null;}
+    function noticeTeacherOptions(roleKey){
+      const role=String(roleKey||'').toLowerCase();
+      const preferred=adminTeacherRows.filter(t=>t.roles.includes(role));
+      const privileged=adminTeacherRows.filter(t=>!preferred.includes(t)&&(t.roles.includes('admin')||t.roles.includes('master')));
+      const others=adminTeacherRows.filter(t=>!preferred.includes(t)&&!privileged.includes(t));
+      return [...preferred,...privileged,...others];
+    }
+    function noticeTeacherOptionLabel(t,roleKey){
+      const tags=[];
+      if(t.roles.includes(roleKey)) tags.push(roleKey);
+      else if(t.roles.includes('admin')) tags.push('admin');
+      else if(t.roles.includes('master')) tags.push('master');
+      return (tags.length?'['+tags.join(', ')+'] ':'')+(t.name||'이름 없음')+(t.email?' · '+t.email:'');
+    }
+    function renderNoticeBulkAssignees(){
+      const pairs=[['notice-bulk-ms-teacher','ms_notice'],['notice-bulk-hs-teacher','hs_notice']];
+      pairs.forEach(([id,role])=>{
+        const el=document.getElementById(id);if(!el)return;
+        const current=el.value;
+        const options=noticeTeacherOptions(role);
+        el.innerHTML='<option value="">담당자 선택</option>'+options.map(t=>'<option value="'+esc(t.key)+'">'+esc(noticeTeacherOptionLabel(t,role))+'</option>').join('');
+        if(current&&options.some(t=>String(t.key)===String(current))) el.value=current;
+        else {const preferred=options.find(t=>t.roles.includes(role));if(preferred)el.value=preferred.key;}
+      });
+      updateNoticeBulkPreview();
+    }
+    function noticeFilteredInfo(){
+      const q=String((document.getElementById('notice-search')||{}).value||'').trim().toLowerCase();
+      const status=String((document.getElementById('notice-status-filter')||{}).value||'all');
+      const issueFilter=String((document.getElementById('notice-issue-filter')||{}).value||'all');
+      const info=noticeRows.map(r=>({row:r,issues:noticeIssues(r)}));
+      const filtered=info.filter(function(x){const r=x.row;if(status==='active'&&(r.completedAt||r._deleted))return false;if(status==='done'&&!r.completedAt)return false;if(status==='deleted'&&!r._deleted)return false;if(q&&!dbAdminRowSearchText(r).includes(q))return false;if(issueFilter==='problem'&&!x.issues.length)return false;if(issueFilter==='clean'&&x.issues.length)return false;if(!['all','problem','clean'].includes(issueFilter)&&!x.issues.some(i=>i.type===issueFilter))return false;return true;});
+      return {info,filtered};
+    }
+    function noticeLevelForBulk(row){
+      const raw=String((row&&row.level)||'').trim().toLowerCase();
+      if(raw==='ms'||raw==='hs')return raw;
+      const p=adminProfileForRow(row||{});
+      const m=String((p&&p.className)||'').match(/(\d{1,2})/);
+      const grade=m?Number(m[1]):0;
+      if(grade>=7&&grade<=9)return 'ms';
+      if(grade>=10&&grade<=12)return 'hs';
+      return '';
+    }
+    function normalizedAdminPersonText(v){return String(v||'').trim().toLowerCase().replace(/\s+/g,'');}
+    function matchTeacherForNotice(row){
+      const email=normalizedAdminPersonText(row&&row.completedByEmail);
+      const name=normalizedAdminPersonText(row&&row.completedBy);
+      if(email){const t=adminTeacherRows.find(x=>normalizedAdminPersonText(x.email)===email);if(t)return t;}
+      if(name){const matches=adminTeacherRows.filter(x=>normalizedAdminPersonText(x.name)===name);if(matches.length===1)return matches[0];}
+      return null;
+    }
+    function noticeBulkCandidateRows(){
+      const scope=String((document.getElementById('notice-bulk-scope')||{}).value||'filtered');
+      const base=scope==='all'?noticeRows:noticeFilteredInfo().filtered.map(x=>x.row);
+      return base.filter(r=>!r._deleted&&!!r.completedAt&&(!String(r.completedBy||'').trim()||!String(r.completedByEmail||'').trim()));
+    }
+    function noticeBulkAssignmentPlan(){
+      const msFallback=adminTeacherByKey((document.getElementById('notice-bulk-ms-teacher')||{}).value||'');
+      const hsFallback=adminTeacherByKey((document.getElementById('notice-bulk-hs-teacher')||{}).value||'');
+      const plan=[];const skipped=[];
+      noticeBulkCandidateRows().forEach(row=>{
+        const level=noticeLevelForBulk(row);
+        const hasName=!!String(row.completedBy||'').trim();
+        const hasEmail=!!String(row.completedByEmail||'').trim();
+        const matched=matchTeacherForNotice(row);
+        let teacher=matched;
+        if(!teacher&&!hasName&&!hasEmail) teacher=(level==='ms'?msFallback:level==='hs'?hsFallback:null);
+        if(!teacher||!String(teacher.email||'').trim()){skipped.push({row,level,reason:hasName||hasEmail?'기존 완료자와 교사 계정 매칭 실패':'담당자 미선택'});return;}
+        plan.push({row,teacher,level,matched:!!matched});
+      });
+      return {plan,skipped,msFallback,hsFallback};
+    }
+    function updateNoticeBulkPreview(){
+      const el=document.getElementById('notice-bulk-preview');if(!el)return;
+      if(!adminTeacherRows.length){el.innerHTML='<span class="notice-bulk-warning">교사 계정을 불러오지 못했거나 등록된 교사가 없습니다.</span>';return;}
+      const {plan,skipped}=noticeBulkAssignmentPlan();
+      const ms=plan.filter(x=>x.level==='ms').length,hs=plan.filter(x=>x.level==='hs').length,matched=plan.filter(x=>x.matched).length;
+      el.innerHTML='<strong>적용 예정 '+plan.length+'건</strong> · 중등 '+ms+'건 · 고등 '+hs+'건'+(matched?' · 기존 완료자 이름/이메일로 계정 자동 매칭 '+matched+'건':'')+(skipped.length?' <span class="notice-bulk-warning">· 담당자 선택 또는 구분 확인 필요 '+skipped.length+'건</span>':'')+'<br>완료된 기록 중 완료자 이름 또는 이메일이 비어 있는 항목만 채웁니다. 기존에 이름과 이메일이 모두 있는 기록은 변경하지 않습니다.';
+    }
+    function applyNoticeBulkAssignees(){
+      const {plan,skipped}=noticeBulkAssignmentPlan();
+      if(!plan.length)return toast(skipped.length?'담당자를 선택하거나 기록의 중등·고등 구분을 확인해 주세요.':'입력할 누락 완료자 정보가 없습니다.','err');
+      const byTeacher={};plan.forEach(x=>{const label=(x.teacher.name||x.teacher.email)+' ('+x.teacher.email+')';byTeacher[label]=(byTeacher[label]||0)+1;});
+      const summary=Object.entries(byTeacher).map(([name,count])=>'• '+name+': '+count+'건').join('\n');
+      if(!confirm('완료자 누락 기록 '+plan.length+'건에 교사 계정 정보를 입력합니다.\n\n'+summary+(skipped.length?'\n\n담당자를 정할 수 없어 제외: '+skipped.length+'건':'')+'\n\n아직 DB에는 저장되지 않으며, 확인 후 [저장 | Save]를 눌러야 반영됩니다.'))return;
+      plan.forEach(({row,teacher})=>{if(!String(row.completedBy||'').trim())row.completedBy=String(teacher.name||'').trim();if(!String(row.completedByEmail||'').trim())row.completedByEmail=String(teacher.email||'').trim();});
+      checkNoticeDirty();renderNoticesTable();updateNoticeBulkPreview();
+      toast('완료자 정보 '+plan.length+'건을 입력했습니다. 저장 버튼을 눌러 DB에 반영하세요.','ok');
+    }
+
+    function renderNoticesTable(){const tb=document.getElementById('notices-tbody');if(!tb)return;const result=noticeFilteredInfo();const info=result.info,filtered=result.filtered;countSet('notice-count-total',noticeRows.length);countSet('notice-count-active',noticeRows.filter(r=>!r.completedAt&&!r._deleted).length);countSet('notice-count-done',noticeRows.filter(r=>!!r.completedAt&&!r._deleted).length);countSet('notice-count-problem',info.filter(x=>x.issues.length).length);countSet('notice-count-visible',filtered.length);tb.innerHTML=filtered.length?filtered.map(function(x,i){const r=x.row,p=adminProfileForRow(r),st=r._deleted?'deleted':r.completedAt?'done':'active';return '<tr class="'+(r._deleted?'pending-delete ':'')+(selectedNoticeKey===r.key?'admin-selected':'')+'" data-row-key="'+esc(r.key)+'"><td class="row-num">'+(i+1)+'</td><td><span class="admin-status-badge '+st+'">'+(r._deleted?'삭제':r.completedAt?'완료':'진행 중')+'</span></td><td><span class="student-main">'+esc(p.name)+'</span><span class="student-sub">'+esc(p.studentKey||r.key)+'</span></td><td>'+esc(String(r.level||'-').toUpperCase())+'</td><td>'+esc(dateInputValue(r.parentMailAt)||'-')+'</td><td>'+esc(dateInputValue(r.studentTeacherMailAt)||'-')+'</td><td>'+esc(dateInputValue(r.completedAt)||'-')+'</td><td>'+issueSummaryHtml(x.issues)+'</td></tr>';}).join(''):'<tr><td colspan="8" class="empty">검색 결과가 없습니다.</td></tr>';bindAdminRows('notices-tbody','notice');renderNoticeEditor();updateNoticeBulkPreview();}
     function renderNoticeEditor(){const pane=document.getElementById('notices-editor-pane');if(!pane)return;const r=selectedAdminRow('notice');if(!r){pane.innerHTML='<div class="admin-editor-empty">왼쪽에서 수정할 알림 기록을 선택하세요.</div>';return;}const p=adminProfileForRow(r),issues=noticeIssues(r);const lab=document.getElementById('notice-selection-label');if(lab)lab.textContent=p.name+' 선택됨';pane.innerHTML='<div class="admin-editor-head"><div><div class="admin-editor-title">'+esc(p.name)+' · '+esc(p.className||'학반 없음')+' · '+(r.completedAt?'완료':'진행 중')+'</div><div class="admin-editor-sub">'+esc(r.key)+' · '+esc(p.studentKey||'학생 Key 없음')+'</div></div></div><div class="admin-editor-body">'+issueAlertHtml(issues)+'<div class="admin-form-section"><div class="admin-form-title">학생 및 구분</div><div class="admin-form-grid">'+adminInput('notice','studentKey','studentKey',r.studentKey,{full:true})+adminInput('notice','level','구분',r.level,{type:'select',options:[['ms','중등'],['hs','고등']]})+adminInput('notice','year','학년도',r.year,{mode:'number'})+'</div></div><div class="admin-form-section"><div class="admin-form-title">알림 진행 날짜</div><div class="admin-form-grid">'+adminInput('notice','parentMailAt','학부모 알림일',r.parentMailAt,{type:'date'})+adminInput('notice','studentTeacherMailAt','학생/교사 알림일',r.studentTeacherMailAt,{type:'date'})+adminInput('notice','completedAt','완료일',r.completedAt,{type:'date'})+adminInput('notice','completedBy','완료자',r.completedBy)+adminInput('notice','completedByEmail','완료자 이메일',r.completedByEmail,{full:true})+'</div></div><div class="admin-form-section"><div class="admin-form-title">사유 스냅샷</div><div class="admin-form-grid one">'+adminInput('notice','cycleViolationsSnapshot','사유 내역',r.cycleViolationsSnapshot||r.reasonSnapshot,{type:'textarea',full:true})+'</div></div><div class="admin-editor-actions"><button class="btn '+(r._deleted?'btn-secondary':'btn-danger')+' small-btn" onclick="toggleSelectedAdminDeleted(\'notice\')">'+(r._deleted?'삭제 취소':'삭제 표시')+'</button><div class="right"><button class="btn btn-primary" onclick="saveNotices()">알림 기록 저장</button></div></div></div>';}
     function markNoticeDeleted(key){selectedNoticeKey=key;toggleSelectedAdminDeleted('notice');}
     async function saveNotices(){try{await saveRowsToFirebase({rows:noticeRows,path:'detentionNotices',origMap:_noticeOrig,reason:'detention-admin-notices',labelKo:'알림 기록',labelEn:'Notices'});}catch(err){console.error(err);toast('알림 기록 DB 저장 실패: '+(err&&err.message?err.message:err),'err');}}
