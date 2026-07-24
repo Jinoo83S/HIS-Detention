@@ -215,7 +215,7 @@
           } catch(e) {}
 
           const teacherPw = String(found.password || '');
-          const validPws = [teacherPw, adminConfigPw, '1751'].filter(Boolean);
+          const validPws = [teacherPw, adminConfigPw].filter(Boolean);
 
           if (!validPws.includes(pw)) {
             document.getElementById('pw').value = '';

@@ -214,7 +214,7 @@
   <script src="common.js"></script>
 
   <script>
-    let ADMIN_PW = '1751'; // RTDB에서 로드됨
+    let ADMIN_PW = ''; // RTDB에서 로드됨. 기본 비밀번호는 사용하지 않습니다.
     const ROLE_OPTIONS = [
       { key: 'admin', label: 'Admin' },
       { key: 'master', label: 'Master' },
@@ -432,6 +432,9 @@
       try { await ensureFirebaseAuth(); }
       catch (e) { console.error(e); return toast('Firebase 인증에 실패했습니다.\nFirebase authentication failed.', 'err'); }
       const pw = document.getElementById('admin-pw').value;
+      if (!ADMIN_PW) {
+        return toast('관리자 비밀번호가 설정되어 있지 않습니다. adminConfig/password를 먼저 설정해 주세요.\nAdmin password is not configured.', 'err');
+      }
       if (pw !== ADMIN_PW) {
         document.getElementById('admin-pw').value = '';
         return toast('비밀번호가 올바르지 않습니다.\nInvalid password.', 'err');
@@ -871,7 +874,7 @@
         await ensureFirebaseAuth();
         const snap = await db.ref('adminConfig/password').once('value');
         if(snap.val()) ADMIN_PW = snap.val();
-      }catch(e){ console.warn('adminConfig load failed, using default'); }
+      }catch(e){ console.warn('adminConfig load failed; no fallback password is enabled.', e); }
       
       if (sessionStorage.getItem('his_admin_session') === '1') {
         document.getElementById('login-screen').classList.add('hidden');

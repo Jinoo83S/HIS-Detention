@@ -224,7 +224,18 @@ function readFileText(file, enc = 'utf-8') {
   }
 
   function hisCurrentYear(){
-    return String(new Date().getFullYear());
+    const now = new Date();
+    // HIS 학년도는 3월 시작이므로 1~2월은 직전 연도로 계산합니다.
+    return String(now.getMonth() < 2 ? now.getFullYear() - 1 : now.getFullYear());
+  }
+
+  function hisAcademicYearFromDateText(value, fallbackYear){
+    const raw = String(value || '').trim();
+    const m = raw.match(/^(\d{4})-(\d{2})/);
+    if (!m) return String(fallbackYear || hisCurrentYear());
+    const year = Number(m[1]);
+    const month = Number(m[2]);
+    return String(month <= 2 ? year - 1 : year);
   }
 
   function hisRecordYear(record, fallbackYear){
@@ -234,9 +245,7 @@ function readFileText(file, enc = 'utf-8') {
       return String(direct).trim();
     }
     const dt = String(r.confirmedAt || r.createdAt || r.completedAt || '').trim();
-    const m = dt.match(/^(\d{4})/);
-    if (m) return m[1];
-    return String(fallbackYear || hisCurrentYear());
+    return hisAcademicYearFromDateText(dt, fallbackYear || hisCurrentYear());
   }
 
   function hisIsCurrentYearRecord(record, currentYear){
@@ -271,12 +280,10 @@ function readFileText(file, enc = 'utf-8') {
       )
       .sort((a, b) => hisLatestEntryDate(b[1]).localeCompare(hisLatestEntryDate(a[1])));
 
-    // yearRawPoints: 현재 학년도 위원회 판단용 원점수입니다.
-    // 회복교육으로 차감하지 않고, 30점 초과 기준에 사용합니다.
-    // 기존 화면 호환을 위해 overallPoints에도 같은 값을 저장합니다.
+    // 현재 학년도 확정 디텐션 원점수입니다.
     const yearRawPoints = confirmedEntries.reduce((sum, [, r]) => sum + Number((r || {}).totalPoints || 0), 0);
 
-    // recoveredTotal: 현재 학년도 + 같은 학년군(level)의 회복교육 차감점수입니다.
+    // 현재 학년도 + 같은 학년군의 회복교육 차감점수입니다.
     const recoveredTotal = hisValues(recovery)
       .filter(r =>
         String((r || {}).studentKey || '') === sk &&
@@ -285,8 +292,6 @@ function readFileText(file, enc = 'utf-8') {
       )
       .reduce((sum, r) => sum + Number((r || {}).recoveryPoints || 0), 0);
 
-    // currentPoints: 현재 미해소 점수입니다.
-    // 3점 이상 알림/회복교육, 12점 이상 생활교육위원회 기준에 사용합니다.
     const currentPoints = Math.max(0, yearRawPoints - recoveredTotal);
 
     const activeNoticeArr = hisEntries(notices)
@@ -309,51 +314,30 @@ function readFileText(file, enc = 'utf-8') {
       .sort((a, b) => String((b[1] || {}).completedAt || '').localeCompare(String((a[1] || {}).completedAt || '')));
     const lastCompletedNotice = completedNoticeArr.length ? { key: completedNoticeArr[0][0], notice: completedNoticeArr[0][1] || {} } : null;
 
-    const referralEntries = confirmedEntries.filter(([, r]) => (r || {}).isReferral === true);
-    const referralCompleted = referralEntries.length > 0 && referralEntries.every(([refKey]) => {
-      return hisValues(committee).some(c =>
-        ((c || {}).type === 'referral' || (c || {}).type === 'manual_referral') &&
-        (((c || {}).entryKey === refKey) || String((c || {}).studentKey || '') === sk) &&
-        !!(c || {}).completedAt &&
-        hisIsCurrentYearRecord(c, curYear)
-      );
-    });
-    const hasActiveReferral = referralEntries.length > 0 && !referralCompleted;
-
-    const completedCommitteeArr = hisValues(committee)
-      .filter(c =>
+    // 위원회는 분류 없이 학생 단위의 수동 회부/완료 기록으로만 관리합니다.
+    const committeeArr = hisEntries(committee)
+      .filter(([, c]) =>
         String((c || {}).studentKey || '') === sk &&
-        !!(c || {}).completedAt &&
         hisIsCurrentYearRecord(c, curYear)
       )
-      .sort((a, b) => String((b || {}).completedAt || '').localeCompare(String((a || {}).completedAt || '')));
-    const latestCommitteeCompletedAt = completedCommitteeArr.length ? String((completedCommitteeArr[0] || {}).completedAt || '') : '';
+      .sort((a, b) => String((b[1] || {}).createdAt || (b[1] || {}).referredAt || '').localeCompare(String((a[1] || {}).createdAt || (a[1] || {}).referredAt || '')));
+
+    const pendingCommitteeEntry = committeeArr.find(([, c]) => !(c || {}).completedAt) || null;
+    const completedCommitteeArr = committeeArr
+      .filter(([, c]) => !!(c || {}).completedAt)
+      .sort((a, b) => String((b[1] || {}).completedAt || '').localeCompare(String((a[1] || {}).completedAt || '')));
+
+    const latestCommitteeCompletedAt = completedCommitteeArr.length ? String((completedCommitteeArr[0][1] || {}).completedAt || '') : '';
     const latestConfirmedEntryAt = confirmedEntries.length ? hisLatestEntryDate(confirmedEntries[0][1]) : '';
     const committeeCoversLatestEntry = !!latestCommitteeCompletedAt && (!latestConfirmedEntryAt || latestCommitteeCompletedAt >= latestConfirmedEntryAt);
-
-    const eduCompletedThisYear = completedCommitteeArr.some(c =>
-      ['edu_points', 'edu_overall', 'manual_edu', 'edu'].includes(String((c || {}).type || ''))
-    );
-
-    const needsEduCommittee = !eduCompletedThisYear && (currentPoints >= 12 || yearRawPoints > 30);
-    const hasManualReferralPending = hisValues(committee).some(c =>
-      String((c || {}).type || '') === 'manual_referral' &&
-      String((c || {}).studentKey || '') === sk &&
-      !(c || {}).completedAt &&
-      hisIsCurrentYearRecord(c, curYear)
-    );
-    const hasManualEduPending = hisValues(committee).some(c =>
-      String((c || {}).type || '') === 'manual_edu' &&
-      String((c || {}).studentKey || '') === sk &&
-      !(c || {}).completedAt &&
-      hisIsCurrentYearRecord(c, curYear)
-    );
+    const hasPendingCommittee = !!pendingCommitteeEntry;
+    const needsCommittee = currentPoints >= 12 && !hasPendingCommittee && !committeeCoversLatestEntry;
 
     let phase = 'clean';
-    if (hasActiveReferral || hasManualReferralPending) {
-      phase = 'referral';
+    if (hasPendingCommittee) {
+      phase = 'committee_pending';
     } else if (committeeCoversLatestEntry && currentPoints >= 3) {
-      // 위원회 완료 후에는 같은 위반 묶음에 대해 알림 단계로 되돌리지 않고 회복교육 단계로 보냅니다.
+      // 위원회 완료 후에는 같은 위반 묶음을 다시 알림으로 보내지 않고 회복교육 단계로 보냅니다.
       phase = 'in_recovery';
     } else if (activeNotice) {
       phase = (activeNotice.notice.parentMailAt || activeNotice.notice.studentTeacherMailAt) ? 'notice_active' : 'notice_needed';
@@ -367,21 +351,18 @@ function readFileText(file, enc = 'utf-8') {
       phase = 'notice_needed';
     }
 
-    let committeeStatus = 'none';
-    if (hasActiveReferral || hasManualReferralPending) committeeStatus = 'pending_referral';
-    else if (needsEduCommittee || hasManualEduPending) committeeStatus = 'pending_edu';
+    const committeeStatus = hasPendingCommittee ? 'pending' : (needsCommittee ? 'eligible' : 'none');
 
     const state = {
       phase,
-      // 기존 화면 호환 필드
       cyclePoints: currentPoints,
       overallPoints: yearRawPoints,
-      // 새 의미 명시 필드
       currentPoints,
       yearRawPoints,
       recoveryPoints: recoveredTotal,
       currentYear: curYear,
       committeeStatus,
+      committeeThreshold: 12,
       updatedAt: new Date().toISOString(),
       updatedBy: options.updatedBy || 'system_recalculate'
     };
@@ -392,13 +373,17 @@ function readFileText(file, enc = 'utf-8') {
         activeNotice,
         lastCompletedNotice,
         confirmedEntries,
-        hasActiveReferral,
-        hasManualReferralPending,
-        hasManualEduPending,
-        needsEduCommittee,
-        eduCompletedThisYear,
+        pendingCommitteeEntry,
+        hasPendingCommittee,
+        needsCommittee,
         latestCommitteeCompletedAt,
-        committeeCoversLatestEntry
+        committeeCoversLatestEntry,
+        // 구버전 호출부 호환용 별칭
+        hasActiveReferral: false,
+        hasManualReferralPending: hasPendingCommittee,
+        hasManualEduPending: false,
+        needsEduCommittee: needsCommittee,
+        eduCompletedThisYear: completedCommitteeArr.length > 0
       }
     };
   }
@@ -429,16 +414,16 @@ function readFileText(file, enc = 'utf-8') {
     const data = options.freshData || await readStateData();
     const result = calculateStudentCycleState(studentKey, level, data, options);
 
-    // teacher.html 기존 동작 보존: 선도위원회 대상이 되면 진행 중 알림은 자동 완료 처리합니다.
+    // 위원회 회부가 수동 등록되면 진행 중 알림은 자동 완료 처리할 수 있습니다.
     if (options.autoCompleteReferralNotice &&
         result.meta &&
-        (result.meta.hasActiveReferral || result.meta.hasManualReferralPending) &&
+        result.meta.hasPendingCommittee &&
         result.meta.activeNotice &&
         result.meta.activeNotice.key &&
         !(result.meta.activeNotice.notice || {}).completedAt) {
       await db.ref('detentionNotices/' + result.meta.activeNotice.key).update({
         completedAt: new Date().toISOString(),
-        completedBy: 'system_referral'
+        completedBy: 'system_committee'
       });
       const refreshed = options.freshData ? await readStateData() : await readStateData();
       const resultAfterNoticeClose = calculateStudentCycleState(studentKey, level, refreshed, options);
