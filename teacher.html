@@ -80,8 +80,28 @@
     .summary-row:hover{background:#eef4ff !important}
     .detail-row{display:none;background:#fbfdff !important}
     .detail-row.show{display:table-row}
+    .summary-row.detail-selected{
+      background:#dbe8ff !important;
+      box-shadow:inset 4px 0 0 var(--nv2),inset 0 0 0 1px #9db9ef;
+    }
+    .summary-row.detail-selected:hover{background:#d1e1ff !important}
+    .summary-row.detail-selected td:first-child{font-weight:800;color:var(--nv)}
     .tc{text-align:center!important}
     .detail-box{padding:8px 6px 4px;display:grid;gap:8px}
+    .detail-selected-header{
+      display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+      min-height:38px;padding:8px 11px;border:1px solid #b9cbed;border-radius:10px;
+      background:linear-gradient(90deg,#e8f0ff,#f7f9ff);color:var(--nv);
+    }
+    .detail-selected-header .selected-label{
+      display:inline-flex;align-items:center;padding:3px 7px;border-radius:999px;
+      background:var(--nv);color:#fff;font-size:10px;font-weight:800;white-space:nowrap;
+    }
+    .detail-selected-header .selected-name{font-size:14px;font-weight:900;color:var(--nv)}
+    .detail-selected-header .selected-class{font-size:12px;font-weight:800;color:#40558e;white-space:nowrap}
+    .detail-selected-header .selected-context{
+      margin-left:auto;font-size:11px;font-weight:700;color:var(--sb);white-space:nowrap;
+    }
     .detail-section{border:1px solid var(--bd);border-radius:10px;background:#fff;padding:8px 10px}
     .detail-title{font-size:11px;font-weight:700;color:var(--sb);margin-bottom:4px}
     .detail-content{white-space:pre-wrap;word-break:keep-all;line-height:1.5;font-size:12px}
@@ -138,6 +158,7 @@
       .stat-boxes{grid-template-columns:1fr}
       .recent-entry-top{flex-direction:column}
       .recent-entry-side{min-width:0;align-items:flex-start;text-align:left}
+      .detail-selected-header .selected-context{width:100%;margin-left:0}
     }
     .class-list-header{
       background:linear-gradient(120deg,var(--nv),var(--nv2));
@@ -1985,12 +2006,14 @@
       if (expandedRecoveryKeys[level].has(key)) expandedRecoveryKeys[level].delete(key);
       else expandedRecoveryKeys[level].add(key);
       renderRecoveryTableByLevel(level);
+      stripeAll();
     }
 
     function setRecoveryExpanded(level, expanded){
       const list = getRecoveryCandidates(level);
       expandedRecoveryKeys[level] = expanded ? new Set(list.map(s => s.key)) : new Set();
       renderRecoveryTableByLevel(level);
+      stripeAll();
     }
 
     function setupEvents(){
@@ -2280,7 +2303,7 @@
       tb.innerHTML = pageData.rows.map((r,idx) => {
         const reasonPreview = esc(String(r.reasonsSnapshot||'-').split('\n')[0]);
         const reasonFull = esc(r.reasonsSnapshot||'-');
-        return `<tr class="summary-row" onclick="this.nextElementSibling.classList.toggle('show')" style="cursor:pointer;">
+        return `<tr class="summary-row" onclick="toggleAdjacentDetailRow(this)" style="cursor:pointer;">
           <td class="nowrap">${esc(sName(r.studentName,r.englishName))}</td>
           <td class="nowrap">${esc(r.className||'')}</td>
           <td class="nowrap">회복교육 | Restorative Education</td>
@@ -2298,6 +2321,8 @@
           </div></div></td>
         </tr>`;
       }).join('');
+      stripeTable('all-recovery-tbody');
+      syncOpenDetailHighlights(tb);
     }
 
     function renderConfirmEntries(){
@@ -2465,15 +2490,84 @@
       });
     }
 
+    const DETAIL_TABLE_CONTEXT = {
+      'all-records-tbody':'디텐션 전체 · 확정 기록',
+      'all-recovery-tbody':'디텐션 전체 · 회복교육 기록',
+      'confirm-pending-tbody':'디텐션 확정 · 대기',
+      'confirm-processed-tbody':'디텐션 확정 · 처리 완료',
+      'notify-active-tbody':'디텐션 알림 · 진행 중',
+      'notify-done-tbody':'디텐션 알림 · 완료',
+      'recovery-ms-active-tbody':'중등 회복교육 · 진행 중',
+      'recovery-ms-done-tbody':'중등 회복교육 · 완료',
+      'recovery-hs-active-tbody':'고등 회복교육 · 진행 중',
+      'recovery-hs-done-tbody':'고등 회복교육 · 완료',
+      'discipline-active-tbody':'위원회 · 진행 중',
+      'discipline-done-tbody':'위원회 · 완료'
+    };
+
+    function getDetailStudentInfo(summaryRow){
+      const cells=summaryRow ? Array.from(summaryRow.children||[]).filter(el=>el.tagName==='TD') : [];
+      const name=String((cells[0]&&cells[0].innerText)||'').replace(/\s+/g,' ').trim()||'학생 정보 없음';
+      const className=String((cells[1]&&cells[1].innerText)||'').replace(/\s+/g,' ').trim()||'-';
+      return {name,className};
+    }
+
+    function ensureDetailSelectedHeader(summaryRow,detailRow){
+      if(!summaryRow||!detailRow) return;
+      const box=detailRow.querySelector('.detail-box');
+      if(!box) return;
+      const tbody=summaryRow.closest('tbody');
+      const context=DETAIL_TABLE_CONTEXT[String((tbody&&tbody.id)||'')]||'상세 기록';
+      const info=getDetailStudentInfo(summaryRow);
+      let header=box.querySelector(':scope > .detail-selected-header');
+      if(!header){
+        header=document.createElement('div');
+        header.className='detail-selected-header';
+        box.insertBefore(header,box.firstChild);
+      }
+      header.replaceChildren();
+      const label=document.createElement('span'); label.className='selected-label'; label.textContent='선택한 학생';
+      const name=document.createElement('strong'); name.className='selected-name'; name.textContent=info.name;
+      const cls=document.createElement('span'); cls.className='selected-class'; cls.textContent=info.className;
+      const ctx=document.createElement('span'); ctx.className='selected-context'; ctx.textContent=context;
+      header.append(label,name,cls,ctx);
+    }
+
+    function setDetailRowExpanded(summaryRow,detailRow,expanded){
+      if(!summaryRow||!detailRow||!detailRow.classList.contains('detail-row')) return;
+      detailRow.classList.toggle('show',!!expanded);
+      summaryRow.classList.toggle('detail-selected',!!expanded);
+      summaryRow.setAttribute('aria-expanded',expanded?'true':'false');
+      if(expanded) ensureDetailSelectedHeader(summaryRow,detailRow);
+    }
+
+    function toggleDetailRowForSummary(summaryRow,detailRow){
+      if(!summaryRow) return;
+      const detail=detailRow||summaryRow.nextElementSibling;
+      if(!detail||!detail.classList.contains('detail-row')) return;
+      setDetailRowExpanded(summaryRow,detail,!detail.classList.contains('show'));
+    }
+
+    function toggleAdjacentDetailRow(summaryRow){
+      toggleDetailRowForSummary(summaryRow);
+    }
+
+    function syncOpenDetailHighlights(root){
+      const scope=root||document;
+      Object.keys(DETAIL_TABLE_CONTEXT).forEach(tbodyId=>{
+        const tbody=(scope.id===tbodyId?scope:(scope.querySelector?scope.querySelector('#'+tbodyId):null))||document.getElementById(tbodyId);
+        if(!tbody) return;
+        tbody.querySelectorAll('tr.detail-row').forEach(detail=>{
+          const summary=detail.previousElementSibling;
+          if(!summary||!summary.classList.contains('summary-row')) return;
+          setDetailRowExpanded(summary,detail,detail.classList.contains('show'));
+        });
+      });
+    }
+
     function stripeAll(){
-      ['confirm-pending-tbody','confirm-processed-tbody',
-       'notify-ms-active-tbody','notify-ms-done-tbody',
-       'notify-hs-active-tbody','notify-hs-done-tbody',
-       'recovery-ms-active-tbody','recovery-ms-done-tbody',
-       'recovery-hs-active-tbody','recovery-hs-done-tbody',
-       'all-records-tbody','all-recovery-tbody',
-       'discipline-active-tbody','discipline-done-tbody'
-      ].forEach(stripeTable);
+      Object.keys(DETAIL_TABLE_CONTEXT).forEach(stripeTable);
+      syncOpenDetailHighlights(document);
     }
 
     async function updateNoticeDateField(noticeKey, field, dateValue){
@@ -3663,15 +3757,15 @@
           );
         });
         doneTb.innerHTML = rows.join('');
-        // 행 클릭 이벤트 - 직접 nextSibling 토글
+        // 완료 행도 공통 상세 선택 처리 사용
         doneTb.querySelectorAll('.summary-row').forEach(tr => {
-          tr.addEventListener('click', () => {
-            const detail = tr.nextElementSibling;
-            if (detail && detail.classList.contains('detail-row')) {
-              detail.classList.toggle('show');
-            }
+          tr.addEventListener('click', event => {
+            if(event.target.closest('button,input,select,textarea,a,label')) return;
+            toggleDetailRowForSummary(tr);
           });
         });
+        stripeTable(doneTb.id);
+        syncOpenDetailHighlights(doneTb);
       }
     }
 
@@ -3865,6 +3959,10 @@
       doneTb.innerHTML=done.length?done.map(doneRow).join(''):'<tr><td colspan="10" class="empty">완료된 내역이 없습니다.</td></tr>';
       bindCommitteeDetailRows(activeTb);
       bindCommitteeDetailRows(doneTb);
+      stripeTable('discipline-active-tbody');
+      stripeTable('discipline-done-tbody');
+      syncOpenDetailHighlights(activeTb);
+      syncOpenDetailHighlights(doneTb);
     }
 
     async function referCommitteeCase(studentKey, editorToken){
@@ -3959,7 +4057,13 @@
       }catch(e){ console.error(e); toast('위원회 완료 취소 실패', 'err'); }
     }
 
-    function toggleDetailDiv(id){const el=document.getElementById(id);if(el)el.classList.toggle('show');}
+    function toggleDetailDiv(id){
+      const detail=document.getElementById(id);
+      if(!detail) return;
+      const summary=detail.previousElementSibling;
+      if(summary&&summary.classList.contains('summary-row')) toggleDetailRowForSummary(summary,detail);
+      else detail.classList.toggle('show');
+    }
 
 
     function renderCommitteePendingBanner(){
