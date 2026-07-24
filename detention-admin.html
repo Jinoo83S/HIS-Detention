@@ -1409,7 +1409,14 @@
         toast('데이터를 불러왔습니다. | Data loaded.', 'ok');
       }catch(err){
         console.error(err);
-        toast('데이터를 불러오지 못했습니다. | Failed to load data.', 'err');
+        const message = err && err.message ? err.message : String(err || 'unknown error');
+        const committeeBody = document.getElementById('committee-tbody');
+        if(committeeBody){
+          committeeBody.innerHTML='<tr><td colspan="9" class="empty" style="color:#b91c1c;font-weight:700;">데이터를 불러오지 못했습니다.<br><span style="font-weight:400;font-size:11px;">'+esc(message)+'</span></td></tr>';
+        }
+        const selectionLabel = document.getElementById('committee-selection-label');
+        if(selectionLabel) selectionLabel.textContent='불러오기 실패';
+        toast('데이터를 불러오지 못했습니다: ' + message, 'err');
       }
     }
 
@@ -1888,7 +1895,8 @@
     function checkCommitteeDirty(){ _setBtnState('btn-save-committee', committeeRows.some(r => _rowChanged(r, _committeeOrig))); checkStudentDataDirty(); }
 
     function committeeLinkedKeys(row){
-      return parseKeyList(listText((row || {}).linkedEntryKeys));
+      const parsed = parseKeyList(listText((row || {}).linkedEntryKeys));
+      return Array.isArray(parsed) ? parsed : [];
     }
 
     function committeeDateOnly(value){
