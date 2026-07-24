@@ -245,12 +245,12 @@
     #discipline-active-table th,#discipline-active-table td,
     #discipline-done-table th,#discipline-done-table td{vertical-align:middle}
     #discipline-active-table th:nth-child(1){width:18%}
-    #discipline-active-table th:nth-child(2){width:6%}
-    #discipline-active-table th:nth-child(3){width:9%}
-    #discipline-active-table th:nth-child(4){width:9%}
+    #discipline-active-table th:nth-child(2){width:5%}
+    #discipline-active-table th:nth-child(3){width:10%}
+    #discipline-active-table th:nth-child(4){width:10%}
     #discipline-active-table th:nth-child(5){width:7%}
     #discipline-active-table th:nth-child(6){width:11%}
-    #discipline-active-table th:nth-child(7){width:28%}
+    #discipline-active-table th:nth-child(7){width:27%}
     #discipline-active-table th:nth-child(8){width:12%}
     #discipline-done-table th:nth-child(1){width:16%}
     #discipline-done-table th:nth-child(2){width:5%}
@@ -267,6 +267,21 @@
     .committee-cell-text{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
     .committee-note-preview{display:-webkit-box;line-clamp:2;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;white-space:normal;line-height:1.35;max-height:2.7em}
     .committee-detail-hint{display:inline-block;font-size:11px;color:var(--sb);font-weight:700}
+    .committee-history-wrap{display:grid;gap:8px}
+    .committee-history-head{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:2px}
+    .committee-history-count{display:inline-block;padding:3px 8px;border-radius:999px;background:#eef3ff;color:var(--nv);font-size:11px;font-weight:800}
+    .committee-history-warning{border:1px solid #f0c040;background:#fff8dd;color:#6b4b00;border-radius:8px;padding:7px 9px;font-size:11px;white-space:pre-wrap}
+    .committee-history-item{border:1px solid var(--bd);border-radius:9px;background:#fff;padding:9px 10px}
+    .committee-history-item.current{border:2px solid var(--nv2);background:#f3f6ff;box-shadow:0 0 0 2px rgba(27,47,122,.08)}
+    .committee-history-title{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px;font-weight:800;color:var(--nv);margin-bottom:6px}
+    .committee-history-status{font-size:10px;padding:2px 7px;border-radius:999px;background:#eef3ff;color:var(--nv2);white-space:nowrap}
+    .committee-history-status.done{background:#e8f7ed;color:var(--gn)}
+    .committee-history-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px 10px;font-size:11px}
+    .committee-history-field{min-width:0}
+    .committee-history-field.wide{grid-column:1/-1}
+    .committee-history-label{color:var(--sb);font-weight:700;margin-bottom:1px}
+    .committee-history-value{color:var(--tx);white-space:pre-wrap;overflow-wrap:anywhere}
+    @media(max-width:850px){.committee-history-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
   </style>
 </head>
 <body>
@@ -3802,8 +3817,6 @@
         .map(([k,c])=>({committeeKey:k,...c}))
         .filter(c=>isCurrentYearRecord(c,yr));
 
-      const completedCountByStudent={};
-      const committeeRoundByKey={};
       const committeeByStudent={};
       committeeArr.forEach(c=>{
         const sk=String(c.studentKey||'');
@@ -3813,86 +3826,62 @@
       });
       Object.entries(committeeByStudent).forEach(([sk,list])=>{
         list.sort((a,b)=>String(committeeCreatedAt(a)||a.completedAt||'').localeCompare(String(committeeCreatedAt(b)||b.completedAt||'')) || String(a.completedAt||'').localeCompare(String(b.completedAt||'')) || String(a.committeeKey||'').localeCompare(String(b.committeeKey||'')));
-        let completedCount=0;
-        list.forEach((record,idx)=>{
-          record.__committeeRound=idx+1;
-          if(record.committeeKey) committeeRoundByKey[String(record.committeeKey)]=idx+1;
-          if(record.completedAt) completedCount += 1;
-        });
-        completedCountByStudent[sk]=completedCount;
+        list.forEach((record,idx)=>{ record.__committeeRound=idx+1; });
       });
       const cntLabelForActive=(studentKey,pendingRecord)=>{
-        const sk=String(studentKey||'');
+        const history=committeeHistoryRecords(studentKey,pendingRecord||{});
         const pendingKey=String((pendingRecord&&pendingRecord.committeeKey)||'');
-        const round=pendingKey ? committeeRoundByKey[pendingKey] : null;
-        return String(round || ((completedCountByStudent[sk]||0)+1))+'회';
-      };
-      const cntLabelForDone=record=>String(record.__committeeRound || committeeRoundByKey[String(record.committeeKey||'')] || 1)+'회';
-      const committeeResolvedStudentKey=record=>{
-        record=record||{};
-        const direct=String(record.studentKey||'').trim();
-        if(direct) return direct;
-        const ids=[];
-        if(record.entryKey) ids.push(String(record.entryKey));
-        normalizeKeyList(record.linkedEntryKeys).forEach(k=>ids.push(String(k)));
-        for(const key of ids){
-          const entry=entries&&entries[key];
-          if(entry&&String(entry.studentKey||'').trim()) return String(entry.studentKey).trim();
+        if(pendingKey){
+          const idx=history.findIndex(r=>String(r.committeeKey||'')===pendingKey);
+          if(idx>=0) return String(idx+1)+'회';
         }
-        return '';
+        return String(history.filter(r=>!!r.completedAt).length+1)+'회';
       };
-      const committeeTimeMs=(value,endOfDay)=>{
-        let raw=String(value||'').trim();
-        if(!raw) return NaN;
-        if(/^\d{4}-\d{2}-\d{2}$/.test(raw)) raw+=endOfDay?'T23:59:59.999':'T00:00:00';
-        const parsed=Date.parse(raw);
-        if(Number.isFinite(parsed)) return parsed;
-        const m=raw.match(/^(\d{4})[.\/-]\s*(\d{1,2})[.\/-]\s*(\d{1,2})/);
-        if(!m) return NaN;
-        return new Date(Number(m[1]),Number(m[2])-1,Number(m[3]),endOfDay?23:0,endOfDay?59:0,endOfDay?59:0,endOfDay?999:0).getTime();
+      const cntLabelForDone=record=>{
+        const history=committeeHistoryRecords(String((record||{}).studentKey||''),record||{});
+        const key=String((record||{}).committeeKey||'');
+        const idx=history.findIndex(r=>String(r.committeeKey||'')===key);
+        return String(idx>=0?idx+1:Math.max(1,Number(record.__committeeRound)||1))+'회';
       };
-      const committeeAtOrBefore=(value,cutoff)=>{
-        const itemMs=committeeTimeMs(value,false);
-        const cutoffMs=committeeTimeMs(cutoff,true);
-        if(Number.isFinite(itemMs)&&Number.isFinite(cutoffMs)) return itemMs<=cutoffMs;
-        return String(value||'')<=String(cutoff||'');
-      };
-      const committeeRecoveryBefore=(studentKey,year,cutoff)=>Object.values(recoveryEntries||{})
-        .filter(r=>String(r.studentKey||'')===String(studentKey||'')&&isCurrentYearRecord(r,year)&&String(r.completedAt||'').trim()&&committeeAtOrBefore(r.completedAt,cutoff))
-        .reduce((sum,r)=>sum+Number(r.recoveryPoints||0),0);
-      const committeeHistoricalCurrentPoints=record=>{
-        record=record||{};
-        const studentKey=committeeResolvedStudentKey(record);
-        const cutoff=String(committeeCreatedAt(record)||'').trim();
-        if(!studentKey||!cutoff) return null;
-        const year=String(getRecordYear(record,getCurrentYear()));
-        const raw=Object.values(entries||{})
-          .filter(r=>String(r.studentKey||'')===studentKey&&String(r.status||'')==='확정'&&isCurrentYearRecord(r,year)&&String(r.confirmedAt||r.createdAt||'').trim()&&committeeAtOrBefore(r.confirmedAt||r.createdAt,cutoff))
-          .reduce((sum,r)=>sum+Number(r.totalPoints||0),0);
-        const recovered=committeeRecoveryBefore(studentKey,year,cutoff);
-        if(raw>0||recovered>0) return Math.max(0,raw-recovered);
-        const rawSnapshotValue=record.yearRawPointsAtReferral;
-        if(rawSnapshotValue!==null&&rawSnapshotValue!==undefined&&rawSnapshotValue!==''&&Number.isFinite(Number(rawSnapshotValue))) return Math.max(0,Number(rawSnapshotValue)-recovered);
-        return null;
-      };
-      const committeeReferralPoints=record=>{
+      const committeeRecordAt=record=>String(committeeCreatedAt(record||{})||(record||{}).completedAt||'');
+      const committeeReferralPoints=(record,identityKeys)=>{
         record=record||{};
         const direct=[record.currentPointsAtReferral,record.referredPoints,record.currentTotalAtReferral,record.currentPoints,record.currentTotal];
         for(const value of direct){
           if(value!==null&&value!==undefined&&value!==''&&Number.isFinite(Number(value))) return Number(value);
         }
-        const storedText=[record.reason,record.reasonSnapshot,record.reasonsSnapshot,record.violationSnapshot]
-          .map(v=>String(v||'').trim()).filter(Boolean).join('\n');
-        const explicit=storedText.match(/(?:현재\s*미해소|잔여(?:\s*디텐션)?|회부\s*당시(?:\s*점수)?|current\s*(?:unresolved|remaining)|remaining)[^0-9]{0,20}(\d+)\s*(?:점|points?)/i);
-        if(explicit) return Number(explicit[1]);
-        const historical=committeeHistoricalCurrentPoints(record);
-        if(historical!==null) return historical;
-        const linked=getCommitteeLinkedEntryList(record);
-        if(linked.length){
-          const linkedTotal=linked.reduce((sum,r)=>sum+Number(r.totalPoints||0),0);
+        const reason=String(record.reason||'')+' '+String(record.reasonSnapshot||'');
+        const match=reason.match(/(?:현재\s*미해소|잔여|회부\s*당시)[^0-9]{0,12}(\d+)\s*점/);
+        if(match) return Number(match[1]);
+
+        const linkedKeys=Array.isArray(record.linkedEntryKeys)?record.linkedEntryKeys.map(String):[];
+        if(linkedKeys.length){
+          const linkedTotal=linkedKeys.reduce((sum,key)=>{
+            const entry=entries&&entries[key];
+            if(!entry||String(entry.status||'')!=='확정') return sum;
+            return sum+Number(entry.manualPoints||entry.totalPoints||0);
+          },0);
           if(linkedTotal>0) return linkedTotal;
         }
-        return null;
+
+        const at=committeeRecordAt(record);
+        if(!at) return null;
+        const keys=new Set([String(record.studentKey||''),...(identityKeys||[]).map(String)].filter(Boolean));
+        const recordYear=Number(record.year)||getCurrentYear();
+        let raw=0;
+        Object.values(entries||{}).forEach(entry=>{
+          if(!entry||String(entry.status||'')!=='확정'||!keys.has(String(entry.studentKey||''))) return;
+          if(!isCurrentYearRecord(entry,recordYear)) return;
+          const entryAt=String(entry.confirmedAt||entry.createdAt||'');
+          if(entryAt&&entryAt<=at) raw+=Number(entry.manualPoints||entry.totalPoints||0);
+        });
+        let recovered=0;
+        Object.values(recoveryEntries||{}).forEach(rec=>{
+          if(!rec||!rec.completedAt||!keys.has(String(rec.studentKey||''))) return;
+          if(!isCurrentYearRecord(rec,recordYear)) return;
+          if(String(rec.completedAt)<=at) recovered+=Number(rec.recoveryPoints||0);
+        });
+        return raw>0?Math.max(0,raw-recovered):null;
       };
       const pointLabel=value=>(value===null||value===undefined||value===''||!Number.isFinite(Number(value)))?'-':String(Number(value))+'점';
 
@@ -3912,6 +3901,83 @@
         const sk=String(c.studentKey||'');
         if(sk&&!profileByKey[sk]) profileByKey[sk]={key:sk,name:c.studentName||sk,englishName:c.englishName||'',className:c.className||''};
       });
+
+      function committeeIdentityClass(value){
+        return String(value||'').trim().toUpperCase().replace(/\s+/g,'');
+      }
+      function committeeIdentityNames(record,profile){
+        return [
+          profile&&profile.name, profile&&profile.englishName,
+          record&&record.studentName, record&&record.name, record&&record.englishName
+        ].map(normalizeStudentIdentity).filter(v=>v.length>=2);
+      }
+      function committeeSameIdentity(record,targetKey,anchorRecord){
+        record=record||{}; anchorRecord=anchorRecord||{};
+        const recordKey=String(record.studentKey||'');
+        const key=String(targetKey||anchorRecord.studentKey||'');
+        if(key&&recordKey===key) return true;
+        const targetProfile=profileByKey[key]||{};
+        const recordProfile=profileByKey[recordKey]||{};
+        const targetClass=committeeIdentityClass(targetProfile.className||anchorRecord.className);
+        const recordClass=committeeIdentityClass(recordProfile.className||record.className);
+        if(targetClass&&recordClass&&targetClass!==recordClass) return false;
+        const targetNames=committeeIdentityNames(anchorRecord,targetProfile);
+        const recordNames=committeeIdentityNames(record,recordProfile);
+        if(!targetNames.length||!recordNames.length) return false;
+        return targetNames.some(a=>recordNames.some(b=>a===b||(a.length>=4&&b.length>=4&&(a.startsWith(b)||b.startsWith(a)))));
+      }
+      function committeeHistoryRecords(studentKey,anchorRecord){
+        const key=String(studentKey||(anchorRecord&&anchorRecord.studentKey)||'');
+        return committeeArr.filter(record=>committeeSameIdentity(record,key,anchorRecord||{}))
+          .sort((a,b)=>committeeRecordAt(a).localeCompare(committeeRecordAt(b))||String(a.committeeKey||'').localeCompare(String(b.committeeKey||'')));
+      }
+      function committeeHistoryWarningText(history){
+        const warnings=[];
+        const keys=[...new Set(history.map(r=>String(r.studentKey||'').trim()).filter(Boolean))];
+        const classes=[...new Set(history.map(r=>String(r.className||'').trim()).filter(Boolean))];
+        const missingReferral=history.filter(r=>!committeeCreatedAt(r)).length;
+        const missingPoints=history.filter(r=>committeeReferralPoints(r,keys)===null).length;
+        if(keys.length>1) warnings.push('학생 연결 Key가 '+keys.length+'개로 나뉘어 있습니다: '+keys.join(' / '));
+        if(classes.length>1) warnings.push('학반 정보가 서로 다릅니다: '+classes.join(' / '));
+        if(missingReferral) warnings.push('회부일시가 없는 기록이 '+missingReferral+'건 있습니다.');
+        if(missingPoints) warnings.push('회부 당시 점수를 복원하지 못한 기록이 '+missingPoints+'건 있습니다.');
+        return warnings.join('\n');
+      }
+      function committeeHistoryHtml(studentKey,anchorRecord){
+        const history=committeeHistoryRecords(studentKey,anchorRecord||{});
+        if(!history.length) return '<div class="detail-section"><div class="detail-title">위원회 전체 이력 | Committee History</div><div class="detail-content">연결된 위원회 기록이 없습니다.</div></div>';
+        const identityKeys=[...new Set(history.map(r=>String(r.studentKey||'')).filter(Boolean))];
+        const anchorKey=String((anchorRecord&&anchorRecord.committeeKey)||'');
+        const warning=committeeHistoryWarningText(history);
+        const cards=history.map((record,index)=>{
+          const recordKey=String(record.committeeKey||'');
+          const isCurrent=anchorKey&&recordKey===anchorKey;
+          const profile=profileByKey[String(record.studentKey||'')]||{};
+          const recordName=sName(profile.name||record.studentName||record.name||'',profile.englishName||record.englishName||'')||String(record.studentKey||'-');
+          const recordClass=profile.className||record.className||'-';
+          const note=String(record.committeeNote||'').trim()||'-';
+          const author=committeeNoteAuthorText(record);
+          const completedBy=String(record.completedBy||'-')+(record.completedByEmail?' ('+record.completedByEmail+')':'');
+          const reason=getCommitteeReasonText(record)||'-';
+          const referralPoints=committeeReferralPoints(record,identityKeys);
+          return '<div class="committee-history-item'+(isCurrent?' current':'')+'">'+
+            '<div class="committee-history-title"><span>'+(index+1)+'회 위원회'+(isCurrent?' · 현재 선택 기록':'')+'</span><span class="committee-history-status '+(record.completedAt?'done':'')+'">'+(record.completedAt?'완료':'진행 중')+'</span></div>'+
+            '<div class="committee-history-grid">'+
+              '<div class="committee-history-field"><div class="committee-history-label">기록 학생</div><div class="committee-history-value">'+esc(recordName)+'</div></div>'+
+              '<div class="committee-history-field"><div class="committee-history-label">학반</div><div class="committee-history-value">'+esc(recordClass)+'</div></div>'+
+              '<div class="committee-history-field"><div class="committee-history-label">회부일시</div><div class="committee-history-value">'+fmt(committeeCreatedAt(record))+'</div></div>'+
+              '<div class="committee-history-field"><div class="committee-history-label">완료일시</div><div class="committee-history-value">'+(record.completedAt?fmt(record.completedAt):'-')+'</div></div>'+
+              '<div class="committee-history-field"><div class="committee-history-label">회부 당시 점수</div><div class="committee-history-value">'+pointLabel(referralPoints)+'</div></div>'+
+              '<div class="committee-history-field"><div class="committee-history-label">기록 연결 Key</div><div class="committee-history-value">'+esc(String(record.studentKey||'-'))+'</div></div>'+
+              '<div class="committee-history-field wide"><div class="committee-history-label">회부 당시 위반 내역</div><div class="committee-history-value">'+esc(reason)+'</div></div>'+
+              '<div class="committee-history-field wide"><div class="committee-history-label">메모</div><div class="committee-history-value">'+esc(note)+'</div></div>'+
+              '<div class="committee-history-field wide"><div class="committee-history-label">처리 정보</div><div class="committee-history-value">메모 작성자: '+esc(author)+' / 완료 처리자: '+esc(completedBy)+'</div></div>'+
+            '</div></div>';
+        }).join('');
+        return '<div class="detail-section"><div class="committee-history-head"><div class="detail-title" style="margin:0;">위원회 전체 이력 | Committee History</div><span class="committee-history-count">총 '+history.length+'건</span></div>'+
+          (warning?'<div class="committee-history-warning">⚠ 수동 이전 데이터 연결 확인\n'+esc(warning)+'</div>':'')+
+          '<div class="committee-history-wrap" style="margin-top:8px;">'+cards+'</div></div>';
+      }
 
       const active=[];
       Object.values(profileByKey).forEach(s=>{
@@ -3960,9 +4026,9 @@
             ? '<button class="btn btn-primary committee-action-btn" onclick="completeCommittee('+committeeJsArg(c.studentKey)+','+committeeJsArg(pendingKey)+','+committeeJsArg(token)+')">완료</button><div class="committee-detail-hint" style="margin-top:4px;">상세</div>'
             : '<button class="btn btn-secondary committee-action-btn" onclick="referCommitteeCase('+committeeJsArg(c.studentKey)+','+committeeJsArg(token)+')">회부확정</button><div class="committee-detail-hint" style="margin-top:4px;">상세</div>')+'</td></tr>'+
           '<tr class="detail-row '+stripe+'" id="'+did+'"><td colspan="8"><div class="detail-box">'+
-          '<div class="detail-section"><div class="detail-title">점수 정보</div><div class="detail-content">현재 미해소 점수: '+pointLabel(c.currentPoints)+'\n누적 점수: '+pointLabel(c.overallPoints)+'</div></div>'+
+          '<div class="detail-section"><div class="detail-title">현재 점수 및 상태</div><div class="detail-content">현재 미해소 점수: '+pointLabel(c.currentPoints)+'\n누적 점수: '+pointLabel(c.overallPoints)+'\n상태: '+(c.pending?'회부 확정 후 위원회 진행 중':'12점 이상으로 회부 가능')+'</div></div>'+
           '<div class="detail-section"><div class="detail-title">현재 위반 내역</div><div class="detail-content">'+esc(buildReasonTextWithPoints(c.studentKey))+'</div></div>'+
-          '<div class="detail-section"><div class="detail-title">현재 회부 상태</div><div class="detail-content">'+(c.pending?'회부 확정 후 위원회 진행 중':'12점 이상으로 회부 가능')+'</div></div>'+
+          committeeHistoryHtml(c.studentKey,record)+
           '</div></td></tr>';
       }
 
@@ -3970,7 +4036,7 @@
         .sort((a,b)=>String(b.completedAt||'').localeCompare(String(a.completedAt||'')));
       function doneRow(record,index){
         const stripe=index%2?'row-even':'row-odd';
-        const sk=committeeResolvedStudentKey(record);
+        const sk=String(record.studentKey||'');
         const profile=profileByKey[sk]||{};
         const name=sName(profile.name||record.studentName||sk,profile.englishName||record.englishName||'');
         const className=profile.className||record.className||'';
@@ -3979,7 +4045,9 @@
         const note=String(record.committeeNote||'').trim();
         const author=committeeNoteAuthorText(record);
         const completedBy=String(record.completedBy||'-')+(record.completedByEmail?' ('+record.completedByEmail+')':'');
-        const referralPoints=committeeReferralPoints(record);
+        const recordHistory=committeeHistoryRecords(sk,record);
+        const recordIdentityKeys=[...new Set(recordHistory.map(r=>String(r.studentKey||'')).filter(Boolean))];
+        const referralPoints=committeeReferralPoints(record,recordIdentityKeys);
         const currentPoints=getStudentCurrentTotal(sk,level,yr);
         const overallPoints=getStudentOverallTotal(sk,yr);
         const committeeKey=String(record.committeeKey||'');
@@ -3997,10 +4065,9 @@
           '<td title="'+esc(note||'-')+'">'+noteCell+'</td>'+
           '<td class="tc"><span class="committee-detail-hint">상세</span></td></tr>'+
           '<tr class="detail-row '+stripe+'" id="'+did+'"><td colspan="10"><div class="detail-box">'+
-          '<div class="detail-section"><div class="detail-title">점수 정보</div><div class="detail-content">회부 당시 점수: '+pointLabel(referralPoints)+'\n현재 점수: '+pointLabel(currentPoints)+'\n누적 점수: '+pointLabel(overallPoints)+'</div></div>'+
-          '<div class="detail-section"><div class="detail-title">회부 당시 위반 내역</div><div class="detail-content">'+esc(getCommitteeReasonText(record))+'</div></div>'+
-          '<div class="detail-section"><div class="detail-title">위원회 메모 | Committee Note</div><div class="detail-content">'+esc(note||'-')+'</div><div class="small-muted" style="margin-top:6px;">작성자: '+esc(author)+' / 수정일: '+fmt(record.committeeNoteUpdatedAt||'')+'</div><div class="small-muted" style="margin-top:4px;">완료 처리자: '+esc(completedBy)+'</div></div>'+
-          (canManageCommittee()?'<div class="detail-section"><div class="detail-title">취소 | Cancel</div><button class="btn btn-secondary btn-xs" onclick="event.stopPropagation();cancelCommitteeCompletion('+committeeJsArg(record.committeeKey)+')">완료취소</button></div>':'')+
+          '<div class="detail-section"><div class="detail-title">현재 선택 기록 점수</div><div class="detail-content">회부 당시 점수: '+pointLabel(referralPoints)+'\n현재 점수: '+pointLabel(currentPoints)+'\n누적 점수: '+pointLabel(overallPoints)+'</div></div>'+
+          committeeHistoryHtml(sk,record)+
+          (canManageCommittee()?'<div class="detail-section"><div class="detail-title">현재 선택 기록 취소 | Cancel Selected Record</div><button class="btn btn-secondary btn-xs" onclick="event.stopPropagation();cancelCommitteeCompletion('+committeeJsArg(record.committeeKey)+')">완료취소</button></div>':'')+
           '</div></td></tr>';
       }
 
