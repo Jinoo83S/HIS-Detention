@@ -244,13 +244,14 @@
     #discipline-active-table,#discipline-done-table{width:100%;table-layout:fixed}
     #discipline-active-table th,#discipline-active-table td,
     #discipline-done-table th,#discipline-done-table td{vertical-align:middle}
-    #discipline-active-table th:nth-child(1){width:22%}
-    #discipline-active-table th:nth-child(2){width:7%}
-    #discipline-active-table th:nth-child(3){width:12%}
-    #discipline-active-table th:nth-child(4){width:8%}
-    #discipline-active-table th:nth-child(5){width:12%}
-    #discipline-active-table th:nth-child(6){width:27%}
-    #discipline-active-table th:nth-child(7){width:12%}
+    #discipline-active-table th:nth-child(1){width:18%}
+    #discipline-active-table th:nth-child(2){width:6%}
+    #discipline-active-table th:nth-child(3){width:9%}
+    #discipline-active-table th:nth-child(4){width:9%}
+    #discipline-active-table th:nth-child(5){width:7%}
+    #discipline-active-table th:nth-child(6){width:11%}
+    #discipline-active-table th:nth-child(7){width:28%}
+    #discipline-active-table th:nth-child(8){width:12%}
     #discipline-done-table th:nth-child(1){width:16%}
     #discipline-done-table th:nth-child(2){width:5%}
     #discipline-done-table th:nth-child(3){width:7%}
@@ -842,7 +843,7 @@
         <div class="notice">위원회 기준은 <b>현재 미해소 디텐션 12점 이상</b>으로 고정됩니다. 자동 회부하지 않으며, 담당자가 메모를 작성한 뒤 [회부확정]과 [완료]를 직접 처리합니다.</div>
         <div class="section-title-row" style="margin-top:6px;"><span class="stitle">진행 중 | Active</span></div>
         <div class="tbl-wrap"><table id="discipline-active-table"><thead><tr>
-          <th>학생</th><th class="nowrap tc">학반</th><th class="nowrap tc">현재 미해소</th>
+          <th>학생</th><th class="nowrap tc">학반</th><th class="nowrap tc">현재 미해소</th><th class="nowrap tc">누적 점수</th>
           <th class="nowrap tc">위원회 횟수</th><th class="nowrap tc">회부일시</th><th>메모</th><th class="nowrap tc">처리</th>
         </tr></thead><tbody id="discipline-active-tbody"></tbody></table></div>
         <div class="section-title-row notice-divider" style="margin-top:12px;"><span class="stitle">완료 기록 | Completed History</span></div>
@@ -3792,7 +3793,7 @@
       if(!activeTb||!doneTb)return;
       const catalog = getStudentCatalog();
       if(!catalog.length && !Object.keys(entries||{}).length && !Object.keys(committeeEntries||{}).length){
-        activeTb.innerHTML='<tr><td colspan="7" class="empty">로딩 중...</td></tr>';
+        activeTb.innerHTML='<tr><td colspan="8" class="empty">로딩 중...</td></tr>';
         doneTb.innerHTML='<tr><td colspan="10" class="empty">로딩 중...</td></tr>';
         return;
       }
@@ -3827,15 +3828,71 @@
         return String(round || ((completedCountByStudent[sk]||0)+1))+'회';
       };
       const cntLabelForDone=record=>String(record.__committeeRound || committeeRoundByKey[String(record.committeeKey||'')] || 1)+'회';
+      const committeeResolvedStudentKey=record=>{
+        record=record||{};
+        const direct=String(record.studentKey||'').trim();
+        if(direct) return direct;
+        const ids=[];
+        if(record.entryKey) ids.push(String(record.entryKey));
+        normalizeKeyList(record.linkedEntryKeys).forEach(k=>ids.push(String(k)));
+        for(const key of ids){
+          const entry=entries&&entries[key];
+          if(entry&&String(entry.studentKey||'').trim()) return String(entry.studentKey).trim();
+        }
+        return '';
+      };
+      const committeeTimeMs=(value,endOfDay)=>{
+        let raw=String(value||'').trim();
+        if(!raw) return NaN;
+        if(/^\d{4}-\d{2}-\d{2}$/.test(raw)) raw+=endOfDay?'T23:59:59.999':'T00:00:00';
+        const parsed=Date.parse(raw);
+        if(Number.isFinite(parsed)) return parsed;
+        const m=raw.match(/^(\d{4})[.\/-]\s*(\d{1,2})[.\/-]\s*(\d{1,2})/);
+        if(!m) return NaN;
+        return new Date(Number(m[1]),Number(m[2])-1,Number(m[3]),endOfDay?23:0,endOfDay?59:0,endOfDay?59:0,endOfDay?999:0).getTime();
+      };
+      const committeeAtOrBefore=(value,cutoff)=>{
+        const itemMs=committeeTimeMs(value,false);
+        const cutoffMs=committeeTimeMs(cutoff,true);
+        if(Number.isFinite(itemMs)&&Number.isFinite(cutoffMs)) return itemMs<=cutoffMs;
+        return String(value||'')<=String(cutoff||'');
+      };
+      const committeeRecoveryBefore=(studentKey,year,cutoff)=>Object.values(recoveryEntries||{})
+        .filter(r=>String(r.studentKey||'')===String(studentKey||'')&&isCurrentYearRecord(r,year)&&String(r.completedAt||'').trim()&&committeeAtOrBefore(r.completedAt,cutoff))
+        .reduce((sum,r)=>sum+Number(r.recoveryPoints||0),0);
+      const committeeHistoricalCurrentPoints=record=>{
+        record=record||{};
+        const studentKey=committeeResolvedStudentKey(record);
+        const cutoff=String(committeeCreatedAt(record)||'').trim();
+        if(!studentKey||!cutoff) return null;
+        const year=String(getRecordYear(record,getCurrentYear()));
+        const raw=Object.values(entries||{})
+          .filter(r=>String(r.studentKey||'')===studentKey&&String(r.status||'')==='확정'&&isCurrentYearRecord(r,year)&&String(r.confirmedAt||r.createdAt||'').trim()&&committeeAtOrBefore(r.confirmedAt||r.createdAt,cutoff))
+          .reduce((sum,r)=>sum+Number(r.totalPoints||0),0);
+        const recovered=committeeRecoveryBefore(studentKey,year,cutoff);
+        if(raw>0||recovered>0) return Math.max(0,raw-recovered);
+        const rawSnapshotValue=record.yearRawPointsAtReferral;
+        if(rawSnapshotValue!==null&&rawSnapshotValue!==undefined&&rawSnapshotValue!==''&&Number.isFinite(Number(rawSnapshotValue))) return Math.max(0,Number(rawSnapshotValue)-recovered);
+        return null;
+      };
       const committeeReferralPoints=record=>{
         record=record||{};
         const direct=[record.currentPointsAtReferral,record.referredPoints,record.currentTotalAtReferral,record.currentPoints,record.currentTotal];
         for(const value of direct){
           if(value!==null&&value!==undefined&&value!==''&&Number.isFinite(Number(value))) return Number(value);
         }
-        const reason=String(record.reason||'');
-        const match=reason.match(/(?:현재\s*미해소|잔여|회부\s*당시)[^0-9]{0,12}(\d+)\s*점/);
-        return match ? Number(match[1]) : null;
+        const storedText=[record.reason,record.reasonSnapshot,record.reasonsSnapshot,record.violationSnapshot]
+          .map(v=>String(v||'').trim()).filter(Boolean).join('\n');
+        const explicit=storedText.match(/(?:현재\s*미해소|잔여(?:\s*디텐션)?|회부\s*당시(?:\s*점수)?|current\s*(?:unresolved|remaining)|remaining)[^0-9]{0,20}(\d+)\s*(?:점|points?)/i);
+        if(explicit) return Number(explicit[1]);
+        const historical=committeeHistoricalCurrentPoints(record);
+        if(historical!==null) return historical;
+        const linked=getCommitteeLinkedEntryList(record);
+        if(linked.length){
+          const linkedTotal=linked.reduce((sum,r)=>sum+Number(r.totalPoints||0),0);
+          if(linkedTotal>0) return linkedTotal;
+        }
+        return null;
       };
       const pointLabel=value=>(value===null||value===undefined||value===''||!Number.isFinite(Number(value)))?'-':String(Number(value))+'점';
 
@@ -3873,6 +3930,7 @@
           name:sName(s.name||'',s.englishName||''),
           className:s.className||'',
           currentPoints:cur,
+          overallPoints:getStudentOverallTotal(sk,yr),
           pending,
           referredAt:(pending&&(pending.createdAt||pending.referredAt))||''
         });
@@ -3895,12 +3953,14 @@
         return '<tr class="summary-row committee-summary-row '+stripe+'" data-detail-id="'+esc(did)+'" style="cursor:pointer;">'+
           '<td>'+esc(c.name)+'</td><td class="tc">'+esc(c.className)+'</td>'+
           '<td class="tc" style="font-weight:800;'+(Number(c.currentPoints)>=COMMITTEE_THRESHOLD?'color:var(--rd);':'')+'">'+esc(String(c.currentPoints))+'점'+(c.pending?'<div class="small-muted">회부 진행중</div>':'<div class="small-muted">12점 이상</div>')+'</td>'+
+          '<td class="tc" style="font-weight:700;">'+pointLabel(c.overallPoints)+'</td>'+
           '<td class="tc">'+cntLabelForActive(c.studentKey,record)+'</td><td class="tc">'+fmt(c.referredAt)+'</td>'+
           '<td class="wrap-cell">'+noteEditorHtml(token,record,pendingKey)+'</td>'+
           '<td class="tc">'+(c.pending
             ? '<button class="btn btn-primary committee-action-btn" onclick="completeCommittee('+committeeJsArg(c.studentKey)+','+committeeJsArg(pendingKey)+','+committeeJsArg(token)+')">완료</button><div class="committee-detail-hint" style="margin-top:4px;">상세</div>'
             : '<button class="btn btn-secondary committee-action-btn" onclick="referCommitteeCase('+committeeJsArg(c.studentKey)+','+committeeJsArg(token)+')">회부확정</button><div class="committee-detail-hint" style="margin-top:4px;">상세</div>')+'</td></tr>'+
-          '<tr class="detail-row '+stripe+'" id="'+did+'"><td colspan="7"><div class="detail-box">'+
+          '<tr class="detail-row '+stripe+'" id="'+did+'"><td colspan="8"><div class="detail-box">'+
+          '<div class="detail-section"><div class="detail-title">점수 정보</div><div class="detail-content">현재 미해소 점수: '+pointLabel(c.currentPoints)+'\n누적 점수: '+pointLabel(c.overallPoints)+'</div></div>'+
           '<div class="detail-section"><div class="detail-title">현재 위반 내역</div><div class="detail-content">'+esc(buildReasonTextWithPoints(c.studentKey))+'</div></div>'+
           '<div class="detail-section"><div class="detail-title">현재 회부 상태</div><div class="detail-content">'+(c.pending?'회부 확정 후 위원회 진행 중':'12점 이상으로 회부 가능')+'</div></div>'+
           '</div></td></tr>';
@@ -3910,7 +3970,7 @@
         .sort((a,b)=>String(b.completedAt||'').localeCompare(String(a.completedAt||'')));
       function doneRow(record,index){
         const stripe=index%2?'row-even':'row-odd';
-        const sk=String(record.studentKey||'');
+        const sk=committeeResolvedStudentKey(record);
         const profile=profileByKey[sk]||{};
         const name=sName(profile.name||record.studentName||sk,profile.englishName||record.englishName||'');
         const className=profile.className||record.className||'';
@@ -3955,7 +4015,7 @@
       }
 
       active.sort((a,b)=>String(b.referredAt||'').localeCompare(String(a.referredAt||''))||Number(b.currentPoints)-Number(a.currentPoints));
-      activeTb.innerHTML=active.length?active.map(activeRow).join(''):'<tr><td colspan="7" class="empty">현재 미해소 점수 12점 이상 또는 회부 진행 중인 학생이 없습니다.</td></tr>';
+      activeTb.innerHTML=active.length?active.map(activeRow).join(''):'<tr><td colspan="8" class="empty">현재 미해소 점수 12점 이상 또는 회부 진행 중인 학생이 없습니다.</td></tr>';
       doneTb.innerHTML=done.length?done.map(doneRow).join(''):'<tr><td colspan="10" class="empty">완료된 내역이 없습니다.</td></tr>';
       bindCommitteeDetailRows(activeTb);
       bindCommitteeDetailRows(doneTb);
