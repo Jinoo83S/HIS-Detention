@@ -395,6 +395,72 @@
 
     /* ── 위원회 기록 전용 작업 화면 ── */
     #panel-committee .card{overflow:visible}
+
+    /* ── 공통 목록 + 상세 편집 작업공간 ── */
+    .admin-toolbar{
+      display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:8px;
+    }
+    .admin-toolbar .admin-search{flex:1 1 320px;min-width:240px;height:30px}
+    .admin-toolbar select{width:auto;min-width:128px;height:30px}
+    .admin-count-strip{display:flex;gap:6px;flex-wrap:wrap;margin:7px 0 9px}
+    .admin-count-chip{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:999px;background:#eef3ff;border:1px solid #d8e2f5;color:#29457d;font-size:10px;font-weight:700}
+    .admin-count-chip b{font-size:11px}
+    .admin-count-chip.warn{background:#fff8e1;border-color:#f2d184;color:#8a5700}
+    .admin-count-chip.deleted{background:#fff1f0;border-color:#f0b4ae;color:#a61b1b}
+    .admin-workspace{display:grid;grid-template-columns:minmax(560px,1fr) minmax(390px,470px);gap:10px;align-items:start}
+    .admin-list-pane{min-width:0}
+    .admin-list-help{font-size:10px;color:#64748b;margin:0 0 5px 2px;line-height:1.45}
+    .admin-list-wrap{max-height:63vh;overflow:auto}
+    .admin-summary-table{width:100%;min-width:0!important;table-layout:fixed}
+    .admin-summary-table th,.admin-summary-table td{height:31px;line-height:1.25;padding:4px 6px}
+    .admin-summary-table tbody tr{cursor:pointer}
+    .admin-summary-table tbody tr.admin-selected{background:#dbeafe!important;box-shadow:inset 4px 0 #2563eb}
+    .admin-summary-table tbody tr.admin-selected td{font-weight:700}
+    .admin-summary-table .student-main{display:block;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .admin-summary-table .student-sub{display:block;font-size:9px;color:#64748b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:2px}
+    .admin-status-badge{display:inline-block;padding:2px 6px;border-radius:999px;font-size:9px;font-weight:800;white-space:nowrap}
+    .admin-status-badge.confirmed,.admin-status-badge.done{background:#e8f5e9;color:#166534}
+    .admin-status-badge.pending,.admin-status-badge.active{background:#fff3cd;color:#7c5200}
+    .admin-status-badge.rejected,.admin-status-badge.deleted{background:#fee2e2;color:#991b1b}
+    .admin-issue-pill{display:inline-block;padding:2px 5px;border-radius:4px;font-size:9px;font-weight:800;white-space:nowrap}
+    .admin-issue-pill.ok{background:#ecfdf5;color:#047857}
+    .admin-issue-pill.warn{background:#fff7d6;color:#8a5700}
+    .admin-issue-pill.bad{background:#fee2e2;color:#991b1b}
+    .admin-editor-pane{border:1px solid #cfd8e6;border-radius:6px;background:#fff;position:sticky;top:8px;max-height:74vh;overflow:auto;min-height:230px}
+    .admin-editor-empty{padding:54px 20px;text-align:center;color:#64748b;font-size:12px;line-height:1.7}
+    .admin-editor-head{background:linear-gradient(120deg,#132c6d,#27499d);color:#fff;padding:11px 12px;display:flex;justify-content:space-between;gap:8px;align-items:flex-start;position:sticky;top:0;z-index:2}
+    .admin-editor-title{font-size:14px;font-weight:900;line-height:1.35}
+    .admin-editor-sub{font-size:9px;color:#dbe7ff;margin-top:3px;word-break:break-all}
+    .admin-editor-body{padding:11px}
+    .admin-editor-alert{padding:7px 9px;margin-bottom:9px;border-radius:5px;font-size:10px;line-height:1.5}
+    .admin-editor-alert.warn{background:#fff8e1;border:1px solid #f2d184;color:#754700}
+    .admin-editor-alert.bad{background:#fff1f0;border:1px solid #f0b4ae;color:#8f1d16}
+    .admin-editor-alert.ok{background:#ecfdf5;border:1px solid #a7e6c3;color:#065f46}
+    .admin-editor-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:9px}
+    .admin-editor-metric{background:#f4f7fc;border:1px solid #dbe4f3;border-radius:5px;padding:7px;text-align:center}
+    .admin-editor-metric .value{font-size:16px;font-weight:900;color:#173a7a;line-height:1.1}
+    .admin-editor-metric .label{font-size:8px;color:#64748b;margin-top:4px;font-weight:700}
+    .admin-form-section{border:1px solid #dde3ee;border-radius:6px;margin-bottom:8px;overflow:hidden}
+    .admin-form-title{background:#f7f9fc;padding:6px 8px;font-size:10px;font-weight:800;color:#334155;border-bottom:1px solid #e2e8f0}
+    .admin-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;padding:8px}
+    .admin-form-grid.one{grid-template-columns:1fr}
+    .admin-form-field.full{grid-column:1/-1}
+    .admin-form-label{display:block;font-size:9px;font-weight:800;color:#64748b;margin-bottom:3px}
+    .admin-form-field .edit-input,.admin-form-field .edit-textarea{height:29px;border-radius:4px;padding:4px 6px}
+    .admin-form-field .edit-textarea{height:auto;min-height:64px;line-height:1.4}
+    .admin-editor-actions{display:flex;justify-content:space-between;gap:7px;flex-wrap:wrap;padding-top:4px;border-top:1px solid #e5e7eb}
+    .admin-editor-actions .right{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+    .student-index-table th:nth-child(1){width:32px}.student-index-table th:nth-child(2){width:31%}.student-index-table th:nth-child(3){width:10%}.student-index-table th:nth-child(4),.student-index-table th:nth-child(5),.student-index-table th:nth-child(6),.student-index-table th:nth-child(7){width:9%}.student-index-table th:nth-child(8){width:13%}
+    .student-record-list{border:1px solid #dde3ee;border-radius:5px;overflow:hidden;margin-bottom:8px}
+    .student-record-list-title{background:#f7f9fc;padding:6px 8px;font-size:10px;font-weight:800;color:#334155}
+    .student-record-item{display:grid;grid-template-columns:75px 1fr 58px;gap:6px;align-items:center;padding:6px 8px;border-top:1px solid #eef2f7;font-size:10px;cursor:pointer}
+    .student-record-item:hover{background:#eef4ff}
+    .student-record-item .desc{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    @media(max-width:1180px){
+      .admin-workspace{grid-template-columns:1fr}
+      .admin-editor-pane{position:relative;top:auto;max-height:none}
+      .admin-list-wrap{max-height:48vh}
+    }
     .committee-toolbar{
       display:flex;align-items:center;gap:7px;flex-wrap:wrap;
       margin-bottom:8px;padding:8px;background:#f8faff;border:1px solid #dbe4f3;border-radius:6px;
@@ -523,23 +589,23 @@
     <div id="panel-student-data" class="panel">
       <div class="card">
         <div class="card-title">
-          <span>학생별 데이터 조회/수정 | Student Data Search/Edit</span>
-          <small style="color:#64748b;font-size:12px;">검색 전에는 목록을 표시하지 않습니다.</small>
+          <span>학생별 데이터 조회/수정 | Student Data</span>
+          <span id="student-selection-label" style="font-size:11px;color:#64748b;font-weight:500;"></span>
         </div>
-        <div class="notice">
-          학생 이름, 영문명, 학반, studentKey를 검색하면 디텐션/알림/회복교육/위원회/상태 데이터를 한 페이지에 모아 보여줍니다.<br>
-          Search by student name, English name, class, or studentKey to view related data across DB paths on one page.
-        </div>
-        <div class="toolbar">
-          <input id="student-data-search" class="edit-input" placeholder="예: 김사랑 / Saiyah / 7A_김사랑 / 10B | Search student">
-          <button class="btn btn-primary" onclick="runStudentDataSearch()">검색 | Search</button>
-          <button class="btn btn-secondary" onclick="clearStudentDataSearch()">비우기 | Clear</button>
-          <button class="btn btn-secondary" onclick="exportStudentDataJson()">검색결과 JSON | Export Result</button>
+        <div class="notice">왼쪽에서 학생을 선택하면 오른쪽에 디텐션·알림·회복교육·위원회·상태 기록이 한 번에 표시됩니다. 기록을 누르면 해당 편집 화면으로 이동합니다.</div>
+        <div class="admin-toolbar">
+          <input id="student-data-search" class="edit-input admin-search" placeholder="학생명·영문명·학반·studentKey 검색" oninput="renderStudentIndex()">
+          <select id="student-data-filter" class="edit-input" onchange="renderStudentIndex()">
+            <option value="all">전체 학생</option><option value="records">관련 기록 있음</option><option value="committee">위원회 기록 있음</option><option value="problem">학생 Key 점검 필요</option>
+          </select>
+          <button class="btn btn-secondary" onclick="clearStudentDataSearch()">필터 초기화</button>
+          <button class="btn btn-secondary" onclick="exportStudentDataJson()">선택 학생 JSON</button>
           <button id="btn-save-student-data" class="btn btn-primary" onclick="saveStudentDataChanges()" disabled style="opacity:.4;cursor:not-allowed;">저장할 내용 없음</button>
         </div>
-        <div id="student-data-result" class="student-data-empty">
-          검색어를 입력한 뒤 검색 버튼을 눌러주세요.<br>
-          Enter a search term and click Search.
+        <div class="admin-count-strip"><span class="admin-count-chip">전체 <b id="student-count-total">0</b></span><span class="admin-count-chip">기록 있음 <b id="student-count-records">0</b></span><span class="admin-count-chip">검색 결과 <b id="student-count-visible">0</b></span></div>
+        <div class="admin-workspace">
+          <div class="admin-list-pane"><div class="admin-list-help">학생 행을 누르면 관련 기록을 모아 봅니다.</div><div class="tbl-wrap admin-list-wrap"><table class="admin-summary-table student-index-table"><thead><tr><th>#</th><th>학생 / studentKey</th><th>학반</th><th>디텐션</th><th>알림</th><th>회복</th><th>위원회</th><th>현재 / 누적</th></tr></thead><tbody id="student-index-tbody"></tbody></table></div></div>
+          <aside id="student-data-result" class="admin-editor-pane"><div class="admin-editor-empty">왼쪽에서 조회할 학생을 선택하세요.</div></aside>
         </div>
       </div>
     </div>
@@ -547,135 +613,35 @@
     <!-- Entries -->
     <div id="panel-entries" class="panel active">
       <div class="card">
-        <div class="card-title">디텐션 기록 | Detention Entries</div>
-        <div class="toolbar">
-          <input id="entry-search" class="edit-input" placeholder="학생/영문명/구분/위반행위 검색 | Search">
-          <select id="entry-status-filter" class="edit-input" onchange="renderEntriesTable()">
-            <option value="">전체 상태 | All Statuses</option>
-            <option value="임시저장">대기 | Pending</option>
-            <option value="확정">확정 | Confirmed</option>
-            <option value="반려">반려 | Rejected</option>
-          </select>
-          <button class="btn btn-secondary" onclick="addEntryRow()">행 추가 | Add Row</button>
-          <button id="btn-save-entries" class="btn btn-primary" onclick="saveEntries()" disabled style="opacity:.4;cursor:not-allowed;">저장할 내용 없음</button>
+        <div class="card-title"><span>디텐션 기록 | Detention Entries</span><span id="entry-selection-label" style="font-size:11px;color:#64748b;font-weight:500;"></span></div>
+        <div class="notice">왼쪽 목록에서 기록을 선택하고 오른쪽 편집 패널에서 수정합니다. 삭제는 먼저 표시한 뒤 저장할 때 실제 반영됩니다.</div>
+        <div class="admin-toolbar">
+          <input id="entry-search" class="edit-input admin-search" placeholder="학생·영문명·학반·위반행위·DB Key 검색" oninput="renderEntriesTable()">
+          <select id="entry-status-filter" class="edit-input" onchange="renderEntriesTable()"><option value="">전체 상태</option><option value="임시저장">대기</option><option value="확정">확정</option><option value="반려">반려</option><option value="삭제">삭제 표시</option></select>
+          <select id="entry-issue-filter" class="edit-input" onchange="renderEntriesTable()"><option value="all">전체 점검 상태</option><option value="problem">검토 필요</option><option value="duplicate">중복 가능</option><option value="missing">필수정보 누락</option><option value="date">날짜 오류</option><option value="clean">정상만</option></select>
+          <button class="btn btn-secondary" onclick="clearEntryFilters()">필터 초기화</button><button class="btn btn-secondary" onclick="addEntryRow()">행 추가</button><button id="btn-save-entries" class="btn btn-primary" onclick="saveEntries()" disabled style="opacity:.4;cursor:not-allowed;">저장할 내용 없음</button>
         </div>
-        <details class="bulk-import-box">
-          <summary>디텐션 일괄 입력 | Bulk Detention Import</summary>
-          <div class="bulk-help">
-            구글시트/TSV 행을 그대로 붙여넣은 뒤 <b>미리보기</b>로 확인하세요. DB Key가 이미 있으면 기존 행을 갱신하고, 없으면 새 행으로 추가합니다.<br>
-            Paste Google Sheet/TSV rows, preview them, then import. Existing DB keys are updated; new keys are added.
-          </div>
-          <textarea id="entry-bulk-text" placeholder="ID	이름	학년	날짜	교사	종류	상세 ... 형식의 TSV 데이터를 붙여넣으세요."></textarea>
-          <div class="toolbar" style="margin-top:8px;margin-bottom:0;">
-            <button class="btn btn-secondary" onclick="previewBulkEntries()">미리보기 | Preview</button>
-            <button class="btn btn-primary" onclick="applyBulkEntries(false)">목록에 반영 | Add to List</button>
-            <button class="btn btn-primary" onclick="applyBulkEntries(true)">일괄 입력 저장 | Import & Save</button>
-            <button class="btn btn-secondary" onclick="clearBulkEntries()">비우기 | Clear</button>
-          </div>
-          <div id="entry-bulk-summary" class="bulk-help">아직 미리보기 전입니다. | Not previewed yet.</div>
-          <div id="entry-bulk-preview" class="bulk-preview" style="display:none;"></div>
-        </details>
-        <div class="tbl-wrap">
-          <table style="table-layout:fixed">
-            <thead>
-              <tr>
-                <th style="width:32px">  #  </th>
-                <th style="width:130px">DB Key<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
-                <th style="width:90px" >학생<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
-                <th style="width:100px">영문명<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
-                <th style="width:48px" >학반<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
-                <th style="width:180px">studentKey<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
-                <th style="width:120px">구분<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
-                <th style="width:240px">위반행위<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
-                <th style="width:62px" >자동점수<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
-                <th style="width:56px" >수동점수<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
-                <th style="width:46px" >총점<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
-                <th style="width:68px" >상태<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
-                <th style="width:70px" >교사<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
-                <th style="width:96px" >작성일<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
-                <th style="width:96px" >확정일<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
-                <th style="width:140px">메모<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
-                <th style="width:70px">연도<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
-                <th style="width:140px">관리자메모<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
-                <th style="width:180px">학부모 Email<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
-                <th style="width:180px">학생 Email<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
-                <th style="width:180px">담임 Email<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
-                <th style="width:46px" >삭제</th>
-              </tr>
-            </thead>
-            <tbody id="entries-tbody"></tbody>
-          </table>
-        </div>
+        <details class="bulk-import-box"><summary>디텐션 일괄 입력 | Bulk Detention Import</summary><div class="bulk-help">구글시트/TSV 행을 그대로 붙여넣은 뒤 미리보기로 확인하세요.</div><textarea id="entry-bulk-text" placeholder="TSV 데이터를 붙여넣으세요."></textarea><div class="toolbar" style="margin-top:8px;margin-bottom:0;"><button class="btn btn-secondary" onclick="previewBulkEntries()">미리보기</button><button class="btn btn-primary" onclick="applyBulkEntries(false)">목록에 반영</button><button class="btn btn-primary" onclick="applyBulkEntries(true)">일괄 입력 저장</button><button class="btn btn-secondary" onclick="clearBulkEntries()">비우기</button><span id="entry-bulk-summary" style="font-size:11px;color:#64748b;align-self:center;">아직 미리보기 전입니다.</span></div><div id="entry-bulk-preview" style="display:none;margin-top:10px;"></div></details>
+        <div class="admin-count-strip"><span class="admin-count-chip">전체 <b id="entry-count-total">0</b></span><span class="admin-count-chip">대기 <b id="entry-count-pending">0</b></span><span class="admin-count-chip">확정 <b id="entry-count-confirmed">0</b></span><span class="admin-count-chip">반려 <b id="entry-count-rejected">0</b></span><span class="admin-count-chip warn">검토 필요 <b id="entry-count-problem">0</b></span><span class="admin-count-chip">검색 결과 <b id="entry-count-visible">0</b></span></div>
+        <div class="admin-workspace"><div class="admin-list-pane"><div class="admin-list-help">행을 클릭하면 오른쪽에서 전체 필드를 수정할 수 있습니다.</div><div class="tbl-wrap admin-list-wrap"><table class="admin-summary-table" id="entries-summary-table"><thead><tr><th style="width:32px">#</th><th style="width:64px">상태</th><th style="width:27%">학생 / Key</th><th style="width:52px">학반</th><th style="width:58px">점수</th><th style="width:92px">발생일</th><th style="width:84px">교사</th><th>위반행위</th><th style="width:74px">점검</th></tr></thead><tbody id="entries-tbody"></tbody></table></div></div><aside id="entries-editor-pane" class="admin-editor-pane"><div class="admin-editor-empty">왼쪽에서 수정할 디텐션 기록을 선택하세요.</div></aside></div>
       </div>
     </div>
 
     <!-- Notices -->
-    <div id="panel-notices" class="panel">
-      <div class="card">
-        <div class="card-title">알림 기록 | Notice Records</div>
-        <div class="toolbar">
-          <input id="notice-search" class="edit-input" placeholder="studentKey / level 검색 | Search">
-          <button class="btn btn-secondary" onclick="addNoticeRow()">행 추가 | Add Row</button>
-          <button id="btn-save-notices" class="btn btn-primary" onclick="saveNotices()" disabled style="opacity:.4;cursor:not-allowed;">저장할 내용 없음</button>
-        </div>
-        <div class="tbl-wrap">
-          <table style="table-layout:fixed">
-            <thead>
-              <tr>
-                <th style="width:32px">#</th>
-                <th style="width:130px">DB Key<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
-                <th style="width:180px">학생키<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
-                <th style="width:56px">구분<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
-                <th style="width:110px">학부모 알림일<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
-                <th style="width:110px">학생/교사 알림일<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
-                <th style="width:110px">완료일<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
-                <th style="width:90px">완료자<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
-                <th style="width:150px">완료자 이메일<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
-                <th style="width:70px">연도<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
-                <th style="width:220px">사유 스냅샷<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
-                <th style="width:46px">삭제</th>
-              </tr>
-            </thead>
-            <tbody id="notices-tbody"></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
+    <div id="panel-notices" class="panel"><div class="card">
+      <div class="card-title"><span>알림 기록 | Notice Records</span><span id="notice-selection-label" style="font-size:11px;color:#64748b;font-weight:500;"></span></div><div class="notice">알림 진행 상태와 날짜를 목록에서 확인하고, 오른쪽에서 한 기록씩 수정합니다.</div>
+      <div class="admin-toolbar"><input id="notice-search" class="edit-input admin-search" placeholder="학생명·학반·studentKey·DB Key 검색" oninput="renderNoticesTable()"><select id="notice-status-filter" class="edit-input" onchange="renderNoticesTable()"><option value="all">전체 상태</option><option value="active">진행 중</option><option value="done">완료</option><option value="deleted">삭제 표시</option></select><select id="notice-issue-filter" class="edit-input" onchange="renderNoticesTable()"><option value="all">전체 점검 상태</option><option value="problem">검토 필요</option><option value="missing">필수정보 누락</option><option value="date">날짜 오류</option><option value="clean">정상만</option></select><button class="btn btn-secondary" onclick="clearNoticeFilters()">필터 초기화</button><button class="btn btn-secondary" onclick="addNoticeRow()">행 추가</button><button id="btn-save-notices" class="btn btn-primary" onclick="saveNotices()" disabled style="opacity:.4;cursor:not-allowed;">저장할 내용 없음</button></div>
+      <div class="admin-count-strip"><span class="admin-count-chip">전체 <b id="notice-count-total">0</b></span><span class="admin-count-chip">진행 중 <b id="notice-count-active">0</b></span><span class="admin-count-chip">완료 <b id="notice-count-done">0</b></span><span class="admin-count-chip warn">검토 필요 <b id="notice-count-problem">0</b></span><span class="admin-count-chip">검색 결과 <b id="notice-count-visible">0</b></span></div>
+      <div class="admin-workspace"><div class="admin-list-pane"><div class="admin-list-help">학생과 알림 단계가 한눈에 보이도록 요약합니다.</div><div class="tbl-wrap admin-list-wrap"><table class="admin-summary-table"><thead><tr><th style="width:32px">#</th><th style="width:62px">상태</th><th style="width:30%">학생 / Key</th><th style="width:48px">구분</th><th style="width:92px">학부모</th><th style="width:92px">학생/교사</th><th style="width:92px">완료</th><th>점검</th></tr></thead><tbody id="notices-tbody"></tbody></table></div></div><aside id="notices-editor-pane" class="admin-editor-pane"><div class="admin-editor-empty">왼쪽에서 수정할 알림 기록을 선택하세요.</div></aside></div>
+    </div></div>
 
     <!-- Recovery -->
-    <div id="panel-recovery" class="panel">
-      <div class="card">
-        <div class="card-title">회복교육 기록 | Recovery Records</div>
-        <div class="toolbar">
-          <input id="recovery-search" class="edit-input" placeholder="학생/영문명/학반 검색 | Search">
-          <button class="btn btn-secondary" onclick="addRecoveryRow()">행 추가 | Add Row</button>
-          <button id="btn-save-recovery" class="btn btn-primary" onclick="saveRecovery()" disabled style="opacity:.4;cursor:not-allowed;">저장할 내용 없음</button>
-        </div>
-        <div class="tbl-wrap">
-          <table style="table-layout:fixed">
-            <thead>
-              <tr>
-                <th style="width:32px">#</th>
-                <th style="width:130px">DB Key<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
-                <th style="width:90px">학생<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
-                <th style="width:100px">영문명<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
-                <th style="width:48px">학반<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
-                <th style="width:180px">studentKey<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
-                <th style="width:56px">구분<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
-                <th style="width:68px">회복점수<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
-                <th style="width:80px">담당자<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
-                <th style="width:150px">담당자 이메일<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
-                <th style="width:110px">완료일<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
-                <th style="width:70px">연도<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
-                <th style="width:220px">사유 스냅샷<span class="col-resizer" onmousedown="startResize(event,this)"></span></th>
-                <th style="width:46px">삭제</th>
-              </tr>
-            </thead>
-            <tbody id="recovery-tbody"></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
+    <div id="panel-recovery" class="panel"><div class="card">
+      <div class="card-title"><span>회복교육 기록 | Recovery Records</span><span id="recovery-selection-label" style="font-size:11px;color:#64748b;font-weight:500;"></span></div><div class="notice">회복점수와 완료일을 목록에서 확인하고, 오른쪽에서 학생 연결·담당자·점수 계산값을 수정합니다.</div>
+      <div class="admin-toolbar"><input id="recovery-search" class="edit-input admin-search" placeholder="학생명·영문명·학반·studentKey·DB Key 검색" oninput="renderRecoveryTable()"><select id="recovery-level-filter" class="edit-input" onchange="renderRecoveryTable()"><option value="all">전체 구분</option><option value="ms">중등</option><option value="hs">고등</option><option value="deleted">삭제 표시</option></select><select id="recovery-issue-filter" class="edit-input" onchange="renderRecoveryTable()"><option value="all">전체 점검 상태</option><option value="problem">검토 필요</option><option value="missing">필수정보 누락</option><option value="points">점수 오류</option><option value="date">날짜 누락</option><option value="clean">정상만</option></select><button class="btn btn-secondary" onclick="clearRecoveryFilters()">필터 초기화</button><button class="btn btn-secondary" onclick="addRecoveryRow()">행 추가</button><button id="btn-save-recovery" class="btn btn-primary" onclick="saveRecovery()" disabled style="opacity:.4;cursor:not-allowed;">저장할 내용 없음</button></div>
+      <div class="admin-count-strip"><span class="admin-count-chip">전체 <b id="recovery-count-total">0</b></span><span class="admin-count-chip">중등 <b id="recovery-count-ms">0</b></span><span class="admin-count-chip">고등 <b id="recovery-count-hs">0</b></span><span class="admin-count-chip warn">검토 필요 <b id="recovery-count-problem">0</b></span><span class="admin-count-chip">검색 결과 <b id="recovery-count-visible">0</b></span></div>
+      <div class="admin-workspace"><div class="admin-list-pane"><div class="admin-list-help">행을 클릭하면 오른쪽에서 전체 필드를 수정합니다.</div><div class="tbl-wrap admin-list-wrap"><table class="admin-summary-table"><thead><tr><th style="width:32px">#</th><th style="width:28%">학생 / Key</th><th style="width:52px">학반</th><th style="width:48px">구분</th><th style="width:68px">회복점수</th><th style="width:92px">완료일</th><th style="width:86px">담당자</th><th>점검</th></tr></thead><tbody id="recovery-tbody"></tbody></table></div></div><aside id="recovery-editor-pane" class="admin-editor-pane"><div class="admin-editor-empty">왼쪽에서 수정할 회복교육 기록을 선택하세요.</div></aside></div>
+    </div></div>
 
     <!-- Committee Panel -->
     <div id="panel-committee" class="panel">
@@ -747,6 +713,10 @@
 
   <script>
     let entryRows = [];
+    let selectedEntryKey = "";
+    let selectedNoticeKey = "";
+    let selectedRecoveryKey = "";
+    let selectedStudentKey = "";
     let committeeRows = [];
     let selectedCommitteeKey = "";
     let committeeIssueContext = null;
@@ -866,6 +836,8 @@
         memo: '', adminNote: '', year: currentAdminYear(),
         parentEmail: '', studentEmail: '', homeroomEmail: ''
       });
+      selectedEntryKey = entryRows[0].key;
+      clearEntryFilters(false);
       renderEntriesTable();
       checkEntryDirty();
       toast('디텐션 행이 추가되었습니다. 필요한 값을 입력한 뒤 저장하세요. | New detention row added.', 'ok');
@@ -1075,6 +1047,8 @@
         parentMailAt: null, studentTeacherMailAt: null, completedAt: null,
         completedBy: '', completedByEmail: '', cycleViolationsSnapshot: ''
       });
+      selectedNoticeKey = noticeRows[0].key;
+      clearNoticeFilters(false);
       renderNoticesTable();
       checkNoticeDirty();
       toast('알림 행이 추가되었습니다. | New notice row added.', 'ok');
@@ -1088,6 +1062,8 @@
         completedAt: now, staffName: '', staffEmail: '',
         reasonsSnapshot: '', currentTotalBefore: '', currentTotalAfter: ''
       });
+      selectedRecoveryKey = recoveryRows[0].key;
+      clearRecoveryFilters(false);
       renderRecoveryTable();
       checkRecoveryDirty();
       toast('회복교육 행이 추가되었습니다. | New restorative education row added.', 'ok');
@@ -1412,6 +1388,7 @@
         renderNoticesTable();
         renderRecoveryTable();
         renderCommitteeTable();
+        renderStudentIndex();
         renderStudentDataSearch(true);
         toast('데이터를 불러왔습니다. | Data loaded.', 'ok');
       }catch(err){
@@ -1468,227 +1445,76 @@
       return dbAdminRowSearchText(row).includes(q);
     }
 
-    function runStudentDataSearch(){
-      const input = document.getElementById('student-data-search');
-      studentDataLastQuery = String((input && input.value) || '').trim();
-      renderStudentDataSearch(false);
+    function normalizeAdminStudentKey(value){ return String(value||'').trim().replace(/\s+/g,'_').toLowerCase(); }
+    function adminStudentProfile(studentKeyValue, fallback){
+      const nk=normalizeAdminStudentKey(studentKeyValue); fallback=fallback||{};
+      const exact=studentRows.find(function(s){return normalizeAdminStudentKey(s.key||s.studentKey)===nk;});
+      if(exact) return {studentKey:String(exact.key||exact.studentKey||studentKeyValue||''),name:String(exact.name||exact.studentName||fallback.studentName||''),englishName:String(exact.englishName||fallback.englishName||''),className:String(exact.className||fallback.className||'')};
+      const all=[].concat(entryRows,noticeRows,recoveryRows,committeeRows);
+      const hit=all.find(function(r){return normalizeAdminStudentKey(dbAdminRowStudentKey(r))===nk;});
+      return {studentKey:String((hit&&dbAdminRowStudentKey(hit))||studentKeyValue||''),name:String((hit&&(hit.studentName||hit.name))||fallback.studentName||''),englishName:String((hit&&hit.englishName)||fallback.englishName||''),className:String((hit&&hit.className)||fallback.className||'')};
     }
-
-    function clearStudentDataSearch(clearInput){
-      if (clearInput !== false) {
-        const input = document.getElementById('student-data-search');
-        if (input) input.value = '';
-      }
-      studentDataLastQuery = '';
-      const result = document.getElementById('student-data-result');
-      if (result) {
-        result.className = 'student-data-empty';
-        result.innerHTML = '검색어를 입력한 뒤 검색 버튼을 눌러주세요.<br>Enter a search term and click Search.';
-      }
-      checkStudentDataDirty();
+    function studentAggregateRows(){
+      const map={};
+      function ensure(key,row){const nk=normalizeAdminStudentKey(key);if(!nk)return null;if(!map[nk]){const p=adminStudentProfile(key,row);map[nk]={norm:nk,studentKey:p.studentKey||key,name:p.name,englishName:p.englishName,className:p.className,entries:[],notices:[],recovery:[],committee:[],states:[]};}return map[nk];}
+      studentRows.forEach(function(s){ensure(s.key||s.studentKey,s);});
+      entryRows.forEach(function(r){const x=ensure(dbAdminRowStudentKey(r),r);if(x)x.entries.push(r);});
+      noticeRows.forEach(function(r){const x=ensure(dbAdminRowStudentKey(r),r);if(x)x.notices.push(r);});
+      recoveryRows.forEach(function(r){const x=ensure(dbAdminRowStudentKey(r),r);if(x)x.recovery.push(r);});
+      committeeRows.forEach(function(r){const x=ensure(dbAdminRowStudentKey(r),r);if(x)x.committee.push(r);});
+      cycleRows.forEach(function(r){const x=ensure(dbAdminStateStudentKey(r),r);if(x)x.states.push(r);});
+      return Object.values(map).map(function(x){
+        const calculatedOverall=x.entries.filter(function(r){return !r._deleted&&String(r.status||'')==='확정';}).reduce(function(s,r){return s+Number(r.totalPoints||0);},0);
+        x.recovered=x.recovery.filter(function(r){return !r._deleted;}).reduce(function(s,r){return s+Number(r.recoveryPoints||r.points||0);},0);
+        const latestState=x.states.slice().sort(function(a,b){return String(b.updatedAt||'').localeCompare(String(a.updatedAt||''));})[0]||null;
+        const stateCurrent=latestState&&Number(latestState.currentPoints??latestState.cyclePoints);
+        const stateOverall=latestState&&Number(latestState.yearRawPoints??latestState.overallPoints);
+        x.overall=Number.isFinite(stateOverall)?stateOverall:calculatedOverall;
+        x.current=Number.isFinite(stateCurrent)?stateCurrent:Math.max(0,calculatedOverall-x.recovered);
+        x.total=x.entries.length+x.notices.length+x.recovery.length+x.committee.length;
+        return x;
+      }).sort(function(a,b){return String(a.className||'').localeCompare(String(b.className||''),'ko',{numeric:true})||String(a.name||a.studentKey).localeCompare(String(b.name||b.studentKey),'ko');});
     }
-
+    function renderStudentIndex(){
+      const tbody=document.getElementById('student-index-tbody'); if(!tbody)return;
+      const q=String((document.getElementById('student-data-search')||{}).value||'').trim().toLowerCase();
+      const filter=String((document.getElementById('student-data-filter')||{}).value||'all');
+      const all=studentAggregateRows();
+      const filtered=all.filter(function(x){
+        const text=[x.name,x.englishName,x.className,x.studentKey].join(' ').toLowerCase(); if(q&&!text.includes(q))return false;
+        if(filter==='records'&&!x.total)return false; if(filter==='committee'&&!x.committee.length)return false;
+        if(filter==='problem'&&x.studentKey&&x.name&&x.className)return false; return true;
+      });
+      const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=String(v);}; set('student-count-total',all.length);set('student-count-records',all.filter(x=>x.total).length);set('student-count-visible',filtered.length);
+      if(!filtered.length){tbody.innerHTML='<tr><td colspan="8" class="empty">검색 결과가 없습니다.</td></tr>';return;}
+      tbody.innerHTML=filtered.map(function(x,i){return '<tr class="admin-list-row '+(normalizeAdminStudentKey(selectedStudentKey)===x.norm?'admin-selected':'')+'" data-student-key="'+esc(x.studentKey)+'"><td class="row-num">'+(i+1)+'</td><td><span class="student-main">'+esc(x.name||x.studentKey)+'</span><span class="student-sub">'+esc(x.englishName||'')+(x.englishName?' · ':'')+esc(x.studentKey)+'</span></td><td>'+esc(x.className||'-')+'</td><td class="tc">'+x.entries.length+'</td><td class="tc">'+x.notices.length+'</td><td class="tc">'+x.recovery.length+'</td><td class="tc">'+x.committee.length+'</td><td class="tc"><b>'+x.current+'</b> / '+x.overall+'</td></tr>';}).join('');
+      tbody.querySelectorAll('tr[data-student-key]').forEach(function(tr){tr.addEventListener('click',function(){selectStudentForAdmin(tr.dataset.studentKey);});});
+    }
+    function selectStudentForAdmin(key){selectedStudentKey=String(key||'');studentDataLastQuery=selectedStudentKey;renderStudentIndex();renderStudentDataSearch(true);}
     function getStudentDataMatches(query){
-      const q = String(query || '').trim().toLowerCase();
-      const keys = new Set();
-
-      function addKey(k){
-        k = String(k || '').trim();
-        if (k) keys.add(k);
-      }
-
-      studentRows.forEach(function(r){ if (dbAdminIdentityMatches(r, q)) addKey(r.key); });
-      entryRows.forEach(function(r){ if (dbAdminIdentityMatches(r, q)) addKey(dbAdminRowStudentKey(r)); });
-      recoveryRows.forEach(function(r){ if (dbAdminIdentityMatches(r, q)) addKey(dbAdminRowStudentKey(r)); });
-      noticeRows.forEach(function(r){ if (dbAdminIdentityMatches(r, q)) addKey(r.studentKey); });
-      committeeRows.forEach(function(r){ if (dbAdminIdentityMatches(r, q)) addKey(r.studentKey); });
-      cycleRows.forEach(function(r){ if (dbAdminIdentityMatches(r, q)) addKey(dbAdminStateStudentKey(r)); });
-
-      const studentsMatched = studentRows.filter(function(r){
-        const k = String(r.key || '');
-        return keys.has(k) || dbAdminIdentityMatches(r, q);
-      });
-      const entries = entryRows.filter(function(r){
-        const k = dbAdminRowStudentKey(r);
-        return keys.has(k) || dbAdminIdentityMatches(r, q);
-      });
-      const notices = noticeRows.filter(function(r){
-        const k = String(r.studentKey || '');
-        return keys.has(k) || dbAdminIdentityMatches(r, q);
-      });
-      const recovery = recoveryRows.filter(function(r){
-        const k = dbAdminRowStudentKey(r);
-        return keys.has(k) || dbAdminIdentityMatches(r, q);
-      });
-      const committee = committeeRows.filter(function(r){
-        const k = String(r.studentKey || '');
-        return keys.has(k) || dbAdminIdentityMatches(r, q);
-      });
-      const states = cycleRows.filter(function(r){
-        const k = dbAdminStateStudentKey(r);
-        return keys.has(k) || dbAdminIdentityMatches(r, q);
-      });
-
-      return { q:q, keys:Array.from(keys), students:studentsMatched, entries, notices, recovery, committee, states };
+      const q=normalizeAdminStudentKey(query);
+      const agg=studentAggregateRows();
+      const matchedAgg=agg.filter(function(x){return x.norm===q || [x.name,x.englishName,x.className,x.studentKey].join(' ').toLowerCase().includes(String(query||'').trim().toLowerCase());});
+      const norms=new Set(matchedAgg.map(function(x){return x.norm;}));
+      function matchesRow(row){return norms.has(normalizeAdminStudentKey(dbAdminRowStudentKey(row)));}
+      return {
+        keys:matchedAgg.map(function(x){return x.studentKey;}),
+        entries:entryRows.filter(matchesRow),notices:noticeRows.filter(matchesRow),recovery:recoveryRows.filter(matchesRow),committee:committeeRows.filter(matchesRow),
+        states:cycleRows.filter(function(r){return norms.has(normalizeAdminStudentKey(dbAdminStateStudentKey(r)));}),
+        students:studentRows.filter(function(r){return norms.has(normalizeAdminStudentKey(r.key||r.studentKey));})
+      };
     }
-
-    function studentDataSection(title, count, innerHtml){
-      return '<div class="student-data-section">' +
-        '<div class="student-data-section-title"><span>' + title + '</span><small>' + count + '건</small></div>' +
-        innerHtml +
-        '</div>';
-    }
-
-    function studentDataEmptyRow(colspan){
-      return '<tr><td class="empty-row" colspan="' + colspan + '">관련 기록이 없습니다. | No related records.</td></tr>';
-    }
-
-    function markStudentPanelChanged(kind){
-      if (kind === 'entry') checkEntryDirty();
-      else if (kind === 'notice') checkNoticeDirty();
-      else if (kind === 'recovery') checkRecoveryDirty();
-      else if (kind === 'committee') checkCommitteeDirty();
-      checkStudentDataDirty();
-    }
-
-    function renderStudentEntriesTable(rows){
-      const body = rows.length ? rows.map(function(row, rowNum){
-        const idx = entryRows.findIndex(function(r){ return r.key === row.key; });
-        return '<tr class="' + (row._deleted ? 'pending-delete' : '') + '">' +
-          '<td class="row-num">' + (rowNum+1) + '</td>' +
-          '<td><input class="edit-input" value="' + esc(row.key || '') + '" readonly></td>' +
-          '<td><input class="edit-input" value="' + esc(row.studentName || '') + '" oninput="entryRows['+idx+'].studentName=this.value;markStudentPanelChanged(\'entry\')"></td>' +
-          '<td><input class="edit-input" value="' + esc(row.englishName || '') + '" oninput="entryRows['+idx+'].englishName=this.value;markStudentPanelChanged(\'entry\')"></td>' +
-          '<td><input class="edit-input" value="' + esc(row.className || '') + '" oninput="entryRows['+idx+'].className=this.value;markStudentPanelChanged(\'entry\')"></td>' +
-          '<td><input class="edit-input" value="' + esc(row.studentKey || '') + '" oninput="entryRows['+idx+'].studentKey=this.value;markStudentPanelChanged(\'entry\')"></td>' +
-          '<td><textarea class="edit-textarea" oninput="entryRows['+idx+'].violation=this.value;markStudentPanelChanged(\'entry\')">' + esc(row.violation || '') + '</textarea></td>' +
-          '<td><input class="edit-input" value="' + esc(String(row.totalPoints || '')) + '" oninput="entryRows['+idx+'].totalPoints=Number(this.value||0);markStudentPanelChanged(\'entry\')"></td>' +
-          '<td><select class="edit-input" onchange="entryRows['+idx+'].status=this.value;markStudentPanelChanged(\'entry\')"><option value="임시저장" '+(row.status==='임시저장'?'selected':'')+'>대기</option><option value="확정" '+(row.status==='확정'?'selected':'')+'>확정</option><option value="반려" '+(row.status==='반려'?'selected':'')+'>반려</option></select></td>' +
-          '<td><input type="date" class="edit-input" value="' + esc(dateInputValue(row.createdAt)) + '" onchange="entryRows['+idx+'].createdAt=this.value?this.value+\'T00:00:00\':null;markStudentPanelChanged(\'entry\')"></td>' +
-          '<td><input type="date" class="edit-input" value="' + esc(dateInputValue(row.confirmedAt)) + '" onchange="entryRows['+idx+'].confirmedAt=this.value?this.value+\'T00:00:00\':null;markStudentPanelChanged(\'entry\')"></td>' +
-          '<td><button class="btn btn-danger small-btn" onclick="entryRows['+idx+']._deleted=!entryRows['+idx+']._deleted;markStudentPanelChanged(\'entry\');renderStudentDataSearch(true)">' + (row._deleted ? '복구' : '삭제') + '</button></td>' +
-          '</tr>';
-      }).join('') : studentDataEmptyRow(12);
-      return '<div class="tbl-wrap"><table><thead><tr>' +
-        '<th style="width:32px">#</th><th style="width:180px">DB Key</th><th>학생</th><th>영문명</th><th>학반</th><th>studentKey</th><th style="width:260px">위반행위</th><th>총점</th><th>상태</th><th>작성일</th><th>확정일</th><th>삭제</th>' +
-        '</tr></thead><tbody>' + body + '</tbody></table></div>';
-    }
-
-    function renderStudentNoticesTable(rows){
-      const body = rows.length ? rows.map(function(row, rowNum){
-        const idx = noticeRows.findIndex(function(r){ return r.key === row.key; });
-        return '<tr class="' + (row._deleted ? 'pending-delete' : '') + '">' +
-          '<td class="row-num">' + (rowNum+1) + '</td>' +
-          '<td><input class="edit-input" value="' + esc(row.key || '') + '" readonly></td>' +
-          '<td><input class="edit-input" value="' + esc(row.studentKey || '') + '" oninput="noticeRows['+idx+'].studentKey=this.value;markStudentPanelChanged(\'notice\')"></td>' +
-          '<td><input class="edit-input" value="' + esc(row.level || '') + '" oninput="noticeRows['+idx+'].level=this.value;markStudentPanelChanged(\'notice\')"></td>' +
-          '<td><input type="date" class="edit-input" value="' + esc(dateInputValue(row.parentMailAt)) + '" onchange="noticeRows['+idx+'].parentMailAt=this.value?this.value+\'T00:00:00\':null;markStudentPanelChanged(\'notice\')"></td>' +
-          '<td><input type="date" class="edit-input" value="' + esc(dateInputValue(row.studentTeacherMailAt)) + '" onchange="noticeRows['+idx+'].studentTeacherMailAt=this.value?this.value+\'T00:00:00\':null;markStudentPanelChanged(\'notice\')"></td>' +
-          '<td><input type="date" class="edit-input" value="' + esc(dateInputValue(row.completedAt)) + '" onchange="noticeRows['+idx+'].completedAt=this.value?this.value+\'T00:00:00\':null;markStudentPanelChanged(\'notice\')"></td>' +
-          '<td><input class="edit-input" value="' + esc(row.completedBy || '') + '" oninput="noticeRows['+idx+'].completedBy=this.value;markStudentPanelChanged(\'notice\')"></td>' +
-          '<td><button class="btn btn-danger small-btn" onclick="noticeRows['+idx+']._deleted=!noticeRows['+idx+']._deleted;markStudentPanelChanged(\'notice\');renderStudentDataSearch(true)">' + (row._deleted ? '복구' : '삭제') + '</button></td>' +
-          '</tr>';
-      }).join('') : studentDataEmptyRow(9);
-      return '<div class="tbl-wrap"><table><thead><tr>' +
-        '<th style="width:32px">#</th><th style="width:180px">DB Key</th><th>studentKey</th><th>구분</th><th>학부모 알림</th><th>학생/교사 알림</th><th>완료일</th><th>완료자</th><th>삭제</th>' +
-        '</tr></thead><tbody>' + body + '</tbody></table></div>';
-    }
-
-    function renderStudentRecoveryTable(rows){
-      const body = rows.length ? rows.map(function(row, rowNum){
-        const idx = recoveryRows.findIndex(function(r){ return r.key === row.key; });
-        return '<tr class="' + (row._deleted ? 'pending-delete' : '') + '">' +
-          '<td class="row-num">' + (rowNum+1) + '</td>' +
-          '<td><input class="edit-input" value="' + esc(row.key || '') + '" readonly></td>' +
-          '<td><input class="edit-input" value="' + esc(row.studentName || '') + '" oninput="recoveryRows['+idx+'].studentName=this.value;markStudentPanelChanged(\'recovery\')"></td>' +
-          '<td><input class="edit-input" value="' + esc(row.englishName || '') + '" oninput="recoveryRows['+idx+'].englishName=this.value;markStudentPanelChanged(\'recovery\')"></td>' +
-          '<td><input class="edit-input" value="' + esc(row.className || '') + '" oninput="recoveryRows['+idx+'].className=this.value;markStudentPanelChanged(\'recovery\')"></td>' +
-          '<td><input class="edit-input" value="' + esc(row.studentKey || '') + '" oninput="recoveryRows['+idx+'].studentKey=this.value;markStudentPanelChanged(\'recovery\')"></td>' +
-          '<td><input class="edit-input" value="' + esc(row.level || '') + '" oninput="recoveryRows['+idx+'].level=this.value;markStudentPanelChanged(\'recovery\')"></td>' +
-          '<td><input class="edit-input" value="' + esc(String(row.recoveryPoints || row.points || '')) + '" oninput="recoveryRows['+idx+'].recoveryPoints=Number(this.value||0);markStudentPanelChanged(\'recovery\')"></td>' +
-          '<td><input type="date" class="edit-input" value="' + esc(dateInputValue(row.completedAt)) + '" onchange="recoveryRows['+idx+'].completedAt=this.value?this.value+\'T00:00:00\':null;markStudentPanelChanged(\'recovery\')"></td>' +
-          '<td><input class="edit-input" value="' + esc(row.staffName || '') + '" oninput="recoveryRows['+idx+'].staffName=this.value;markStudentPanelChanged(\'recovery\')"></td>' +
-          '<td><button class="btn btn-danger small-btn" onclick="recoveryRows['+idx+']._deleted=!recoveryRows['+idx+']._deleted;markStudentPanelChanged(\'recovery\');renderStudentDataSearch(true)">' + (row._deleted ? '복구' : '삭제') + '</button></td>' +
-          '</tr>';
-      }).join('') : studentDataEmptyRow(11);
-      return '<div class="tbl-wrap"><table><thead><tr>' +
-        '<th style="width:32px">#</th><th style="width:180px">DB Key</th><th>학생</th><th>영문명</th><th>학반</th><th>studentKey</th><th>구분</th><th>회복점수</th><th>완료일</th><th>담당자</th><th>삭제</th>' +
-        '</tr></thead><tbody>' + body + '</tbody></table></div>';
-    }
-
-    function renderStudentCommitteeTable(rows){
-      const body = rows.length ? rows.map(function(row, rowNum){
-        const idx = committeeRows.findIndex(function(r){ return r.key === row.key; });
-        return '<tr class="' + (row._deleted ? 'pending-delete' : '') + '">' +
-          '<td class="row-num">' + (rowNum+1) + '</td>' +
-          '<td><input class="edit-input" value="' + esc(row.key || '') + '" readonly></td>' +
-          '<td><input class="edit-input" value="' + esc(row.studentKey || '') + '" oninput="committeeRows['+idx+'].studentKey=this.value;markStudentPanelChanged(\'committee\')"></td>' +
-          '<td><input class="edit-input" value="' + esc(String(row.currentPointsAtReferral ?? row.referredPoints ?? '')) + '" oninput="committeeRows['+idx+'].currentPointsAtReferral=Number(this.value||0);markStudentPanelChanged(\'committee\')"></td>' +
-          '<td><textarea class="edit-textarea" oninput="setCommitteeNoteFromAdmin(committeeRows['+idx+'],this.value);markStudentPanelChanged(\'committee\')">' + esc(row.committeeNote || '') + '</textarea></td>' +
-          '<td><input class="edit-input" value="' + esc(row.committeeNoteAuthorId || '') + '" readonly></td>' +
-          '<td><input type="date" class="edit-input" value="' + esc(dateInputValue(row.completedAt)) + '" onchange="committeeRows['+idx+'].completedAt=this.value?this.value+\'T00:00:00\':null;markStudentPanelChanged(\'committee\')"></td>' +
-          '<td><input class="edit-input" value="' + esc(row.completedBy || '') + '" oninput="committeeRows['+idx+'].completedBy=this.value;markStudentPanelChanged(\'committee\')"></td>' +
-          '<td><input class="edit-input" value="' + esc(row.year || '') + '" oninput="committeeRows['+idx+'].year=this.value;markStudentPanelChanged(\'committee\')"></td>' +
-          '<td><button class="btn btn-danger small-btn" onclick="committeeRows['+idx+']._deleted=!committeeRows['+idx+']._deleted;markStudentPanelChanged(\'committee\');renderStudentDataSearch(true)">' + (row._deleted ? '복구' : '삭제') + '</button></td>' +
-          '</tr>';
-      }).join('') : studentDataEmptyRow(10);
-      return '<div class="tbl-wrap"><table><thead><tr>' +
-        '<th style="width:32px">#</th><th style="width:180px">DB Key</th><th>studentKey</th><th>회부 당시 점수</th><th>메모</th><th>메모 작성자 ID</th><th>완료일</th><th>처리자</th><th>연도</th><th>삭제</th>' +
-        '</tr></thead><tbody>' + body + '</tbody></table></div>';
-    }
-
-    function renderStudentStateTable(rows){
-      const body = rows.length ? rows.map(function(row, rowNum){
-        return '<tr>' +
-          '<td class="row-num">' + (rowNum+1) + '</td>' +
-          '<td>' + esc(row.key || '') + '</td>' +
-          '<td>' + esc(row.phase || '') + '</td>' +
-          '<td>' + esc(row.committeeStatus || '') + '</td>' +
-          '<td>' + esc(String(row.currentPoints ?? row.cyclePoints ?? '')) + '</td>' +
-          '<td>' + esc(String(row.yearRawPoints ?? row.overallPoints ?? '')) + '</td>' +
-          '<td>' + esc(String(row.recoveryPoints ?? '')) + '</td>' +
-          '<td>' + esc(row.currentYear || row.year || '') + '</td>' +
-          '<td>' + esc(row.updatedAt || '') + '</td>' +
-          '</tr>';
-      }).join('') : studentDataEmptyRow(9);
-      return '<div class="notice" style="margin:8px 12px;">studentCycleState는 계산 결과입니다. 원자료를 수정한 뒤 저장하면 자동 재계산됩니다.</div>' +
-        '<div class="tbl-wrap"><table><thead><tr>' +
-        '<th style="width:32px">#</th><th>State Key</th><th>phase</th><th>committeeStatus</th><th>현재미해소</th><th>연간원점수</th><th>회복점수</th><th>연도</th><th>갱신일</th>' +
-        '</tr></thead><tbody>' + body + '</tbody></table></div>';
-    }
-
-    function renderStudentDataSearch(preserve){
-      const result = document.getElementById('student-data-result');
-      if (!result) return;
-      const input = document.getElementById('student-data-search');
-      const query = preserve ? studentDataLastQuery : String((input && input.value) || '').trim();
-      if (!query) {
-        clearStudentDataSearch(false);
-        return;
-      }
-      studentDataLastQuery = query;
-      if (input && input.value !== query) input.value = query;
-      const matched = getStudentDataMatches(query);
-      const total = matched.entries.length + matched.notices.length + matched.recovery.length + matched.committee.length + matched.states.length;
-      const chips = '<div class="student-data-summary">' +
-        '<span class="student-data-chip">검색어: ' + esc(query) + '</span>' +
-        '<span class="student-data-chip">학생 Key 후보: ' + matched.keys.length + '</span>' +
-        '<span class="student-data-chip">전체 관련 기록: ' + total + '</span>' +
-        '</div>';
-      if (!total) {
-        result.className = '';
-        result.innerHTML = chips + '<div class="student-data-empty">검색 결과가 없습니다.<br>No related student data found.</div>';
-        checkStudentDataDirty();
-        return;
-      }
-      result.className = '';
-      result.innerHTML = chips +
-        studentDataSection('디텐션 기록 | Detention Entries', matched.entries.length, renderStudentEntriesTable(matched.entries)) +
-        studentDataSection('알림 기록 | Notice Records', matched.notices.length, renderStudentNoticesTable(matched.notices)) +
-        studentDataSection('회복교육 기록 | Restorative Education Records', matched.recovery.length, renderStudentRecoveryTable(matched.recovery)) +
-        studentDataSection('위원회 기록 | Committee Records', matched.committee.length, renderStudentCommitteeTable(matched.committee)) +
-        studentDataSection('상태 계산 결과 | studentCycleState', matched.states.length, renderStudentStateTable(matched.states));
-      checkStudentDataDirty();
+    function runStudentDataSearch(){renderStudentIndex();const q=String((document.getElementById('student-data-search')||{}).value||'').trim().toLowerCase();if(!q)return;const hit=studentAggregateRows().find(function(x){return [x.name,x.englishName,x.className,x.studentKey].join(' ').toLowerCase().includes(q);});if(hit)selectStudentForAdmin(hit.studentKey);}
+    function clearStudentDataSearch(clearInput){if(clearInput!==false){const i=document.getElementById('student-data-search');if(i)i.value='';const f=document.getElementById('student-data-filter');if(f)f.value='all';}selectedStudentKey='';studentDataLastQuery='';renderStudentIndex();const r=document.getElementById('student-data-result');if(r)r.innerHTML='<div class="admin-editor-empty">왼쪽에서 조회할 학생을 선택하세요.</div>';const l=document.getElementById('student-selection-label');if(l)l.textContent='';checkStudentDataDirty();}
+    function adminRecordDate(row){return dateInputValue(row.completedAt||row.confirmedAt||row.createdAt||row.parentMailAt||'')||'-';}
+    function activateAdminPanel(panel){document.querySelectorAll('.subtab-btn').forEach(function(b){b.classList.toggle('active',b.dataset.panel===panel);});document.querySelectorAll('.panel').forEach(function(p){p.classList.toggle('active',p.id==='panel-'+panel);});}
+    function openAdminRecord(kind,key){const map={entry:'entries',notice:'notices',recovery:'recovery',committee:'committee'};if(kind==='entry')selectedEntryKey=key;if(kind==='notice')selectedNoticeKey=key;if(kind==='recovery')selectedRecoveryKey=key;if(kind==='committee')selectedCommitteeKey=key;activateAdminPanel(map[kind]);if(kind==='entry')renderEntriesTable();if(kind==='notice')renderNoticesTable();if(kind==='recovery')renderRecoveryTable();if(kind==='committee')renderCommitteeTable();}
+    function studentRecordList(title,kind,rows,descFn){if(!rows.length)return '<div class="student-record-list"><div class="student-record-list-title">'+title+' · 0건</div><div style="padding:10px;color:#94a3b8;font-size:10px;">기록 없음</div></div>';return '<div class="student-record-list"><div class="student-record-list-title">'+title+' · '+rows.length+'건</div>'+rows.slice().sort(function(a,b){return String(adminRecordDate(b)).localeCompare(String(adminRecordDate(a)));}).map(function(r){return '<div class="student-record-item" onclick="openAdminRecord(\''+kind+'\',\''+esc(r.key)+'\')"><span>'+esc(adminRecordDate(r))+'</span><span class="desc">'+esc(descFn(r))+'</span><span style="text-align:right;color:#27499d;font-weight:800;">편집 ›</span></div>';}).join('')+'</div>';}
+    function renderStudentDataSearch(){
+      const pane=document.getElementById('student-data-result');if(!pane)return;if(!selectedStudentKey){pane.innerHTML='<div class="admin-editor-empty">왼쪽에서 조회할 학생을 선택하세요.</div>';return;}
+      const x=studentAggregateRows().find(function(v){return normalizeAdminStudentKey(v.studentKey)===normalizeAdminStudentKey(selectedStudentKey);});if(!x){pane.innerHTML='<div class="admin-editor-empty">학생 데이터를 찾을 수 없습니다.</div>';return;}
+      const lab=document.getElementById('student-selection-label');if(lab)lab.textContent=(x.name||x.studentKey)+' 선택됨';
+      pane.innerHTML='<div class="admin-editor-head"><div><div class="admin-editor-title">'+esc(x.name||x.studentKey)+' · '+esc(x.className||'학반 없음')+'</div><div class="admin-editor-sub">'+esc(x.englishName||'')+(x.englishName?' · ':'')+esc(x.studentKey)+'</div></div></div><div class="admin-editor-body"><div class="admin-editor-metrics"><div class="admin-editor-metric"><div class="value">'+x.current+'점</div><div class="label">현재 미해소</div></div><div class="admin-editor-metric"><div class="value">'+x.overall+'점</div><div class="label">전체 누적</div></div><div class="admin-editor-metric"><div class="value">'+x.committee.length+'회</div><div class="label">위원회 기록</div></div></div>'+studentRecordList('디텐션','entry',x.entries,function(r){return (r.status||'')+' · '+Number(r.totalPoints||0)+'점 · '+(r.violation||'');})+studentRecordList('알림','notice',x.notices,function(r){return (r.completedAt?'완료':'진행 중')+' · '+(r.level||'');})+studentRecordList('회복교육','recovery',x.recovery,function(r){return Number(r.recoveryPoints||r.points||0)+'점 · '+(r.staffName||'');})+studentRecordList('위원회','committee',x.committee,function(r){return (r.completedAt?'완료':'진행 중')+' · '+(r.committeeNote||r.reason||'');})+'<div class="student-record-list"><div class="student-record-list-title">상태 계산 결과 · '+x.states.length+'건</div>'+(x.states.length?x.states.map(function(s){return '<div style="padding:7px 8px;border-top:1px solid #eef2f7;font-size:10px;">'+esc(s.key)+' · '+esc(s.phase||'')+' · 현재 '+esc(String(s.currentPoints??s.cyclePoints??'-'))+'점</div>';}).join(''):'<div style="padding:10px;color:#94a3b8;font-size:10px;">기록 없음</div>')+'</div></div>';
     }
 
     async function saveStudentDataChanges(){
@@ -1728,176 +1554,44 @@
     }
 
 
+    function adminProfileForRow(row){const key=dbAdminRowStudentKey(row);const p=adminStudentProfile(key,row);return {studentKey:key||p.studentKey,name:String(row.studentName||p.name||key||'학생 없음'),englishName:String(row.englishName||p.englishName||''),className:String(row.className||p.className||'')};}
+    function adminDateOrderBad(a,b){const x=dateInputValue(a),y=dateInputValue(b);return !!(x&&y&&x>y);}
+    function buildEntryDuplicateMap(){const m={};entryRows.filter(r=>!r._deleted&&String(r.status||'')==='확정').forEach(function(r){const sig=[normalizeAdminStudentKey(dbAdminRowStudentKey(r)),dateInputValue(r.confirmedAt||r.createdAt),String(r.violation||'').trim().toLowerCase(),Number(r.totalPoints||0),String(r.memo||'').trim().toLowerCase()].join('|');if(!m[sig])m[sig]=[];m[sig].push(r.key);});return m;}
+    function entryIssues(row,dup){const a=[];const p=adminProfileForRow(row);if(!p.studentKey)a.push({type:'missing',level:'bad',text:'학생 Key 누락'});if(!p.name||p.name==='학생 없음')a.push({type:'missing',level:'warn',text:'학생명 누락'});if(!p.className)a.push({type:'missing',level:'warn',text:'학반 누락'});if(!String(row.violation||'').trim())a.push({type:'missing',level:'bad',text:'위반행위 누락'});if(String(row.status||'')==='확정'&&!dateInputValue(row.confirmedAt))a.push({type:'date',level:'bad',text:'확정일 누락'});if(adminDateOrderBad(row.createdAt,row.confirmedAt))a.push({type:'date',level:'bad',text:'확정일이 작성일보다 빠름'});const sig=[normalizeAdminStudentKey(dbAdminRowStudentKey(row)),dateInputValue(row.confirmedAt||row.createdAt),String(row.violation||'').trim().toLowerCase(),Number(row.totalPoints||0),String(row.memo||'').trim().toLowerCase()].join('|');if((dup[sig]||[]).length>1)a.push({type:'duplicate',level:'bad',text:'동일 기록 '+dup[sig].length+'건'});if(!Number.isFinite(Number(row.totalPoints)))a.push({type:'points',level:'bad',text:'총점 오류'});return a;}
+    function noticeIssues(row){const a=[];if(!dbAdminRowStudentKey(row))a.push({type:'missing',level:'bad',text:'학생 Key 누락'});if(!['ms','hs'].includes(String(row.level||'').toLowerCase()))a.push({type:'missing',level:'warn',text:'구분 확인'});if(!row.parentMailAt&&!row.studentTeacherMailAt&&!row.completedAt)a.push({type:'missing',level:'warn',text:'알림 날짜 없음'});if(adminDateOrderBad(row.parentMailAt,row.completedAt)||adminDateOrderBad(row.studentTeacherMailAt,row.completedAt))a.push({type:'date',level:'bad',text:'완료일이 알림일보다 빠름'});if(row.completedAt&&!row.completedBy)a.push({type:'missing',level:'warn',text:'완료자 누락'});return a;}
+    function recoveryIssues(row){const a=[];const p=adminProfileForRow(row);if(!p.studentKey)a.push({type:'missing',level:'bad',text:'학생 Key 누락'});if(!p.name||p.name==='학생 없음')a.push({type:'missing',level:'warn',text:'학생명 누락'});if(!p.className)a.push({type:'missing',level:'warn',text:'학반 누락'});if(!['ms','hs'].includes(String(row.level||'').toLowerCase()))a.push({type:'missing',level:'warn',text:'구분 확인'});if(!(Number(row.recoveryPoints||row.points)>0))a.push({type:'points',level:'bad',text:'회복점수 오류'});if(!dateInputValue(row.completedAt))a.push({type:'date',level:'warn',text:'완료일 누락'});if(row.currentTotalBefore!==''&&row.currentTotalAfter!==''&&Number(row.currentTotalAfter)>Number(row.currentTotalBefore))a.push({type:'points',level:'bad',text:'처리 후 점수가 더 큼'});return a;}
+    function issueSummaryHtml(issues){if(!issues.length)return '<span class="admin-issue-pill ok">정상</span>';const bad=issues.some(x=>x.level==='bad');return '<span class="admin-issue-pill '+(bad?'bad':'warn')+'">'+(bad?'오류 ':'확인 ')+issues.length+'</span>';}
+    function issueAlertHtml(issues){if(!issues.length)return '<div class="admin-editor-alert ok">현재 자동 점검에서 발견된 문제가 없습니다.</div>';const bad=issues.some(x=>x.level==='bad');return '<div class="admin-editor-alert '+(bad?'bad':'warn')+'"><b>데이터 점검 필요</b><br>'+issues.map(x=>'• '+esc(x.text)).join('<br>')+'</div>';}
+    function countSet(id,v){const e=document.getElementById(id);if(e)e.textContent=String(v);}
+    function selectedAdminRow(kind){const cfg={entry:[entryRows,selectedEntryKey],notice:[noticeRows,selectedNoticeKey],recovery:[recoveryRows,selectedRecoveryKey]};const c=cfg[kind];return c?c[0].find(r=>r.key===c[1]):null;}
+    function setSelectedAdminField(kind,field,value,mode){const row=selectedAdminRow(kind);if(!row)return;if(mode==='number')row[field]=value===''?'':Number(value||0);else if(mode==='date')row[field]=value?value+'T00:00:00':null;else if(mode==='nullable')row[field]=String(value||'').trim()?String(value):null;else row[field]=value;if(kind==='entry')checkEntryDirty();if(kind==='notice')checkNoticeDirty();if(kind==='recovery')checkRecoveryDirty();}
+    function adminInput(kind,field,label,value,opts){opts=opts||{};const type=opts.type||'text';const full=opts.full?' full':'';const ro=opts.readonly?' readonly':'';const mode=opts.mode||'';if(type==='textarea')return '<div class="admin-form-field'+full+'"><label class="admin-form-label">'+label+'</label><textarea class="edit-textarea"'+ro+' oninput="setSelectedAdminField(\''+kind+'\',\''+field+'\',this.value,\''+mode+'\')">'+esc(value??'')+'</textarea></div>';if(type==='select')return '<div class="admin-form-field'+full+'"><label class="admin-form-label">'+label+'</label><select class="edit-input" onchange="setSelectedAdminField(\''+kind+'\',\''+field+'\',this.value,\''+mode+'\');render'+(kind==='entry'?'Entries':kind==='notice'?'Notices':'Recovery')+'Table()">'+opts.options.map(o=>'<option value="'+esc(o[0])+'" '+(String(value??'')===String(o[0])?'selected':'')+'>'+esc(o[1])+'</option>').join('')+'</select></div>';const shown=type==='date'?dateInputValue(value):String(value??'');return '<div class="admin-form-field'+full+'"><label class="admin-form-label">'+label+'</label><input type="'+type+'" class="edit-input" value="'+esc(shown)+'"'+ro+' oninput="setSelectedAdminField(\''+kind+'\',\''+field+'\',this.value,\''+(type==='date'?'date':mode)+'\')"></div>';}
+    function toggleSelectedAdminDeleted(kind){const row=selectedAdminRow(kind);if(!row)return;row._deleted=!row._deleted;if(kind==='entry'){checkEntryDirty();renderEntriesTable();}if(kind==='notice'){checkNoticeDirty();renderNoticesTable();}if(kind==='recovery'){checkRecoveryDirty();renderRecoveryTable();}}
+    function bindAdminRows(tbodyId,kind){const tb=document.getElementById(tbodyId);if(!tb)return;tb.querySelectorAll('tr[data-row-key]').forEach(function(tr){tr.addEventListener('click',function(){const key=tr.dataset.rowKey;if(kind==='entry')selectedEntryKey=key;if(kind==='notice')selectedNoticeKey=key;if(kind==='recovery')selectedRecoveryKey=key;if(kind==='entry')renderEntriesTable();if(kind==='notice')renderNoticesTable();if(kind==='recovery')renderRecoveryTable();});});}
+    function clearEntryFilters(render=true){const s=document.getElementById('entry-search'),st=document.getElementById('entry-status-filter'),i=document.getElementById('entry-issue-filter');if(s)s.value='';if(st)st.value='';if(i)i.value='all';if(render)renderEntriesTable();}
+    function clearNoticeFilters(render=true){const s=document.getElementById('notice-search'),st=document.getElementById('notice-status-filter'),i=document.getElementById('notice-issue-filter');if(s)s.value='';if(st)st.value='all';if(i)i.value='all';if(render)renderNoticesTable();}
+    function clearRecoveryFilters(render=true){const s=document.getElementById('recovery-search'),st=document.getElementById('recovery-level-filter'),i=document.getElementById('recovery-issue-filter');if(s)s.value='';if(st)st.value='all';if(i)i.value='all';if(render)renderRecoveryTable();}
+
     function renderEntriesTable(){
-      const tbody = document.getElementById('entries-tbody');
-      const q = (document.getElementById('entry-search').value || '').trim().toLowerCase();
-      const status = document.getElementById('entry-status-filter').value || '';
-      const filtered = entryRows.filter(row => {
-        if (status && String(row.status || '') !== status) return false;
-        if (!q) return true;
-        return [row.key,row.studentName,row.englishName,row.className,row.studentKey,row.category,row.violation,row.teacherName,row.parentEmail,row.studentEmail,row.homeroomEmail].some(v => String(v || '').toLowerCase().includes(q));
-      });
-      if (!filtered.length){ tbody.innerHTML = `<tr><td colspan="21">기록이 없습니다. | No records found.</td></tr>`; return; }
-      tbody.innerHTML = filtered.map((row, rowNum) => {
-        const idx = entryRows.findIndex(r => r.key === row.key);
-        return `
-          <tr class="${row._deleted ? 'pending-delete' : ''}">
-            <td class="row-num">${rowNum+1}</td>
-            <td><input class="edit-input" value="${esc(row.key || '')}" readonly></td>
-            <td><input class="edit-input" value="${esc(row.studentName || '')}" oninput="entryRows[${idx}].studentName=this.value;checkEntryDirty()"></td>
-            <td><input class="edit-input" value="${esc(row.englishName || '')}" oninput="entryRows[${idx}].englishName=this.value;checkEntryDirty()"></td>
-            <td><input class="edit-input" value="${esc(row.className || '')}" oninput="entryRows[${idx}].className=this.value;checkEntryDirty()"></td>
-            <td><input class="edit-input" value="${esc(row.studentKey || '')}" oninput="entryRows[${idx}].studentKey=this.value;checkEntryDirty()"></td>
-            <td><input class="edit-input" value="${esc(row.category || '')}" oninput="entryRows[${idx}].category=this.value;checkEntryDirty()"></td>
-            <td><textarea class="edit-textarea" oninput="entryRows[${idx}].violation=this.value;checkEntryDirty()">${esc(row.violation || '')}</textarea></td>
-            <td><input class="edit-input" value="${esc(String(row.autoPoints || ''))}" oninput="entryRows[${idx}].autoPoints=this.value;checkEntryDirty()"></td>
-            <td><input class="edit-input" value="${esc(String(row.manualPoints || ''))}" oninput="entryRows[${idx}].manualPoints=Number(this.value||0);checkEntryDirty()"></td>
-            <td><input class="edit-input" value="${esc(String(row.totalPoints || ''))}" oninput="entryRows[${idx}].totalPoints=Number(this.value||0);checkEntryDirty()"></td>
-            <td><select class="edit-input" onchange="entryRows[${idx}].status=this.value;checkEntryDirty()"><option value="임시저장" ${row.status==='임시저장'?'selected':''}>대기</option><option value="확정" ${row.status==='확정'?'selected':''}>확정</option><option value="반려" ${row.status==='반려'?'selected':''}>반려</option></select></td>
-            <td><input class="edit-input" value="${esc(row.teacherName || '')}" oninput="entryRows[${idx}].teacherName=this.value;checkEntryDirty()"></td>
-            <td><input type="date" class="edit-input" value="${esc(dateInputValue(row.createdAt))}" onchange="entryRows[${idx}].createdAt=this.value?this.value+'T00:00:00':null;checkEntryDirty()"></td>
-            <td><input type="date" class="edit-input" value="${esc(dateInputValue(row.confirmedAt))}" onchange="entryRows[${idx}].confirmedAt=this.value?this.value+'T00:00:00':null;checkEntryDirty()"></td>
-            <td><textarea class="edit-textarea" style="min-height:32px" placeholder="메모" oninput="entryRows[${idx}].memo=this.value;checkEntryDirty()">${esc(row.memo || '')}</textarea></td>
-            <td><input class="edit-input" value="${esc(String(row.year || ''))}" oninput="entryRows[${idx}].year=this.value;checkEntryDirty()"></td>
-            <td><textarea class="edit-textarea" style="min-height:32px" placeholder="관리자 메모" oninput="entryRows[${idx}].adminNote=this.value;checkEntryDirty()">${esc(row.adminNote || '')}</textarea></td>
-            <td><input class="edit-input" value="${esc(row.parentEmail || '')}" oninput="entryRows[${idx}].parentEmail=this.value;checkEntryDirty()"></td>
-            <td><input class="edit-input" value="${esc(row.studentEmail || '')}" oninput="entryRows[${idx}].studentEmail=this.value;checkEntryDirty()"></td>
-            <td><input class="edit-input" value="${esc(row.homeroomEmail || '')}" oninput="entryRows[${idx}].homeroomEmail=this.value;checkEntryDirty()"></td>
-            <td><button class="btn btn-danger small-btn" onclick="toggleEntryDeleted('${row.key}')">${row._deleted ? "복구" : "삭제"}</button></td>
-          </tr>`;
-      }).join('');
+      const tb=document.getElementById('entries-tbody');if(!tb)return;const dup=buildEntryDuplicateMap();const q=String((document.getElementById('entry-search')||{}).value||'').trim().toLowerCase();const status=String((document.getElementById('entry-status-filter')||{}).value||'');const issueFilter=String((document.getElementById('entry-issue-filter')||{}).value||'all');
+      const info=entryRows.map(r=>({row:r,issues:entryIssues(r,dup)}));const filtered=info.filter(function(x){const r=x.row;if(status==='삭제'&&!r._deleted)return false;if(status&&status!=='삭제'&&String(r.status||'')!==status)return false;const text=dbAdminRowSearchText(r);if(q&&!text.includes(q))return false;if(issueFilter==='problem'&&!x.issues.length)return false;if(issueFilter==='clean'&&x.issues.length)return false;if(!['all','problem','clean'].includes(issueFilter)&&!x.issues.some(i=>i.type===issueFilter))return false;return true;});
+      countSet('entry-count-total',entryRows.length);countSet('entry-count-pending',entryRows.filter(r=>String(r.status||'')==='임시저장').length);countSet('entry-count-confirmed',entryRows.filter(r=>String(r.status||'')==='확정').length);countSet('entry-count-rejected',entryRows.filter(r=>String(r.status||'')==='반려').length);countSet('entry-count-problem',info.filter(x=>x.issues.length).length);countSet('entry-count-visible',filtered.length);
+      tb.innerHTML=filtered.length?filtered.map(function(x,i){const r=x.row,p=adminProfileForRow(r),statusClass=r._deleted?'deleted':String(r.status||'')==='확정'?'confirmed':String(r.status||'')==='반려'?'rejected':'pending';return '<tr class="'+(r._deleted?'pending-delete ':'')+(selectedEntryKey===r.key?'admin-selected':'')+'" data-row-key="'+esc(r.key)+'"><td class="row-num">'+(i+1)+'</td><td><span class="admin-status-badge '+statusClass+'">'+(r._deleted?'삭제':esc(r.status||'대기'))+'</span></td><td><span class="student-main">'+esc(p.name)+'</span><span class="student-sub">'+esc(p.englishName||'')+(p.englishName?' · ':'')+esc(p.studentKey||r.key)+'</span></td><td>'+esc(p.className||'-')+'</td><td class="tc"><b>'+esc(String(r.totalPoints??'-'))+'</b></td><td>'+esc(dateInputValue(r.createdAt)||'-')+'</td><td>'+esc(r.teacherName||'-')+'</td><td title="'+esc(r.violation||'')+'">'+esc(r.violation||'-')+'</td><td>'+issueSummaryHtml(x.issues)+'</td></tr>';}).join(''):'<tr><td colspan="9" class="empty">검색 결과가 없습니다.</td></tr>';bindAdminRows('entries-tbody','entry');renderEntryEditor(dup);
     }
+    function renderEntryEditor(dup){const pane=document.getElementById('entries-editor-pane');if(!pane)return;let r=selectedAdminRow('entry');if(!r){pane.innerHTML='<div class="admin-editor-empty">왼쪽에서 수정할 디텐션 기록을 선택하세요.</div>';return;}const p=adminProfileForRow(r),issues=entryIssues(r,dup||buildEntryDuplicateMap());const lab=document.getElementById('entry-selection-label');if(lab)lab.textContent=p.name+' 선택됨';pane.innerHTML='<div class="admin-editor-head"><div><div class="admin-editor-title">'+esc(p.name)+' · '+esc(p.className||'학반 없음')+' · '+esc(String(r.totalPoints??0))+'점</div><div class="admin-editor-sub">'+esc(r.key)+' · '+esc(p.studentKey||'학생 Key 없음')+'</div></div></div><div class="admin-editor-body">'+issueAlertHtml(issues)+'<div class="admin-form-section"><div class="admin-form-title">학생 및 상태</div><div class="admin-form-grid">'+adminInput('entry','studentName','학생명',r.studentName)+adminInput('entry','englishName','영문명',r.englishName)+adminInput('entry','className','학반',r.className)+adminInput('entry','studentKey','studentKey',r.studentKey,{full:true})+adminInput('entry','status','상태',r.status,{type:'select',options:[['임시저장','대기'],['확정','확정'],['반려','반려']]})+adminInput('entry','year','학년도',r.year,{mode:'number'})+'</div></div><div class="admin-form-section"><div class="admin-form-title">위반 및 점수</div><div class="admin-form-grid">'+adminInput('entry','category','구분',r.category,{full:true})+adminInput('entry','violation','위반행위',r.violation,{type:'textarea',full:true})+adminInput('entry','autoPoints','자동점수',r.autoPoints)+adminInput('entry','manualPoints','수동점수',r.manualPoints,{mode:'number'})+adminInput('entry','totalPoints','총점',r.totalPoints,{mode:'number'})+adminInput('entry','teacherName','입력 교사',r.teacherName)+'</div></div><div class="admin-form-section"><div class="admin-form-title">날짜와 메모</div><div class="admin-form-grid">'+adminInput('entry','createdAt','작성일',r.createdAt,{type:'date'})+adminInput('entry','confirmedAt','확정일',r.confirmedAt,{type:'date'})+adminInput('entry','memo','교사 메모',r.memo,{type:'textarea',full:true})+adminInput('entry','adminNote','관리자 메모',r.adminNote,{type:'textarea',full:true})+'</div></div><div class="admin-form-section"><div class="admin-form-title">연락처</div><div class="admin-form-grid one">'+adminInput('entry','parentEmail','학부모 Email',r.parentEmail,{full:true})+adminInput('entry','studentEmail','학생 Email',r.studentEmail,{full:true})+adminInput('entry','homeroomEmail','담임 Email',r.homeroomEmail,{full:true})+'</div></div><div class="admin-editor-actions"><button class="btn '+(r._deleted?'btn-secondary':'btn-danger')+' small-btn" onclick="toggleSelectedAdminDeleted(\'entry\')">'+(r._deleted?'삭제 취소':'삭제 표시')+'</button><div class="right"><button class="btn btn-primary" onclick="saveEntries()">디텐션 기록 저장</button></div></div></div>';}
+    function toggleEntryDeleted(key){selectedEntryKey=key;toggleSelectedAdminDeleted('entry');}
+    function markEntryDeleted(key){selectedEntryKey=key;toggleSelectedAdminDeleted('entry');}
+    async function saveEntries(){try{await saveRowsToFirebase({rows:entryRows,path:'detentionEntries',origMap:_entryOrig,reason:'detention-admin-entries',labelKo:'디텐션 기록',labelEn:'Entries'});}catch(err){console.error(err);toast('디텐션 기록 DB 저장 실패: '+(err&&err.message?err.message:err),'err');}}
 
-    function toggleEntryDeleted(key){
-      const row = entryRows.find(r => r.key === key);
-      if (row) row._deleted = !row._deleted;
-      renderEntriesTable();
-      checkEntryDirty();
-    }
-    function markEntryDeleted(key){
-      if (!confirm('정말 삭제하시겠습니까?\nAre you sure you want to delete this entry?')) return;
-      const row = entryRows.find(r => r.key === key);
-      if (row) { row._deleted = true; }
-      renderEntriesTable();
-      checkEntryDirty();
-    }
+    function renderNoticesTable(){const tb=document.getElementById('notices-tbody');if(!tb)return;const q=String((document.getElementById('notice-search')||{}).value||'').trim().toLowerCase();const status=String((document.getElementById('notice-status-filter')||{}).value||'all');const issueFilter=String((document.getElementById('notice-issue-filter')||{}).value||'all');const info=noticeRows.map(r=>({row:r,issues:noticeIssues(r)}));const filtered=info.filter(function(x){const r=x.row;if(status==='active'&&(r.completedAt||r._deleted))return false;if(status==='done'&&!r.completedAt)return false;if(status==='deleted'&&!r._deleted)return false;if(q&&!dbAdminRowSearchText(r).includes(q))return false;if(issueFilter==='problem'&&!x.issues.length)return false;if(issueFilter==='clean'&&x.issues.length)return false;if(!['all','problem','clean'].includes(issueFilter)&&!x.issues.some(i=>i.type===issueFilter))return false;return true;});countSet('notice-count-total',noticeRows.length);countSet('notice-count-active',noticeRows.filter(r=>!r.completedAt&&!r._deleted).length);countSet('notice-count-done',noticeRows.filter(r=>!!r.completedAt&&!r._deleted).length);countSet('notice-count-problem',info.filter(x=>x.issues.length).length);countSet('notice-count-visible',filtered.length);tb.innerHTML=filtered.length?filtered.map(function(x,i){const r=x.row,p=adminProfileForRow(r),st=r._deleted?'deleted':r.completedAt?'done':'active';return '<tr class="'+(r._deleted?'pending-delete ':'')+(selectedNoticeKey===r.key?'admin-selected':'')+'" data-row-key="'+esc(r.key)+'"><td class="row-num">'+(i+1)+'</td><td><span class="admin-status-badge '+st+'">'+(r._deleted?'삭제':r.completedAt?'완료':'진행 중')+'</span></td><td><span class="student-main">'+esc(p.name)+'</span><span class="student-sub">'+esc(p.studentKey||r.key)+'</span></td><td>'+esc(String(r.level||'-').toUpperCase())+'</td><td>'+esc(dateInputValue(r.parentMailAt)||'-')+'</td><td>'+esc(dateInputValue(r.studentTeacherMailAt)||'-')+'</td><td>'+esc(dateInputValue(r.completedAt)||'-')+'</td><td>'+issueSummaryHtml(x.issues)+'</td></tr>';}).join(''):'<tr><td colspan="8" class="empty">검색 결과가 없습니다.</td></tr>';bindAdminRows('notices-tbody','notice');renderNoticeEditor();}
+    function renderNoticeEditor(){const pane=document.getElementById('notices-editor-pane');if(!pane)return;const r=selectedAdminRow('notice');if(!r){pane.innerHTML='<div class="admin-editor-empty">왼쪽에서 수정할 알림 기록을 선택하세요.</div>';return;}const p=adminProfileForRow(r),issues=noticeIssues(r);const lab=document.getElementById('notice-selection-label');if(lab)lab.textContent=p.name+' 선택됨';pane.innerHTML='<div class="admin-editor-head"><div><div class="admin-editor-title">'+esc(p.name)+' · '+esc(p.className||'학반 없음')+' · '+(r.completedAt?'완료':'진행 중')+'</div><div class="admin-editor-sub">'+esc(r.key)+' · '+esc(p.studentKey||'학생 Key 없음')+'</div></div></div><div class="admin-editor-body">'+issueAlertHtml(issues)+'<div class="admin-form-section"><div class="admin-form-title">학생 및 구분</div><div class="admin-form-grid">'+adminInput('notice','studentKey','studentKey',r.studentKey,{full:true})+adminInput('notice','level','구분',r.level,{type:'select',options:[['ms','중등'],['hs','고등']]})+adminInput('notice','year','학년도',r.year,{mode:'number'})+'</div></div><div class="admin-form-section"><div class="admin-form-title">알림 진행 날짜</div><div class="admin-form-grid">'+adminInput('notice','parentMailAt','학부모 알림일',r.parentMailAt,{type:'date'})+adminInput('notice','studentTeacherMailAt','학생/교사 알림일',r.studentTeacherMailAt,{type:'date'})+adminInput('notice','completedAt','완료일',r.completedAt,{type:'date'})+adminInput('notice','completedBy','완료자',r.completedBy)+adminInput('notice','completedByEmail','완료자 이메일',r.completedByEmail,{full:true})+'</div></div><div class="admin-form-section"><div class="admin-form-title">사유 스냅샷</div><div class="admin-form-grid one">'+adminInput('notice','cycleViolationsSnapshot','사유 내역',r.cycleViolationsSnapshot||r.reasonSnapshot,{type:'textarea',full:true})+'</div></div><div class="admin-editor-actions"><button class="btn '+(r._deleted?'btn-secondary':'btn-danger')+' small-btn" onclick="toggleSelectedAdminDeleted(\'notice\')">'+(r._deleted?'삭제 취소':'삭제 표시')+'</button><div class="right"><button class="btn btn-primary" onclick="saveNotices()">알림 기록 저장</button></div></div></div>';}
+    function markNoticeDeleted(key){selectedNoticeKey=key;toggleSelectedAdminDeleted('notice');}
+    async function saveNotices(){try{await saveRowsToFirebase({rows:noticeRows,path:'detentionNotices',origMap:_noticeOrig,reason:'detention-admin-notices',labelKo:'알림 기록',labelEn:'Notices'});}catch(err){console.error(err);toast('알림 기록 DB 저장 실패: '+(err&&err.message?err.message:err),'err');}}
 
-    async function saveEntries(){
-      try{
-        await saveRowsToFirebase({
-          rows: entryRows,
-          path: 'detentionEntries',
-          origMap: _entryOrig,
-          reason: 'detention-admin-entries',
-          labelKo: '디텐션 기록',
-          labelEn: 'Entries'
-        });
-      }catch(err){
-        console.error(err);
-        toast('디텐션 기록 DB 저장 실패: ' + (err && err.message ? err.message : err), 'err');
-      }
-    }
-
-    function renderNoticesTable(){
-      const tbody = document.getElementById('notices-tbody');
-      const q = (document.getElementById('notice-search').value || '').trim().toLowerCase();
-      const filtered = noticeRows.filter(row => !q || [row.key,row.studentKey,row.level,row.completedBy,row.completedByEmail,row.cycleViolationsSnapshot].some(v => String(v || '').toLowerCase().includes(q)));
-      if (!filtered.length){ tbody.innerHTML = `<tr><td colspan="12">기록이 없습니다. | No notice records found.</td></tr>`; return; }
-      tbody.innerHTML = filtered.map((row, rowNum) => {
-        const idx = noticeRows.findIndex(r => r.key === row.key);
-        return `
-          <tr class="${row._deleted ? 'pending-delete' : ''}">
-            <td class="row-num">${rowNum+1}</td>
-            <td><input class="edit-input" value="${esc(row.key || '')}" readonly></td>
-            <td><input class="edit-input" value="${esc(row.studentKey || '')}" oninput="noticeRows[${idx}].studentKey=this.value;checkNoticeDirty()"></td>
-            <td><input class="edit-input" value="${esc(row.level || '')}" oninput="noticeRows[${idx}].level=this.value;checkNoticeDirty()"></td>
-            <td><input type="date" class="edit-input" value="${esc(dateInputValue(row.parentMailAt))}" onchange="noticeRows[${idx}].parentMailAt=this.value?this.value+'T00:00:00':null;checkNoticeDirty()"></td>
-            <td><input type="date" class="edit-input" value="${esc(dateInputValue(row.studentTeacherMailAt))}" onchange="noticeRows[${idx}].studentTeacherMailAt=this.value?this.value+'T00:00:00':null;checkNoticeDirty()"></td>
-            <td><input type="date" class="edit-input" value="${esc(dateInputValue(row.completedAt))}" onchange="noticeRows[${idx}].completedAt=this.value?this.value+'T00:00:00':null;checkNoticeDirty()"></td>
-            <td><input class="edit-input" value="${esc(row.completedBy || '')}" oninput="noticeRows[${idx}].completedBy=this.value;checkNoticeDirty()"></td>
-            <td><input class="edit-input" value="${esc(row.completedByEmail || '')}" oninput="noticeRows[${idx}].completedByEmail=this.value;checkNoticeDirty()"></td>
-            <td><input class="edit-input" value="${esc(String(row.year || ''))}" oninput="noticeRows[${idx}].year=this.value;checkNoticeDirty()"></td>
-            <td><textarea class="edit-textarea" style="min-height:32px" oninput="noticeRows[${idx}].cycleViolationsSnapshot=this.value;checkNoticeDirty()">${esc(row.cycleViolationsSnapshot || row.reasonSnapshot || '')}</textarea></td>
-            <td><button class="btn btn-danger small-btn" onclick="(function(k){const r=noticeRows.find(x=>x.key===k);if(r){r._deleted=!r._deleted;renderNoticesTable();checkNoticeDirty();}})('${row.key}')">${row._deleted ? "복구" : "삭제"}</button></td>
-          </tr>`;
-      }).join('');
-    }
-
-    function markNoticeDeleted(key){
-      if (!confirm('정말 삭제하시겠습니까?\nAre you sure?')) return;
-      const row = noticeRows.find(r => r.key === key);
-      if (row) { row._deleted = true; }
-      renderNoticesTable();
-      checkNoticeDirty();
-    }
-
-    async function saveNotices(){
-      try{
-        await saveRowsToFirebase({
-          rows: noticeRows,
-          path: 'detentionNotices',
-          origMap: _noticeOrig,
-          reason: 'detention-admin-notices',
-          labelKo: '알림 기록',
-          labelEn: 'Notices'
-        });
-      }catch(err){
-        console.error(err);
-        toast('알림 기록 DB 저장 실패: ' + (err && err.message ? err.message : err), 'err');
-      }
-    }
-
-    function renderRecoveryTable(){
-      const tbody = document.getElementById('recovery-tbody');
-      const q = (document.getElementById('recovery-search').value || '').trim().toLowerCase();
-      const filtered = recoveryRows.filter(row => !q || [row.key,row.studentKey,row.studentName,row.englishName,row.className,row.staffName,row.staffEmail].some(v => String(v || '').toLowerCase().includes(q)));
-      if (!filtered.length){ tbody.innerHTML = `<tr><td colspan="14">기록이 없습니다. | No recovery records found.</td></tr>`; return; }
-      tbody.innerHTML = filtered.map((row, rowNum) => {
-        const idx = recoveryRows.findIndex(r => r.key === row.key);
-        return `
-          <tr class="${row._deleted ? 'pending-delete' : ''}">
-            <td class="row-num">${rowNum+1}</td>
-            <td><input class="edit-input" value="${esc(row.key || '')}" readonly></td>
-            <td><input class="edit-input" value="${esc(row.studentName || '')}" oninput="recoveryRows[${idx}].studentName=this.value;checkRecoveryDirty()"></td>
-            <td><input class="edit-input" value="${esc(row.englishName || '')}" oninput="recoveryRows[${idx}].englishName=this.value;checkRecoveryDirty()"></td>
-            <td><input class="edit-input" value="${esc(row.className || '')}" oninput="recoveryRows[${idx}].className=this.value;checkRecoveryDirty()"></td>
-            <td><input class="edit-input" value="${esc(row.studentKey || '')}" oninput="recoveryRows[${idx}].studentKey=this.value;checkRecoveryDirty()"></td>
-            <td><input class="edit-input" value="${esc(row.level || '')}" oninput="recoveryRows[${idx}].level=this.value;checkRecoveryDirty()"></td>
-            <td><input class="edit-input" value="${esc(String(row.recoveryPoints || row.points || ''))}" oninput="recoveryRows[${idx}].recoveryPoints=Number(this.value||0);checkRecoveryDirty()"></td>
-            <td><input class="edit-input" value="${esc(row.staffName || '')}" oninput="recoveryRows[${idx}].staffName=this.value;checkRecoveryDirty()"></td>
-            <td><input class="edit-input" value="${esc(row.staffEmail || '')}" oninput="recoveryRows[${idx}].staffEmail=this.value;checkRecoveryDirty()"></td>
-            <td><input type="date" class="edit-input" value="${esc(dateInputValue(row.completedAt))}" onchange="recoveryRows[${idx}].completedAt=this.value?this.value+'T00:00:00':null;checkRecoveryDirty()"></td>
-            <td><input class="edit-input" value="${esc(String(row.year || ''))}" oninput="recoveryRows[${idx}].year=this.value;checkRecoveryDirty()"></td>
-            <td><textarea class="edit-textarea" style="min-height:32px" oninput="recoveryRows[${idx}].reasonsSnapshot=this.value;checkRecoveryDirty()">${esc(row.reasonsSnapshot || '')}</textarea></td>
-            <td><button class="btn btn-danger small-btn" onclick="(function(k){const r=recoveryRows.find(x=>x.key===k);if(r){r._deleted=!r._deleted;renderRecoveryTable();checkRecoveryDirty();}})('${row.key}')">${row._deleted ? "복구" : "삭제"}</button></td>
-          </tr>`;
-      }).join('');
-    }
-
-    function markRecoveryDeleted(key){
-      if (!confirm('정말 삭제하시겠습니까?\nAre you sure?')) return;
-      const row = recoveryRows.find(r => r.key === key);
-      if (row) { row._deleted = true; }
-      renderRecoveryTable();
-      checkRecoveryDirty();
-    }
-
-    async function saveRecovery(){
-      try{
-        await saveRowsToFirebase({
-          rows: recoveryRows,
-          path: 'recoveryEntries',
-          origMap: _recoveryOrig,
-          reason: 'detention-admin-recovery',
-          labelKo: '회복교육 기록',
-          labelEn: 'Recovery'
-        });
-      }catch(err){
-        console.error(err);
-        toast('회복교육 기록 DB 저장 실패: ' + (err && err.message ? err.message : err), 'err');
-      }
-    }
-
+    function renderRecoveryTable(){const tb=document.getElementById('recovery-tbody');if(!tb)return;const q=String((document.getElementById('recovery-search')||{}).value||'').trim().toLowerCase();const level=String((document.getElementById('recovery-level-filter')||{}).value||'all');const issueFilter=String((document.getElementById('recovery-issue-filter')||{}).value||'all');const info=recoveryRows.map(r=>({row:r,issues:recoveryIssues(r)}));const filtered=info.filter(function(x){const r=x.row;if(level==='deleted'&&!r._deleted)return false;if(['ms','hs'].includes(level)&&String(r.level||'').toLowerCase()!==level)return false;if(q&&!dbAdminRowSearchText(r).includes(q))return false;if(issueFilter==='problem'&&!x.issues.length)return false;if(issueFilter==='clean'&&x.issues.length)return false;if(!['all','problem','clean'].includes(issueFilter)&&!x.issues.some(i=>i.type===issueFilter))return false;return true;});countSet('recovery-count-total',recoveryRows.length);countSet('recovery-count-ms',recoveryRows.filter(r=>String(r.level||'').toLowerCase()==='ms').length);countSet('recovery-count-hs',recoveryRows.filter(r=>String(r.level||'').toLowerCase()==='hs').length);countSet('recovery-count-problem',info.filter(x=>x.issues.length).length);countSet('recovery-count-visible',filtered.length);tb.innerHTML=filtered.length?filtered.map(function(x,i){const r=x.row,p=adminProfileForRow(r);return '<tr class="'+(r._deleted?'pending-delete ':'')+(selectedRecoveryKey===r.key?'admin-selected':'')+'" data-row-key="'+esc(r.key)+'"><td class="row-num">'+(i+1)+'</td><td><span class="student-main">'+esc(p.name)+'</span><span class="student-sub">'+esc(p.englishName||'')+(p.englishName?' · ':'')+esc(p.studentKey||r.key)+'</span></td><td>'+esc(p.className||'-')+'</td><td>'+esc(String(r.level||'-').toUpperCase())+'</td><td class="tc"><b>'+esc(String(r.recoveryPoints||r.points||0))+'</b></td><td>'+esc(dateInputValue(r.completedAt)||'-')+'</td><td>'+esc(r.staffName||'-')+'</td><td>'+issueSummaryHtml(x.issues)+'</td></tr>';}).join(''):'<tr><td colspan="8" class="empty">검색 결과가 없습니다.</td></tr>';bindAdminRows('recovery-tbody','recovery');renderRecoveryEditor();}
+    function renderRecoveryEditor(){const pane=document.getElementById('recovery-editor-pane');if(!pane)return;const r=selectedAdminRow('recovery');if(!r){pane.innerHTML='<div class="admin-editor-empty">왼쪽에서 수정할 회복교육 기록을 선택하세요.</div>';return;}const p=adminProfileForRow(r),issues=recoveryIssues(r);const lab=document.getElementById('recovery-selection-label');if(lab)lab.textContent=p.name+' 선택됨';pane.innerHTML='<div class="admin-editor-head"><div><div class="admin-editor-title">'+esc(p.name)+' · '+esc(p.className||'학반 없음')+' · -'+esc(String(r.recoveryPoints||r.points||0))+'점</div><div class="admin-editor-sub">'+esc(r.key)+' · '+esc(p.studentKey||'학생 Key 없음')+'</div></div></div><div class="admin-editor-body">'+issueAlertHtml(issues)+'<div class="admin-form-section"><div class="admin-form-title">학생 및 구분</div><div class="admin-form-grid">'+adminInput('recovery','studentName','학생명',r.studentName)+adminInput('recovery','englishName','영문명',r.englishName)+adminInput('recovery','className','학반',r.className)+adminInput('recovery','studentKey','studentKey',r.studentKey,{full:true})+adminInput('recovery','level','구분',r.level,{type:'select',options:[['ms','중등'],['hs','고등']]})+adminInput('recovery','year','학년도',r.year,{mode:'number'})+'</div></div><div class="admin-form-section"><div class="admin-form-title">회복교육 처리</div><div class="admin-form-grid">'+adminInput('recovery','recoveryPoints','회복점수',r.recoveryPoints??r.points,{mode:'number'})+adminInput('recovery','completedAt','완료일',r.completedAt,{type:'date'})+adminInput('recovery','staffName','담당자',r.staffName)+adminInput('recovery','staffEmail','담당자 이메일',r.staffEmail)+adminInput('recovery','currentTotalBefore','처리 전 점수',r.currentTotalBefore,{mode:'number'})+adminInput('recovery','currentTotalAfter','처리 후 점수',r.currentTotalAfter,{mode:'number'})+'</div></div><div class="admin-form-section"><div class="admin-form-title">사유 스냅샷</div><div class="admin-form-grid one">'+adminInput('recovery','reasonsSnapshot','사유 내역',r.reasonsSnapshot,{type:'textarea',full:true})+'</div></div><div class="admin-editor-actions"><button class="btn '+(r._deleted?'btn-secondary':'btn-danger')+' small-btn" onclick="toggleSelectedAdminDeleted(\'recovery\')">'+(r._deleted?'삭제 취소':'삭제 표시')+'</button><div class="right"><button class="btn btn-primary" onclick="saveRecovery()">회복교육 기록 저장</button></div></div></div>';}
+    function markRecoveryDeleted(key){selectedRecoveryKey=key;toggleSelectedAdminDeleted('recovery');}
+    async function saveRecovery(){try{await saveRowsToFirebase({rows:recoveryRows,path:'recoveryEntries',origMap:_recoveryOrig,reason:'detention-admin-recovery',labelKo:'회복교육 기록',labelEn:'Recovery'});}catch(err){console.error(err);toast('회복교육 기록 DB 저장 실패: '+(err&&err.message?err.message:err),'err');}}
 
     function checkCommitteeDirty(){ _setBtnState('btn-save-committee', committeeRows.some(r => _rowChanged(r, _committeeOrig))); checkStudentDataDirty(); }
 
