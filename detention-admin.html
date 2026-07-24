@@ -417,15 +417,17 @@
     .committee-list-wrap{max-height:68vh;overflow:auto}
     #committee-summary-table{width:100%;min-width:0;table-layout:fixed}
     #committee-summary-table th,#committee-summary-table td{padding:5px 7px;height:auto;line-height:1.25}
-    #committee-summary-table th:nth-child(1){width:4%}
-    #committee-summary-table th:nth-child(2){width:9%}
-    #committee-summary-table th:nth-child(3){width:24%}
-    #committee-summary-table th:nth-child(4){width:7%}
-    #committee-summary-table th:nth-child(5){width:9%}
-    #committee-summary-table th:nth-child(6){width:12%}
-    #committee-summary-table th:nth-child(7){width:12%}
-    #committee-summary-table th:nth-child(8){width:8%}
-    #committee-summary-table th:nth-child(9){width:15%}
+    #committee-summary-table th:nth-child(1){width:3%}
+    #committee-summary-table th:nth-child(2){width:7%}
+    #committee-summary-table th:nth-child(3){width:20%}
+    #committee-summary-table th:nth-child(4){width:5%}
+    #committee-summary-table th:nth-child(5){width:7%}
+    #committee-summary-table th:nth-child(6){width:7%}
+    #committee-summary-table th:nth-child(7){width:7%}
+    #committee-summary-table th:nth-child(8){width:9%}
+    #committee-summary-table th:nth-child(9){width:9%}
+    #committee-summary-table th:nth-child(10){width:5%}
+    #committee-summary-table th:nth-child(11){width:21%}
     #committee-summary-table td{white-space:normal;overflow:hidden;text-overflow:ellipsis}
     .committee-summary-row{cursor:pointer}
     .committee-summary-row.selected{background:#dbeafe!important;box-shadow:inset 4px 0 #1a73e8}
@@ -457,6 +459,10 @@
     .committee-editor-alert{padding:8px 10px;margin-bottom:10px;border-radius:5px;font-size:11px;line-height:1.55}
     .committee-editor-alert.warn{background:#fff8e1;border:1px solid #f2d184;color:#754700}
     .committee-editor-alert.ok{background:#ecfdf5;border:1px solid #a7e6c3;color:#065f46}
+    .committee-editor-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:10px}
+    .committee-editor-metric{background:#f4f7fc;border:1px solid #dbe4f3;border-radius:6px;padding:8px 9px;text-align:center}
+    .committee-editor-metric .value{font-size:17px;font-weight:900;color:#173a7a;line-height:1.1}
+    .committee-editor-metric .label{font-size:9px;color:#64748b;margin-top:4px;font-weight:700}
     .committee-edit-section{border:1px solid #dbe2ef;border-radius:6px;margin-bottom:10px;overflow:hidden}
     .committee-edit-section-title{padding:6px 9px;background:#f3f6fb;color:#1e3a6d;font-size:11px;font-weight:800;border-bottom:1px solid #dbe2ef}
     .committee-edit-section-body{padding:9px}
@@ -714,11 +720,12 @@
 
         <div class="committee-workspace">
           <div class="committee-list-pane">
-            <div class="committee-list-help">행을 클릭하면 오른쪽에서 전체 필드를 수정할 수 있습니다. 학생명 아래에는 학생 Key가 표시됩니다.</div>
+            <div class="committee-list-help">행을 클릭하면 오른쪽에서 전체 필드를 수정할 수 있습니다. 전체누적은 확정 디텐션의 전체 합계이며, 위원회 횟수는 학생별 기록의 시간순 회차입니다.</div>
             <div class="tbl-wrap committee-list-wrap">
               <table id="committee-summary-table">
                 <thead><tr>
-                  <th>#</th><th>상태</th><th>학생 / 학생 Key</th><th>학반</th><th>회부점수</th>
+                  <th>#</th><th>상태</th><th>학생 / 학생 Key</th><th>학반</th>
+                  <th title="확정 디텐션 전체 합계 · 회복교육 차감 전">전체누적</th><th>회부점수</th><th>위원회 횟수</th>
                   <th>회부일</th><th>완료일</th><th>연결</th><th>데이터 점검</th>
                 </tr></thead>
                 <tbody id="committee-tbody"></tbody>
@@ -1938,6 +1945,73 @@
       };
     }
 
+    function normalizeAdminIdentityToken(value){
+      return String(value||'').trim().toLowerCase().replace(/[\s_]+/g,'');
+    }
+
+    function committeeStudentIdentity(row){
+      row=row||{};
+      const normalizedKey=normalizeAdminIdentityToken(row.studentKey);
+      if(normalizedKey) return 'key:'+normalizedKey;
+      const profile=getCommitteeDisplayProfile(row);
+      const classToken=normalizeAdminIdentityToken(profile.className);
+      const nameToken=normalizeAdminIdentityToken(profile.name==='학생명 없음'?'':profile.name);
+      if(classToken||nameToken) return 'profile:'+classToken+'|'+nameToken;
+      return 'record:'+String(row.key||'');
+    }
+
+    function entryStudentIdentity(row){
+      row=row||{};
+      const normalizedKey=normalizeAdminIdentityToken(row.studentKey);
+      if(normalizedKey) return 'key:'+normalizedKey;
+      const classToken=normalizeAdminIdentityToken(row.className);
+      const nameToken=normalizeAdminIdentityToken(row.studentName||row.name);
+      if(classToken||nameToken) return 'profile:'+classToken+'|'+nameToken;
+      return '';
+    }
+
+    function committeeEffectiveSortDate(row){
+      const created=committeeDateOnly((row||{}).createdAt);
+      const completed=committeeDateOnly((row||{}).completedAt);
+      if(created&&completed) return created<=completed?created:completed;
+      return created||completed||'9999-12-31';
+    }
+
+    function buildCommitteeStudentStats(){
+      const overallPointsByIdentity={};
+      (entryRows||[]).forEach(function(entry){
+        if(!entry||entry._deleted||String(entry.status||'')!=='확정') return;
+        const identity=entryStudentIdentity(entry);
+        if(!identity) return;
+        const raw=entry.totalPoints!==undefined&&entry.totalPoints!==null&&entry.totalPoints!==''?entry.totalPoints:entry.manualPoints;
+        const points=Number(raw||0);
+        overallPointsByIdentity[identity]=(overallPointsByIdentity[identity]||0)+(Number.isFinite(points)?points:0);
+      });
+
+      const grouped={};
+      (committeeRows||[]).forEach(function(row){
+        if(!row||row._deleted) return;
+        const identity=committeeStudentIdentity(row);
+        if(!grouped[identity]) grouped[identity]=[];
+        grouped[identity].push(row);
+      });
+      const rowStats={};
+      Object.keys(grouped).forEach(function(identity){
+        const list=grouped[identity].slice().sort(function(a,b){
+          return committeeEffectiveSortDate(a).localeCompare(committeeEffectiveSortDate(b)) || String(a.completedAt||'').localeCompare(String(b.completedAt||'')) || String(a.key||'').localeCompare(String(b.key||''));
+        });
+        list.forEach(function(row,index){
+          rowStats[String(row.key||'')]={
+            identity:identity,
+            overallPoints:Number(overallPointsByIdentity[identity]||0),
+            round:index+1,
+            total:list.length
+          };
+        });
+      });
+      return {rowStats:rowStats,overallPointsByIdentity:overallPointsByIdentity};
+    }
+
     function fillCommitteeStudentFromKey(key){
       const row=committeeRows.find(function(r){return String(r.key)===String(key);});
       if(!row) return;
@@ -2042,6 +2116,9 @@
       const issues=committeeIssueSummary(row);
       const profile=getCommitteeDisplayProfile(row);
       const status=row._deleted?'삭제 표시':(row.completedAt?'완료':'진행 중');
+      const statsContext=buildCommitteeStudentStats();
+      const rowStats=statsContext.rowStats[String(row.key||'')]||{overallPoints:0,round:1,total:1};
+      const linkedCount=committeeLinkedKeys(row).length;
       const issueHtml=issues.issues.length
         ? '<div class="committee-editor-alert warn"><b>데이터 점검 필요</b><br>'+issues.issues.map(function(i){return '• '+esc(i.text);}).join('<br>')+'</div>'
         : '<div class="committee-editor-alert ok">현재 자동 점검에서 발견된 문제가 없습니다.</div>';
@@ -2058,6 +2135,11 @@
       pane.innerHTML=
         '<div class="committee-editor-head"><div><div class="committee-editor-title">'+esc(profile.name)+' · '+esc(profile.className||'학반 없음')+' <span style="font-size:11px;opacity:.85;">['+status+']</span></div><div class="committee-editor-sub">'+esc(row.studentKey||'학생 Key 없음')+((profile.inferredName||profile.inferredClass)?' · 학생 Key 기준 임시 표시':'')+'</div></div><button class="btn btn-secondary small-btn" onclick="copyCommitteeKey(\''+esc(key)+'\')">Key 복사</button></div>'+
         '<div class="committee-editor-body">'+issueHtml+
+          '<div class="committee-editor-metrics">'+
+            '<div class="committee-editor-metric"><div class="value">'+esc(String(rowStats.overallPoints))+'점</div><div class="label">전체 누적점수</div></div>'+
+            '<div class="committee-editor-metric"><div class="value">'+esc(String(rowStats.round))+'회</div><div class="label">현재 기록 회차 · 총 '+esc(String(rowStats.total))+'건</div></div>'+
+            '<div class="committee-editor-metric"><div class="value">'+esc(String(linkedCount))+'건</div><div class="label">연결된 디텐션</div></div>'+
+          '</div>'+
           '<div class="committee-edit-section"><div class="committee-edit-section-title" style="display:flex;justify-content:space-between;align-items:center;"><span>학생 및 연결 정보</span>'+((profile.inferredName||profile.inferredClass)?'<button class="btn btn-secondary small-btn" onclick="fillCommitteeStudentFromKey(\''+esc(key)+'\')">학생정보 채우기</button>':'')+'</div><div class="committee-edit-section-body"><div class="committee-edit-grid">'+
             input('학생 Key','studentKey','text','text',true,false)+
             input('학생명','studentName','text','text',false,false)+input('학반','className','text','text',false,false)+
@@ -2095,6 +2177,7 @@
       const tbody=document.getElementById('committee-tbody');
       if(!tbody)return;
       committeeIssueContext=buildCommitteeIssueContext();
+      const committeeStatsContext=buildCommitteeStudentStats();
       const q=String((document.getElementById('committee-search')||{}).value||'').trim().toLowerCase();
       const statusFilter=String((document.getElementById('committee-status-filter')||{}).value||'all');
       const issueFilter=String((document.getElementById('committee-issue-filter')||{}).value||'all');
@@ -2121,7 +2204,7 @@
 
       if(!filtered.some(function(r){return String(r.key)===String(selectedCommitteeKey);})) selectedCommitteeKey=filtered.length?String(filtered[0].key):'';
       if(!filtered.length){
-        tbody.innerHTML='<tr><td colspan="9" class="empty">검색 조건에 맞는 위원회 기록이 없습니다.</td></tr>';
+        tbody.innerHTML='<tr><td colspan="11" class="empty">검색 조건에 맞는 위원회 기록이 없습니다.</td></tr>';
         renderCommitteeEditor(null);
         const sl=document.getElementById('committee-selection-label');if(sl)sl.textContent='';
         return;
@@ -2134,10 +2217,16 @@
         const statusText=row._deleted?'삭제 표시':(row.completedAt?'완료':'진행 중');
         const selected=String(row.key)===String(selectedCommitteeKey);
         const links=committeeLinkedKeys(row);
+        const stats=committeeStatsContext.rowStats[String(row.key||'')]||{overallPoints:0,round:1,total:1};
+        const roundText=String(stats.round)+'회';
+        const roundSub=stats.total>1?'<div style="font-size:9px;color:#64748b;">총 '+esc(String(stats.total))+'건</div>':'';
         return '<tr class="committee-summary-row '+(selected?'selected ':'')+(row._deleted?'pending-delete':'')+'" data-committee-key="'+esc(row.key)+'">'+
           '<td class="row-num">'+(rowNum+1)+'</td><td><span class="committee-status-badge '+status+'">'+statusText+'</span></td>'+
           '<td><div class="committee-student-main">'+esc(profile.name)+(profile.inferredName?' <span style="font-size:9px;color:#b45309;">(Key 기준)</span>':'')+'</div><div class="committee-student-key">'+esc(row.studentKey||'학생 Key 없음')+'</div></td>'+
-          '<td style="text-align:center;font-weight:700;">'+esc(profile.className||'-')+(profile.inferredClass?'<div style="font-size:9px;color:#b45309;">추정</div>':'')+'</td><td style="text-align:center;font-weight:700;">'+esc(String(row.currentPointsAtReferral??'-'))+(row.currentPointsAtReferral===null||row.currentPointsAtReferral===undefined||row.currentPointsAtReferral===''?'':'점')+'</td>'+
+          '<td style="text-align:center;font-weight:700;">'+esc(profile.className||'-')+(profile.inferredClass?'<div style="font-size:9px;color:#b45309;">추정</div>':'')+'</td>'+
+          '<td style="text-align:center;font-weight:800;color:#173a7a;" title="확정 디텐션 전체 합계 · 회복교육 차감 전">'+esc(String(stats.overallPoints))+'점</td>'+
+          '<td style="text-align:center;font-weight:700;">'+esc(String(row.currentPointsAtReferral??'-'))+(row.currentPointsAtReferral===null||row.currentPointsAtReferral===undefined||row.currentPointsAtReferral===''?'':'점')+'</td>'+
+          '<td style="text-align:center;font-weight:800;">'+roundText+roundSub+'</td>'+
           '<td>'+esc(committeeDateOnly(row.createdAt)||'-')+'</td><td>'+esc(committeeDateOnly(row.completedAt)||'-')+'</td><td style="text-align:center;">'+links.length+'건</td>'+
           '<td><span class="committee-issue-badge '+issue.level+'" title="'+esc(issue.issues.map(function(i){return i.text;}).join(' / '))+'">'+esc(issue.text)+'</span></td></tr>';
       }).join('');
