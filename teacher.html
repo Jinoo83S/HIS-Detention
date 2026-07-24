@@ -2885,7 +2885,8 @@
       return JSON.stringify(String(value || ''))
         .replace(/</g,'\\u003c')
         .replace(/>/g,'\\u003e')
-        .replace(/&/g,'\\u0026');
+        .replace(/&/g,'\\u0026')
+        .replace(/\"/g,'&quot;');
     }
 
     function committeeEditorToken(studentKey, committeeKey){
@@ -3776,20 +3777,21 @@
         return '<input type="text" id="committee-note-'+token+'" class="edit-input committee-note-input" placeholder="회부 및 처리 메모를 입력하세요" value="'+esc(note)+'" title="'+esc(note)+'" oninput="'+oninput+'" '+(onblur?'onblur="'+onblur+'"':'')+'>';
       }
 
-      function activeRow(c){
+      function activeRow(c,index){
         const record=c.pending||{};
+        const stripe=index%2?'row-even':'row-odd';
         const pendingKey=String(record.committeeKey||'');
         const token=committeeEditorToken(c.studentKey,pendingKey||'new');
         const did='dca_'+token;
-        return '<tr class="summary-row" onclick="toggleDetailDiv('+committeeJsArg(did)+')" style="cursor:pointer;">'+
+        return '<tr class="summary-row committee-summary-row '+stripe+'" data-detail-id="'+esc(did)+'" style="cursor:pointer;">'+
           '<td>'+esc(c.name)+'</td><td class="tc">'+esc(c.className)+'</td>'+
           '<td class="tc" style="font-weight:800;'+(Number(c.currentPoints)>=COMMITTEE_THRESHOLD?'color:var(--rd);':'')+'">'+esc(String(c.currentPoints))+'점'+(c.pending?'<div class="small-muted">회부 진행중</div>':'<div class="small-muted">12점 이상</div>')+'</td>'+
           '<td class="tc">'+cntLabelForActive(c.studentKey,record)+'</td><td class="tc">'+fmt(c.referredAt)+'</td>'+
-          '<td class="wrap-cell" onclick="event.stopPropagation()">'+noteEditorHtml(token,record,pendingKey)+'</td>'+
-          '<td class="tc" onclick="event.stopPropagation()">'+(c.pending
+          '<td class="wrap-cell">'+noteEditorHtml(token,record,pendingKey)+'</td>'+
+          '<td class="tc">'+(c.pending
             ? '<button class="btn btn-primary committee-action-btn" onclick="completeCommittee('+committeeJsArg(c.studentKey)+','+committeeJsArg(pendingKey)+','+committeeJsArg(token)+')">완료</button><div class="committee-detail-hint" style="margin-top:4px;">상세</div>'
             : '<button class="btn btn-secondary committee-action-btn" onclick="referCommitteeCase('+committeeJsArg(c.studentKey)+','+committeeJsArg(token)+')">회부확정</button><div class="committee-detail-hint" style="margin-top:4px;">상세</div>')+'</td></tr>'+
-          '<tr class="detail-row" id="'+did+'"><td colspan="7"><div class="detail-box">'+
+          '<tr class="detail-row '+stripe+'" id="'+did+'"><td colspan="7"><div class="detail-box">'+
           '<div class="detail-section"><div class="detail-title">현재 위반 내역</div><div class="detail-content">'+esc(buildReasonTextWithPoints(c.studentKey))+'</div></div>'+
           '<div class="detail-section"><div class="detail-title">현재 회부 상태</div><div class="detail-content">'+(c.pending?'회부 확정 후 위원회 진행 중':'12점 이상으로 회부 가능')+'</div></div>'+
           '</div></td></tr>';
@@ -3797,7 +3799,8 @@
 
       const done=committeeArr.filter(c=>!!c.completedAt)
         .sort((a,b)=>String(b.completedAt||'').localeCompare(String(a.completedAt||'')));
-      function doneRow(record){
+      function doneRow(record,index){
+        const stripe=index%2?'row-even':'row-odd';
         const sk=String(record.studentKey||'');
         const profile=profileByKey[sk]||{};
         const name=sName(profile.name||record.studentName||sk,profile.englishName||record.englishName||'');
@@ -3806,21 +3809,33 @@
         const note=String(record.committeeNote||'').trim();
         const author=committeeNoteAuthorText(record);
         const completedBy=String(record.completedBy||'-')+(record.completedByEmail?' ('+record.completedByEmail+')':'');
-        return '<tr class="summary-row" onclick="toggleDetailDiv('+committeeJsArg(did)+')" style="cursor:pointer;">'+
+        return '<tr class="summary-row committee-summary-row '+stripe+'" data-detail-id="'+esc(did)+'" style="cursor:pointer;">'+
           '<td>'+esc(name)+'</td><td class="tc">'+esc(className)+'</td><td class="tc">'+cntLabelForDone(record)+'</td>'+
           '<td class="tc">'+fmt(committeeCreatedAt(record))+'</td><td class="tc" style="color:var(--gn);font-weight:700;">&#10003; '+fmt(record.completedAt)+'</td>'+
           '<td title="'+esc(note||'-')+'"><span class="committee-note-preview">'+esc((note||'-').replace(/\s+/g,' '))+'</span></td>'+
           '<td class="tc"><span class="committee-detail-hint">상세</span></td></tr>'+
-          '<tr class="detail-row" id="'+did+'"><td colspan="7"><div class="detail-box">'+
+          '<tr class="detail-row '+stripe+'" id="'+did+'"><td colspan="7"><div class="detail-box">'+
           '<div class="detail-section"><div class="detail-title">회부 당시 위반 내역</div><div class="detail-content">'+esc(getCommitteeReasonText(record))+'</div></div>'+
           '<div class="detail-section"><div class="detail-title">위원회 메모 | Committee Note</div><div class="detail-content">'+esc(note||'-')+'</div><div class="small-muted" style="margin-top:6px;">작성자: '+esc(author)+' / 수정일: '+fmt(record.committeeNoteUpdatedAt||'')+'</div><div class="small-muted" style="margin-top:4px;">완료 처리자: '+esc(completedBy)+'</div></div>'+
           (canManageCommittee()?'<div class="detail-section"><div class="detail-title">취소 | Cancel</div><button class="btn btn-secondary btn-xs" onclick="event.stopPropagation();cancelCommitteeCompletion('+committeeJsArg(record.committeeKey)+')">완료취소</button></div>':'')+
           '</div></td></tr>';
       }
 
+      function bindCommitteeDetailRows(tbody){
+        tbody.querySelectorAll('tr.committee-summary-row[data-detail-id]').forEach(row=>{
+          row.addEventListener('click',event=>{
+            if(event.target.closest('button,input,select,textarea,a,label')) return;
+            const detailId=String(row.dataset.detailId||'');
+            if(detailId) toggleDetailDiv(detailId);
+          });
+        });
+      }
+
       active.sort((a,b)=>String(b.referredAt||'').localeCompare(String(a.referredAt||''))||Number(b.currentPoints)-Number(a.currentPoints));
       activeTb.innerHTML=active.length?active.map(activeRow).join(''):'<tr><td colspan="7" class="empty">현재 미해소 점수 12점 이상 또는 회부 진행 중인 학생이 없습니다.</td></tr>';
       doneTb.innerHTML=done.length?done.map(doneRow).join(''):'<tr><td colspan="7" class="empty">완료된 내역이 없습니다.</td></tr>';
+      bindCommitteeDetailRows(activeTb);
+      bindCommitteeDetailRows(doneTb);
     }
 
     async function referCommitteeCase(studentKey, editorToken){
