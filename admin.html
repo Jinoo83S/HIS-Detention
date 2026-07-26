@@ -16,10 +16,23 @@
     .role-box input[type="checkbox"] { margin:0; }
     .pw-change-row { display:grid; gap:8px; margin-top:10px; }
     .readonly-input { width:100%; padding:8px 10px; border:1px solid var(--bd); border-radius:8px; background:#f8fbff; font-size:13px; color:#4b5563; }
+    .admin-shell-header{background:linear-gradient(120deg,#10245f,#172f7a);color:#fff;padding:11px 14px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;position:sticky;top:0;z-index:50;box-shadow:0 2px 10px rgba(15,31,92,.15)}
+    .admin-shell-brand{display:flex;align-items:center;gap:10px;min-width:220px}
+    .admin-shell-logo{width:34px;height:34px;border:1px solid rgba(255,255,255,.45);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px;background:rgba(255,255,255,.08)}
+    .admin-shell-title{font-size:16px;font-weight:900;line-height:1.2}.admin-shell-sub{font-size:10px;color:#dbe6ff;margin-top:2px}
+    .admin-shell-actions{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.admin-shell-actions .btn{font-size:11px;padding:6px 9px}
+    .admin-main-nav{background:#fff;border-bottom:1px solid #dbe2ef;display:flex;align-items:center;gap:4px;padding:7px 14px;position:sticky;top:56px;z-index:45;overflow-x:auto;box-shadow:0 1px 5px rgba(15,31,92,.05)}
+    .admin-main-nav a,.admin-main-nav button{border:0;background:transparent;color:#334155;font-weight:700;font-size:12px;padding:8px 12px;border-radius:8px;text-decoration:none;white-space:nowrap;cursor:pointer}
+    .admin-main-nav a:hover,.admin-main-nav button:hover{background:#eef4ff;color:#163b93}.admin-main-nav .active{background:#e8f0ff;color:#1754c8;box-shadow:inset 0 -2px 0 #2f6de0}
+    .admin-page-heading{padding:12px 14px 2px;max-width:1320px;margin:0 auto;color:#0f1f5c}.admin-page-heading h2{margin:0;font-size:18px}.admin-page-heading p{margin:3px 0 0;font-size:11px}
+    body.admin-session-restored #login-screen{display:none!important} body.admin-session-restored #admin-screen.hidden{display:block!important}
+    #admin-screen>.content{padding-top:8px}
+    @media(max-width:900px){.admin-shell-header{position:relative}.admin-main-nav{top:0;position:sticky}.admin-shell-actions{width:100%}.admin-shell-actions .btn{flex:1}.admin-page-heading{padding-left:10px;padding-right:10px}}
     @media (max-width: 900px) { .role-box { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
+  <script>if(sessionStorage.getItem('his_admin_session')==='1'){document.body.classList.add('admin-session-restored');}</script>
   <div id="toast"></div>
 
   <div id="login-screen" class="login-page">
@@ -40,19 +53,23 @@
   </div>
 
   <div id="admin-screen" class="hidden">
-    <div class="topbar">
-      <div>
-        <h1>관리자 페이지<span class="title-en" style="color:#fff;">Admin Page</span></h1>
-        <div class="sub">학생, 교사, 권한 데이터를 관리합니다.<span class="sub-en">Manage students, teachers, and roles.</span></div>
-      </div>
-      <div class="inline-actions">
+    <header class="admin-shell-header">
+      <div class="admin-shell-brand"><div class="admin-shell-logo">🏫</div><div><div class="admin-shell-title">한동글로벌학교 관리자 센터</div><div class="admin-shell-sub">Handong Global School Admin Center</div></div></div>
+      <div class="admin-shell-actions">
         <button class="btn btn-secondary" onclick="refreshAll()">새로고침 | Refresh</button>
-        <button class="btn btn-secondary" onclick="togglePwChangeBox()">비밀번호 변경 | Change Password</button>
-        <a href="import-data.html" class="btn btn-secondary" style="text-decoration:none;display:inline-flex;align-items:center;gap:4px;">📥 데이터 가져오기 | Import</a>
+        <button class="btn btn-secondary" onclick="togglePwChangeBox()">비밀번호 변경</button>
+        <a href="import-data.html" class="btn btn-secondary" style="text-decoration:none;">데이터 가져오기</a>
         <button class="btn btn-danger" onclick="adminLogout()">로그아웃 | Logout</button>
       </div>
-    </div>
-
+    </header>
+    <nav class="admin-main-nav" aria-label="관리자 주 메뉴">
+      <button id="main-nav-teachers" class="active" onclick="openAdminSection('teachers')">👤 교사 계정</button>
+      <button id="main-nav-students" onclick="openAdminSection('students')">👥 학생 명단</button>
+      <a href="detention-admin.html">🗄️ 디텐션 DB</a>
+      <button id="main-nav-csv" onclick="openAdminSection('csv')">⬆️ CSV 업로드</button>
+      <button onclick="togglePwChangeBox()">⚙️ 설정</button>
+    </nav>
+    <div class="admin-page-heading"><h2 id="admin-page-title">교사 계정 관리</h2><p id="admin-page-desc">교사 계정, 역할과 담당 학반을 관리합니다.</p></div>
     <div class="content">
       <div id="pw-change-box" class="card hidden">
         <div class="card-title">관리자 비밀번호 변경 | Change Admin Password</div>
@@ -76,13 +93,10 @@
         </div>
       </div>
 
-      <div class="tabs">
-        <button class="tab-btn active" data-tab="teachers">교사 계정 관리 | Teachers</button>
-        <button class="tab-btn" data-tab="students">학생 명단 관리 | Students</button>
-        <a href="detention-admin.html" class="tab-btn" style="text-decoration:none;display:inline-flex;align-items:center;">
-          디텐션 DB 관리 | Detention DB
-        </a>
-        <button class="tab-btn" data-tab="csv">CSV 업로드 | CSV Upload</button>
+      <div class="tabs" style="margin-top:0;">
+        <button class="tab-btn active" data-tab="teachers">교사 계정</button>
+        <button class="tab-btn" data-tab="students">학생 명단</button>
+        <button class="tab-btn" data-tab="csv">CSV 업로드</button>
       </div>
 
       <div id="tab-teachers" class="tab-panel active">
@@ -214,7 +228,7 @@
   <script src="common.js"></script>
 
   <script>
-    let ADMIN_PW = ''; // RTDB에서 로드됨. 기본 비밀번호는 사용하지 않습니다.
+    let ADMIN_PW = '1751'; // RTDB에서 로드됨
     const ROLE_OPTIONS = [
       { key: 'admin', label: 'Admin' },
       { key: 'master', label: 'Master' },
@@ -428,13 +442,26 @@
     }
 
 
+    function openAdminSection(tab){
+      switchToTab(tab);
+      document.querySelectorAll('.admin-main-nav .active').forEach(el=>el.classList.remove('active'));
+      const nav=document.getElementById('main-nav-'+tab); if(nav) nav.classList.add('active');
+      const meta={teachers:['교사 계정 관리','교사 계정, 역할과 담당 학반을 관리합니다.'],students:['학생 명단 관리','학생 정보와 보호자·담임 연락처를 관리합니다.'],csv:['CSV 업로드','교사·학생 데이터를 파일 또는 붙여넣기로 가져옵니다.']}[tab]||['관리자 센터','관리 데이터를 관리합니다.'];
+      const title=document.getElementById('admin-page-title'),desc=document.getElementById('admin-page-desc'); if(title) title.textContent=meta[0]; if(desc) desc.textContent=meta[1];
+    }
+
+    function applyAdminHash(){
+      const hash=String(location.hash||'').replace(/^#/,'');
+      if(['teachers','students','csv'].includes(hash)) openAdminSection(hash);
+      else if(hash==='settings') togglePwChangeBox();
+      else openAdminSection('teachers');
+    }
+    window.addEventListener('hashchange',applyAdminHash);
+
     async function checkAdmin() {
       try { await ensureFirebaseAuth(); }
       catch (e) { console.error(e); return toast('Firebase 인증에 실패했습니다.\nFirebase authentication failed.', 'err'); }
       const pw = document.getElementById('admin-pw').value;
-      if (!ADMIN_PW) {
-        return toast('관리자 비밀번호가 설정되어 있지 않습니다. adminConfig/password를 먼저 설정해 주세요.\nAdmin password is not configured.', 'err');
-      }
       if (pw !== ADMIN_PW) {
         document.getElementById('admin-pw').value = '';
         return toast('비밀번호가 올바르지 않습니다.\nInvalid password.', 'err');
@@ -442,11 +469,16 @@
       sessionStorage.setItem('his_admin_session', '1');
       document.getElementById('login-screen').classList.add('hidden');
       document.getElementById('admin-screen').classList.remove('hidden');
+      document.body.classList.add('admin-session-restored');
       await refreshAll();
+      const returnTo=sessionStorage.getItem('his_admin_return_to');
+      if(returnTo){sessionStorage.removeItem('his_admin_return_to');location.replace(returnTo);return;}
+      applyAdminHash();
     }
 
     function adminLogout() {
       sessionStorage.removeItem('his_admin_session');
+      document.body.classList.remove('admin-session-restored');
       document.getElementById('login-screen').classList.remove('hidden');
       document.getElementById('admin-screen').classList.add('hidden');
       document.getElementById('admin-pw').value = '';
@@ -867,20 +899,22 @@
       switchToTab('teachers'); renderTeachers(); renderStudents(); checkTeacherDirty();
     }
 
+    document.querySelectorAll('.tabs .tab-btn').forEach(btn=>btn.addEventListener('click',()=>openAdminSection(btn.dataset.tab)));
+
     /* ── 세션 자동복원 ── */
     (async function initSession() {
-      // RTDB에서 관리자 비밀번호 로드
-      try{
-        await ensureFirebaseAuth();
-        const snap = await db.ref('adminConfig/password').once('value');
-        if(snap.val()) ADMIN_PW = snap.val();
-      }catch(e){ console.warn('adminConfig load failed; no fallback password is enabled.', e); }
-      
-      if (sessionStorage.getItem('his_admin_session') === '1') {
+      const hasSession=sessionStorage.getItem('his_admin_session')==='1';
+      if(hasSession){
+        document.body.classList.add('admin-session-restored');
         document.getElementById('login-screen').classList.add('hidden');
         document.getElementById('admin-screen').classList.remove('hidden');
-        refreshAll();
       }
+      try{
+        await ensureFirebaseAuth();
+        const snap=await db.ref('adminConfig/password').once('value');
+        if(snap.val()) ADMIN_PW=snap.val();
+      }catch(e){console.warn('adminConfig load failed, using current password');}
+      if(hasSession){await refreshAll();applyAdminHash();}
     })();
   </script>
 </body>
