@@ -565,20 +565,47 @@
     }
 
 
-    .admin-center-topbar{background:linear-gradient(110deg,#10245f,#173a86);color:#fff;padding:12px 18px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;position:sticky;top:0;z-index:30;box-shadow:0 2px 10px rgba(15,31,92,.16)}
-    .admin-center-brand{display:flex;align-items:center;gap:10px;min-width:240px}.admin-center-logo{width:34px;height:34px;border:1px solid rgba(255,255,255,.45);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px;background:rgba(255,255,255,.08)}.admin-center-brand h1{color:#fff;font-family:'Noto Sans KR',sans-serif;font-size:17px;margin:0;font-weight:900}.admin-center-brand .sub{font-size:10px;color:#dce6ff;margin-top:2px}.admin-center-actions{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.admin-center-actions .btn{font-size:11px;padding:6px 9px}
-    .admin-primary-nav{display:flex;gap:2px;align-items:center;background:#fff;border-bottom:1px solid #dbe2ef;padding:0 18px;position:sticky;top:58px;z-index:29;box-shadow:0 1px 5px rgba(15,31,92,.05);overflow-x:auto}.admin-primary-link{display:inline-flex;align-items:center;gap:6px;padding:11px 13px;color:#334155;text-decoration:none;font-size:12px;font-weight:700;border-bottom:3px solid transparent;white-space:nowrap}.admin-primary-link:hover{background:#f5f8ff;color:#173a86}.admin-primary-link.active{color:#164bb7;border-bottom-color:#2563eb;background:#f7faff}.admin-breadcrumb{font-size:11px;color:#64748b;margin:2px 0 10px}.admin-breadcrumb b{color:#173a7a}
-    @media(max-width:900px){.admin-primary-nav{top:82px}}
+    .admin-center-header{background:linear-gradient(120deg,#0f1f5c,#1b347e);color:#fff;box-shadow:0 2px 12px rgba(15,31,92,.18)}
+    .admin-center-top{min-height:66px;padding:11px 22px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+    .admin-center-brand{min-width:0}.admin-center-brand h1{margin:0;color:#fff;font-family:'Noto Sans KR',sans-serif;font-size:19px;font-weight:900;letter-spacing:-.02em}.admin-center-brand .sub{margin-top:3px;color:#dce6ff;font-size:11px}
+    .admin-center-actions{display:flex;align-items:center;justify-content:flex-end;gap:7px;flex-wrap:wrap}
+    .admin-center-nav{display:flex;align-items:center;gap:3px;padding:0 18px;background:#fff;border-bottom:1px solid #d8dded;overflow-x:auto;box-shadow:0 2px 6px rgba(15,31,92,.04)}
+    .admin-center-nav .nav-item{appearance:none;border:0;border-bottom:3px solid transparent;background:transparent;color:#506080;padding:11px 13px 9px;font-size:12px;font-weight:800;white-space:nowrap;text-decoration:none;cursor:pointer}.admin-center-nav .nav-item:hover{color:#0f1f5c;background:#f5f8ff}.admin-center-nav .nav-item.active{color:#174ea6;border-bottom-color:#2563eb;background:#f7faff}
+    .admin-context-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:9px}.admin-context-head h2{margin:0;color:#0f1f5c;font-size:18px}.admin-context-head p{margin:3px 0 0;font-size:11px;color:#64748b}.admin-context-badge{display:inline-flex;padding:4px 8px;border-radius:999px;background:#e8efff;color:#1f4a96;font-size:10px;font-weight:800}
+    @media(max-width:900px){.admin-center-top{align-items:flex-start;padding:10px 12px}.admin-center-actions{max-width:60%}.admin-center-nav{padding:0 7px}}
+    @media(max-width:560px){.admin-center-top{display:block}.admin-center-actions{max-width:none;margin-top:9px;justify-content:flex-start}}
   </style>
 </head>
 <body>
   <div id="toast"></div>
 
-  <header class="admin-center-topbar"><div class="admin-center-brand"><div class="admin-center-logo">🏫</div><div><h1>한동글로벌학교 관리자 센터</h1><div class="sub">통합 관리자 홈 · 계정 · 학생 · 디텐션 DB</div></div></div><div class="admin-center-actions"><button class="btn btn-secondary" onclick="loadAllData()">새로고침 | Refresh</button><button class="btn btn-secondary" onclick="manualRecalculateCycleStates()">상태 재계산</button><button class="btn btn-secondary" onclick="exportAdminJson()">JSON 내보내기</button><button class="btn btn-danger" onclick="confirmResetDB()">DB 초기화</button><button class="btn btn-danger" onclick="logoutAdmin()">로그아웃</button></div></header>
-  <nav class="admin-primary-nav" aria-label="관리자 주 메뉴"><a class="admin-primary-link" href="admin.html#home">⌂ 관리자 홈</a><a class="admin-primary-link" href="admin.html#teachers">♙ 교사 계정</a><a class="admin-primary-link" href="admin.html#students">♧ 학생 명단</a><a class="admin-primary-link active" href="detention-admin.html">▣ 디텐션 DB</a><a class="admin-primary-link" href="admin.html#csv">⇧ CSV 업로드</a><a class="admin-primary-link" href="admin.html#settings">⚙ 설정</a></nav>
+  <header class="admin-center-header">
+    <div class="admin-center-top">
+      <div class="admin-center-brand">
+        <h1>한동글로벌학교 관리자 센터</h1>
+        <div class="sub">교사·학생·디텐션 운영 데이터를 한 곳에서 관리합니다.</div>
+      </div>
+      <div class="admin-center-actions">
+        <span class="admin-context-badge">디텐션 DB</span>
+        <button class="btn btn-secondary" onclick="loadAllData()">새로고침</button>
+        <button class="btn btn-secondary" onclick="manualRecalculateCycleStates()">상태 재계산</button>
+        <button class="btn btn-secondary" onclick="exportAdminJson()">JSON 내보내기</button>
+        <button class="btn btn-danger" onclick="confirmResetDB()">DB 초기화</button>
+        <button class="btn btn-danger" onclick="logoutAdmin()">로그아웃</button>
+      </div>
+    </div>
+    <nav class="admin-center-nav" aria-label="관리자 주 메뉴">
+      <a class="nav-item" href="admin.html#home">관리자 홈</a>
+      <a class="nav-item" href="admin.html#teachers">교사 계정</a>
+      <a class="nav-item" href="admin.html#students">학생 명단</a>
+      <a class="nav-item active" href="detention-admin.html#entries">디텐션 DB</a>
+      <a class="nav-item" href="admin.html#csv">CSV 업로드</a>
+      <a class="nav-item" href="admin.html#settings">설정</a>
+    </nav>
+  </header>
 
   <div class="content">
-    <div class="admin-breadcrumb">관리자 센터 &gt; <b>디텐션 DB</b> &gt; <span id="detention-current-location">디텐션 기록</span></div>
+    <div class="admin-context-head"><div><h2>디텐션 DB 관리</h2><p>디텐션 기록, 학생별 데이터, 알림, 회복교육, 위원회 기록을 조회하고 수정합니다.</p></div><span id="detention-admin-location" class="admin-context-badge">디텐션 기록</span></div>
     <div class="subtabs">
       
       <button class="subtab-btn active" data-panel="entries">디텐션 기록 | Entries</button>
@@ -1166,7 +1193,8 @@
     // 인증 확인: admin.html에서 로그인한 세션이 없으면 돌려보냄
     function checkAdminSession() {
       if (!sessionStorage.getItem('his_admin_session')) {
-        location.href = 'admin.html';
+        sessionStorage.setItem('his_admin_return', location.pathname.split('/').pop() + (location.hash || '#entries'));
+        location.replace('admin.html#home');
         return false;
       }
       return true;
@@ -1174,7 +1202,7 @@
 
     function logoutAdmin() {
       sessionStorage.removeItem('his_admin_session');
-      location.href = 'admin.html';
+      location.replace('admin.html#home');
     }
 
     function badgeHtml(status){
@@ -1183,12 +1211,12 @@
       return '<span class="status-chip pending">대기</span>';
     }
 
-    function openPanel(name,updateHash=true){
-      const allowed=['entries','student-data','notices','recovery','committee']; if(!allowed.includes(name)) name='entries';
-      document.querySelectorAll('.subtab-btn').forEach(btn => {btn.classList.toggle('active', btn.dataset.panel === name);});
-      document.querySelectorAll('.panel').forEach(panel => {panel.classList.toggle('active', panel.id === 'panel-' + name);});
-      const labels={entries:'디텐션 기록','student-data':'학생별 조회','notices':'알림 기록',recovery:'회복교육',committee:'위원회'};
-      const loc=document.getElementById('detention-current-location'); if(loc)loc.textContent=labels[name]||name;
+    function openPanel(name, updateHash=true){
+      const valid=['entries','student-data','notices','recovery','committee']; if(!valid.includes(name))name='entries';
+      document.querySelectorAll('.subtab-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.panel === name));
+      document.querySelectorAll('.panel').forEach(panel => panel.classList.toggle('active', panel.id === 'panel-' + name));
+      const labels={'entries':'디텐션 기록','student-data':'학생별 조회','notices':'알림 기록','recovery':'회복교육','committee':'위원회'};
+      const badge=document.getElementById('detention-admin-location');if(badge)badge.textContent=labels[name]||'디텐션 DB';
       if(updateHash&&location.hash!=='#'+name)history.replaceState(null,'','#'+name);
     }
 
@@ -2177,7 +2205,6 @@
           throw new Error('Firebase 인증 초기화 함수가 없습니다. common.js를 확인하세요.');
         }
         await window.ensureFirebaseAuth();
-        openPanel((location.hash||'#entries').slice(1),false);
         await loadAllData();
       }catch(err){
         console.error(err);
@@ -2186,6 +2213,10 @@
     }
 
     bootstrapDetentionAdmin();
-  </script>
+  
+    function syncDetentionPanelFromHash(){openPanel((location.hash||'#entries').slice(1),false);}
+    window.addEventListener('hashchange',syncDetentionPanelFromHash);
+    syncDetentionPanelFromHash();
+</script>
 </body>
 </html>
