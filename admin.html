@@ -581,9 +581,9 @@
     }
     async function loadDashboardOperationalCounts() {
       const specs = [
-        ['entries','dash-pending', obj => Object.values(obj||{}).filter(v => !v?._delete && String(v.status||'').trim() === '대기').length],
-        ['notices','dash-notices', obj => Object.values(obj||{}).filter(v => !v?._delete && !v.completedAt && !v.completedDate).length],
-        ['recoveryRecords','dash-recovery', obj => Object.values(obj||{}).filter(v => !v?._delete && !v.completedAt && !v.completedDate).length],
+        ['detentionEntries','dash-pending', obj => Object.values(obj||{}).filter(v => !v?._delete && String(v.status||'').trim() === '대기').length],
+        ['detentionNotices','dash-notices', obj => Object.values(obj||{}).filter(v => !v?._delete && !v.completedAt && !v.completedDate).length],
+        ['recoveryEntries','dash-recovery', obj => Object.values(obj||{}).filter(v => !v?._delete && !v.completedAt && !v.completedDate).length],
         ['committeeRecords','dash-committee', obj => Object.values(obj||{}).filter(v => !v?._delete && !v.completedAt && !v.completedDate && String(v.status||'').toLowerCase() !== 'completed').length]
       ];
       await Promise.all(specs.map(async ([path,id,count]) => {
