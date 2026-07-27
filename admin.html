@@ -85,6 +85,20 @@
     .admin-page-heading{margin:0 0 12px}.admin-page-heading h2{margin:0;color:#142b70;font-size:20px}.admin-page-heading p{margin:4px 0 0;color:var(--sb);font-size:12px}
     @media(max-width:900px){.admin-dashboard-grid,.admin-dashboard-actions{grid-template-columns:1fr 1fr}}
     @media(max-width:560px){.admin-dashboard-grid,.admin-dashboard-actions{grid-template-columns:1fr}}
+  
+    /* Unified administrator center shell */
+    .admin-center-topbar{min-height:76px;background:linear-gradient(110deg,#102863,#173b86);color:#fff;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;gap:16px;box-sizing:border-box;}
+    .admin-center-brand h1{margin:0;font-size:18px;line-height:1.25;color:#fff;}
+    .admin-center-brand .sub{margin-top:4px;font-size:10px;color:#dbe7ff;}
+    .admin-center-actions{display:flex;align-items:center;justify-content:flex-end;gap:7px;flex-wrap:wrap;}
+    .admin-center-actions .btn,.admin-center-actions a.btn{min-height:31px;box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;text-decoration:none;white-space:nowrap;}
+    .admin-center-user{display:inline-flex;align-items:center;justify-content:center;min-height:26px;padding:0 9px;border-radius:999px;background:#eef4ff;color:#173b86;font-size:10px;font-weight:900;}
+    .admin-center-nav{height:46px;background:#fff;border-bottom:1px solid #d8deea;box-shadow:0 2px 6px rgba(15,23,42,.08);display:flex;align-items:stretch;padding:0 20px;gap:2px;box-sizing:border-box;overflow-x:auto;}
+    .admin-center-nav a,.admin-center-nav button{appearance:none;border:0;background:transparent;color:#334155;padding:0 13px;text-decoration:none;font-family:inherit;font-size:12px;font-weight:800;display:inline-flex;align-items:center;cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap;}
+    .admin-center-nav a:hover,.admin-center-nav button:hover{background:#f4f7fc;color:#174ea6;}
+    .admin-center-nav .active{color:#174ea6;border-bottom-color:#1a73e8;background:#f7faff;}
+    @media(max-width:760px){.admin-center-topbar{align-items:flex-start;flex-direction:column}.admin-center-actions{justify-content:flex-start}.admin-center-nav{padding:0 8px}.admin-center-nav a,.admin-center-nav button{padding:0 10px}}
+
   </style>
 </head>
 <body>
@@ -125,6 +139,7 @@
       <button type="button" data-admin-tab="teachers" onclick="switchAdminView('teachers')">교사 계정</button>
       <button type="button" data-admin-tab="students" onclick="switchAdminView('students')">학생 명단</button>
       <a href="detention-admin.html#entries" data-admin-link="detention">디텐션 DB</a>
+      <a href="teacher.html" data-admin-link="teacher-main">디텐션 메인</a>
       <button type="button" data-admin-tab="csv" onclick="switchAdminView('csv')">CSV 업로드</button>
       <button type="button" data-admin-tab="settings" onclick="switchAdminView('settings')">설정</button>
     </nav>

@@ -564,19 +564,48 @@
       .committee-list-wrap{max-height:48vh}
     }
 
+  
+    /* Unified administrator center shell */
+    .admin-center-topbar{min-height:76px;background:linear-gradient(110deg,#102863,#173b86);color:#fff;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;gap:16px;box-sizing:border-box;}
+    .admin-center-brand h1{margin:0;font-size:18px;line-height:1.25;color:#fff;}
+    .admin-center-brand .sub{margin-top:4px;font-size:10px;color:#dbe7ff;}
+    .admin-center-actions{display:flex;align-items:center;justify-content:flex-end;gap:7px;flex-wrap:wrap;}
+    .admin-center-actions .btn,.admin-center-actions a.btn{min-height:31px;box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;text-decoration:none;white-space:nowrap;}
+    .admin-center-user{display:inline-flex;align-items:center;justify-content:center;min-height:26px;padding:0 9px;border-radius:999px;background:#eef4ff;color:#173b86;font-size:10px;font-weight:900;}
+    .admin-center-nav{height:46px;background:#fff;border-bottom:1px solid #d8deea;box-shadow:0 2px 6px rgba(15,23,42,.08);display:flex;align-items:stretch;padding:0 20px;gap:2px;box-sizing:border-box;overflow-x:auto;}
+    .admin-center-nav a,.admin-center-nav button{appearance:none;border:0;background:transparent;color:#334155;padding:0 13px;text-decoration:none;font-family:inherit;font-size:12px;font-weight:800;display:inline-flex;align-items:center;cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap;}
+    .admin-center-nav a:hover,.admin-center-nav button:hover{background:#f4f7fc;color:#174ea6;}
+    .admin-center-nav .active{color:#174ea6;border-bottom-color:#1a73e8;background:#f7faff;}
+    @media(max-width:760px){.admin-center-topbar{align-items:flex-start;flex-direction:column}.admin-center-actions{justify-content:flex-start}.admin-center-nav{padding:0 8px}.admin-center-nav a,.admin-center-nav button{padding:0 10px}}
+
   </style>
 </head>
 <body>
   <div id="toast"></div>
 
-  <div class="topbar">
-    <div>
-      <h1>
-        디텐션 DB 관리
-        <span class="title-en" style="color:#fff;">Detention DB Admin</span>
-      </h1>
-      <div class="sub-en">기준표, 디텐션 기록, 알림, 회복교육 데이터를 관리합니다.</div>
+  <header class="admin-center-topbar">
+    <div class="admin-center-brand">
+      <h1>한동글로벌학교 관리자 센터</h1>
+      <div class="sub">교사·학생·디텐션 운영 데이터를 한 곳에서 관리합니다.</div>
     </div>
+    <div class="admin-center-actions">
+      <span class="admin-center-user">관리자</span>
+      <button class="btn btn-secondary" onclick="loadAllData()">새로고침</button>
+      <button class="btn btn-secondary" onclick="manualRecalculateCycleStates()">상태 재계산</button>
+      <button class="btn btn-secondary" onclick="exportAdminJson()">JSON 내보내기</button>
+      <button class="btn btn-danger" onclick="confirmResetDB()" style="background:#dc2626;color:#fff;font-weight:700;">DB 초기화</button>
+      <button class="btn btn-danger" onclick="logoutAdmin()">로그아웃</button>
+    </div>
+  </header>
+  <nav class="admin-center-nav" aria-label="관리자 메뉴">
+    <a href="admin.html#home" data-admin-link="home">관리자 홈</a>
+    <a href="admin.html#teachers" data-admin-link="teachers">교사 계정</a>
+    <a href="admin.html#students" data-admin-link="students">학생 명단</a>
+    <a href="detention-admin.html#entries" data-admin-link="detention" class="active">디텐션 DB</a>
+    <a href="teacher.html" data-admin-link="teacher-main">디텐션 메인</a>
+    <a href="admin.html#csv" data-admin-link="csv">CSV 업로드</a>
+    <a href="admin.html#settings" data-admin-link="settings">설정</a>
+  </nav>
 
     <div class="inline-actions">
       <button class="btn btn-secondary" onclick="loadAllData()">새로고침 | Refresh</button>
