@@ -2246,8 +2246,10 @@
     /* ---------- 5-2) 탭별 렌더링 ---------- */
     function renderRecentEntries(){
       const box = document.getElementById('recent-entry-list');
+      const normalizeTeacherName = value => String(value || '').trim().toLowerCase();
+      const currentTeacherName = normalizeTeacherName(teacher && teacher.name);
       const list = Object.entries(entries || {}).map(([key, value]) => ({ key, ...(value || {}) }))
-        .filter(r => String(r.teacherEmail || '') === String(teacher.email || '') || hasFullWorkRole())
+        .filter(r => hasFullWorkRole() || normalizeTeacherName(r.teacherName) === currentTeacherName)
         .sort((a,b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')))
         .slice(0, 10);
 
