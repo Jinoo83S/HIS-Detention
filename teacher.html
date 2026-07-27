@@ -383,7 +383,7 @@
           <button class="tab-btn role-only" data-role="ms_notice,hs_notice" data-tab="notify">알림 | Notice</button>
           <button class="tab-btn role-only" data-role="ms_restore" data-tab="recovery-ms">중등 회복교육 | MS Recovery</button>
           <button class="tab-btn role-only" data-role="hs_restore" data-tab="recovery-hs">고등 회복교육 | HS Recovery</button>
-          <button class="tab-btn role-only" data-role="master" data-tab="discipline">위원회 | Committee</button>
+          <button class="tab-btn role-only" data-role="master,ms_notice,hs_notice,ms_restore,hs_restore" data-tab="discipline">위원회 | Committee</button>
         </div>
       </div>
       <div class="teacher-nav-group">
@@ -459,7 +459,10 @@
         </div>
 
         <div class="card">
-          <div class="card-title">최근 입력 내역 | Recent Entries</div>
+          <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+            <span>최근 입력 내역 | Recent Entries</span>
+            <span id="recent-entry-scope" class="small" style="font-weight:700;color:#5b657a;"></span>
+          </div>
           <div id="recent-entry-list" class="recent-entry-list"></div>
         </div>
       </div>
@@ -1103,6 +1106,9 @@
     function canConfirmDetention(){ return hasFullWorkRole(); }
     function canManageNoticeLevel(level){ return hasFullWorkRole() || hasRole(level === 'ms' ? 'ms_notice' : 'hs_notice'); }
     function canManageRecoveryLevel(level){ return hasFullWorkRole() || hasRole(level === 'ms' ? 'ms_restore' : 'hs_restore'); }
+    function canViewCommittee(){
+      return hasFullWorkRole() || ['ms_notice','hs_notice','ms_restore','hs_restore'].some(role => hasRole(role));
+    }
     function canManageCommittee(){ return hasFullWorkRole(); }
 
     // admin 전용 권한: 날짜/DB 보정성 수정, 자동 벌점 기준 외 입력
@@ -1792,7 +1798,7 @@
       notify: () => canManageNoticeLevel('ms') || canManageNoticeLevel('hs'),
       'recovery-ms': () => canManageRecoveryLevel('ms'),
       'recovery-hs': () => canManageRecoveryLevel('hs'),
-      discipline: () => canManageCommittee()
+      discipline: () => canViewCommittee()
     });
 
     function canAccessTeacherTab(tabName){
@@ -2246,6 +2252,12 @@
     /* ---------- 5-2) 탭별 렌더링 ---------- */
     function renderRecentEntries(){
       const box = document.getElementById('recent-entry-list');
+      const scope = document.getElementById('recent-entry-scope');
+      if(scope){
+        scope.textContent = hasFullWorkRole()
+          ? '전체 교사 최신 10건 | All teachers'
+          : `${String((teacher && teacher.name) || '').trim()} 입력 최신 10건 | My entries`;
+      }
       const normalizeTeacherName = value => String(value || '').trim().toLowerCase();
       const currentTeacherName = normalizeTeacherName(teacher && teacher.name);
       const list = Object.entries(entries || {}).map(([key, value]) => ({ key, ...(value || {}) }))
@@ -4136,11 +4148,9 @@
       const banner = document.getElementById('committee-pending-banner');
       if(!banner) return;
 
-      // Default 전용 계정은 위원회 처리 대상이나 대기 현황을 볼 필요가 없습니다.
-      // 데이터는 그대로 유지하되 경고 배너를 렌더링하지 않습니다.
-      const isDefaultOnly = teacherRoles.length === 0 ||
-        (teacherRoles.length === 1 && teacherRoles[0] === 'default');
-      if(isDefaultOnly){
+      // 위원회 경고는 Admin/Master 및 Notice/Restore 업무 권한 사용자에게 표시합니다.
+      // Default 전용 계정에는 렌더링하지 않습니다.
+      if(!canViewCommittee()){
         banner.style.display = 'none';
         banner.classList.remove('expanded');
         banner.innerHTML = '';
