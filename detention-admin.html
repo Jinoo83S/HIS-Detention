@@ -564,48 +564,31 @@
       .committee-list-wrap{max-height:48vh}
     }
 
-
-    .admin-center-header{background:linear-gradient(120deg,#0f1f5c,#1b347e);color:#fff;box-shadow:0 2px 12px rgba(15,31,92,.18)}
-    .admin-center-top{min-height:66px;padding:11px 22px;display:flex;align-items:center;justify-content:space-between;gap:16px}
-    .admin-center-brand{min-width:0}.admin-center-brand h1{margin:0;color:#fff;font-family:'Noto Sans KR',sans-serif;font-size:19px;font-weight:900;letter-spacing:-.02em}.admin-center-brand .sub{margin-top:3px;color:#dce6ff;font-size:11px}
-    .admin-center-actions{display:flex;align-items:center;justify-content:flex-end;gap:7px;flex-wrap:wrap}
-    .admin-center-nav{display:flex;align-items:center;gap:3px;padding:0 18px;background:#fff;border-bottom:1px solid #d8dded;overflow-x:auto;box-shadow:0 2px 6px rgba(15,31,92,.04)}
-    .admin-center-nav .nav-item{appearance:none;border:0;border-bottom:3px solid transparent;background:transparent;color:#506080;padding:11px 13px 9px;font-size:12px;font-weight:800;white-space:nowrap;text-decoration:none;cursor:pointer}.admin-center-nav .nav-item:hover{color:#0f1f5c;background:#f5f8ff}.admin-center-nav .nav-item.active{color:#174ea6;border-bottom-color:#2563eb;background:#f7faff}
-    .admin-context-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:9px}.admin-context-head h2{margin:0;color:#0f1f5c;font-size:18px}.admin-context-head p{margin:3px 0 0;font-size:11px;color:#64748b}.admin-context-badge{display:inline-flex;padding:4px 8px;border-radius:999px;background:#e8efff;color:#1f4a96;font-size:10px;font-weight:800}
-    @media(max-width:900px){.admin-center-top{align-items:flex-start;padding:10px 12px}.admin-center-actions{max-width:60%}.admin-center-nav{padding:0 7px}}
-    @media(max-width:560px){.admin-center-top{display:block}.admin-center-actions{max-width:none;margin-top:9px;justify-content:flex-start}}
   </style>
 </head>
 <body>
   <div id="toast"></div>
 
-  <header class="admin-center-header">
-    <div class="admin-center-top">
-      <div class="admin-center-brand">
-        <h1>한동글로벌학교 관리자 센터</h1>
-        <div class="sub">교사·학생·디텐션 운영 데이터를 한 곳에서 관리합니다.</div>
-      </div>
-      <div class="admin-center-actions">
-        <span class="admin-context-badge">디텐션 DB</span>
-        <button class="btn btn-secondary" onclick="loadAllData()">새로고침</button>
-        <button class="btn btn-secondary" onclick="manualRecalculateCycleStates()">상태 재계산</button>
-        <button class="btn btn-secondary" onclick="exportAdminJson()">JSON 내보내기</button>
-        <button class="btn btn-danger" onclick="confirmResetDB()">DB 초기화</button>
-        <button class="btn btn-danger" onclick="logoutAdmin()">로그아웃</button>
-      </div>
+  <div class="topbar">
+    <div>
+      <h1>
+        디텐션 DB 관리
+        <span class="title-en" style="color:#fff;">Detention DB Admin</span>
+      </h1>
+      <div class="sub-en">기준표, 디텐션 기록, 알림, 회복교육 데이터를 관리합니다.</div>
     </div>
-    <nav class="admin-center-nav" aria-label="관리자 주 메뉴">
-      <a class="nav-item" href="admin.html#home">관리자 홈</a>
-      <a class="nav-item" href="admin.html#teachers">교사 계정</a>
-      <a class="nav-item" href="admin.html#students">학생 명단</a>
-      <a class="nav-item active" href="detention-admin.html#entries">디텐션 DB</a>
-      <a class="nav-item" href="admin.html#csv">CSV 업로드</a>
-      <a class="nav-item" href="admin.html#settings">설정</a>
-    </nav>
-  </header>
+
+    <div class="inline-actions">
+      <button class="btn btn-secondary" onclick="loadAllData()">새로고침 | Refresh</button>
+      <button class="btn btn-secondary" onclick="manualRecalculateCycleStates()">상태 재계산 | Recalculate State</button>
+      <button class="btn btn-secondary" onclick="exportAdminJson()">JSON 내보내기 | Export JSON</button>
+      <button class="btn btn-danger" onclick="confirmResetDB()" style="background:#dc2626;color:#fff;font-weight:700;">DB 초기화 | Reset DB</button>
+      <a href="admin.html#home" class="btn btn-secondary" style="text-decoration:none;display:inline-flex;align-items:center;">관리자 메인 | Admin</a>
+      <button class="btn btn-danger" onclick="logoutAdmin()">로그아웃 | Logout</button>
+    </div>
+  </div>
 
   <div class="content">
-    <div class="admin-context-head"><div><h2>디텐션 DB 관리</h2><p>디텐션 기록, 학생별 데이터, 알림, 회복교육, 위원회 기록을 조회하고 수정합니다.</p></div><span id="detention-admin-location" class="admin-context-badge">디텐션 기록</span></div>
     <div class="subtabs">
       
       <button class="subtab-btn active" data-panel="entries">디텐션 기록 | Entries</button>
@@ -1190,11 +1173,26 @@
       }
     }
 
-    // 인증 확인: admin.html에서 로그인한 세션이 없으면 돌려보냄
+    // 관리자 비밀번호 세션과 Admin/Master 교사 세션을 동일한 관리자센터 권한으로 처리합니다.
+    function getAdminCenterSessionRoles() {
+      try {
+        const teacher = JSON.parse(sessionStorage.getItem('his_teacher') || '{}');
+        const raw = teacher.roles ?? teacher.role ?? [];
+        if (Array.isArray(raw)) return raw.map(v => String(v).toLowerCase());
+        if (raw && typeof raw === 'object') return Object.keys(raw).filter(k => raw[k]).map(k => String(k).toLowerCase());
+        return String(raw || '').split(/[|,\s]+/).filter(Boolean).map(v => v.toLowerCase());
+      } catch (e) { return []; }
+    }
+
+    function hasAdminCenterSession() {
+      if (sessionStorage.getItem('his_admin_session') === '1') return true;
+      return getAdminCenterSessionRoles().some(role => role === 'admin' || role === 'master');
+    }
+
     function checkAdminSession() {
-      if (!sessionStorage.getItem('his_admin_session')) {
-        sessionStorage.setItem('his_admin_return', location.pathname.split('/').pop() + (location.hash || '#entries'));
-        location.replace('admin.html#home');
+      if (!hasAdminCenterSession()) {
+        sessionStorage.setItem('his_admin_return_to', location.pathname.split('/').pop() + location.hash);
+        location.href = 'admin.html';
         return false;
       }
       return true;
@@ -1202,7 +1200,8 @@
 
     function logoutAdmin() {
       sessionStorage.removeItem('his_admin_session');
-      location.replace('admin.html#home');
+      sessionStorage.removeItem('his_teacher');
+      location.href = 'admin.html';
     }
 
     function badgeHtml(status){
@@ -1211,13 +1210,13 @@
       return '<span class="status-chip pending">대기</span>';
     }
 
-    function openPanel(name, updateHash=true){
-      const valid=['entries','student-data','notices','recovery','committee']; if(!valid.includes(name))name='entries';
-      document.querySelectorAll('.subtab-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.panel === name));
-      document.querySelectorAll('.panel').forEach(panel => panel.classList.toggle('active', panel.id === 'panel-' + name));
-      const labels={'entries':'디텐션 기록','student-data':'학생별 조회','notices':'알림 기록','recovery':'회복교육','committee':'위원회'};
-      const badge=document.getElementById('detention-admin-location');if(badge)badge.textContent=labels[name]||'디텐션 DB';
-      if(updateHash&&location.hash!=='#'+name)history.replaceState(null,'','#'+name);
+    function openPanel(name){
+      document.querySelectorAll('.subtab-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.panel === name);
+      });
+      document.querySelectorAll('.panel').forEach(panel => {
+        panel.classList.toggle('active', panel.id === 'panel-' + name);
+      });
     }
 
     document.addEventListener('click', (e) => {
@@ -1541,7 +1540,7 @@
     function runStudentDataSearch(){renderStudentIndex();const q=String((document.getElementById('student-data-search')||{}).value||'').trim().toLowerCase();if(!q)return;const hit=studentAggregateRows().find(function(x){return [x.name,x.englishName,x.className,x.studentKey].join(' ').toLowerCase().includes(q);});if(hit)selectStudentForAdmin(hit.studentKey);}
     function clearStudentDataSearch(clearInput){if(clearInput!==false){const i=document.getElementById('student-data-search');if(i)i.value='';const f=document.getElementById('student-data-filter');if(f)f.value='all';}selectedStudentKey='';studentDataLastQuery='';renderStudentIndex();const r=document.getElementById('student-data-result');if(r)r.innerHTML='<div class="admin-editor-empty">왼쪽에서 조회할 학생을 선택하세요.</div>';const l=document.getElementById('student-selection-label');if(l)l.textContent='';checkStudentDataDirty();}
     function adminRecordDate(row){return dateInputValue(row.completedAt||row.confirmedAt||row.createdAt||row.parentMailAt||'')||'-';}
-    function activateAdminPanel(panel){openPanel(panel);}
+    function activateAdminPanel(panel){document.querySelectorAll('.subtab-btn').forEach(function(b){b.classList.toggle('active',b.dataset.panel===panel);});document.querySelectorAll('.panel').forEach(function(p){p.classList.toggle('active',p.id==='panel-'+panel);});}
     function openAdminRecord(kind,key){const map={entry:'entries',notice:'notices',recovery:'recovery',committee:'committee'};if(kind==='entry')selectedEntryKey=key;if(kind==='notice')selectedNoticeKey=key;if(kind==='recovery')selectedRecoveryKey=key;if(kind==='committee')selectedCommitteeKey=key;activateAdminPanel(map[kind]);if(kind==='entry')renderEntriesTable();if(kind==='notice')renderNoticesTable();if(kind==='recovery')renderRecoveryTable();if(kind==='committee')renderCommitteeTable();}
     function studentRecordList(title,kind,rows,descFn){if(!rows.length)return '<div class="student-record-list"><div class="student-record-list-title">'+title+' · 0건</div><div style="padding:10px;color:#94a3b8;font-size:10px;">기록 없음</div></div>';return '<div class="student-record-list"><div class="student-record-list-title">'+title+' · '+rows.length+'건</div>'+rows.slice().sort(function(a,b){return String(adminRecordDate(b)).localeCompare(String(adminRecordDate(a)));}).map(function(r){return '<div class="student-record-item" onclick="openAdminRecord(\''+kind+'\',\''+esc(r.key)+'\')"><span>'+esc(adminRecordDate(r))+'</span><span class="desc">'+esc(descFn(r))+'</span><span style="text-align:right;color:#27499d;font-weight:800;">편집 ›</span></div>';}).join('')+'</div>';}
     function renderStudentDataSearch(){
@@ -2213,10 +2212,6 @@
     }
 
     bootstrapDetentionAdmin();
-  
-    function syncDetentionPanelFromHash(){openPanel((location.hash||'#entries').slice(1),false);}
-    window.addEventListener('hashchange',syncDetentionPanelFromHash);
-    syncDetentionPanelFromHash();
-</script>
+  </script>
 </body>
 </html>

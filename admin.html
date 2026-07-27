@@ -7,9 +7,23 @@
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=DM+Serif+Display&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="common.css" />
   <script>
-    // 관리자 세션이 있으면 첫 화면을 그리기 전에 로그인 화면을 숨겨 깜빡임을 방지합니다.
+    // 관리자 비밀번호 세션 또는 Admin/Master 교사 세션이 있으면
+    // 첫 화면을 그리기 전에 관리자 화면을 표시해 로그인 화면 재노출을 막습니다.
+    function hasAdminCenterSessionEarly() {
+      try {
+        if (sessionStorage.getItem('his_admin_session') === '1') return true;
+        const teacher = JSON.parse(sessionStorage.getItem('his_teacher') || '{}');
+        const raw = teacher.roles ?? teacher.role ?? [];
+        const roles = Array.isArray(raw)
+          ? raw
+          : (raw && typeof raw === 'object')
+            ? Object.keys(raw).filter(key => raw[key])
+            : String(raw || '').split(/[|,\s]+/).filter(Boolean);
+        return roles.map(role => String(role).toLowerCase()).some(role => role === 'admin' || role === 'master');
+      } catch (e) { return false; }
+    }
     try {
-      if (sessionStorage.getItem('his_admin_session') === '1') {
+      if (hasAdminCenterSessionEarly()) {
         document.documentElement.classList.add('admin-session-restored');
       }
     } catch (e) {}
@@ -527,6 +541,21 @@
     }
 
 
+    function getSessionRoleNames() {
+      try {
+        const teacher = JSON.parse(sessionStorage.getItem('his_teacher') || '{}');
+        const raw = teacher.roles ?? teacher.role ?? [];
+        if (Array.isArray(raw)) return raw.map(v => String(v).toLowerCase());
+        if (raw && typeof raw === 'object') return Object.keys(raw).filter(k => raw[k]).map(k => String(k).toLowerCase());
+        return String(raw || '').split(/[|,\s]+/).filter(Boolean).map(v => v.toLowerCase());
+      } catch (e) { return []; }
+    }
+
+    function hasAdminCenterSession() {
+      if (sessionStorage.getItem('his_admin_session') === '1') return true;
+      return getSessionRoleNames().some(role => role === 'admin' || role === 'master');
+    }
+
     async function checkAdmin() {
       try { await ensureFirebaseAuth(); }
       catch (e) { console.error(e); return toast('Firebase 인증에 실패했습니다.\nFirebase authentication failed.', 'err'); }
@@ -544,6 +573,7 @@
 
     function adminLogout() {
       sessionStorage.removeItem('his_admin_session');
+      sessionStorage.removeItem('his_teacher');
       document.documentElement.classList.remove('admin-session-restored');
       document.getElementById('login-screen').classList.remove('hidden');
       document.getElementById('admin-screen').classList.add('hidden');
@@ -1004,7 +1034,7 @@
 
     /* ── 세션 자동복원 ── */
     (async function initSession() {
-      const hasAdminSession = sessionStorage.getItem('his_admin_session') === '1';
+      const hasAdminSession = hasAdminCenterSession();
 
       // 세션 화면 전환은 Firebase 조회보다 먼저 처리합니다.
       if (hasAdminSession) {
