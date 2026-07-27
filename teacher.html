@@ -4073,6 +4073,18 @@
     function renderCommitteePendingBanner(){
       const banner = document.getElementById('committee-pending-banner');
       if(!banner) return;
+
+      // Default 전용 계정은 위원회 처리 대상이나 대기 현황을 볼 필요가 없습니다.
+      // 데이터는 그대로 유지하되 경고 배너를 렌더링하지 않습니다.
+      const isDefaultOnly = teacherRoles.length === 0 ||
+        (teacherRoles.length === 1 && teacherRoles[0] === 'default');
+      if(isDefaultOnly){
+        banner.style.display = 'none';
+        banner.classList.remove('expanded');
+        banner.innerHTML = '';
+        return;
+      }
+
       const yr=getCurrentYear();
       const seen=new Set(); const pending=[];
       function addP(nm,type){const k=nm+'|'+type;if(!seen.has(k)){seen.add(k);pending.push({name:nm,type});}}
