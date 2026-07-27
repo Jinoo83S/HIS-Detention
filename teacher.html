@@ -2437,6 +2437,9 @@
 
       // 관리자 노트 공통 td (dirty tracking 포함)
       function noteTd(r){
+        if(!canEditAdminNote()){
+          return `<td style="min-width:130px;max-width:200px"><span class="cell-reason-preview">${esc(r.adminNote||'-')}</span></td>`;
+        }
         return `<td onclick="event.stopPropagation()" style="min-width:130px;max-width:200px">
           <input class="edit-input admin-note-input" style="width:100%" value="${esc(r.adminNote||'')}" placeholder="관리자 노트"
             oninput="entries['${esc(r.key)}'].adminNote=this.value"
@@ -3818,6 +3821,9 @@
 
 
     async function cancelRecoveryCompletion(recoveryKey){
+      const _recoveryGuard = recoveryEntries[String(recoveryKey||'')] || {};
+      const _recoveryLevel = String(_recoveryGuard.level || getLevelForStudentKey(_recoveryGuard.studentKey || '', '') || '').toLowerCase();
+      if(!canManageRecoveryLevel(_recoveryLevel)) return toast('회복교육 완료 취소 권한이 없습니다.', 'err');
       const record = recoveryEntries[recoveryKey] || {};
       if(!record || !recoveryKey) return toast('회복교육 기록을 찾을 수 없습니다.', 'err');
       if(!canManageRecoveryLevel(record.level || getLevelForStudentKey(record.studentKey, ''))) return toast('회복교육 완료 취소 권한이 없습니다.', 'err');
@@ -3994,6 +4000,7 @@
     }
 
     async function completeCommittee(type,entryKey,studentKey,committeeKey,editorToken){
+      if(!canManageCommittee()) return toast('위원회 처리 권한이 없습니다.', 'err');
       const now=new Date().toISOString();
       const yr=getCurrentYear();
       try{
@@ -4051,6 +4058,7 @@
 
 
     async function cancelCommitteeCompletion(committeeKey){
+      if(!canManageCommittee()) return toast('위원회 완료 취소 권한이 없습니다.', 'err');
       const record = committeeEntries[committeeKey] || {};
       if(!record || !committeeKey) return toast('위원회 기록을 찾을 수 없습니다.', 'err');
       if(!canManageCommittee()) return toast('위원회 완료 취소 권한이 없습니다.', 'err');
@@ -4076,6 +4084,7 @@
 
     let _manualCommitteeData = {};
     function openManualCommittee(entryKey, studentKey, studentName){
+      if(!canManageCommittee()) return toast('위원회 처리 권한이 없습니다.', 'err');
       _manualCommitteeData = {entryKey, studentKey, studentName};
       document.getElementById('modal-committee-student').textContent = studentName;
       document.getElementById('modal-committee-reason').value = '';
@@ -4191,6 +4200,8 @@
 
 
     async function cancelDraftDetention(key){
+      const _guardRecord = entries[String(key||'')] || {};
+      if(!canCancelDraftDetention(_guardRecord)) return toast('입력 취소 권한이 없습니다.', 'err');
       const record = entries[key] || {};
       if(!record || !key) return toast('기록을 찾을 수 없습니다.', 'err');
       if(!canCancelDraftDetention(record)) return toast('입력 취소 권한이 없습니다.', 'err');
@@ -4207,6 +4218,7 @@
     }
 
     async function cancelDetentionProcessing(key){
+      if(!canConfirmDetention()) return toast('처리 취소 권한이 없습니다.', 'err');
       const record = entries[key] || {};
       if(!record || !key) return toast('기록을 찾을 수 없습니다.', 'err');
       if(!canConfirmDetention()) return toast('처리 취소 권한이 없습니다.', 'err');
@@ -4236,6 +4248,7 @@
 
     /* ---------- 6) 저장 / 확정 / 반려 / 메일 / 완료 처리 ---------- */
     async function saveDetention(){
+      if(!teacher || !teacher.email) return toast('로그인 사용자 정보를 확인할 수 없습니다.', 'err');
       const studentKey = syncStudentSelection();
       const category = document.getElementById('category-select').value;
       const violation = document.getElementById('violation-select').value;
@@ -4666,6 +4679,7 @@
       return normalizeMailList([student.fatherEmail, student.motherEmail].filter(Boolean).join(','));
     }
     async function sendParentMail(studentKey,level,fixedNoticeKey){
+      if(!canManageNoticeLevel(level)) return toast('해당 알림 처리 권한이 없습니다.', 'err');
       const lockKey = 'parent_mail_' + studentKey + '_' + level;
       const student={key:studentKey,...(students[studentKey]||{})};
       const to=getParentNoticeMailTo(student);
@@ -4693,6 +4707,7 @@
     }
 
     async function sendStudentTeacherMail(studentKey,level,fixedNoticeKey){
+      if(!canManageNoticeLevel(level)) return toast('해당 알림 처리 권한이 없습니다.', 'err');
       const lockKey = 'student_teacher_mail_' + studentKey + '_' + level;
       const student={key:studentKey,...(students[studentKey]||{})};
       const re2=level==='ms'?getTeacherEmailsByRole('ms_restore'):getTeacherEmailsByRole('hs_restore');
@@ -4721,6 +4736,7 @@
     }
 
     async function completeNotice(studentKey,level){
+      if(!canManageNoticeLevel(level)) return toast('알림 완료 처리 권한이 없습니다.', 'err');
       try{
         await upsertNoticeEntry(studentKey, level, {
           completedAt:new Date().toISOString(),
@@ -4736,6 +4752,7 @@
     }
 
     async function completeRecovery(studentKey, level){
+      if(!canManageRecoveryLevel(level)) return toast('해당 회복교육 처리 권한이 없습니다.', 'err');
       const student = students[studentKey];
       if (!student) return;
 
