@@ -249,23 +249,64 @@
     .committee-note-input{display:block;width:100%!important;min-width:0!important;height:30px!important;padding:4px 7px!important;font-size:11px!important;line-height:20px!important;box-sizing:border-box}
     .committee-action-btn{white-space:nowrap;padding:4px 7px!important;font-size:11px!important}
     .committee-cell-text{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+
+    /* teacher UI refinement */
+    .teacher-shell{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;width:100%}
+    .teacher-brand{display:flex;align-items:center;gap:14px;min-width:0}
+    .teacher-brand-title{font-size:18px;font-weight:900;color:#fff;white-space:nowrap}
+    .teacher-user-card{display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-width:0}
+    .teacher-user-main{display:flex;flex-direction:column;line-height:1.15;padding-right:6px}
+    .teacher-user-main strong{font-size:12px;color:#fff}
+    .teacher-user-main span{font-size:10px;color:#dbe2ff;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .teacher-role-chip,.teacher-room-chip{display:inline-flex;align-items:center;padding:3px 8px;border-radius:999px;background:rgba(255,255,255,.14);color:#fff;font-size:10px;font-weight:700;border:1px solid rgba(255,255,255,.18)}
+    .teacher-top-stats{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+    .teacher-top-stat{display:inline-flex;align-items:baseline;gap:3px;padding:4px 8px;border-radius:999px;background:rgba(255,255,255,.1);color:#dbe2ff;font-size:10px}
+    .teacher-top-stat b{font-size:12px;color:#fff}
+    .teacher-actions{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+    .teacher-nav-groups{display:grid;grid-template-columns:1fr 1.45fr .75fr;gap:8px;margin-bottom:10px}
+    .teacher-nav-group{border:1px solid var(--bd);border-radius:10px;background:#f8faff;padding:7px 8px}
+    .teacher-nav-label{font-size:10px;font-weight:800;color:var(--sb);margin:0 0 5px 2px}
+    .teacher-nav-buttons{display:flex;gap:5px;flex-wrap:wrap}
+    .teacher-nav-buttons .tab-btn{margin:0;padding:7px 10px;font-size:12px;border-radius:8px}
+    .teacher-nav-buttons .tab-btn.active{background:#eaf1ff;color:#173f96;border-color:#8eb4ff;box-shadow:inset 0 -2px 0 #2563eb}
+    .committee-summary{display:flex;align-items:center;justify-content:space-between;gap:10px}
+    .committee-summary-main{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .committee-summary-toggle{flex:0 0 auto;border:0;background:#ffe49a;color:#6a4a00;border-radius:7px;padding:4px 8px;font-size:11px;font-weight:800;cursor:pointer}
+    #committee-pending-banner.expanded .committee-summary-main{white-space:normal;overflow:visible}
+    .recent-entry-list{gap:7px}
+    .recent-entry-item{padding:9px 10px;border-radius:10px}
+    .recent-entry-title{font-size:13px;margin-bottom:3px}
+    .recent-entry-meta{gap:4px;margin-bottom:5px}
+    .recent-chip{padding:3px 6px;font-size:10px}
+    .recent-entry-violation{font-size:12px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+    .recent-entry-item.expanded .recent-entry-violation{display:block;overflow:visible}
+    .recent-entry-side{min-width:90px;gap:4px}
+    .recent-entry-points{font-size:16px}
+    .recent-entry-datetime{font-size:11px}
+    .recent-entry-expand{border:0;background:transparent;color:#315ea8;font-size:10px;font-weight:700;padding:0;cursor:pointer}
+    .points-note{grid-column:1/-1;margin-top:-4px;padding:7px 9px;border-radius:8px;background:#f7f9fc;color:var(--sb);font-size:11px;line-height:1.45}
+    @media(max-width:980px){.teacher-nav-groups{grid-template-columns:1fr}.teacher-user-main span{max-width:140px}}
   </style>
 </head>
 <body>
   <div id="toast"></div>
 
-  <div class="topbar" style="flex-wrap:wrap;gap:8px;">
-    <div style="display:flex;align-items:center;gap:12px;flex:1;min-width:0;">
-      <h1 style="white-space:nowrap;">디텐션 관리</h1>
-      <div id="teacher-info" class="info-badges" style="margin-bottom:0;"></div>
-    </div>
-    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-      <span style="color:#dbe2ff;font-size:12px;">오늘: <b id="today-count" style="color:#fff;">0</b>건</span>
-      <span style="color:#dbe2ff;font-size:12px;">미확정: <b id="pending-count" style="color:#fff;">0</b>건</span>
-      <span style="color:#dbe2ff;font-size:12px;">전체: <b id="total-count" style="color:#fff;">0</b>건</span>
-      <a id="admin-center-link" href="admin.html#home" class="btn btn-secondary" style="display:none;font-size:12px;padding:5px 10px;text-decoration:none;align-items:center;">관리자센터</a>
-      <button class="btn btn-secondary" onclick="refreshData()" style="font-size:12px;padding:5px 10px;">새로고침</button>
-      <button class="btn btn-danger" onclick="logoutTeacher()" style="font-size:12px;padding:5px 10px;">로그아웃</button>
+  <div class="topbar">
+    <div class="teacher-shell">
+      <div class="teacher-brand">
+        <div class="teacher-brand-title">디텐션 관리</div>
+        <div id="teacher-info" class="teacher-user-card"></div>
+      </div>
+      <div class="teacher-actions">
+        <div class="teacher-top-stats">
+          <span class="teacher-top-stat">오늘 <b id="today-count">0</b>건</span>
+          <span class="teacher-top-stat">미확정 <b id="pending-count">0</b>건</span>
+          <span class="teacher-top-stat">전체 <b id="total-count">0</b>건</span>
+        </div>
+        <a id="admin-center-link" href="admin.html#home" class="btn btn-secondary" style="display:none;font-size:12px;padding:5px 10px;text-decoration:none;align-items:center;">관리자센터</a>
+        <button class="btn btn-secondary" onclick="refreshData()" style="font-size:12px;padding:5px 10px;">새로고침</button>
+        <button class="btn btn-danger" onclick="logoutTeacher()" style="font-size:12px;padding:5px 10px;">로그아웃</button>
+      </div>
     </div>
   </div>
 
@@ -327,18 +368,33 @@
     </div>
   </div>
 
-  <div class="tabs">
-      <button class="tab-btn active" data-tab="entry">디텐션 입력 | Entry</button>
-      <button class="tab-btn" data-tab="standard">디텐션 기준표 | Standards</button>
-      <button class="tab-btn" data-tab="all">디텐션 전체보기 | All Records</button>
-      <button class="tab-btn role-only" data-role="master" data-tab="confirm">디텐션 확정 | Confirm</button>
-      <button class="tab-btn role-only" data-role="ms_notice,hs_notice" data-tab="notify">디텐션 알림 | Detention Notice</button>
-      <button class="tab-btn role-only" data-role="ms_restore" data-tab="recovery-ms">중등 회복교육 | MS Restorative Education</button>
-      <button class="tab-btn role-only" data-role="hs_restore" data-tab="recovery-hs">고등 회복교육 | HS Restorative Education</button>
-      <button class="tab-btn" data-tab="students">조회 | Search</button>
-      <button class="tab-btn role-only" data-role="master" data-tab="discipline">위원회 | Committee</button>
+  <div class="teacher-nav-groups">
+      <div class="teacher-nav-group">
+        <div class="teacher-nav-label">기록 | Records</div>
+        <div class="teacher-nav-buttons">
+          <button class="tab-btn active" data-tab="entry">입력 | Entry</button>
+          <button class="tab-btn" data-tab="all">전체 기록 | All Records</button>
+          <button class="tab-btn role-only" data-role="master" data-tab="confirm">확정 | Confirm</button>
+        </div>
+      </div>
+      <div class="teacher-nav-group">
+        <div class="teacher-nav-label">후속 조치 | Follow-up</div>
+        <div class="teacher-nav-buttons">
+          <button class="tab-btn role-only" data-role="ms_notice,hs_notice" data-tab="notify">알림 | Notice</button>
+          <button class="tab-btn role-only" data-role="ms_restore" data-tab="recovery-ms">중등 회복교육 | MS Recovery</button>
+          <button class="tab-btn role-only" data-role="hs_restore" data-tab="recovery-hs">고등 회복교육 | HS Recovery</button>
+          <button class="tab-btn role-only" data-role="master" data-tab="discipline">위원회 | Committee</button>
+        </div>
+      </div>
+      <div class="teacher-nav-group">
+        <div class="teacher-nav-label">조회·기준 | Search & Standards</div>
+        <div class="teacher-nav-buttons">
+          <button class="tab-btn" data-tab="students">조회 | Search</button>
+          <button class="tab-btn" data-tab="standard">기준표 | Standards</button>
+        </div>
+      </div>
     </div>
-    <div id="committee-pending-banner" style="display:none;background:#fff3cd;border:1px solid #f0c040;border-radius:8px;padding:8px 16px;margin:var(--ui-gap) 0 var(--ui-gap);font-size:12px;color:#5a3e00;font-weight:600;"></div>
+    <div id="committee-pending-banner" style="display:none;background:#fff3cd;border:1px solid #f0c040;border-radius:8px;padding:8px 12px;margin:var(--ui-gap) 0 var(--ui-gap);font-size:12px;color:#5a3e00;font-weight:600;"></div>
 
     <!-- ENTRY -->
     <div id="tab-entry" class="tab-panel active">
@@ -366,16 +422,13 @@
             <div>
               <label class="label">자동벌점 | Auto Points</label>
               <div id="auto-points" class="readonly-box">-</div>
-              <div class="small">
-                숫자 범위(예: 1-12, 1,3)는 기준에 따라 수동 입력이 필요합니다.<br>
-                Ranges such as 1-12 or 1,3 require manual judgment.
-              </div>
             </div>
 
             <div>
               <label class="label">수동벌점 | Manual Points</label>
               <input id="manual-points" type="number" min="0" class="edit-input" value="0">
             </div>
+            <div class="points-note">숫자 범위(예: 1-12, 1,3)는 기준에 따라 수동 입력이 필요합니다. | Ranges such as 1-12 or 1,3 require manual judgment.</div>
 
             <div class="full">
               <label class="label">메모 | Memo</label>
@@ -1713,10 +1766,9 @@
       const adminCenterLink = document.getElementById('admin-center-link');
       if (adminCenterLink) adminCenterLink.style.display = hasFullWorkRole() ? 'inline-flex' : 'none';
       document.getElementById('teacher-info').innerHTML = `
-        <span class="badge">${esc(teacher.name || '')}</span>
-        <span class="badge">${esc(teacher.email || '')}</span>
-        <span class="badge">${esc(rolesLabel(teacher.roles || []))}</span>
-        ${teacher.homeroom ? `<span class="badge">${esc(teacher.homeroom)}</span>` : ''}
+        <span class="teacher-user-main"><strong>${esc(teacher.name || '사용자')}</strong><span>${esc(teacher.email || '')}</span></span>
+        <span class="teacher-role-chip">${esc(rolesLabel(teacher.roles || []))}</span>
+        ${teacher.homeroom ? `<span class="teacher-room-chip">담당 ${esc(teacher.homeroom)}</span>` : ''}
       `;
 
       setupRoleVisibility();
@@ -2161,6 +2213,7 @@
                 ${r.isReferral ? '<span class="recent-chip" style="background:#fde8e8;color:#7f1d1d;font-weight:700;">위원회 회부</span>' : ''}
               </div>
               <div class="recent-entry-violation">${esc(r.violation || '')}</div>
+              <button type="button" class="recent-entry-expand" onclick="this.closest('.recent-entry-item').classList.toggle('expanded');this.textContent=this.closest('.recent-entry-item').classList.contains('expanded')?'접기':'전체 보기'">전체 보기</button>
             </div>
             <div class="recent-entry-side">
               <div class="recent-entry-points">${esc(String(r.totalPoints || 0))}점</div>
@@ -4008,6 +4061,13 @@
     }
 
     function toggleDetailDiv(id){const el=document.getElementById(id);if(el)el.classList.toggle('show');}
+    function toggleCommitteeBanner(){
+      const banner=document.getElementById('committee-pending-banner');
+      if(!banner) return;
+      banner.classList.toggle('expanded');
+      const btn=banner.querySelector('.committee-summary-toggle');
+      if(btn) btn.textContent=banner.classList.contains('expanded')?'접기':'펼치기';
+    }
 
 
     function renderCommitteePendingBanner(){
@@ -4042,9 +4102,10 @@
       });
       if(pending.length>0){
         banner.style.display='block';
-        const items=pending.slice(0,6).map(p=>'<b>'+esc(p.name)+'</b><span style="margin-left:3px;padding:1px 5px;background:#fef3cd;border-radius:4px;font-size:10px;">'+esc(p.type)+'</span>').join('  ');
-        banner.innerHTML='⚠️ 위원회 처리 대기: '+items+(pending.length>6?' 외 '+(pending.length-6)+'명':'');
-      } else { banner.style.display='none'; }
+        const items=pending.map(p=>'<b>'+esc(p.name)+'</b><span style="margin-left:3px;padding:1px 5px;background:#fef3cd;border-radius:4px;font-size:10px;">'+esc(p.type)+'</span>').join('  ');
+        banner.classList.remove('expanded');
+        banner.innerHTML='<div class="committee-summary"><div class="committee-summary-main">⚠️ 위원회 처리 대기 <b>'+pending.length+'건</b> · '+items+'</div><button type="button" class="committee-summary-toggle" onclick="toggleCommitteeBanner()">펼치기</button></div>';
+      } else { banner.style.display='none'; banner.classList.remove('expanded'); }
     }
     function renderStats(){
       const el=Object.values(entries||{});const td=todayKey();
