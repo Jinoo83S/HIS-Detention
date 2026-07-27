@@ -1783,13 +1783,69 @@
       }
     }
 
+    const TAB_ACCESS_RULES = Object.freeze({
+      entry: () => true,
+      all: () => true,
+      students: () => true,
+      standard: () => true,
+      confirm: () => canConfirmDetention(),
+      notify: () => canManageNoticeLevel('ms') || canManageNoticeLevel('hs'),
+      'recovery-ms': () => canManageRecoveryLevel('ms'),
+      'recovery-hs': () => canManageRecoveryLevel('hs'),
+      discipline: () => canManageCommittee()
+    });
+
+    function canAccessTeacherTab(tabName){
+      const rule = TAB_ACCESS_RULES[String(tabName || '')];
+      return typeof rule === 'function' ? !!rule() : false;
+    }
+
+    function activateTeacherTab(tabName, options){
+      const requested = String(tabName || 'entry');
+      const target = canAccessTeacherTab(requested) ? requested : 'entry';
+      const btn = document.querySelector(`.tab-btn[data-tab="${target}"]`);
+      const panel = document.getElementById('tab-' + target);
+      if(!btn || !panel) return false;
+
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      panel.classList.add('active');
+
+      if(requested !== target && !(options && options.silent)){
+        toast('이 메뉴에 접근할 권한이 없습니다. | You do not have permission to access this menu.', 'err');
+      }
+      return requested === target;
+    }
+
     function setupRoleVisibility(){
       const hasFullAccess = hasFullWorkRole();
       document.querySelectorAll('.role-only').forEach(el => {
         const roles = String(el.dataset.role || '').split(',').map(v => v.trim()).filter(Boolean);
         const visible = hasFullAccess || roles.some(role => hasRole(role));
         el.classList.toggle('role-show', visible);
+        el.setAttribute('aria-hidden', visible ? 'false' : 'true');
       });
+
+      document.querySelectorAll('.tab-btn[data-tab]').forEach(btn => {
+        const allowed = canAccessTeacherTab(btn.dataset.tab);
+        if(!allowed){
+          btn.classList.remove('active');
+          btn.setAttribute('aria-disabled', 'true');
+          btn.tabIndex = -1;
+        }else{
+          btn.removeAttribute('aria-disabled');
+          btn.tabIndex = 0;
+        }
+      });
+
+      document.querySelectorAll('.tab-panel').forEach(panel => {
+        const tabName = String(panel.id || '').replace(/^tab-/, '');
+        if(tabName && !canAccessTeacherTab(tabName)) panel.classList.remove('active');
+      });
+
+      const currentBtn = document.querySelector('.tab-btn.active[data-tab]');
+      if(!currentBtn || !canAccessTeacherTab(currentBtn.dataset.tab)) activateTeacherTab('entry', {silent:true});
 
       document.getElementById('standard-edit-note').textContent = '기본 보기 모드 | View Mode';
     }
@@ -2082,10 +2138,8 @@
       document.addEventListener('click', e => {
         const btn = e.target.closest('.tab-btn');
         if (!btn) return;
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-        btn.classList.add('active');
-        document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+        e.preventDefault();
+        activateTeacherTab(btn.dataset.tab);
       });
     }
 
@@ -3421,10 +3475,7 @@
       const s = getStudentProfile(studentKey);
       if(!s) return;
       const label = `${String(s.className||'-')} · ${String(s.name||'')} · ${String(s.englishName||'')}`;
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-      document.querySelector('[data-tab="entry"]').classList.add('active');
-      document.getElementById('tab-entry').classList.add('active');
+      activateTeacherTab('entry', {silent:true});
       const inp = document.getElementById('student-search-input');
       if(inp){ inp.value = label; syncStudentSelection(); }
       window.scrollTo(0,0);
