@@ -286,6 +286,10 @@
     .recent-entry-expand{border:0;background:transparent;color:#315ea8;font-size:10px;font-weight:700;padding:0;cursor:pointer}
     .points-note{grid-column:1/-1;margin-top:-4px;padding:7px 9px;border-radius:8px;background:#f7f9fc;color:var(--sb);font-size:11px;line-height:1.45}
     @media(max-width:980px){.teacher-nav-groups{grid-template-columns:1fr}.teacher-user-main span{max-width:140px}}
+      .committee-readonly-control:disabled{opacity:.55;cursor:not-allowed;background:#f3f5f9;color:#64748b;}
+    .committee-action-group{display:flex;gap:4px;justify-content:center;align-items:center;flex-wrap:wrap;}
+    .btn-exception{background:#fff7ed;color:#9a3412;border:1px solid #fdba74;}
+    .btn-exception:hover:not(:disabled){background:#ffedd5;}
   </style>
 </head>
 <body>
@@ -3944,21 +3948,23 @@
       });
 
       const categorySelectHtml=(token, category, pendingKey, fallbackType)=>{
+        const editable=canManageCommittee();
         const onchange = pendingKey
           ? "saveCommitteeMeta('"+esc(pendingKey)+"','"+token+"','"+esc(fallbackType)+"')"
           : "captureCommitteeDraft('"+token+"','"+esc(fallbackType)+"',null)";
-        return '<select id="committee-category-'+token+'" class="edit-input committee-category-select" onchange="'+onchange+'">'+
+        return '<select id="committee-category-'+token+'" class="edit-input committee-category-select committee-readonly-control" '+(editable?'onchange="'+onchange+'"':'disabled title="조회 전용 권한입니다"')+'>'+
           COMMITTEE_CATEGORY_OPTIONS.map(opt=>'<option value="'+opt[0]+'" '+(opt[0]===category?'selected':'')+'>'+opt[1]+'</option>').join('')+
           '</select>';
       };
 
       const noteEditorHtml=(token, record, pendingKey, fallbackType)=>{
         record=record||{};
+        const editable=canManageCommittee();
         const note=String(record.committeeNote||'');
         const oninput="captureCommitteeDraft('"+token+"','"+esc(fallbackType)+"',"+(pendingKey?"committeeEntries['"+esc(pendingKey)+"']":"null")+")";
         const onblur=pendingKey?"saveCommitteeMeta('"+esc(pendingKey)+"','"+token+"','"+esc(fallbackType)+"')":"";
         const oneLineNote=note.replace(/\s+/g,' ').trim();
-        return '<input type="text" id="committee-note-'+token+'" class="edit-input committee-note-input" placeholder="위원회 메모" value="'+esc(oneLineNote)+'" title="'+esc(oneLineNote)+'" oninput="'+oninput+'" '+(onblur?'onblur="'+onblur+'"':'')+'>';
+        return '<input type="text" id="committee-note-'+token+'" class="edit-input committee-note-input committee-readonly-control" placeholder="위원회 메모" value="'+esc(oneLineNote)+'" title="'+esc(oneLineNote)+'" '+(editable?('oninput="'+oninput+'" '+(onblur?'onblur="'+onblur+'"':'')):'disabled')+'>';
       };
 
       const mkRow=(c,isDone)=>{
@@ -3974,7 +3980,7 @@
             '<td>'+esc(c.name)+'</td><td class="tc">'+esc(c.className)+'</td><td><span class="cell-reason-preview">'+esc(c.reason)+'</span></td>'+
             ptsCell(c.cur,12)+ptsCell(c.ovr,31)+'<td class="tc">'+cntLabel(c.studentKey)+'</td><td class="tc">'+fmt(c.referredAt)+'</td>'+
             '<td class="tc" style="font-size:11px;color:var(--gn);font-weight:700;">&#10003; '+fmt(record.completedAt)+'</td>'+
-            '<td class="tc">'+committeeCategoryBadge(category)+'</td>'+
+            '<td class="tc">'+committeeCategoryBadge(category)+(record.committeeDecision==='recovery_exception'?'<div style="margin-top:3px;font-size:10px;font-weight:700;color:#9a3412;">예외→회복</div>':'')+'</td>'+
             '<td title="'+esc(note||'-')+'"><span class="committee-cell-text">'+esc((note||'-').replace(/\s+/g,' '))+'</span></td>'+
             '<td title="'+esc(author)+'"><span class="committee-cell-text" style="font-size:11px;">'+esc(author)+'</span></td></tr>'+
             '<tr class="detail-row" id="'+did+'"><td colspan="11"><div class="detail-box">'+
@@ -3990,16 +3996,63 @@
           ptsCell(c.cur,12)+ptsCell(c.ovr,31)+'<td class="tc">'+cntLabel(c.studentKey)+'</td><td class="tc">'+fmt(c.referredAt)+'</td>'+
           '<td class="tc" onclick="event.stopPropagation()">'+categorySelectHtml(token,category,pendingKey,c.type)+'</td>'+
           '<td class="wrap-cell" onclick="event.stopPropagation()">'+noteEditorHtml(token,c.pending,pendingKey,c.type)+'</td>'+
-          '<td class="tc" onclick="event.stopPropagation()">'+(c.pending
-            ? '<div style="font-size:10px;color:var(--mut);margin-bottom:2px;">회부확정됨</div><button class="btn btn-primary committee-action-btn" onclick="completeCommittee(\''+(c.type==='referral'?(c.pending.type||'referral'):(c.pending.type||'edu'))+'\',\''+esc(c.entryKey)+'\',\''+esc(c.studentKey)+'\',\''+esc(pendingKey)+'\',\''+token+'\')">완료</button>'
-            : '<button class="btn btn-secondary committee-action-btn" onclick="referCommitteeCase(\''+c.type+'\',\''+esc(c.entryKey)+'\',\''+esc(c.studentKey)+'\',\''+token+'\')">회부확정</button>')+'</td></tr>'+
+          '<td class="tc" onclick="event.stopPropagation()"><div class="committee-action-group">'+(c.pending
+            ? '<div style="width:100%;font-size:10px;color:var(--mut);margin-bottom:2px;">회부확정됨</div><button class="btn btn-primary committee-action-btn" '+(canManageCommittee()?'onclick="completeCommittee(\''+(c.type==='referral'?(c.pending.type||'referral'):(c.pending.type||'edu'))+'\',\''+esc(c.entryKey)+'\',\''+esc(c.studentKey)+'\',\''+esc(pendingKey)+'\',\''+token+'\')"':'disabled title="조회 전용 권한입니다"')+'>완료</button>'
+            : '<button class="btn btn-secondary committee-action-btn" '+(canManageCommittee()?'onclick="referCommitteeCase(\''+c.type+'\',\''+esc(c.entryKey)+'\',\''+esc(c.studentKey)+'\',\''+token+'\')"':'disabled title="조회 전용 권한입니다"')+'>회부확정</button><button class="btn btn-exception committee-action-btn" '+(canManageCommittee()?'onclick="exceptionToRecovery(\''+c.type+'\',\''+esc(c.entryKey)+'\',\''+esc(c.studentKey)+'\',\''+token+'\')"':'disabled title="조회 전용 권한입니다"')+'>예외→회복</button>')+'</div></td></tr>'+
           '<tr class="detail-row" id="'+did+'"><td colspan="10"><div class="detail-box"><div class="detail-section"><div class="detail-title">전체 위반 내역</div><div class="detail-content">'+esc(buildReasonTextWithPoints(c.studentKey))+'</div></div></div></td></tr>';
       };
 
       const active=cases.filter(c=>!c.done).sort((a,b)=>String(b.referredAt||'').localeCompare(String(a.referredAt||'')));
-      const done=cases.filter(c=>!!c.done).sort((a,b)=>String((b.done&&b.done.completedAt)||'').localeCompare(String((a.done&&a.done.completedAt)||'')));
+      // 완료 목록은 현재 점수 후보 계산과 무관하게 committeeRecords 원본의 완료 기록 전체를 표시합니다.
+      const done=committeeArr.filter(c=>!!c.completedAt).map(record=>{
+        const sk=String(record.studentKey||'')||String((entries[String(record.entryKey||'')]||{}).studentKey||'');
+        const profile=getStudentProfile(sk)||students[sk]||{};
+        const entry=entries[String(record.entryKey||'')]||{};
+        const className=profile.className||entry.className||record.className||'';
+        const lvl=getSchoolLevel(className||'');
+        const type=REFERRAL_COMMITTEE_TYPES.includes(record.type)?'referral':'edu';
+        const reason=String(record.reason||record.reasonSnapshot||entry.violation||'위원회 처리 완료').split('\n')[0];
+        return {
+          type, entryKey:String(record.entryKey||''), studentKey:sk,
+          name:sName(profile.name||record.studentName||entry.studentName||sk,profile.englishName||record.englishName||entry.englishName||''),
+          className, reason,
+          cur:getStudentCurrentTotal(sk,lvl), ovr:getStudentOverallTotal(sk,yr),
+          referredAt:record.createdAt||'', done:record, pending:null
+        };
+      }).sort((a,b)=>String((b.done&&b.done.completedAt)||'').localeCompare(String((a.done&&a.done.completedAt)||'')));
       activeTb.innerHTML=active.length?active.map(c=>mkRow(c,false)).join(''):'<tr><td colspan="10" class="empty">진행 중인 위원회가 없습니다.</td></tr>';
       doneTb.innerHTML=done.length?done.map(c=>mkRow(c,true)).join(''):'<tr><td colspan="11" class="empty">완료된 내역이 없습니다.</td></tr>';
+    }
+
+    // 예외처리: 위원회 회부 대신 완료 기록을 남기고 회복교육 단계로 전환
+    async function exceptionToRecovery(type, entryKey, studentKey, editorToken){
+      if(!canManageCommittee()) return toast('위원회 예외처리 권한이 없습니다.', 'err');
+      const sk=String(studentKey||'')||String((entries[String(entryKey||'')]||{}).studentKey||'');
+      const lvl=getLevelForStudentKey(sk,'');
+      if(!sk||!lvl) return toast('학생 정보를 확인할 수 없습니다.', 'err');
+      const profile=getStudentProfile(sk)||students[sk]||{};
+      const yr=getCurrentYear();
+      const cur=getStudentCurrentTotal(sk,lvl), ovr=getStudentOverallTotal(sk,yr);
+      const reason=(type==='referral'
+        ? String((entries[String(entryKey||'')]||{}).violation||'').split('\n')[0]
+        : ((cur>=12?'잔여 '+cur+'점 (12점 이상)':'')+(cur>=12&&ovr>30?' / ':'')+(ovr>30?'누적 '+ovr+'점 (30점 초과)':''))) || '위원회 예외처리';
+      const meta=readCommitteeEditorMeta(editorToken,type,null);
+      if(!confirm((profile.name||sk)+' 학생을 위원회 회부 예외로 처리하고 회복교육 단계로 전환하시겠습니까?\n\n'+reason)) return;
+      const now=new Date().toISOString();
+      try{
+        const payload=Object.assign({
+          type, studentKey:sk, studentName:profile.name||'', className:profile.className||'',
+          entryKey:entryKey||'', reason, reasonSnapshot:buildNoticeReasonText(sk)||reason,
+          linkedEntryKeys:entryKey?[entryKey]:getCurrentCycleEntries(sk).map(r=>r.key).filter(Boolean),
+          year:yr, createdAt:now, createdBy:teacher.name||'', createdByEmail:teacher.email||'',
+          completedAt:now, completedBy:teacher.name||'', completedByEmail:teacher.email||'',
+          committeeDecision:'recovery_exception', exceptionHandled:true, exceptionAt:now
+        },committeeNotePayload(meta));
+        await db.ref(COMMITTEE_DB_PATH).push(payload);
+        await recalculateStudentState(sk,lvl);
+        toast('예외처리되었습니다. 회복교육 목록으로 전환됩니다.','ok');
+        await loadData();
+      }catch(e){console.error(e);toast('예외처리 실패','err');}
     }
 
     // 처리 1단계: 회부확정 — 미완료 위원회 기록 생성 (회부일시 확정)
