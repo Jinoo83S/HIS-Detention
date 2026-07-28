@@ -377,17 +377,18 @@
         <div class="teacher-nav-label">기록 | Records</div>
         <div class="teacher-nav-buttons">
           <button class="tab-btn active" data-tab="entry">입력 | Entry</button>
-          <button class="tab-btn" data-tab="all">전체 기록 | All Records</button>
-          <button class="tab-btn role-only" data-role="master" data-tab="confirm">확정 | Confirm</button>
+          <button class="tab-btn" data-tab="all">디텐션 조회 | Detention Records</button>
+          <button class="tab-btn role-only" data-role="confirm" data-tab="confirm">디텐션 확정 | Confirm</button>
         </div>
       </div>
       <div class="teacher-nav-group">
         <div class="teacher-nav-label">후속 조치 | Follow-up</div>
         <div class="teacher-nav-buttons">
           <button class="tab-btn role-only" data-role="ms_notice,hs_notice" data-tab="notify">알림 | Notice</button>
+          <button class="tab-btn" data-tab="recovery-view">회복교육 조회 | Recovery Records</button>
           <button class="tab-btn role-only" data-role="ms_restore" data-tab="recovery-ms">중등 회복교육 | MS Recovery</button>
           <button class="tab-btn role-only" data-role="hs_restore" data-tab="recovery-hs">고등 회복교육 | HS Recovery</button>
-          <button class="tab-btn role-only" data-role="master,ms_notice,hs_notice,ms_restore,hs_restore" data-tab="discipline">위원회 | Committee</button>
+          <button class="tab-btn role-only" data-role="committee_view,committee_edit" data-tab="discipline">위원회 | Committee</button>
         </div>
       </div>
       <div class="teacher-nav-group">
@@ -560,6 +561,14 @@
         </div>
         <div id="all-records-pager" class="pager"></div>
 
+      </div>
+    </div>
+
+    <!-- RECOVERY VIEW -->
+    <div id="tab-recovery-view" class="tab-panel">
+      <div class="card">
+        <div class="card-title">회복교육 조회 | Restorative Education Records</div>
+        <div class="notice"><div>중등·고등 회복교육 완료 기록을 조회합니다. 기본권한은 조회만 가능합니다.</div><div>View completed middle and high school restorative education records.</div></div>
         <div class="card-title" style="margin-top:16px;">회복교육 기록 | Restorative Education History</div>
         <div class="tbl-wrap">
           <table>
@@ -588,8 +597,8 @@
       <div class="card">
         <div class="card-title">디텐션 확정 | Confirm Detention</div>
         <div class="notice">
-          <div>Master 권한은 디텐션 상태를 조회하고 대기/반려 항목을 확정 또는 반려할 수 있습니다.</div>
-          <div>Users with Master role can review records and confirm or reject pending or rejected entries.</div>
+          <div>디텐션 확정 권한은 대기·확정·반려 기록을 조회하고 수정·처리할 수 있습니다.</div>
+          <div>Users with Detention Confirm permission can review, edit, confirm, or reject records.</div>
         </div>
 
         <div class="filter-bar" style="margin-top:10px;">
@@ -1120,23 +1129,54 @@
 
     function isAdminRole(){ return teacherRoles.includes('admin'); }
     function isMasterRole(){ return teacherRoles.includes('master'); }
-    function hasFullWorkRole(){ return isAdminRole() || isMasterRole(); }
-    function hasRole(roleName){ return isAdminRole() || teacherRoles.includes(String(roleName || '').trim().toLowerCase()); }
+    function hasRole(roleName){ return teacherRoles.includes(String(roleName || '').trim().toLowerCase()); }
 
-    // 전체 업무 권한: admin, master
-    function canEditStandard(){ return hasFullWorkRole(); }
-    function canConfirmDetention(){ return hasFullWorkRole(); }
-    function canManageNoticeLevel(level){ return hasFullWorkRole() || hasRole(level === 'ms' ? 'ms_notice' : 'hs_notice'); }
-    function canManageRecoveryLevel(level){ return hasFullWorkRole() || hasRole(level === 'ms' ? 'ms_restore' : 'hs_restore'); }
-    function canViewCommittee(){
-      return hasFullWorkRole() || ['ms_notice','hs_notice','ms_restore','hs_restore'].some(role => hasRole(role));
+    let permissions = null;
+    function buildPermissions(){
+      const admin = isAdminRole();
+      const master = admin || isMasterRole();
+      permissions = {
+        detention: {
+          create: true,
+          view: true,
+          cancelOwnPending: true,
+          confirm: master || hasRole('confirm'),
+          editAny: master || hasRole('confirm'),
+          delete: admin
+        },
+        notice: {
+          view: master || hasRole('ms_notice') || hasRole('hs_notice'),
+          editMS: master || hasRole('ms_notice'),
+          editHS: master || hasRole('hs_notice')
+        },
+        recovery: {
+          view: true,
+          editMS: master || hasRole('ms_restore'),
+          editHS: master || hasRole('hs_restore')
+        },
+        committee: {
+          view: master || hasRole('committee_view') || hasRole('committee_edit') || hasRole('committee'),
+          edit: master || hasRole('committee_edit') || hasRole('committee')
+        },
+        standards: { view: true, edit: master },
+        admin: { center: master, dataCorrection: admin }
+      };
+      if (permissions.committee.edit) permissions.committee.view = true;
+      return permissions;
     }
-    function canManageCommittee(){ return hasFullWorkRole(); }
-
-    // admin 전용 권한: 날짜/DB 보정성 수정, 자동 벌점 기준 외 입력
-    function canOverrideAutoPoints(){ return isAdminRole(); }
-    function canEditRecordDate(){ return isAdminRole(); }
-    function canEditAdminNote(){ return isAdminRole(); }
+    function getPermissions(){ return permissions || buildPermissions(); }
+    function hasFullWorkRole(){ return isAdminRole() || isMasterRole(); }
+    function canEditStandard(){ return getPermissions().standards.edit; }
+    function canConfirmDetention(){ return getPermissions().detention.confirm; }
+    function canManageNoticeLevel(level){ return level === 'ms' ? getPermissions().notice.editMS : getPermissions().notice.editHS; }
+    function canViewNotice(){ return getPermissions().notice.view; }
+    function canManageRecoveryLevel(level){ return level === 'ms' ? getPermissions().recovery.editMS : getPermissions().recovery.editHS; }
+    function canViewRecovery(){ return getPermissions().recovery.view; }
+    function canViewCommittee(){ return getPermissions().committee.view; }
+    function canManageCommittee(){ return getPermissions().committee.edit; }
+    function canOverrideAutoPoints(){ return getPermissions().admin.dataCorrection; }
+    function canEditRecordDate(){ return getPermissions().admin.dataCorrection; }
+    function canEditAdminNote(){ return getPermissions().admin.dataCorrection; }
     function getLevelForStudentKey(studentKey, fallbackLevel){
       const s = students[String(studentKey || '')] || {};
       return getSchoolLevel(s.className || '') || String(fallbackLevel || '');
@@ -1145,9 +1185,11 @@
       const lvl = getLevelForStudentKey(studentKey, fallbackLevel);
       if(studentKey && lvl){ await recalculateStudentState(String(studentKey), lvl); }
     }
+    function normalizeTeacherName(value){ return String(value || '').trim().toLowerCase(); }
     function canCancelDraftDetention(record){
       const status = String((record && record.status) || '임시저장');
-      return status === '임시저장' && (hasFullWorkRole() || String((record && record.teacherEmail) || '') === String((teacher && teacher.email) || ''));
+      const own = normalizeTeacherName(record && record.teacherName) === normalizeTeacherName(teacher && teacher.name);
+      return status === '임시저장' && (getPermissions().detention.editAny || own);
     }
     /* ---------- 3) 점수 / 상태 표시 헬퍼 ---------- */
     function inferPointsAfterConfirmCancel(record){
@@ -1791,8 +1833,9 @@
       }
 
       teacherRoles = getTeacherRoles(teacher);
+      buildPermissions();
       const adminCenterLink = document.getElementById('admin-center-link');
-      if (adminCenterLink) adminCenterLink.style.display = hasFullWorkRole() ? 'inline-flex' : 'none';
+      if (adminCenterLink) adminCenterLink.style.display = getPermissions().admin.center ? 'inline-flex' : 'none';
       document.getElementById('teacher-info').innerHTML = `
         <span class="teacher-user-main"><strong>${esc(teacher.name || '사용자')}</strong><span>${esc(teacher.email || '')}</span></span>
         <span class="teacher-role-chip">${esc(rolesLabel(teacher.roles || []))}</span>
@@ -1812,12 +1855,13 @@
     }
 
     const TAB_ACCESS_RULES = Object.freeze({
-      entry: () => true,
-      all: () => true,
-      students: () => true,
-      standard: () => true,
+      entry: () => getPermissions().detention.create,
+      all: () => getPermissions().detention.view,
+      students: () => getPermissions().detention.view,
+      standard: () => getPermissions().standards.view,
       confirm: () => canConfirmDetention(),
-      notify: () => canManageNoticeLevel('ms') || canManageNoticeLevel('hs'),
+      notify: () => canViewNotice(),
+      'recovery-view': () => canViewRecovery(),
       'recovery-ms': () => canManageRecoveryLevel('ms'),
       'recovery-hs': () => canManageRecoveryLevel('hs'),
       discipline: () => canViewCommittee()
@@ -1850,7 +1894,11 @@
       const hasFullAccess = hasFullWorkRole();
       document.querySelectorAll('.role-only').forEach(el => {
         const roles = String(el.dataset.role || '').split(',').map(v => v.trim()).filter(Boolean);
-        const visible = hasFullAccess || roles.some(role => hasRole(role));
+        const visible = hasFullAccess || roles.some(role => {
+          if(role === 'confirm') return canConfirmDetention();
+          if(role === 'committee_view' || role === 'committee_edit') return canViewCommittee();
+          return hasRole(role);
+        });
         el.classList.toggle('role-show', visible);
         el.setAttribute('aria-hidden', visible ? 'false' : 'true');
       });
