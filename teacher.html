@@ -429,6 +429,89 @@
       .lookup-desktop-table{display:none}.lookup-mobile-cards{display:block}.lookup-result-card{padding:11px}.lookup-page-head{margin-bottom:12px}
     }
 
+  
+
+    /* 2026-07-28 compact entry layout: keep standards dynamic, reduce vertical scroll */
+    .entry-beginner-guide{margin:0 0 8px;border:1px solid #cfe0ff;border-radius:9px;background:#f5f8ff;color:#2455a6;font-size:11px}
+    .entry-beginner-guide summary{display:flex;align-items:center;gap:7px;min-height:32px;padding:6px 10px;cursor:pointer;list-style:none;font-weight:750}
+    .entry-beginner-guide summary::-webkit-details-marker{display:none}
+    .entry-beginner-guide summary::after{content:'▾';margin-left:auto;color:#6681b2;transition:transform .15s ease}
+    .entry-beginner-guide[open] summary::after{transform:rotate(180deg)}
+    .entry-beginner-guide .entry-info-icon{display:inline-grid;place-items:center;width:16px;height:16px;border:1.5px solid #2563eb;border-radius:50%;font-size:9px;flex:0 0 auto}
+    .entry-guide-summary{font-weight:600;color:#5270a4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .entry-guide-body{padding:0 10px 8px 33px;line-height:1.45;color:#536a95}
+    #tab-entry .entry-main-card{padding:12px 14px}
+    #tab-entry .entry-card-head{margin-bottom:5px}
+    #tab-entry .entry-card-title{font-size:17px}
+    #tab-entry .entry-help{display:none}
+    #tab-entry .entry-steps{gap:4px;margin:0 0 8px}
+    #tab-entry .entry-step{font-size:9px;line-height:1.1;color:#6a7891}
+    #tab-entry .entry-step-num{width:18px;height:18px;font-size:9px;margin-right:4px}
+    #tab-entry .entry-step:not(:last-child)::after{right:-5px;top:8px}
+    #tab-entry .entry-section{padding-top:8px;margin-top:8px}
+    #tab-entry .entry-section-title{gap:6px;margin-bottom:5px;font-size:12px}
+    #tab-entry .entry-section-title .entry-badge{width:18px;height:18px;font-size:9px}
+    #tab-entry .entry-section-help{font-size:10px}
+    #tab-entry .edit-input{min-height:34px}
+    #tab-entry textarea.edit-input{min-height:58px}
+
+    #tab-entry .violation-category-cards{grid-template-columns:repeat(6,minmax(68px,1fr));gap:5px;margin-bottom:7px}
+    #tab-entry .violation-category-card{min-height:46px;padding:5px 3px;border-radius:8px;gap:2px;font-size:9.5px}
+    #tab-entry .violation-category-icon{font-size:15px}
+    #tab-entry .violation-category-name{line-height:1.15;line-clamp:1;-webkit-line-clamp:1}
+    #tab-entry .violation-choice-head{margin:2px 0 4px;font-size:11px}
+    #tab-entry .violation-item-cards{gap:5px;max-height:118px;padding:1px}
+    #tab-entry .violation-item-card{min-height:42px;padding:7px 43px 7px 8px;border-radius:8px}
+    #tab-entry .violation-item-title{font-size:10.5px;line-height:1.28}
+    #tab-entry .violation-item-points{right:6px;top:6px;font-size:9px;padding:2px 5px}
+    #tab-entry .selected-violation-detail-wrap{position:relative;margin-top:5px}
+    #tab-entry .selected-violation-detail{margin-top:0;padding:7px 9px;font-size:10px;line-height:1.35;white-space:pre-wrap}
+    #tab-entry .selected-violation-detail.visible{display:-webkit-box;line-clamp:2;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;max-height:38px}
+    #tab-entry .selected-violation-detail.visible.expanded{display:block;line-clamp:unset;-webkit-line-clamp:unset;max-height:150px;overflow:auto}
+    #tab-entry .selected-violation-toggle{display:block;margin:3px 0 0 auto;border:0;background:transparent;color:#245fc4;font-size:9.5px;font-weight:800;cursor:pointer;padding:2px 3px}
+    #tab-entry .selected-violation-toggle[hidden]{display:none}
+
+    #tab-entry .points-mode-panel{padding:8px 9px;border-radius:9px}
+    #tab-entry .points-mode-summary{margin-bottom:6px;gap:2px 7px}
+    #tab-entry .points-mode-summary strong{font-size:11.5px}
+    #tab-entry .points-mode-summary>span:last-child{font-size:9.5px}
+    #tab-entry .points-mode-badge{padding:3px 6px;font-size:9px}
+    #tab-entry .entry-points-layout{gap:6px}
+    #tab-entry .entry-point-card{padding:7px;min-height:54px;border-radius:8px}
+    #tab-entry .entry-point-value{font-size:20px}
+    #tab-entry .manual-card input{font-size:16px;min-height:32px}
+    #tab-entry .point-caption{font-size:9px;margin-top:2px}
+    #tab-entry .entry-point-tip{padding:6px 8px;font-size:9.5px;line-height:1.3}
+    #tab-entry .entry-bottom-grid{gap:9px}
+    #tab-entry .entry-basic-grid{gap:7px}
+    #tab-entry .entry-save-row{margin-top:8px;gap:8px}
+    #tab-entry .entry-save-row .btn{min-height:36px}
+
+    @media(max-width:980px){
+      #tab-entry .violation-category-cards{grid-template-columns:repeat(6,minmax(58px,1fr))}
+    }
+    @media(max-width:680px){
+      .entry-beginner-guide{margin-bottom:6px}
+      .entry-guide-summary{font-size:9.5px}
+      .entry-guide-body{padding-left:10px}
+      #tab-entry .entry-main-card{padding:10px}
+      #tab-entry .entry-card-title{font-size:15px}
+      #tab-entry .entry-steps{margin-bottom:7px}
+      #tab-entry .entry-step-num{width:17px;height:17px}
+      #tab-entry .entry-step-text{font-size:8px}
+      #tab-entry .entry-section{padding-top:7px;margin-top:7px}
+      #tab-entry .entry-section-help{display:none}
+      #tab-entry .violation-category-cards{grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}
+      #tab-entry .violation-category-card{min-height:39px;padding:4px 2px;font-size:8.5px}
+      #tab-entry .violation-category-icon{font-size:13px}
+      #tab-entry .violation-item-cards{max-height:122px}
+      #tab-entry .violation-item-card{min-height:39px;padding-top:6px;padding-bottom:6px}
+      #tab-entry .points-mode-summary{grid-template-columns:auto 1fr}
+      #tab-entry .points-mode-summary>span:last-child{grid-column:1/-1}
+      #tab-entry .entry-points-layout{grid-template-columns:1fr 18px 1fr}
+      #tab-entry textarea.edit-input{min-height:52px}
+    }
+
   </style>
 </head>
 <body>
@@ -542,10 +625,10 @@
 
     <!-- ENTRY -->
     <div id="tab-entry" class="tab-panel active">
-      <div class="entry-priority-note">
-        <span class="entry-info-icon">i</span>
-        <span>처음 사용하시는 경우: 학생을 검색한 뒤 위반 항목을 선택하고 점수를 확인한 후 저장하세요.</span>
-      </div>
+      <details class="entry-beginner-guide">
+        <summary><span class="entry-info-icon">i</span><strong>처음 사용 안내</strong><span class="entry-guide-summary">학생 검색 → 위반 선택 → 점수 확인 → 저장</span></summary>
+        <div class="entry-guide-body">학생 이름이나 학반을 검색하고, 위반 구분과 위반행위를 선택하세요. 점수가 자동 산정되는지 직접 입력해야 하는지 확인한 뒤 저장합니다.</div>
+      </details>
 
       <div class="entry-redesign-grid">
         <section class="entry-main-card" aria-labelledby="entry-main-title">
@@ -575,7 +658,10 @@
             <div id="category-card-list" class="violation-category-cards" role="list" aria-label="위반 구분"></div>
             <div class="violation-choice-head"><strong>위반행위</strong><span id="violation-choice-count" class="small"></span></div>
             <div id="violation-card-list" class="violation-item-cards" role="listbox" aria-label="위반행위"></div>
-            <div id="selected-violation-detail" class="selected-violation-detail" aria-live="polite"></div>
+            <div class="selected-violation-detail-wrap">
+              <div id="selected-violation-detail" class="selected-violation-detail" aria-live="polite"></div>
+              <button id="selected-violation-toggle" type="button" class="selected-violation-toggle" onclick="toggleSelectedViolationDetail()" aria-expanded="false" hidden>전체 내용 보기</button>
+            </div>
           </div>
 
           <div class="entry-section">
@@ -2141,7 +2227,8 @@
     function renderViolationOptions(){const category=document.getElementById('category-select').value,sel=document.getElementById('violation-select'),prev=sel.value,list=detentionStandards.filter(x=>x.category===category);sel.innerHTML=list.map(x=>`<option value="${esc(x.violation)}">${esc(x.violation)}</option>`).join('');if(prev&&list.some(x=>x.violation===prev))sel.value=prev;renderViolationCards();syncAutoPoints();}
     function renderViolationCards(){const category=document.getElementById('category-select').value,sel=document.getElementById('violation-select'),wrap=document.getElementById('violation-card-list'),count=document.getElementById('violation-choice-count');if(!wrap||!sel)return;const list=detentionStandards.filter(x=>x.category===category),selected=sel.value;if(count)count.textContent=`${list.length}개 항목`;wrap.innerHTML=list.map((x,i)=>{const active=x.violation===selected;return `<button type="button" role="option" aria-selected="${active?'true':'false'}" class="violation-item-card ${active?'active':''}" data-violation-index="${i}" onclick="selectViolationCard(Number(this.dataset.violationIndex))" title="${esc(x.violation)}"><span class="violation-item-title">${esc(x.violation)}</span><span class="violation-item-points">${esc(String(x.autoPoints||'-'))}점</span></button>`;}).join('');updateSelectedViolationDetail();}
     function selectViolationCard(index){const category=document.getElementById('category-select').value,list=detentionStandards.filter(x=>x.category===category),item=list[index];if(!item)return;document.getElementById('violation-select').value=item.violation;renderViolationCards();syncAutoPoints();}
-    function updateSelectedViolationDetail(){const box=document.getElementById('selected-violation-detail'),std=getSelectedStandard();if(!box)return;if(!std){box.classList.remove('visible');box.textContent='';return;}box.textContent=`선택됨: ${std.violation}${std.note?'\n안내: '+std.note:''}`;box.classList.add('visible');}
+    function updateSelectedViolationDetail(){const box=document.getElementById('selected-violation-detail'),toggle=document.getElementById('selected-violation-toggle'),std=getSelectedStandard();if(!box)return;if(!std){box.classList.remove('visible','expanded');box.textContent='';if(toggle){toggle.hidden=true;toggle.setAttribute('aria-expanded','false');}return;}const detail=`선택됨: ${std.violation}${std.note?'\n안내: '+std.note:''}`;box.textContent=detail;box.title=detail;box.classList.add('visible');box.classList.remove('expanded');if(toggle){toggle.hidden=detail.length<95;toggle.textContent='전체 내용 보기';toggle.setAttribute('aria-expanded','false');}}
+    function toggleSelectedViolationDetail(){const box=document.getElementById('selected-violation-detail'),toggle=document.getElementById('selected-violation-toggle');if(!box||!toggle)return;const expanded=box.classList.toggle('expanded');toggle.textContent=expanded?'내용 접기':'전체 내용 보기';toggle.setAttribute('aria-expanded',expanded?'true':'false');}
     function getAutoChoicePoint(std){const raw=String((std&&std.autoPoints)||'').trim(),parts=raw.split(',').map(v=>Number(v.trim())).filter(Number.isFinite);if(parts.length<2)return parts[0]||0;const count=countSameDetention(selectedStudentKey||syncStudentSelectionWithoutUpdate(),std.category||'',std.violation||'');return count===0?parts[0]:parts[1];}
     function syncAutoPoints(){const std=getSelectedStandard(),raw=std?String(std.autoPoints||'').trim():'',count=std&&raw.includes(',')&&!raw.includes('-')?countSameDetention(selectedStudentKey||syncStudentSelectionWithoutUpdate(),std.category||'',std.violation||''):0;let display=raw||'-';if(std&&raw.includes(',')&&!raw.includes('-'))display=`${getAutoChoicePoint(std)}점 (${count+1}회차)`;else if(/^\d+$/.test(raw)||raw.includes('-'))display=`${raw}점`;document.getElementById('auto-points').textContent=display;updateSelectedViolationDetail();updateManualPointsMode();}
 
