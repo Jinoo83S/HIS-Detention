@@ -99,7 +99,8 @@
     .admin-center-nav .active{color:#174ea6;border-bottom-color:#1a73e8;background:#f7faff;}
     @media(max-width:760px){.admin-center-topbar{align-items:flex-start;flex-direction:column}.admin-center-actions{justify-content:flex-start}.admin-center-nav{padding:0 8px}.admin-center-nav a,.admin-center-nav button{padding:0 10px}}
 
-  </style>
+    .role-group{padding:8px 0;border-bottom:1px solid #e5e7eb}.role-group:last-child{border-bottom:0}.role-box input:disabled{cursor:not-allowed;opacity:.55}
+</style>
 </head>
 <body>
   <div id="toast"></div>
@@ -308,7 +309,7 @@
         <div class="card">
           <div class="card-title">교사 계정 CSV 업로드 | Teacher CSV Upload</div>
           <div class="notice">CSV 첫 줄 | Header: name,email,password,homeroom,roles</div>
-          <div class="small" style="margin-bottom:10px;">roles 예시 | Example: admin|master|ms_notice|hs_notice|ms_restore|hs_restore|default</div>
+          <div class="small" style="margin-bottom:10px;">roles 예시 | Example: default|confirm|ms_notice|hs_notice|ms_restore|hs_restore|committee_view|committee_edit|master|admin</div>
           <div class="filter-bar">
             <select id="teacher-csv-enc" class="edit-input">
               <option value="utf-8">UTF-8</option>
@@ -342,14 +343,18 @@
   <script>
     let ADMIN_PW = '1751'; // RTDB에서 로드됨
     const ROLE_OPTIONS = [
-      { key: 'admin', label: 'Admin' },
-      { key: 'master', label: 'Master' },
-      { key: 'ms_notice', label: 'MS Notice' },
-      { key: 'hs_notice', label: 'HS Notice' },
-      { key: 'ms_restore', label: 'MS Restore' },
-      { key: 'hs_restore', label: 'HS Restore' },
-      { key: 'default', label: 'Default' }
+      { key: 'default', label: '기본권한 | Default', group: '기본 업무' },
+      { key: 'confirm', label: '디텐션 확정 | Detention Confirm', group: '기본 업무' },
+      { key: 'ms_notice', label: '중등 알림 | MS Notice', group: '알림' },
+      { key: 'hs_notice', label: '고등 알림 | HS Notice', group: '알림' },
+      { key: 'ms_restore', label: '중등 회복교육 | MS Restore', group: '회복교육' },
+      { key: 'hs_restore', label: '고등 회복교육 | HS Restore', group: '회복교육' },
+      { key: 'committee_view', label: '조회 | View', group: '위원회' },
+      { key: 'committee_edit', label: '수정 | Edit', group: '위원회' },
+      { key: 'master', label: 'Master', group: '관리 권한' },
+      { key: 'admin', label: 'Admin', group: '관리 권한' }
     ];
+    const PRIVILEGED_ROLES = new Set(['master', 'admin']);
 
     let teachersRaw = {};
     let studentsRaw = {};
@@ -399,11 +404,39 @@
     }
 
     function normalizeRoles(roles) {
-      if (Array.isArray(roles)) return roles.filter(Boolean);
-      if (typeof roles === 'string') {
-        return roles.split(/[|,]/).map(v => String(v || '').trim().toLowerCase()).filter(Boolean);
+      let values = [];
+      if (Array.isArray(roles)) values = roles;
+      else if (typeof roles === 'string') values = roles.split(/[|,\s]+/);
+      else if (roles && typeof roles === 'object') values = Object.keys(roles).filter(k => roles[k]);
+      const normalized = [...new Set(values.map(v => String(v || '').trim().toLowerCase()).filter(Boolean))];
+      // 구형 committee 권한은 새 체계에서 조회+수정으로 호환합니다.
+      if (normalized.includes('committee')) {
+        if (!normalized.includes('committee_view')) normalized.push('committee_view');
+        if (!normalized.includes('committee_edit')) normalized.push('committee_edit');
       }
-      return [];
+      return normalized.filter(v => v !== 'committee');
+    }
+
+    function currentManagerRoles() {
+      if (sessionStorage.getItem('his_admin_session') === '1') return ['admin'];
+      try {
+        const teacher = JSON.parse(sessionStorage.getItem('his_teacher') || '{}');
+        return normalizeRoles(teacher.roles ?? teacher.role ?? []);
+      } catch (e) { return []; }
+    }
+    function isCurrentAdmin() { return currentManagerRoles().includes('admin'); }
+    function isCurrentMaster() { return isCurrentAdmin() || currentManagerRoles().includes('master'); }
+    function rowIsPrivileged(row) {
+      const roles = normalizeRoles(row?.roles);
+      return roles.some(role => PRIVILEGED_ROLES.has(role));
+    }
+    function masterCanEditRow(row) {
+      return isCurrentAdmin() || (isCurrentMaster() && !rowIsPrivileged(row));
+    }
+    function canEditRole(row, roleKey) {
+      if (isCurrentAdmin()) return true;
+      if (!isCurrentMaster() || rowIsPrivileged(row)) return false;
+      return !PRIVILEGED_ROLES.has(roleKey);
     }
 
     function hasRole(row, roleKey) {
@@ -683,7 +716,7 @@
     }
 
     function roleLabels(roles){
-      const map={admin:'Admin',master:'Master',ms_notice:'MS Notice',hs_notice:'HS Notice',ms_restore:'MS Restore',hs_restore:'HS Restore',default:'Default'};
+      const map={default:'기본권한',confirm:'디텐션 확정',ms_notice:'중등 알림',hs_notice:'고등 알림',ms_restore:'중등 회복교육',hs_restore:'고등 회복교육',committee_view:'위원회 조회',committee_edit:'위원회 수정',master:'Master',admin:'Admin'};
       return normalizeRoles(roles).map(r=>map[r]||r).join(', ') || '-';
     }
 
@@ -704,23 +737,49 @@
 
     function selectTeacher(idx){selectedTeacherIndex=idx;renderTeachers();}
     function updateTeacherField(idx,field,value){teacherRows[idx][field]=value;if(field==='homeroom')renderStudents();checkTeacherDirty();renderTeachers();}
-    function updateTeacherRole(idx,role,checked){const set=new Set(normalizeRoles(teacherRows[idx].roles));checked?set.add(role):set.delete(role);teacherRows[idx].roles=[...set];checkTeacherDirty();renderTeachers();}
+    function updateTeacherRole(idx, role, checked) {
+      const row = teacherRows[idx];
+      if (!row || !canEditRole(row, role)) {
+        toast('이 권한은 현재 계정으로 변경할 수 없습니다.\nYou do not have permission to change this role.', 'err');
+        renderTeacherDetail();
+        return;
+      }
+      const set = new Set(normalizeRoles(row.roles));
+      if (checked) set.add(role); else set.delete(role);
+      if (role === 'committee_edit' && checked) set.add('committee_view');
+      if (role === 'committee_view' && !checked) set.delete('committee_edit');
+      row.roles = [...set];
+      checkTeacherDirty();
+      renderTeachers();
+    }
     function renderTeacherDetail(){
       const box=document.getElementById('teacher-detail'); const label=document.getElementById('teacher-selected-label');
       const r=teacherRows[selectedTeacherIndex];
       if(!r||r._delete){label.textContent='';box.innerHTML='<div class="admin-detail-empty">왼쪽 목록에서 교사를 선택하세요.</div>';return;}
       label.textContent=(r.name||'신규 교사')+(r._status==='신규'?' · 신규':'');
       const roles=normalizeRoles(r.roles);
+      const editable = masterCanEditRow(r);
+      const disabledAttr = editable ? '' : 'disabled';
+      const groups = [...new Set(ROLE_OPTIONS.map(o => o.group))];
+      const rolesHtml = groups.map(group => {
+        const items = ROLE_OPTIONS.filter(o => o.group === group).map(o => {
+          const roleDisabled = canEditRole(r, o.key) ? '' : 'disabled';
+          return `<label><input type="checkbox" ${roles.includes(o.key)?'checked':''} ${roleDisabled} onchange="updateTeacherRole(${selectedTeacherIndex},'${o.key}',this.checked)">${o.label}</label>`;
+        }).join('');
+        return `<div class="role-group"><div class="admin-secondary" style="font-weight:800;margin-bottom:6px">${group}</div><div class="role-box">${items}</div></div>`;
+      }).join('');
+      const lockNotice = editable ? '' : '<div class="notice" style="margin-bottom:10px">Master는 Admin/Master 계정을 수정할 수 없습니다. | Master cannot edit Admin/Master accounts.</div>';
       box.innerHTML=`
+        ${lockNotice}
         <div class="admin-form-section"><div class="admin-form-title">기본 정보</div><div class="admin-form-grid">
-          <div><label class="label">이름 | Name</label><input class="edit-input" value="${esc(r.name||'')}" oninput="teacherRows[${selectedTeacherIndex}].name=this.value;checkTeacherDirty()" onblur="renderTeachers()"></div>
-          <div><label class="label">이메일 | Email</label><input class="edit-input" value="${esc(r.email||'')}" oninput="teacherRows[${selectedTeacherIndex}].email=this.value;checkTeacherDirty()" onblur="renderTeachers()"></div>
-          <div><label class="label">비밀번호 | Password</label><input class="edit-input" value="${esc(r.password||'')}" oninput="teacherRows[${selectedTeacherIndex}].password=this.value;checkTeacherDirty()"></div>
-          <div><label class="label">담당학반 | Homeroom</label><input class="edit-input" value="${esc(r.homeroom||'')}" oninput="teacherRows[${selectedTeacherIndex}].homeroom=this.value;checkTeacherDirty()" onblur="renderTeachers();renderStudents()"></div>
+          <div><label class="label">이름 | Name</label><input class="edit-input" ${disabledAttr} value="${esc(r.name||'')}" oninput="teacherRows[${selectedTeacherIndex}].name=this.value;checkTeacherDirty()" onblur="renderTeachers()"></div>
+          <div><label class="label">이메일 | Email</label><input class="edit-input" ${disabledAttr} value="${esc(r.email||'')}" oninput="teacherRows[${selectedTeacherIndex}].email=this.value;checkTeacherDirty()" onblur="renderTeachers()"></div>
+          <div><label class="label">비밀번호 | Password</label><input class="edit-input" ${disabledAttr} value="${esc(r.password||'')}" oninput="teacherRows[${selectedTeacherIndex}].password=this.value;checkTeacherDirty()"></div>
+          <div><label class="label">담당학반 | Homeroom</label><input class="edit-input" ${disabledAttr} value="${esc(r.homeroom||'')}" oninput="teacherRows[${selectedTeacherIndex}].homeroom=this.value;checkTeacherDirty()" onblur="renderTeachers();renderStudents()"></div>
         </div></div>
-        <div class="admin-form-section"><div class="admin-form-title">권한 | Roles</div><div class="admin-form-grid one"><div class="role-box">${ROLE_OPTIONS.map(o=>`<label><input type="checkbox" ${roles.includes(o.key)?'checked':''} onchange="updateTeacherRole(${selectedTeacherIndex},'${o.key}',this.checked)">${o.label}</label>`).join('')}</div></div></div>
-        <div class="admin-form-section"><div class="admin-form-title">저장 상태</div><div class="admin-form-grid one"><div>${statusPill(r._status||'기존')}</div><label class="delete-toggle"><input type="checkbox" onchange="teacherRows[${selectedTeacherIndex}]._delete=this.checked;checkTeacherDirty();renderTeachers()"> 이 교사를 삭제 표시</label></div></div>
-        <div class="admin-detail-actions"><button class="btn btn-primary" onclick="saveTeachers()">교사 데이터 저장</button></div>`;
+        <div class="admin-form-section"><div class="admin-form-title">권한 | Roles</div><div class="admin-form-grid one">${rolesHtml}</div></div>
+        <div class="admin-form-section"><div class="admin-form-title">저장 상태</div><div class="admin-form-grid one"><div>${statusPill(r._status||'기존')}</div><label class="delete-toggle"><input type="checkbox" ${editable?'':'disabled'} onchange="teacherRows[${selectedTeacherIndex}]._delete=this.checked;checkTeacherDirty();renderTeachers()"> 이 교사를 삭제 표시</label></div></div>
+        <div class="admin-detail-actions"><button class="btn btn-primary" ${editable?'':'disabled'} onclick="saveTeachers()">교사 데이터 저장</button></div>`;
     }
 
     function deleteTeacherRow(idx) {
@@ -774,6 +833,7 @@
     }
 
     function addTeacherRow() {
+      if (!isCurrentMaster()) return toast('교사 계정 관리 권한이 없습니다.', 'err');
       teacherRows.unshift({ oldKey:'', name:'', email:'', password:'', homeroom:'', roles:[], _delete:false, _status:'신규' });
       selectedTeacherIndex=0;
       renderTeachers();
@@ -788,6 +848,13 @@
     }
 
     async function saveTeachers() {
+      if (!isCurrentMaster()) return toast('교사 계정 관리 권한이 없습니다.', 'err');
+      if (!isCurrentAdmin()) {
+        const protectedChanged = teacherRows.some(row => rowIsPrivileged(row) && teacherRowSig(row) !== teacherRowSig({...(teachersRaw[row.oldKey] || row), _delete:false, roles: normalizeRoles((teachersRaw[row.oldKey] || row).roles)}));
+        if (protectedChanged) return toast('Master는 Admin/Master 계정을 수정하거나 삭제할 수 없습니다.', 'err');
+        const elevated = teacherRows.some(row => !rowIsPrivileged(teachersRaw[row.oldKey] || {}) && normalizeRoles(row.roles).some(role => PRIVILEGED_ROLES.has(role)));
+        if (elevated) return toast('Master는 Admin 또는 Master 권한을 부여할 수 없습니다.', 'err');
+      }
       try {
         const updates = {};
         const removes = [];
