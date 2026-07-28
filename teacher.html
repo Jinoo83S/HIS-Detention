@@ -290,7 +290,84 @@
     .committee-action-group{display:flex;gap:4px;justify-content:center;align-items:center;flex-wrap:wrap;}
     .btn-exception{background:#fff7ed;color:#9a3412;border:1px solid #fdba74;}
     .btn-exception:hover:not(:disabled){background:#ffedd5;}
-  </style>
+  
+
+    /* 2026-07-28 phase 1: beginner-first detention entry UI */
+    .entry-priority-note{display:flex;align-items:center;gap:8px;margin:0 0 12px;padding:10px 12px;border:1px solid #cfe0ff;border-radius:10px;background:#f4f8ff;color:#2455a6;font-size:12px;font-weight:700}
+    .entry-priority-note .entry-info-icon{display:inline-grid;place-items:center;width:20px;height:20px;border:2px solid #2563eb;border-radius:50%;font-size:12px;flex:0 0 auto}
+    .entry-redesign-grid{display:grid;grid-template-columns:minmax(0,1.75fr) minmax(300px,.85fr);gap:14px;align-items:start}
+    .entry-main-card,.entry-recent-card{border:1px solid #dbe3f2;border-radius:14px;background:#fff;box-shadow:0 4px 16px rgba(15,35,75,.05)}
+    .entry-main-card{padding:18px}
+    .entry-recent-card{padding:16px}
+    .entry-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px}
+    .entry-card-title{font-size:18px;font-weight:900;color:#10265f;line-height:1.25}
+    .entry-card-title small{font-size:12px;font-weight:600;color:#8a96ad;margin-left:6px}
+    .entry-help{font-size:11px;color:#3868bd;font-weight:700;text-align:right}
+    .entry-steps{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:0 0 16px;padding:0;list-style:none}
+    .entry-step{position:relative;display:flex;align-items:center;gap:7px;color:#667085;font-size:11px;font-weight:800;min-width:0}
+    .entry-step:not(:last-child)::after{content:'→';position:absolute;right:-7px;color:#b9c3d6}
+    .entry-step-num{display:grid;place-items:center;width:24px;height:24px;border-radius:50%;background:#eef2f8;color:#53627b;font-size:11px;flex:0 0 auto}
+    .entry-step:first-child .entry-step-num{background:#1261e8;color:#fff}
+    .entry-step-text{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .entry-section{border-top:1px solid #edf1f7;padding-top:14px;margin-top:14px}
+    .entry-section:first-of-type{border-top:0;padding-top:0;margin-top:0}
+    .entry-section-title{display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:13px;font-weight:900;color:#172b5f}
+    .entry-section-title .entry-badge{display:grid;place-items:center;width:20px;height:20px;border-radius:50%;background:#1261e8;color:#fff;font-size:11px}
+    .entry-section-help{font-size:11px;color:#7a869d;font-weight:500;margin-left:2px}
+    .entry-two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .entry-points-layout{display:grid;grid-template-columns:minmax(140px,.75fr) 30px minmax(190px,1fr) minmax(180px,.9fr);gap:10px;align-items:stretch}
+    .entry-point-card{border:1px solid #d9e2f2;border-radius:10px;background:#fbfdff;padding:12px;min-height:76px}
+    .entry-point-card .label{margin-bottom:5px}
+    .entry-point-value{font-size:26px;font-weight:900;color:#1458d4;text-align:center;padding-top:5px}
+    .entry-point-arrow{display:grid;place-items:center;font-size:20px;color:#8b98ae}
+    .entry-point-tip{display:flex;align-items:center;border-radius:10px;background:#eef5ff;color:#3164b5;padding:10px;font-size:11px;line-height:1.45;font-weight:700}
+    .entry-bottom-grid{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(250px,.65fr);gap:14px;align-items:end}
+    .entry-basic-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .entry-save-row{display:grid;grid-template-columns:150px 1fr;gap:12px;margin-top:16px}
+    .entry-save-row .btn{min-height:44px;font-size:14px;font-weight:900;border-radius:9px}
+    .entry-save-row .btn-primary{background:#075be8}
+    #tab-entry .entry-recent-card .recent-entry-list{display:grid;grid-template-columns:1fr;gap:8px;max-height:590px;overflow:auto;padding-right:2px}
+    #tab-entry .entry-recent-card .recent-entry-item{padding:10px 11px;border-radius:10px;box-shadow:none}
+    #tab-entry .entry-recent-card .recent-entry-violation{line-clamp:1;-webkit-line-clamp:1;display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden;font-size:12px}
+    #tab-entry .entry-recent-card .recent-entry-meta{margin-bottom:4px}
+    #tab-entry .entry-recent-card .recent-entry-side{min-width:86px}
+    #tab-entry .entry-recent-card .recent-entry-points{font-size:16px}
+    .entry-recent-more{width:100%;margin-top:10px}
+    .mobile-entry-shortcuts{display:none}
+
+    @media (max-width:980px){
+      .entry-redesign-grid{grid-template-columns:1fr}
+      #tab-entry .entry-recent-card .recent-entry-list{grid-template-columns:repeat(2,minmax(0,1fr));max-height:none}
+      .entry-points-layout{grid-template-columns:1fr 28px 1fr}
+      .entry-point-tip{grid-column:1/-1}
+    }
+    @media (max-width:680px){
+      .entry-priority-note{font-size:11px;margin-bottom:8px}
+      .entry-main-card,.entry-recent-card{border-radius:10px;box-shadow:none}
+      .entry-main-card{padding:12px}
+      .entry-recent-card{padding:12px}
+      .entry-card-head{margin-bottom:10px}
+      .entry-card-title{font-size:16px}
+      .entry-help{display:none}
+      .entry-steps{gap:2px;margin-bottom:12px}
+      .entry-step{display:block;text-align:center;font-size:9px}
+      .entry-step:not(:last-child)::after{right:-4px;top:5px}
+      .entry-step-num{margin:0 auto 4px;width:21px;height:21px;font-size:10px}
+      .entry-step-text{white-space:normal;line-height:1.15}
+      .entry-two-col,.entry-bottom-grid,.entry-basic-grid{grid-template-columns:1fr}
+      .entry-points-layout{grid-template-columns:1fr 24px 1fr;gap:6px}
+      .entry-point-card{padding:9px;min-height:68px}
+      .entry-point-value{font-size:22px}
+      .entry-save-row{grid-template-columns:1fr;margin-top:12px}
+      .entry-save-row .btn-secondary{order:2}
+      .entry-save-row .btn-primary{order:1;position:sticky;bottom:8px;z-index:5;box-shadow:0 6px 18px rgba(7,91,232,.25)}
+      #tab-entry .entry-recent-card .recent-entry-list{grid-template-columns:1fr;max-height:320px}
+      .entry-recent-card{margin-bottom:70px}
+      .mobile-entry-shortcuts{display:grid;grid-template-columns:repeat(4,1fr);position:fixed;left:0;right:0;bottom:0;z-index:40;background:#fff;border-top:1px solid #dbe3f2;box-shadow:0 -4px 14px rgba(15,35,75,.08);padding:6px env(safe-area-inset-right) calc(6px + env(safe-area-inset-bottom)) env(safe-area-inset-left)}
+      .mobile-entry-shortcuts button{border:0;background:#fff;padding:7px 2px;color:#33476f;font-size:10px;font-weight:800}
+      .mobile-entry-shortcuts button span{display:block;font-size:17px;margin-bottom:2px;color:#155bd8}
+    }
+</style>
 </head>
 <body>
   <div id="toast"></div>
@@ -403,74 +480,106 @@
 
     <!-- ENTRY -->
     <div id="tab-entry" class="tab-panel active">
-      <div class="page-grid">
-        <div class="card">
-          <div class="card-title">디텐션 입력 | Detention Entry</div>
+      <div class="entry-priority-note">
+        <span class="entry-info-icon">i</span>
+        <span>처음 사용하시는 경우: 학생을 검색한 뒤 위반 항목을 선택하고 점수를 확인한 후 저장하세요.</span>
+      </div>
 
-          <div class="form-grid">
-            <div class="full">
-              <label class="label">이름 검색 / 학생 선택 | Student Search / Select Student</label>
-              <input id="student-search-input" class="edit-input" list="student-list" placeholder="학생 이름 검색 / Search by Korean or English name" oninput="syncStudentSelection()">
-              <datalist id="student-list"></datalist>
-            </div>
+      <div class="entry-redesign-grid">
+        <section class="entry-main-card" aria-labelledby="entry-main-title">
+          <div class="entry-card-head">
+            <div id="entry-main-title" class="entry-card-title">디텐션 입력 <small>Detention Entry</small></div>
+            <div class="entry-help">ⓘ 학생 검색 → 위반 선택 → 점수 확인 → 저장</div>
+          </div>
 
-            <div>
-              <label class="label">벌점 구분 | Category</label>
-              <select id="category-select" class="edit-input"></select>
-            </div>
+          <ol class="entry-steps" aria-label="디텐션 입력 단계">
+            <li class="entry-step"><span class="entry-step-num">1</span><span class="entry-step-text">학생 검색</span></li>
+            <li class="entry-step"><span class="entry-step-num">2</span><span class="entry-step-text">위반 항목 선택</span></li>
+            <li class="entry-step"><span class="entry-step-num">3</span><span class="entry-step-text">점수 확인</span></li>
+            <li class="entry-step"><span class="entry-step-num">4</span><span class="entry-step-text">메모 입력</span></li>
+            <li class="entry-step"><span class="entry-step-num">5</span><span class="entry-step-text">저장</span></li>
+          </ol>
 
-            <div>
-              <label class="label">위반행위 | Violation</label>
-              <select id="violation-select" class="edit-input"></select>
-            </div>
+          <div class="entry-section">
+            <div class="entry-section-title"><span class="entry-badge">1</span>학생 검색 <span class="entry-section-help">학생 이름 또는 학반을 입력하여 검색하세요.</span></div>
+            <input id="student-search-input" class="edit-input" list="student-list" placeholder="학생 이름 또는 학반 입력" oninput="syncStudentSelection()">
+            <datalist id="student-list"></datalist>
+          </div>
 
-            <div>
-              <label class="label">자동벌점 | Auto Points</label>
-              <div id="auto-points" class="readonly-box">-</div>
-            </div>
-
-            <div>
-              <label class="label">수동벌점 | Manual Points</label>
-              <input id="manual-points" type="number" min="0" class="edit-input" value="0">
-            </div>
-            <div class="points-note">숫자 범위(예: 1-12, 1,3)는 기준에 따라 수동 입력이 필요합니다. | Ranges such as 1-12 or 1,3 require manual judgment.</div>
-
-            <div class="full">
-              <label class="label">메모 | Memo</label>
-              <textarea id="memo" class="edit-input" placeholder="상세 메모를 입력해 주세요. / Enter memo details."></textarea>
-            </div>
-
-            <div>
-              <label class="label">교사 | Teacher</label>
-              <input id="entry-teacher" class="edit-input" list="entry-teacher-list"
-                placeholder="교사 검색 / Search teacher"
-                oninput="syncEntryTeacher()">
-              <datalist id="entry-teacher-list"></datalist>
-              <div class="small" id="entry-teacher-hint" style="display:none">
-                admin/master 권한으로 변경 가능 | Editable by admin/master
+          <div class="entry-section">
+            <div class="entry-section-title"><span class="entry-badge">2</span>위반 항목 선택 <span class="entry-section-help">위반 구분과 위반행위를 선택하세요.</span></div>
+            <div class="entry-two-col">
+              <div>
+                <label class="label" for="category-select">위반 구분</label>
+                <select id="category-select" class="edit-input"></select>
+              </div>
+              <div>
+                <label class="label" for="violation-select">위반행위</label>
+                <select id="violation-select" class="edit-input"></select>
               </div>
             </div>
+          </div>
 
-            <div>
-              <label class="label">날짜 | Date</label>
-              <input id="entry-date" type="date" class="edit-input">
+          <div class="entry-section">
+            <div class="entry-section-title"><span class="entry-badge">3</span>자동점수 확인 / 수동점수 입력 <span class="entry-section-help">필요한 경우에만 수동점수를 조정하세요.</span></div>
+            <div class="entry-points-layout">
+              <div class="entry-point-card">
+                <label class="label">자동점수</label>
+                <div id="auto-points" class="entry-point-value">-</div>
+              </div>
+              <div class="entry-point-arrow">→</div>
+              <div class="entry-point-card">
+                <label class="label" for="manual-points">수동점수 (선택)</label>
+                <input id="manual-points" type="number" min="0" class="edit-input" value="0">
+              </div>
+              <div class="entry-point-tip">수동점수를 입력하지 않으면 자동점수 기준으로 저장됩니다. 범위형 기준은 담당자가 최종 점수를 입력합니다.</div>
             </div>
           </div>
 
-          <div class="mini-actions">
-            <button class="btn btn-primary" onclick="saveDetention()">디텐션 저장 | Save Entry</button>
-            <button class="btn btn-secondary" onclick="resetEntryForm()">초기화 | Reset</button>
+          <div class="entry-section entry-bottom-grid">
+            <div>
+              <div class="entry-section-title"><span class="entry-badge">4</span>메모 입력 <span class="entry-section-help">선택사항 · 최대 300자</span></div>
+              <textarea id="memo" class="edit-input" maxlength="300" placeholder="상황 설명이나 추가 내용을 입력하세요."></textarea>
+            </div>
+            <div>
+              <div class="entry-section-title"><span class="entry-badge">5</span>기본 정보</div>
+              <div class="entry-basic-grid">
+                <div>
+                  <label class="label" for="entry-teacher">교사</label>
+                  <input id="entry-teacher" class="edit-input" list="entry-teacher-list" placeholder="교사 검색" oninput="syncEntryTeacher()">
+                  <datalist id="entry-teacher-list"></datalist>
+                  <div class="small" id="entry-teacher-hint" style="display:none">admin/master 권한으로 변경 가능</div>
+                </div>
+                <div>
+                  <label class="label" for="entry-date">날짜</label>
+                  <input id="entry-date" type="date" class="edit-input">
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
 
-        <div class="card">
-          <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
-            <span>최근 입력 내역 | Recent Entries</span>
+          <div class="entry-save-row">
+            <button class="btn btn-secondary" onclick="resetEntryForm()">초기화</button>
+            <button class="btn btn-primary" onclick="saveDetention()">💾 디텐션 저장</button>
+          </div>
+        </section>
+
+        <aside class="entry-recent-card" aria-labelledby="recent-entry-title">
+          <div class="entry-card-head">
+            <div id="recent-entry-title" class="entry-card-title" style="font-size:16px;">최근 입력 내역</div>
             <span id="recent-entry-scope" class="small" style="font-weight:700;color:#5b657a;"></span>
           </div>
           <div id="recent-entry-list" class="recent-entry-list"></div>
-        </div>
+          <button class="btn btn-secondary entry-recent-more" type="button" data-tab="all" onclick="activateTeacherTab('all')">전체 보기</button>
+        </aside>
       </div>
+
+      <nav class="mobile-entry-shortcuts" aria-label="모바일 바로가기">
+        <button type="button" onclick="activateTeacherTab('all')"><span>⌕</span>조회</button>
+        <button type="button" onclick="activateTeacherTab('recovery-view')"><span>▣</span>회복교육</button>
+        <button type="button" onclick="activateTeacherTab('notify')"><span>♢</span>알림</button>
+        <button type="button" onclick="activateTeacherTab('discipline')"><span>♙</span>위원회</button>
+      </nav>
     </div>
 
     <!-- STANDARDS -->
