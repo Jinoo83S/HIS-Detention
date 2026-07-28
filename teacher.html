@@ -369,6 +369,29 @@
     }
 
 
+    /* 2026-07-28 violation card selector + clear point modes */
+    .entry-native-select{position:absolute!important;width:1px!important;height:1px!important;opacity:0!important;pointer-events:none!important;overflow:hidden!important}
+    .violation-category-cards{display:grid;grid-template-columns:repeat(6,minmax(92px,1fr));gap:8px;margin-bottom:14px}
+    .violation-category-card{border:1px solid #d7e0ee;border-radius:11px;background:#fff;min-height:76px;padding:10px 7px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;cursor:pointer;color:#273858;font-weight:800;font-size:11px;text-align:center;transition:.15s ease}
+    .violation-category-card:hover{border-color:#7eabff;background:#f7faff;transform:translateY(-1px)}
+    .violation-category-card.active{border:2px solid #1662e8;background:#edf5ff;color:#0b4dc2;box-shadow:0 3px 10px rgba(22,98,232,.12)}
+    .violation-category-icon{font-size:22px;line-height:1}.violation-category-name{display:-webkit-box;line-clamp:2;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.25}
+    .violation-choice-head{display:flex;justify-content:space-between;align-items:center;margin:4px 0 7px;color:#26385d;font-size:12px}
+    .violation-item-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;max-height:232px;overflow:auto;padding:2px 3px 3px 2px;overscroll-behavior:contain}
+    .violation-item-card{position:relative;border:1px solid #dbe3ef;border-radius:10px;background:#fff;padding:10px 48px 10px 11px;min-height:58px;text-align:left;cursor:pointer;color:#26354f;transition:.14s ease;overflow:hidden}
+    .violation-item-card:hover{border-color:#8bb2f5;background:#f8fbff}.violation-item-card.active{border:2px solid #1662e8;background:#edf5ff;color:#0d47a8}
+    .violation-item-title{font-size:12px;font-weight:800;line-height:1.4;display:-webkit-box;line-clamp:2;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:break-word}
+    .violation-item-points{position:absolute;right:8px;top:9px;border-radius:999px;background:#eef2f8;color:#42526d;font-size:10px;font-weight:900;padding:3px 6px;white-space:nowrap}.violation-item-card.active .violation-item-points{background:#1662e8;color:#fff}
+    .selected-violation-detail{display:none;margin-top:9px;padding:10px 12px;border-radius:9px;background:#f6f8fc;border:1px solid #e1e7f1;color:#37455f;font-size:11px;line-height:1.5;white-space:pre-wrap;word-break:break-word}.selected-violation-detail.visible{display:block}
+    .points-mode-panel{border-radius:12px;border:1px solid #dce4f0;background:#fbfcfe;padding:12px}.points-mode-summary{display:grid;grid-template-columns:auto 1fr;gap:3px 9px;align-items:center;margin-bottom:10px}.points-mode-summary strong{font-size:13px;color:#182b54}.points-mode-summary>span:last-child{grid-column:2;font-size:11px;color:#67758d}
+    .points-mode-badge{display:inline-flex;align-items:center;justify-content:center;border-radius:999px;padding:4px 8px;font-size:10px;font-weight:900;white-space:nowrap;background:#edf1f7;color:#53627b}
+    .points-mode-panel.mode-auto{border-color:#b9d5ff;background:#f6faff}.points-mode-panel.mode-auto .points-mode-badge{background:#dceaff;color:#0754c9}.points-mode-panel.mode-manual{border-color:#fdba74;background:#fffaf2}.points-mode-panel.mode-manual .points-mode-badge{background:#ffedd5;color:#9a3412}
+    .points-mode-panel.mode-manual .manual-card{border:2px solid #f59e0b;background:#fffdf8;box-shadow:0 0 0 3px rgba(245,158,11,.08)}.points-mode-panel.mode-auto .manual-card{background:#f1f5f9;border-color:#d7dee8}.points-mode-panel.mode-auto .manual-card input:disabled{font-weight:900;color:#1458d4;opacity:1;-webkit-text-fill-color:#1458d4;background:#eaf2ff}
+    .point-caption{margin-top:5px;font-size:10px;color:#748096;line-height:1.35}.manual-card input{font-size:18px;font-weight:900;text-align:center}.points-mode-panel.mode-manual .entry-point-tip{background:#fff0dc;color:#9a4a0a}
+    @media(max-width:980px){.violation-category-cards{grid-template-columns:repeat(4,minmax(80px,1fr))}}
+    @media(max-width:680px){.violation-category-cards{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.violation-category-card{min-height:62px;padding:7px 4px;font-size:10px}.violation-category-icon{font-size:18px}.violation-item-cards{grid-template-columns:1fr;max-height:260px}.violation-item-card{min-height:50px;padding-top:8px;padding-bottom:8px}.points-mode-summary{grid-template-columns:1fr;gap:5px}.points-mode-summary>span:last-child{grid-column:1}}
+
+
     /* ===== 조회 화면 2단계 리디자인 ===== */
     .lookup-page-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px}
     .lookup-title-wrap{display:flex;gap:12px;align-items:flex-start}
@@ -546,32 +569,29 @@
           </div>
 
           <div class="entry-section">
-            <div class="entry-section-title"><span class="entry-badge">2</span>위반 항목 선택 <span class="entry-section-help">위반 구분과 위반행위를 선택하세요.</span></div>
-            <div class="entry-two-col">
-              <div>
-                <label class="label" for="category-select">위반 구분</label>
-                <select id="category-select" class="edit-input"></select>
-              </div>
-              <div>
-                <label class="label" for="violation-select">위반행위</label>
-                <select id="violation-select" class="edit-input"></select>
-              </div>
-            </div>
+            <div class="entry-section-title"><span class="entry-badge">2</span>위반 항목 선택 <span class="entry-section-help">먼저 구분을 누른 뒤 해당 위반행위를 선택하세요.</span></div>
+            <select id="category-select" class="entry-native-select" aria-hidden="true" tabindex="-1"></select>
+            <select id="violation-select" class="entry-native-select" aria-hidden="true" tabindex="-1"></select>
+            <div id="category-card-list" class="violation-category-cards" role="list" aria-label="위반 구분"></div>
+            <div class="violation-choice-head"><strong>위반행위</strong><span id="violation-choice-count" class="small"></span></div>
+            <div id="violation-card-list" class="violation-item-cards" role="listbox" aria-label="위반행위"></div>
+            <div id="selected-violation-detail" class="selected-violation-detail" aria-live="polite"></div>
           </div>
 
           <div class="entry-section">
-            <div class="entry-section-title"><span class="entry-badge">3</span>자동점수 확인 / 수동점수 입력 <span class="entry-section-help">필요한 경우에만 수동점수를 조정하세요.</span></div>
-            <div class="entry-points-layout">
-              <div class="entry-point-card">
-                <label class="label">자동점수</label>
-                <div id="auto-points" class="entry-point-value">-</div>
+            <div class="entry-section-title"><span class="entry-badge">3</span>점수 확인 <span class="entry-section-help">자동 산정인지 직접 입력이 필요한지 아래 안내를 확인하세요.</span></div>
+            <div id="points-mode-panel" class="points-mode-panel mode-empty">
+              <div class="points-mode-summary">
+                <span id="points-mode-badge" class="points-mode-badge">항목 선택 필요</span>
+                <strong id="points-mode-title">위반행위를 먼저 선택하세요.</strong>
+                <span id="points-mode-description">선택한 기준에 따라 점수 입력 방식이 자동으로 바뀝니다.</span>
               </div>
-              <div class="entry-point-arrow">→</div>
-              <div class="entry-point-card">
-                <label class="label" for="manual-points">수동점수 (선택)</label>
-                <input id="manual-points" type="number" min="0" class="edit-input" value="0">
+              <div class="entry-points-layout">
+                <div class="entry-point-card auto-card"><label class="label">기준표 점수</label><div id="auto-points" class="entry-point-value">-</div><div id="auto-point-caption" class="point-caption">기준표에 등록된 점수</div></div>
+                <div class="entry-point-arrow">→</div>
+                <div id="manual-point-card" class="entry-point-card manual-card"><label class="label" for="manual-points">최종 적용 점수</label><input id="manual-points" type="number" min="0" class="edit-input" value="0"><div id="manual-point-caption" class="point-caption">항목 선택 후 자동 설정됩니다.</div></div>
+                <div id="entry-point-tip" class="entry-point-tip">위반행위를 선택하면 자동점수 또는 직접 입력 안내가 표시됩니다.</div>
               </div>
-              <div class="entry-point-tip">수동점수를 입력하지 않으면 자동점수 기준으로 저장됩니다. 범위형 기준은 담당자가 최종 점수를 입력합니다.</div>
             </div>
           </div>
 
@@ -1738,63 +1758,7 @@
         .sort((a,b)=>String(b.completedAt || '').localeCompare(String(a.completedAt || '')));
     }
 
-    function updateManualPointsMode(){
-      const manualInput = document.getElementById('manual-points');
-      const studentKey = selectedStudentKey || syncStudentSelectionWithoutUpdate();
-      const std = getSelectedStandard();
-      const canOverride = canOverrideAutoPoints(); // admin 전용, master 제외
-
-      if (!manualInput || !std){
-        manualInput.disabled = false;
-        manualInput.readOnly = false;
-        return;
-      }
-
-      const raw = String(std.autoPoints || '').trim();
-
-      // 범위형 (예: 3-12): admin/master는 범위 외 입력 허용
-      if (raw.includes('-')){
-        manualInput.disabled = false;
-        manualInput.readOnly = false;
-        if (manualInput.value === '0') manualInput.value = '';
-        return;
-      }
-
-      // 선택형 (예: 1,3): admin/master는 자동 입력 후 수정 가능
-      if (raw.includes(',')){
-        const parts = raw.split(',').map(v => String(v).trim());
-        const firstPoint = Number(parts[0] || 0);
-        const repeatPoint = Number(parts[1] || 0);
-        const count = countSameDetention(studentKey, std.category || '', std.violation || '');
-        if(canOverride){
-          if(manualInput.value === '0' || manualInput.value === '') manualInput.value = String(count === 0 ? firstPoint : repeatPoint);
-          manualInput.disabled = false;
-          manualInput.readOnly = false;
-        } else {
-          manualInput.value = String(count === 0 ? firstPoint : repeatPoint);
-          manualInput.disabled = true;
-          manualInput.readOnly = true;
-        }
-        return;
-      }
-
-      // 고정값 (예: 9): admin/master는 자동 입력 후 수정 가능
-      if (!isNaN(Number(raw)) && raw !== ''){
-        if(canOverride){
-          if(manualInput.value === '0' || manualInput.value === '') manualInput.value = String(Number(raw));
-          manualInput.disabled = false;
-          manualInput.readOnly = false;
-        } else {
-          manualInput.value = String(Number(raw));
-          manualInput.disabled = true;
-          manualInput.readOnly = true;
-        }
-        return;
-      }
-
-      manualInput.disabled = false;
-      manualInput.readOnly = false;
-    }
+    function updateManualPointsMode(){const input=document.getElementById('manual-points'),panel=document.getElementById('points-mode-panel'),badge=document.getElementById('points-mode-badge'),title=document.getElementById('points-mode-title'),desc=document.getElementById('points-mode-description'),caption=document.getElementById('manual-point-caption'),tip=document.getElementById('entry-point-tip'),std=getSelectedStandard();if(!input||!panel)return;panel.classList.remove('mode-empty','mode-auto','mode-manual');if(!std){panel.classList.add('mode-empty');input.disabled=true;input.value='0';badge.textContent='항목 선택 필요';title.textContent='위반행위를 먼저 선택하세요.';desc.textContent='선택한 기준에 따라 점수 입력 방식이 자동으로 바뀝니다.';caption.textContent='항목 선택 후 자동 설정됩니다.';tip.textContent='위반행위를 선택하면 자동점수 또는 직접 입력 안내가 표시됩니다.';return;}const raw=String(std.autoPoints||'').trim(),m=raw.match(/^(\d+)\s*-\s*(\d+)$/);if(m){panel.classList.add('mode-manual');input.disabled=false;input.readOnly=false;input.min=m[1];input.max=m[2];if(Number(input.value)<Number(m[1])||Number(input.value)>Number(m[2]))input.value='';badge.textContent='직접 입력 필수';title.textContent=`${raw}점 범위에서 최종 점수를 입력하세요.`;desc.textContent='상황의 정도를 판단하여 담당 교사가 점수를 결정합니다.';caption.textContent=`허용 범위: ${raw}점 · 입력 필수`;tip.textContent='저장 전에 최종 적용 점수를 반드시 입력해야 합니다.';}else{panel.classList.add('mode-auto');input.disabled=true;input.readOnly=true;input.removeAttribute('max');input.min='0';const point=raw.includes(',')?getAutoChoicePoint(std):Number(raw||0);input.value=String(point||0);badge.textContent='자동 산정';title.textContent=`최종 점수 ${point||0}점이 자동 적용됩니다.`;desc.textContent=raw.includes(',')?'동일 위반의 이전 기록 횟수를 확인해 자동으로 점수를 선택했습니다.':'기준표의 고정 점수가 자동으로 적용됩니다.';caption.textContent='직접 입력할 필요 없음';tip.textContent='자동 산정된 점수로 저장됩니다. 입력칸은 수정할 수 없습니다.';}}
 
 
     function toggleRecoveryHistory(level){
@@ -2168,40 +2132,18 @@
       }
     }
 
-    function setupSelectors(){
-      const categorySel = document.getElementById('category-select');
-      const categories = [...new Set(detentionStandards.map(x => x.category).filter(Boolean))];
-      categorySel.innerHTML = categories.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
-      renderViolationOptions();
-    }
-
-    function renderViolationOptions(){
-      const category = document.getElementById('category-select').value;
-      const violationSel = document.getElementById('violation-select');
-      const list = detentionStandards.filter(x => x.category === category);
-      violationSel.innerHTML = list.map(x => `<option value="${esc(x.violation)}">${esc(x.violation)}</option>`).join('');
-      syncAutoPoints();
-    }
-
-    function syncAutoPoints(){
-      const std = getSelectedStandard();
-      let display = std ? String(std.autoPoints || '') : '-';
-
-      // 선택형 (예: 1,3) → 회차 표기 추가
-      if(std && display.includes(',') && !display.includes('-')){
-        const parts = display.split(',').map(v => v.trim());
-        const count = countSameDetention(
-          selectedStudentKey || syncStudentSelectionWithoutUpdate(),
-          std.category || '',
-          std.violation || ''
-        );
-        const round = count + 1; // 다음 입력될 회차
-        display = `${display} — ${round}회차`;
-      }
-
-      document.getElementById('auto-points').textContent = display;
-      updateManualPointsMode();
-    }
+    const CATEGORY_ICON_MAP={'수업':'🔊','표절':'📄','언어':'💬','복장':'👕','두발':'✂️','화장':'💄','시설':'🏫','이성교제':'🤝','흡연':'🚭','음주':'🚫','폭력':'🛡️','교외':'🚌','전자':'💻','그 외':'•••'};
+    function categoryIcon(category){const text=String(category||'');const key=Object.keys(CATEGORY_ICON_MAP).find(k=>text.includes(k));return key?CATEGORY_ICON_MAP[key]:'⚑';}
+    function shortCategoryName(category){const text=String(category||'').trim();const korean=(text.match(/^[^A-Za-z]+/)||[''])[0].trim();return korean||text;}
+    function setupSelectors(){const sel=document.getElementById('category-select');const cats=[...new Set(detentionStandards.map(x=>x.category).filter(Boolean))];const prev=sel.value;sel.innerHTML=cats.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');if(prev&&cats.includes(prev))sel.value=prev;renderCategoryCards();renderViolationOptions();}
+    function renderCategoryCards(){const sel=document.getElementById('category-select'),wrap=document.getElementById('category-card-list');if(!sel||!wrap)return;const selected=sel.value;wrap.innerHTML=Array.from(sel.options).map(opt=>{const v=opt.value;return `<button type="button" class="violation-category-card ${v===selected?'active':''}" data-category="${esc(v)}" onclick="selectCategoryCard(this.dataset.category)" title="${esc(v)}"><span class="violation-category-icon">${categoryIcon(v)}</span><span class="violation-category-name">${esc(shortCategoryName(v))}</span></button>`;}).join('');}
+    function selectCategoryCard(category){const sel=document.getElementById('category-select');if(!sel)return;sel.value=category;renderCategoryCards();renderViolationOptions();}
+    function renderViolationOptions(){const category=document.getElementById('category-select').value,sel=document.getElementById('violation-select'),prev=sel.value,list=detentionStandards.filter(x=>x.category===category);sel.innerHTML=list.map(x=>`<option value="${esc(x.violation)}">${esc(x.violation)}</option>`).join('');if(prev&&list.some(x=>x.violation===prev))sel.value=prev;renderViolationCards();syncAutoPoints();}
+    function renderViolationCards(){const category=document.getElementById('category-select').value,sel=document.getElementById('violation-select'),wrap=document.getElementById('violation-card-list'),count=document.getElementById('violation-choice-count');if(!wrap||!sel)return;const list=detentionStandards.filter(x=>x.category===category),selected=sel.value;if(count)count.textContent=`${list.length}개 항목`;wrap.innerHTML=list.map((x,i)=>{const active=x.violation===selected;return `<button type="button" role="option" aria-selected="${active?'true':'false'}" class="violation-item-card ${active?'active':''}" data-violation-index="${i}" onclick="selectViolationCard(Number(this.dataset.violationIndex))" title="${esc(x.violation)}"><span class="violation-item-title">${esc(x.violation)}</span><span class="violation-item-points">${esc(String(x.autoPoints||'-'))}점</span></button>`;}).join('');updateSelectedViolationDetail();}
+    function selectViolationCard(index){const category=document.getElementById('category-select').value,list=detentionStandards.filter(x=>x.category===category),item=list[index];if(!item)return;document.getElementById('violation-select').value=item.violation;renderViolationCards();syncAutoPoints();}
+    function updateSelectedViolationDetail(){const box=document.getElementById('selected-violation-detail'),std=getSelectedStandard();if(!box)return;if(!std){box.classList.remove('visible');box.textContent='';return;}box.textContent=`선택됨: ${std.violation}${std.note?'\n안내: '+std.note:''}`;box.classList.add('visible');}
+    function getAutoChoicePoint(std){const raw=String((std&&std.autoPoints)||'').trim(),parts=raw.split(',').map(v=>Number(v.trim())).filter(Number.isFinite);if(parts.length<2)return parts[0]||0;const count=countSameDetention(selectedStudentKey||syncStudentSelectionWithoutUpdate(),std.category||'',std.violation||'');return count===0?parts[0]:parts[1];}
+    function syncAutoPoints(){const std=getSelectedStandard(),raw=std?String(std.autoPoints||'').trim():'',count=std&&raw.includes(',')&&!raw.includes('-')?countSameDetention(selectedStudentKey||syncStudentSelectionWithoutUpdate(),std.category||'',std.violation||''):0;let display=raw||'-';if(std&&raw.includes(',')&&!raw.includes('-'))display=`${getAutoChoicePoint(std)}점 (${count+1}회차)`;else if(/^\d+$/.test(raw)||raw.includes('-'))display=`${raw}점`;document.getElementById('auto-points').textContent=display;updateSelectedViolationDetail();updateManualPointsMode();}
 
     function renderStudentOptions(){
       const list = getStudentCatalog();
@@ -4445,21 +4387,18 @@
         alert('학생을 선택해 주세요.\nPlease select a student.');
         return toast('학생을 선택해 주세요.', 'err');
       }
-
-      // 범위형/선택형 자동벌점: 수동 입력 필수 검증
-      const needsManual = autoPointsRaw && autoPointsRaw !== '-' && (autoPointsRaw.includes('-') || autoPointsRaw.includes(','));
-      // apRaw: 화면 표시용 '— N회차' 접미사 제거 (저장용 원본값 보장)
+      // 범위형만 직접 입력이 필요합니다. 고정형·회차 선택형은 자동 산정합니다.
       const apRaw = autoPointsRaw.replace(/\s*—.*$/, '').trim();
-
-      if (manualPoints <= 0 && needsManual){
-        alert('수동벌점을 입력해 주세요.\nPlease enter manual points (required for range/choice type).');
+      const rangeNeedsManual = /^\d+\s*-\s*\d+$/.test(apRaw);
+      let finalManualPoints = manualPoints;
+      if(rangeNeedsManual && finalManualPoints <= 0){
+        alert('최종 적용 점수를 입력해 주세요.\nPlease enter the final points within the allowed range.');
         document.getElementById('manual-points').focus();
         return;
       }
-      if (manualPoints <= 0 && autoPointsRaw && autoPointsRaw !== '-' && /^\d+$/.test(autoPointsRaw.trim())){
-        // 고정형이면 자동으로 채우기
-        document.getElementById('manual-points').value = autoPointsRaw.trim();
-      }
+      if(/^\d+$/.test(apRaw)) finalManualPoints=Number(apRaw);
+      else if(/^[\d]+(,[\d]+)+$/.test(apRaw)) finalManualPoints=getAutoChoicePoint(_std);
+      document.getElementById('manual-points').value=String(finalManualPoints||0);
       if (apRaw && apRaw !== '-'){
         // 범위형: "1-12"
         const rangeMatch = apRaw.match(/^(\d+)-(\d+)$/);
@@ -4468,18 +4407,18 @@
         const canOverride = canOverrideAutoPoints(); // admin 전용, master 제외
         if (rangeMatch && !canOverride){
           const [, minP, maxP] = rangeMatch.map(Number);
-          if (manualPoints < minP || manualPoints > maxP){
+          if (finalManualPoints < minP || finalManualPoints > maxP){
             alert(`벌점은 ${minP}~${maxP}점 사이여야 합니다.\nPoints must be between ${minP} and ${maxP}.`);
             return toast(`벌점 범위 오류\nPoints out of range`, 'err');
           }
         } else if (choiceMatch && !canOverride){
           const choices = apRaw.split(',').map(Number);
-          if (!choices.includes(manualPoints)){
+          if (!choices.includes(finalManualPoints)){
             alert(`벌점은 ${apRaw} 중 하나여야 합니다.\nPoints must be one of: ${apRaw}.`);
             return toast(`벌점 선택 오류\nInvalid points`, 'err');
           }
         } else if (/^\d+$/.test(apRaw)){
-          if (manualPoints !== Number(apRaw)){
+          if (finalManualPoints !== Number(apRaw)){
             alert(`벌점은 ${apRaw}점이어야 합니다.\nPoints must be ${apRaw}.`);
             return toast(`벌점 오류\nInvalid points`, 'err');
           }
@@ -4502,8 +4441,8 @@
         violationId,
         violationCount,
         autoPoints: autoPointsRaw,
-        manualPoints,
-        totalPoints: manualPoints,
+        manualPoints: finalManualPoints,
+        totalPoints: finalManualPoints,
         memo,
         teacherName: entryTeacher,
         teacherEmail: entryTeacherEmail,
@@ -5063,8 +5002,7 @@
       document.getElementById('category-select').selectedIndex = 0;
       renderViolationOptions();
       document.getElementById('manual-points').value = 0;
-      document.getElementById('manual-points').disabled = false;
-      document.getElementById('manual-points').readOnly = false;
+      updateManualPointsMode();
       document.getElementById('memo').value = '';
       // 교사/날짜 초기화
       document.getElementById('entry-teacher').value = teacher.name || '';
