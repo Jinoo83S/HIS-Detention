@@ -408,10 +408,24 @@
     .lookup-result-card{background:#fff;border:1px solid #dbe4f2;border-radius:14px;padding:14px;box-shadow:0 4px 14px rgba(17,42,90,.05)}
     .lookup-result-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
     .lookup-result-title{font-size:16px;font-weight:850;color:#17233d}.lookup-count{color:#1455d9;font-size:12px;margin-left:5px}
-    .lookup-table{width:100%;border-collapse:separate;border-spacing:0;font-size:12px}
-    .lookup-table th{background:#f7f9fc;color:#536078;font-size:11px;font-weight:800;padding:9px 8px;border-bottom:1px solid #dfe6f1;text-align:left}
-    .lookup-table td{padding:9px 8px;border-bottom:1px solid #edf1f7;vertical-align:middle}
-    .lookup-table tbody tr:hover{background:#f8fbff}
+    .lookup-table{width:100%;border-collapse:separate;border-spacing:0;font-size:11px;table-layout:fixed}
+    .lookup-table th{background:#f7f9fc;color:#536078;font-size:10px;font-weight:800;padding:7px 6px;border-bottom:1px solid #dfe6f1;text-align:left;line-height:1.2}
+    .lookup-table td{padding:7px 6px;border-bottom:1px solid #edf1f7;vertical-align:middle;line-height:1.35}
+    .lookup-table tbody tr{cursor:pointer;transition:background .12s ease}
+    .lookup-table tbody tr:hover,.lookup-table tbody tr:focus{background:#eef5ff;outline:none}
+    .lookup-table .cell-ellipsis{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .lookup-table .cell-name{font-weight:800;color:#17233d}
+    .lookup-table .cell-class{text-align:center;font-weight:750;color:#4f5f78}
+    .lookup-detail-hint{font-size:10px;color:#6d7890;margin-left:auto;white-space:nowrap}
+    .lookup-detail-overlay{position:fixed;inset:0;background:rgba(12,25,55,.48);z-index:1200;display:none;align-items:center;justify-content:center;padding:16px}
+    .lookup-detail-overlay.open{display:flex}
+    .lookup-detail-modal{width:min(720px,100%);max-height:90vh;overflow:auto;background:#fff;border-radius:15px;box-shadow:0 18px 55px rgba(0,0,0,.25)}
+    .lookup-detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 14px}
+    .lookup-detail-item{border:1px solid #e1e7f0;border-radius:10px;padding:10px 11px;background:#fbfcff;min-width:0}
+    .lookup-detail-item.full{grid-column:1/-1}
+    .lookup-detail-label{display:block;font-size:10px;font-weight:800;color:#68758d;margin-bottom:4px}
+    .lookup-detail-value{font-size:12px;color:#17233d;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere}
+    .lookup-row-guide{font-size:10px;color:#6d7890;margin-top:6px}
     .lookup-status{display:inline-flex;align-items:center;justify-content:center;min-width:56px;padding:4px 8px;border-radius:999px;font-size:10px;font-weight:800}
     .lookup-status.pending{background:#fff4d6;color:#a16207}.lookup-status.done{background:#e8f8ee;color:#15803d}.lookup-status.rejected{background:#feecec;color:#b91c1c}.lookup-status.cancelled{background:#eef1f5;color:#596579}
     .recovery-summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:14px 0}
@@ -420,13 +434,15 @@
     .recovery-summary-icon{width:38px;height:38px;border-radius:50%;background:#eef4ff;display:flex;align-items:center;justify-content:center;color:#1455d9;font-size:18px}
     .recovery-summary-label{font-size:11px;color:#647086}.recovery-summary-value{font-size:20px;font-weight:900;color:#17316f;margin-top:2px}
     .lookup-mobile-cards{display:none}
-    .lookup-mobile-card{border:1px solid #dbe4f2;border-radius:11px;padding:11px;background:#fff;margin-bottom:9px}
+    .lookup-mobile-card{border:1px solid #dbe4f2;border-radius:11px;padding:11px;background:#fff;margin-bottom:9px;cursor:pointer}
+    .lookup-mobile-card:hover,.lookup-mobile-card:focus{border-color:#79a7ff;background:#f8fbff;outline:none}
     .lookup-mobile-card-top{display:flex;justify-content:space-between;gap:8px;font-weight:800}.lookup-mobile-card-meta{font-size:11px;color:#647086;margin-top:5px}.lookup-mobile-card-body{font-size:12px;margin-top:8px;line-height:1.45}
     @media(max-width:760px){
       .lookup-title{font-size:20px}.lookup-icon{width:36px;height:36px;font-size:18px}
       .lookup-filter-grid,.lookup-filter-grid.recovery{grid-template-columns:1fr 1fr}.lookup-field:first-child{grid-column:1/-1}.lookup-search-btn{grid-column:1/-1;width:100%}
       .recovery-summary-grid{grid-template-columns:repeat(4,1fr);gap:6px}.recovery-summary-card{padding:9px 5px;display:block;text-align:center}.recovery-summary-icon{display:none}.recovery-summary-value{font-size:16px}.recovery-summary-label{font-size:9px}
       .lookup-desktop-table{display:none}.lookup-mobile-cards{display:block}.lookup-result-card{padding:11px}.lookup-page-head{margin-bottom:12px}
+      .lookup-detail-grid{grid-template-columns:1fr}.lookup-detail-item.full{grid-column:1}.lookup-detail-hint{display:none}
     }
 
   
@@ -464,35 +480,12 @@
     #tab-entry .violation-item-card{min-height:42px;padding:7px 43px 7px 8px;border-radius:8px}
     #tab-entry .violation-item-title{font-size:10.5px;line-height:1.28}
     #tab-entry .violation-item-points{right:6px;top:6px;font-size:9px;padding:2px 5px}
-
-    /* bilingual violation selector: Korean and English are always visible */
-    #tab-entry .entry-section-title small{font-size:10px;font-weight:700;color:#71809b;margin-left:4px}
-    #tab-entry .violation-category-card{min-height:58px}
-    #tab-entry .violation-category-name{display:block;overflow:visible;line-clamp:unset;-webkit-line-clamp:unset;width:100%}
-    #tab-entry .violation-category-ko{display:block;font-size:9.5px;font-weight:900;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    #tab-entry .violation-category-en{display:block;margin-top:2px;font-size:8px;font-weight:700;line-height:1.12;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    #tab-entry .violation-category-card.active .violation-category-en{color:#2862b8}
-    #tab-entry .violation-choice-head small{font-size:9px;color:#71809b;margin-left:3px}
-    #tab-entry .violation-item-cards{max-height:198px}
-    #tab-entry .violation-item-card{min-height:70px;padding:7px 47px 7px 9px}
-    #tab-entry .violation-item-copy{display:block;min-width:0}
-    #tab-entry .violation-item-ko{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;font-size:10.5px;font-weight:900;line-height:1.25;word-break:keep-all}
-    #tab-entry .violation-item-en{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;margin-top:4px;font-size:9.5px;font-weight:650;line-height:1.25;color:#66758f;word-break:normal}
-    #tab-entry .violation-item-card.active .violation-item-en{color:#285fae}
-    #tab-entry .selected-detail-label{font-size:9px;font-weight:900;color:#52627c;margin-bottom:3px}
-    #tab-entry .selected-detail-label span{font-weight:700;color:#71809b}
-    #tab-entry .selected-detail-ko{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;font-weight:850;line-height:1.35;color:#253a62}
-    #tab-entry .selected-detail-en{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden;margin-top:3px;line-height:1.35;color:#586984}
-    #tab-entry .selected-detail-note{margin-top:7px;padding-top:6px;border-top:1px dashed #d4ddeb}
     #tab-entry .selected-violation-detail-wrap{position:relative;margin-top:5px}
     #tab-entry .selected-violation-detail{margin-top:0;padding:7px 9px;font-size:10px;line-height:1.35;white-space:pre-wrap}
     #tab-entry .selected-violation-detail.visible{display:-webkit-box;line-clamp:2;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;max-height:38px}
     #tab-entry .selected-violation-detail.visible.expanded{display:block;line-clamp:unset;-webkit-line-clamp:unset;max-height:150px;overflow:auto}
     #tab-entry .selected-violation-toggle{display:block;margin:3px 0 0 auto;border:0;background:transparent;color:#245fc4;font-size:9.5px;font-weight:800;cursor:pointer;padding:2px 3px}
     #tab-entry .selected-violation-toggle[hidden]{display:none}
-    #tab-entry .selected-violation-detail.visible{display:block;max-height:none;overflow:visible}
-    #tab-entry .selected-violation-detail.visible.expanded .selected-detail-ko,
-    #tab-entry .selected-violation-detail.visible.expanded .selected-detail-en{display:block;-webkit-line-clamp:unset;overflow:visible}
 
     #tab-entry .points-mode-panel{padding:8px 9px;border-radius:9px}
     #tab-entry .points-mode-summary{margin-bottom:6px;gap:2px 7px}
@@ -525,12 +518,10 @@
       #tab-entry .entry-section{padding-top:7px;margin-top:7px}
       #tab-entry .entry-section-help{display:none}
       #tab-entry .violation-category-cards{grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}
-      #tab-entry .violation-category-card{min-height:52px;padding:4px 2px;font-size:8.5px}
+      #tab-entry .violation-category-card{min-height:39px;padding:4px 2px;font-size:8.5px}
       #tab-entry .violation-category-icon{font-size:13px}
-      #tab-entry .violation-category-ko{font-size:8.5px}
-      #tab-entry .violation-category-en{font-size:7.5px}
-      #tab-entry .violation-item-cards{max-height:240px;grid-template-columns:1fr}
-      #tab-entry .violation-item-card{min-height:66px;padding-top:6px;padding-bottom:6px}
+      #tab-entry .violation-item-cards{max-height:122px}
+      #tab-entry .violation-item-card{min-height:39px;padding-top:6px;padding-bottom:6px}
       #tab-entry .points-mode-summary{grid-template-columns:auto 1fr}
       #tab-entry .points-mode-summary>span:last-child{grid-column:1/-1}
       #tab-entry .entry-points-layout{grid-template-columns:1fr 18px 1fr}
@@ -650,64 +641,78 @@
 
     <!-- ENTRY -->
     <div id="tab-entry" class="tab-panel active">
+      <details class="entry-beginner-guide">
+        <summary><span class="entry-info-icon">i</span><strong>처음 사용 안내</strong><span class="entry-guide-summary">학생 검색 → 위반 선택 → 점수 확인 → 저장</span></summary>
+        <div class="entry-guide-body">학생 이름이나 학반을 검색하고, 위반 구분과 위반행위를 선택하세요. 점수가 자동 산정되는지 직접 입력해야 하는지 확인한 뒤 저장합니다.</div>
+      </details>
+
       <div class="entry-redesign-grid">
         <section class="entry-main-card" aria-labelledby="entry-main-title">
           <div class="entry-card-head">
             <div id="entry-main-title" class="entry-card-title">디텐션 입력 <small>Detention Entry</small></div>
+            <div class="entry-help">ⓘ 학생 검색 → 위반 선택 → 점수 확인 → 저장</div>
           </div>
 
+          <ol class="entry-steps" aria-label="디텐션 입력 단계">
+            <li class="entry-step"><span class="entry-step-num">1</span><span class="entry-step-text">학생 검색</span></li>
+            <li class="entry-step"><span class="entry-step-num">2</span><span class="entry-step-text">위반 항목 선택</span></li>
+            <li class="entry-step"><span class="entry-step-num">3</span><span class="entry-step-text">점수 확인</span></li>
+            <li class="entry-step"><span class="entry-step-num">4</span><span class="entry-step-text">메모 입력</span></li>
+            <li class="entry-step"><span class="entry-step-num">5</span><span class="entry-step-text">저장</span></li>
+          </ol>
+
           <div class="entry-section">
-            <div class="entry-section-title"><span class="entry-badge">1</span><span>학생 검색 <small>Student Search</small></span><span class="entry-section-help">학생 이름 또는 학반을 입력하세요. | Enter a student name or class.</span></div>
-            <input id="student-search-input" class="edit-input" list="student-list" placeholder="학생 이름 또는 학반 | Student name or class" oninput="syncStudentSelection()">
+            <div class="entry-section-title"><span class="entry-badge">1</span>학생 검색 <span class="entry-section-help">학생 이름 또는 학반을 입력하여 검색하세요.</span></div>
+            <input id="student-search-input" class="edit-input" list="student-list" placeholder="학생 이름 또는 학반 입력" oninput="syncStudentSelection()">
             <datalist id="student-list"></datalist>
           </div>
 
           <div class="entry-section">
-            <div class="entry-section-title"><span class="entry-badge">2</span><span>위반 항목 선택 <small>Select Violation</small></span><span class="entry-section-help">구분을 선택한 뒤 위반행위를 선택하세요. | Choose a category, then a violation.</span></div>
+            <div class="entry-section-title"><span class="entry-badge">2</span>위반 항목 선택 <span class="entry-section-help">먼저 구분을 누른 뒤 해당 위반행위를 선택하세요.</span></div>
             <select id="category-select" class="entry-native-select" aria-hidden="true" tabindex="-1"></select>
             <select id="violation-select" class="entry-native-select" aria-hidden="true" tabindex="-1"></select>
-            <div id="category-card-list" class="violation-category-cards" role="list" aria-label="위반 구분 | Violation categories"></div>
-            <div class="violation-choice-head"><strong>위반행위 <small>Violation</small></strong><span id="violation-choice-count" class="small"></span></div>
-            <div id="violation-card-list" class="violation-item-cards" role="listbox" aria-label="위반행위 | Violations"></div>
+            <div id="category-card-list" class="violation-category-cards" role="list" aria-label="위반 구분"></div>
+            <div class="violation-choice-head"><strong>위반행위</strong><span id="violation-choice-count" class="small"></span></div>
+            <div id="violation-card-list" class="violation-item-cards" role="listbox" aria-label="위반행위"></div>
             <div class="selected-violation-detail-wrap">
               <div id="selected-violation-detail" class="selected-violation-detail" aria-live="polite"></div>
-              <button id="selected-violation-toggle" type="button" class="selected-violation-toggle" onclick="toggleSelectedViolationDetail()" aria-expanded="false" hidden>전체 내용 보기 | Show full text</button>
+              <button id="selected-violation-toggle" type="button" class="selected-violation-toggle" onclick="toggleSelectedViolationDetail()" aria-expanded="false" hidden>전체 내용 보기</button>
             </div>
           </div>
 
           <div class="entry-section">
-            <div class="entry-section-title"><span class="entry-badge">3</span><span>점수 확인 <small>Check Points</small></span><span class="entry-section-help">자동 산정 또는 직접 입력 여부를 확인하세요. | Check whether points are automatic or manual.</span></div>
+            <div class="entry-section-title"><span class="entry-badge">3</span>점수 확인 <span class="entry-section-help">자동 산정인지 직접 입력이 필요한지 아래 안내를 확인하세요.</span></div>
             <div id="points-mode-panel" class="points-mode-panel mode-empty">
               <div class="points-mode-summary">
-                <span id="points-mode-badge" class="points-mode-badge">항목 선택 필요 | Select item</span>
-                <strong id="points-mode-title">위반행위를 먼저 선택하세요. | Select a violation first.</strong>
-                <span id="points-mode-description">선택한 기준에 따라 점수 입력 방식이 바뀝니다. | The point-entry mode changes by the selected standard.</span>
+                <span id="points-mode-badge" class="points-mode-badge">항목 선택 필요</span>
+                <strong id="points-mode-title">위반행위를 먼저 선택하세요.</strong>
+                <span id="points-mode-description">선택한 기준에 따라 점수 입력 방식이 자동으로 바뀝니다.</span>
               </div>
               <div class="entry-points-layout">
-                <div class="entry-point-card auto-card"><label class="label">기준표 점수 | Standard Points</label><div id="auto-points" class="entry-point-value">-</div><div id="auto-point-caption" class="point-caption">기준표에 등록된 점수 | Points in the standards</div></div>
+                <div class="entry-point-card auto-card"><label class="label">기준표 점수</label><div id="auto-points" class="entry-point-value">-</div><div id="auto-point-caption" class="point-caption">기준표에 등록된 점수</div></div>
                 <div class="entry-point-arrow">→</div>
-                <div id="manual-point-card" class="entry-point-card manual-card"><label class="label" for="manual-points">최종 적용 점수 | Final Points</label><input id="manual-points" type="number" min="0" class="edit-input" value="0"><div id="manual-point-caption" class="point-caption">항목 선택 후 설정됩니다. | Set after selection.</div></div>
-                <div id="entry-point-tip" class="entry-point-tip">위반행위를 선택하면 점수 입력 안내가 표시됩니다. | Select a violation to see point instructions.</div>
+                <div id="manual-point-card" class="entry-point-card manual-card"><label class="label" for="manual-points">최종 적용 점수</label><input id="manual-points" type="number" min="0" class="edit-input" value="0"><div id="manual-point-caption" class="point-caption">항목 선택 후 자동 설정됩니다.</div></div>
+                <div id="entry-point-tip" class="entry-point-tip">위반행위를 선택하면 자동점수 또는 직접 입력 안내가 표시됩니다.</div>
               </div>
             </div>
           </div>
 
           <div class="entry-section entry-bottom-grid">
             <div>
-              <div class="entry-section-title"><span class="entry-badge">4</span><span>메모 입력 <small>Memo</small></span><span class="entry-section-help">선택사항 · 최대 300자 | Optional · Up to 300 characters</span></div>
-              <textarea id="memo" class="edit-input" maxlength="300" placeholder="상황 설명 또는 추가 내용 | Situation details or additional notes"></textarea>
+              <div class="entry-section-title"><span class="entry-badge">4</span>메모 입력 <span class="entry-section-help">선택사항 · 최대 300자</span></div>
+              <textarea id="memo" class="edit-input" maxlength="300" placeholder="상황 설명이나 추가 내용을 입력하세요."></textarea>
             </div>
             <div>
-              <div class="entry-section-title"><span class="entry-badge">5</span><span>기본 정보 <small>Basic Information</small></span></div>
+              <div class="entry-section-title"><span class="entry-badge">5</span>기본 정보</div>
               <div class="entry-basic-grid">
                 <div>
-                  <label class="label" for="entry-teacher">교사 | Teacher</label>
-                  <input id="entry-teacher" class="edit-input" list="entry-teacher-list" placeholder="교사 검색 | Search teacher" oninput="syncEntryTeacher()">
+                  <label class="label" for="entry-teacher">교사</label>
+                  <input id="entry-teacher" class="edit-input" list="entry-teacher-list" placeholder="교사 검색" oninput="syncEntryTeacher()">
                   <datalist id="entry-teacher-list"></datalist>
                   <div class="small" id="entry-teacher-hint" style="display:none">admin/master 권한으로 변경 가능</div>
                 </div>
                 <div>
-                  <label class="label" for="entry-date">날짜 | Date</label>
+                  <label class="label" for="entry-date">날짜</label>
                   <input id="entry-date" type="date" class="edit-input">
                 </div>
               </div>
@@ -715,14 +720,14 @@
           </div>
 
           <div class="entry-save-row">
-            <button class="btn btn-secondary" onclick="resetEntryForm()">초기화 | Reset</button>
-            <button class="btn btn-primary" onclick="saveDetention()">💾 디텐션 저장 | Save Detention</button>
+            <button class="btn btn-secondary" onclick="resetEntryForm()">초기화</button>
+            <button class="btn btn-primary" onclick="saveDetention()">💾 디텐션 저장</button>
           </div>
         </section>
 
         <aside class="entry-recent-card" aria-labelledby="recent-entry-title">
           <div class="entry-card-head">
-            <div id="recent-entry-title" class="entry-card-title" style="font-size:16px;">최근 입력 내역 <small>Recent Entries</small></div>
+            <div id="recent-entry-title" class="entry-card-title" style="font-size:16px;">최근 입력 내역</div>
             <span id="recent-entry-scope" class="small" style="font-weight:700;color:#5b657a;"></span>
           </div>
           <div id="recent-entry-list" class="recent-entry-list"></div>
@@ -787,21 +792,23 @@
     <!-- ALL -->
     <div id="tab-all" class="tab-panel">
       <div class="lookup-page-head">
-        <div class="lookup-title-wrap"><div class="lookup-icon">⌕</div><div><div class="lookup-title">학생 기록 검색</div><div class="lookup-subtitle">학생의 디텐션 기록을 이름·학반·기간·상태로 검색합니다.</div></div></div>
+        <div class="lookup-title-wrap"><div class="lookup-icon">⌕</div><div><div class="lookup-title">학생 기록 검색 | Student Records</div><div class="lookup-subtitle">학생의 디텐션 기록을 이름·학반·기간으로 검색합니다. | Search detention records by student, class, and date.</div></div></div>
       </div>
       <div class="lookup-filter-card">
         <div class="lookup-filter-grid">
-          <div class="lookup-field"><label>학생 검색</label><input id="all-student-search" list="all-student-list" placeholder="이름 또는 학번 입력" oninput="syncAllStudentFilter()"><datalist id="all-student-list"></datalist></div>
-          <div class="lookup-field"><label>학반</label><select id="all-class-filter"><option value="">전체</option></select></div>
-          <div class="lookup-field"><label>시작일</label><input type="date" id="all-date-from"></div>
-          <div class="lookup-field"><label>종료일</label><input type="date" id="all-date-to"></div>
-          <button class="lookup-search-btn" type="button" onclick="allRecordsPage=1;renderAllEntries()">상세 검색</button>
+          <div class="lookup-field"><label>학생 검색 | Student</label><input id="all-student-search" list="all-student-list" placeholder="이름 또는 학반 | Name or class" oninput="syncAllStudentFilter()"><datalist id="all-student-list"></datalist></div>
+          <div class="lookup-field"><label>학반 | Class</label><select id="all-class-filter"><option value="">전체 | All</option></select></div>
+          <div class="lookup-field"><label>시작일 | From</label><input type="date" id="all-date-from"></div>
+          <div class="lookup-field"><label>종료일 | To</label><input type="date" id="all-date-to"></div>
+          <button class="lookup-search-btn" type="button" onclick="allRecordsPage=1;renderAllEntries()">검색 | Search</button>
         </div>
         <input id="all-search" style="display:none" value="">
       </div>
       <div class="lookup-result-card">
-        <div class="lookup-result-head"><div class="lookup-result-title">검색 결과 <span id="all-result-count" class="lookup-count">0건</span></div><button class="lookup-reset-btn" onclick="resetStudentRecordFilters()">필터 초기화</button></div>
-        <div class="tbl-wrap lookup-desktop-table"><table class="lookup-table"><thead><tr><th>일자</th><th>학생명 / 학반</th><th>위반 항목</th><th>점수</th><th>처리 상태</th><th>메모</th><th>처리자</th></tr></thead><tbody id="all-records-tbody"></tbody></table></div>
+        <div class="lookup-result-head"><div class="lookup-result-title">검색 결과 | Results <span id="all-result-count" class="lookup-count">0건</span></div><span class="lookup-detail-hint">행을 클릭하면 상세보기 | Click a row for details</span><button class="lookup-reset-btn" onclick="resetStudentRecordFilters()">초기화 | Reset</button></div>
+        <div class="tbl-wrap lookup-desktop-table"><table class="lookup-table lookup-detention-table">
+          <colgroup><col style="width:9%"><col style="width:14%"><col style="width:7%"><col style="width:25%"><col style="width:6%"><col style="width:10%"><col style="width:18%"><col style="width:11%"></colgroup>
+          <thead><tr><th>일자<span class="th-en">Date</span></th><th>학생명<span class="th-en">Student</span></th><th>학반<span class="th-en">Class</span></th><th>위반 항목<span class="th-en">Violation</span></th><th>점수<span class="th-en">Pts</span></th><th>상태<span class="th-en">Status</span></th><th>메모<span class="th-en">Memo</span></th><th>처리자<span class="th-en">Handled by</span></th></tr></thead><tbody id="all-records-tbody"></tbody></table></div>
         <div id="all-records-mobile" class="lookup-mobile-cards"></div>
         <div id="all-records-pager" class="pager"></div>
       </div>
@@ -809,20 +816,22 @@
 
     <!-- RECOVERY VIEW -->
     <div id="tab-recovery-view" class="tab-panel">
-      <div class="lookup-page-head"><div class="lookup-title-wrap"><div class="lookup-icon">▤</div><div><div class="lookup-title">회복교육 조회</div><div class="lookup-subtitle">회복교육 진행 현황과 학생별 이력을 확인합니다.</div></div></div></div>
+      <div class="lookup-page-head"><div class="lookup-title-wrap"><div class="lookup-icon">▤</div><div><div class="lookup-title">회복교육 조회 | Recovery Records</div><div class="lookup-subtitle">회복교육 진행 현황과 학생별 이력을 확인합니다. | Review recovery education status and history.</div></div></div></div>
       <div class="lookup-filter-card">
         <div class="lookup-filter-grid recovery">
-          <div class="lookup-field"><label>구분</label><select id="recovery-view-level"><option value="">전체</option><option value="ms">중등</option><option value="hs">고등</option></select></div>
-          <div class="lookup-field"><label>학반</label><select id="recovery-view-class"><option value="">전체</option></select></div>
-          <div class="lookup-field"><label>담당 교사</label><select id="recovery-view-staff"><option value="">전체</option></select></div>
-          <div class="lookup-field"><label>상태</label><select id="recovery-view-status"><option value="">전체</option><option value="active">진행중</option><option value="done">완료</option><option value="not_started">미시작</option></select></div>
-          <button class="lookup-search-btn" type="button" onclick="allRecoveryPage=1;renderAllRecoveryEntries()">검색</button>
+          <div class="lookup-field"><label>구분 | Level</label><select id="recovery-view-level"><option value="">전체 | All</option><option value="ms">중등 | Middle</option><option value="hs">고등 | High</option></select></div>
+          <div class="lookup-field"><label>학반 | Class</label><select id="recovery-view-class"><option value="">전체 | All</option></select></div>
+          <div class="lookup-field"><label>담당 교사 | Staff</label><select id="recovery-view-staff"><option value="">전체 | All</option></select></div>
+          <div class="lookup-field"><label>상태 | Status</label><select id="recovery-view-status"><option value="">전체 | All</option><option value="active">진행중 | In progress</option><option value="done">완료 | Completed</option><option value="not_started">미시작 | Not started</option></select></div>
+          <button class="lookup-search-btn" type="button" onclick="allRecoveryPage=1;renderAllRecoveryEntries()">검색 | Search</button>
         </div>
       </div>
       <div id="recovery-summary-grid" class="recovery-summary-grid"></div>
       <div class="lookup-result-card">
-        <div class="lookup-result-head"><div class="lookup-result-title">회복교육 기록 <span id="recovery-result-count" class="lookup-count">0건</span></div><button class="lookup-reset-btn" onclick="resetRecoveryViewFilters()">초기화</button></div>
-        <div class="tbl-wrap lookup-desktop-table"><table class="lookup-table"><thead><tr><th>학생명 / 학반</th><th>대상 구분</th><th>회복교육 내용</th><th>배정일</th><th>상태</th><th>완료일</th><th>담당 교사</th></tr></thead><tbody id="all-recovery-tbody"></tbody></table></div>
+        <div class="lookup-result-head"><div class="lookup-result-title">회복교육 기록 | Recovery Records <span id="recovery-result-count" class="lookup-count">0건</span></div><span class="lookup-detail-hint">행을 클릭하면 상세보기 | Click a row for details</span><button class="lookup-reset-btn" onclick="resetRecoveryViewFilters()">초기화 | Reset</button></div>
+        <div class="tbl-wrap lookup-desktop-table"><table class="lookup-table lookup-recovery-table">
+          <colgroup><col style="width:14%"><col style="width:7%"><col style="width:12%"><col style="width:25%"><col style="width:10%"><col style="width:10%"><col style="width:10%"><col style="width:12%"></colgroup>
+          <thead><tr><th>학생명<span class="th-en">Student</span></th><th>학반<span class="th-en">Class</span></th><th>대상 구분<span class="th-en">Type</span></th><th>회복교육 내용<span class="th-en">Recovery activity</span></th><th>배정일<span class="th-en">Assigned</span></th><th>상태<span class="th-en">Status</span></th><th>완료일<span class="th-en">Completed</span></th><th>담당 교사<span class="th-en">Staff</span></th></tr></thead><tbody id="all-recovery-tbody"></tbody></table></div>
         <div id="all-recovery-mobile" class="lookup-mobile-cards"></div>
         <div id="all-recovery-pager" class="pager"></div>
       </div>
@@ -1110,6 +1119,20 @@
               </div>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 기록 상세 모달 | Record detail modal -->
+    <div id="lookup-detail-overlay" class="lookup-detail-overlay" onclick="if(event.target===this)closeLookupDetail()">
+      <div class="lookup-detail-modal" role="dialog" aria-modal="true" aria-labelledby="lookup-detail-title">
+        <div class="modal-header">
+          <h2 id="lookup-detail-title">기록 상세 | Record Details</h2>
+          <button class="modal-close" onclick="closeLookupDetail()" aria-label="닫기 | Close">✕</button>
+        </div>
+        <div class="modal-body">
+          <div id="lookup-detail-grid" class="lookup-detail-grid"></div>
+          <div class="lookup-row-guide">목록의 행 또는 모바일 카드를 선택하면 이 창에서 전체 내용을 확인할 수 있습니다. | Select a row or card to view the full record.</div>
         </div>
       </div>
     </div>
@@ -1855,7 +1878,7 @@
         .sort((a,b)=>String(b.completedAt || '').localeCompare(String(a.completedAt || '')));
     }
 
-    function updateManualPointsMode(){const input=document.getElementById('manual-points'),panel=document.getElementById('points-mode-panel'),badge=document.getElementById('points-mode-badge'),title=document.getElementById('points-mode-title'),desc=document.getElementById('points-mode-description'),caption=document.getElementById('manual-point-caption'),tip=document.getElementById('entry-point-tip'),std=getSelectedStandard();if(!input||!panel)return;panel.classList.remove('mode-empty','mode-auto','mode-manual');if(!std){panel.classList.add('mode-empty');input.disabled=true;input.value='0';badge.textContent='항목 선택 필요 | Select item';title.textContent='위반행위를 먼저 선택하세요. | Select a violation first.';desc.textContent='선택한 기준에 따라 점수 입력 방식이 바뀝니다. | The point-entry mode changes by the selected standard.';caption.textContent='항목 선택 후 설정됩니다. | Set after selection.';tip.textContent='위반행위를 선택하면 점수 입력 안내가 표시됩니다. | Select a violation to see point instructions.';return;}const raw=String(std.autoPoints||'').trim(),m=raw.match(/^(\d+)\s*-\s*(\d+)$/);if(m){panel.classList.add('mode-manual');input.disabled=false;input.readOnly=false;input.min=m[1];input.max=m[2];if(Number(input.value)<Number(m[1])||Number(input.value)>Number(m[2]))input.value='';badge.textContent='직접 입력 | Manual';title.textContent=`${raw}점 범위에서 최종 점수를 입력하세요. | Enter a final score from ${raw}.`;desc.textContent='상황의 정도를 판단하여 담당 교사가 점수를 결정합니다. | The teacher determines the score based on severity.';caption.textContent=`허용 범위: ${raw}점 · 입력 필수 | Allowed: ${raw} · Required`;tip.textContent='저장 전에 최종 적용 점수를 입력하세요. | Enter the final points before saving.';}else{panel.classList.add('mode-auto');input.disabled=true;input.readOnly=true;input.removeAttribute('max');input.min='0';const point=raw.includes(',')?getAutoChoicePoint(std):Number(raw||0);input.value=String(point||0);badge.textContent='자동 산정 | Auto';title.textContent=`최종 점수 ${point||0}점이 자동 적용됩니다. | ${point||0} points will be applied automatically.`;desc.textContent=raw.includes(',')?'이전 동일 위반 횟수를 확인해 점수를 자동 선택했습니다. | The score was selected from prior matching violations.':'기준표의 고정 점수가 적용됩니다. | The fixed standard score will be applied.';caption.textContent='직접 입력 불필요 | No manual entry';tip.textContent='자동 산정된 점수로 저장됩니다. | The automatically calculated points will be saved.';}}
+    function updateManualPointsMode(){const input=document.getElementById('manual-points'),panel=document.getElementById('points-mode-panel'),badge=document.getElementById('points-mode-badge'),title=document.getElementById('points-mode-title'),desc=document.getElementById('points-mode-description'),caption=document.getElementById('manual-point-caption'),tip=document.getElementById('entry-point-tip'),std=getSelectedStandard();if(!input||!panel)return;panel.classList.remove('mode-empty','mode-auto','mode-manual');if(!std){panel.classList.add('mode-empty');input.disabled=true;input.value='0';badge.textContent='항목 선택 필요';title.textContent='위반행위를 먼저 선택하세요.';desc.textContent='선택한 기준에 따라 점수 입력 방식이 자동으로 바뀝니다.';caption.textContent='항목 선택 후 자동 설정됩니다.';tip.textContent='위반행위를 선택하면 자동점수 또는 직접 입력 안내가 표시됩니다.';return;}const raw=String(std.autoPoints||'').trim(),m=raw.match(/^(\d+)\s*-\s*(\d+)$/);if(m){panel.classList.add('mode-manual');input.disabled=false;input.readOnly=false;input.min=m[1];input.max=m[2];if(Number(input.value)<Number(m[1])||Number(input.value)>Number(m[2]))input.value='';badge.textContent='직접 입력 필수';title.textContent=`${raw}점 범위에서 최종 점수를 입력하세요.`;desc.textContent='상황의 정도를 판단하여 담당 교사가 점수를 결정합니다.';caption.textContent=`허용 범위: ${raw}점 · 입력 필수`;tip.textContent='저장 전에 최종 적용 점수를 반드시 입력해야 합니다.';}else{panel.classList.add('mode-auto');input.disabled=true;input.readOnly=true;input.removeAttribute('max');input.min='0';const point=raw.includes(',')?getAutoChoicePoint(std):Number(raw||0);input.value=String(point||0);badge.textContent='자동 산정';title.textContent=`최종 점수 ${point||0}점이 자동 적용됩니다.`;desc.textContent=raw.includes(',')?'동일 위반의 이전 기록 횟수를 확인해 자동으로 점수를 선택했습니다.':'기준표의 고정 점수가 자동으로 적용됩니다.';caption.textContent='직접 입력할 필요 없음';tip.textContent='자동 산정된 점수로 저장됩니다. 입력칸은 수정할 수 없습니다.';}}
 
 
     function toggleRecoveryHistory(level){
@@ -2231,28 +2254,15 @@
 
     const CATEGORY_ICON_MAP={'수업':'🔊','표절':'📄','언어':'💬','복장':'👕','두발':'✂️','화장':'💄','시설':'🏫','이성교제':'🤝','흡연':'🚭','음주':'🚫','폭력':'🛡️','교외':'🚌','전자':'💻','그 외':'•••'};
     function categoryIcon(category){const text=String(category||'');const key=Object.keys(CATEGORY_ICON_MAP).find(k=>text.includes(k));return key?CATEGORY_ICON_MAP[key]:'⚑';}
-    function splitBilingualText(value){
-      const text=String(value||'').replace(/\r\n?/g,'\n').trim();
-      if(!text)return {ko:'',en:''};
-      if(!/[가-힣]/.test(text))return {ko:'',en:text};
-      const boundaries=[];
-      for(const match of text.matchAll(/(?:^|[\s])(?=[A-Za-z0-9])/g))boundaries.push(match.index+(match[0]?match[0].length:0));
-      for(const index of boundaries){
-        const ko=text.slice(0,index).trim();
-        const en=text.slice(index).trim();
-        if(ko&&/[가-힣]/.test(ko)&&/[A-Za-z]/.test(en)&&!/[가-힣]/.test(en))return {ko,en};
-      }
-      return {ko:text,en:''};
-    }
+    function shortCategoryName(category){const text=String(category||'').trim();const korean=(text.match(/^[^A-Za-z]+/)||[''])[0].trim();return korean||text;}
     function setupSelectors(){const sel=document.getElementById('category-select');const cats=[...new Set(detentionStandards.map(x=>x.category).filter(Boolean))];const prev=sel.value;sel.innerHTML=cats.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');if(prev&&cats.includes(prev))sel.value=prev;renderCategoryCards();renderViolationOptions();}
-    function renderCategoryCards(){const sel=document.getElementById('category-select'),wrap=document.getElementById('category-card-list');if(!sel||!wrap)return;const selected=sel.value;wrap.innerHTML=Array.from(sel.options).map(opt=>{const v=opt.value,parts=splitBilingualText(v);return `<button type="button" class="violation-category-card ${v===selected?'active':''}" data-category="${esc(v)}" onclick="selectCategoryCard(this.dataset.category)" title="${esc(v)}"><span class="violation-category-icon">${categoryIcon(v)}</span><span class="violation-category-name"><span class="violation-category-ko" lang="ko">${esc(parts.ko||v)}</span>${parts.en?`<span class="violation-category-en" lang="en">${esc(parts.en)}</span>`:''}</span></button>`;}).join('');}
+    function renderCategoryCards(){const sel=document.getElementById('category-select'),wrap=document.getElementById('category-card-list');if(!sel||!wrap)return;const selected=sel.value;wrap.innerHTML=Array.from(sel.options).map(opt=>{const v=opt.value;return `<button type="button" class="violation-category-card ${v===selected?'active':''}" data-category="${esc(v)}" onclick="selectCategoryCard(this.dataset.category)" title="${esc(v)}"><span class="violation-category-icon">${categoryIcon(v)}</span><span class="violation-category-name">${esc(shortCategoryName(v))}</span></button>`;}).join('');}
     function selectCategoryCard(category){const sel=document.getElementById('category-select');if(!sel)return;sel.value=category;renderCategoryCards();renderViolationOptions();}
     function renderViolationOptions(){const category=document.getElementById('category-select').value,sel=document.getElementById('violation-select'),prev=sel.value,list=detentionStandards.filter(x=>x.category===category);sel.innerHTML=list.map(x=>`<option value="${esc(x.violation)}">${esc(x.violation)}</option>`).join('');if(prev&&list.some(x=>x.violation===prev))sel.value=prev;renderViolationCards();syncAutoPoints();}
-    function renderViolationCards(){const category=document.getElementById('category-select').value,sel=document.getElementById('violation-select'),wrap=document.getElementById('violation-card-list'),count=document.getElementById('violation-choice-count');if(!wrap||!sel)return;const list=detentionStandards.filter(x=>x.category===category),selected=sel.value;if(count)count.textContent=`${list.length}개 | ${list.length} items`;wrap.innerHTML=list.map((x,i)=>{const active=x.violation===selected,parts=splitBilingualText(x.violation);return `<button type="button" role="option" aria-selected="${active?'true':'false'}" class="violation-item-card ${active?'active':''}" data-violation-index="${i}" onclick="selectViolationCard(Number(this.dataset.violationIndex))" title="${esc(x.violation)}"><span class="violation-item-copy"><span class="violation-item-ko" lang="ko">${esc(parts.ko||x.violation)}</span>${parts.en?`<span class="violation-item-en" lang="en">${esc(parts.en)}</span>`:''}</span><span class="violation-item-points">${esc(String(x.autoPoints||'-'))} pts</span></button>`;}).join('');updateSelectedViolationDetail();}
+    function renderViolationCards(){const category=document.getElementById('category-select').value,sel=document.getElementById('violation-select'),wrap=document.getElementById('violation-card-list'),count=document.getElementById('violation-choice-count');if(!wrap||!sel)return;const list=detentionStandards.filter(x=>x.category===category),selected=sel.value;if(count)count.textContent=`${list.length}개 항목`;wrap.innerHTML=list.map((x,i)=>{const active=x.violation===selected;return `<button type="button" role="option" aria-selected="${active?'true':'false'}" class="violation-item-card ${active?'active':''}" data-violation-index="${i}" onclick="selectViolationCard(Number(this.dataset.violationIndex))" title="${esc(x.violation)}"><span class="violation-item-title">${esc(x.violation)}</span><span class="violation-item-points">${esc(String(x.autoPoints||'-'))}점</span></button>`;}).join('');updateSelectedViolationDetail();}
     function selectViolationCard(index){const category=document.getElementById('category-select').value,list=detentionStandards.filter(x=>x.category===category),item=list[index];if(!item)return;document.getElementById('violation-select').value=item.violation;renderViolationCards();syncAutoPoints();}
-    function bilingualDetailBlock(parts){if(parts.ko&&parts.en)return `<div class="selected-detail-ko" lang="ko">${esc(parts.ko)}</div><div class="selected-detail-en" lang="en">${esc(parts.en)}</div>`;if(parts.en)return `<div class="selected-detail-en" lang="en">${esc(parts.en)}</div>`;return `<div class="selected-detail-ko" lang="ko">${esc(parts.ko||'')}</div>`;}
-    function updateSelectedViolationDetail(){const box=document.getElementById('selected-violation-detail'),toggle=document.getElementById('selected-violation-toggle'),std=getSelectedStandard();if(!box)return;if(!std){box.classList.remove('visible','expanded');box.innerHTML='';if(toggle){toggle.hidden=true;toggle.setAttribute('aria-expanded','false');}return;}const violation=splitBilingualText(std.violation),note=splitBilingualText(std.note||''),detail=`${std.violation}${std.note?'\n'+std.note:''}`;box.innerHTML=`<div class="selected-detail-label">선택됨 <span>| Selected</span></div>${bilingualDetailBlock(violation)}${std.note?`<div class="selected-detail-note"><div class="selected-detail-label">안내 <span>| Note</span></div>${bilingualDetailBlock(note)}</div>`:''}`;box.title=detail;box.classList.add('visible');box.classList.remove('expanded');if(toggle){toggle.hidden=detail.length<95&&!detail.includes('\n');toggle.textContent='전체 내용 보기 | Show full text';toggle.setAttribute('aria-expanded','false');}}
-    function toggleSelectedViolationDetail(){const box=document.getElementById('selected-violation-detail'),toggle=document.getElementById('selected-violation-toggle');if(!box||!toggle)return;const expanded=box.classList.toggle('expanded');toggle.textContent=expanded?'내용 접기 | Collapse':'전체 내용 보기 | Show full text';toggle.setAttribute('aria-expanded',expanded?'true':'false');}
+    function updateSelectedViolationDetail(){const box=document.getElementById('selected-violation-detail'),toggle=document.getElementById('selected-violation-toggle'),std=getSelectedStandard();if(!box)return;if(!std){box.classList.remove('visible','expanded');box.textContent='';if(toggle){toggle.hidden=true;toggle.setAttribute('aria-expanded','false');}return;}const detail=`선택됨: ${std.violation}${std.note?'\n안내: '+std.note:''}`;box.textContent=detail;box.title=detail;box.classList.add('visible');box.classList.remove('expanded');if(toggle){toggle.hidden=detail.length<95;toggle.textContent='전체 내용 보기';toggle.setAttribute('aria-expanded','false');}}
+    function toggleSelectedViolationDetail(){const box=document.getElementById('selected-violation-detail'),toggle=document.getElementById('selected-violation-toggle');if(!box||!toggle)return;const expanded=box.classList.toggle('expanded');toggle.textContent=expanded?'내용 접기':'전체 내용 보기';toggle.setAttribute('aria-expanded',expanded?'true':'false');}
     function getAutoChoicePoint(std){const raw=String((std&&std.autoPoints)||'').trim(),parts=raw.split(',').map(v=>Number(v.trim())).filter(Number.isFinite);if(parts.length<2)return parts[0]||0;const count=countSameDetention(selectedStudentKey||syncStudentSelectionWithoutUpdate(),std.category||'',std.violation||'');return count===0?parts[0]:parts[1];}
     function syncAutoPoints(){const std=getSelectedStandard(),raw=std?String(std.autoPoints||'').trim():'',count=std&&raw.includes(',')&&!raw.includes('-')?countSameDetention(selectedStudentKey||syncStudentSelectionWithoutUpdate(),std.category||'',std.violation||''):0;let display=raw||'-';if(std&&raw.includes(',')&&!raw.includes('-'))display=`${getAutoChoicePoint(std)}점 (${count+1}회차)`;else if(/^\d+$/.test(raw)||raw.includes('-'))display=`${raw}점`;document.getElementById('auto-points').textContent=display;updateSelectedViolationDetail();updateManualPointsMode();}
 
@@ -2547,6 +2557,58 @@
       const s=String(status||'임시저장');
       if(s==='확정') return 'done'; if(s==='반려') return 'rejected'; if(s==='취소') return 'cancelled'; return 'pending';
     }
+    function recordStatusBilingual(status){
+      const s=String(status||'임시저장');
+      const map={확정:'확정 | Confirmed',반려:'반려 | Rejected',취소:'취소 | Cancelled',임시저장:'대기 | Pending',대기:'대기 | Pending'};
+      return map[s]||s;
+    }
+    function detailItem(label,value,full=false){
+      return `<div class="lookup-detail-item${full?' full':''}"><span class="lookup-detail-label">${esc(label)}</span><div class="lookup-detail-value">${esc(value==null||value===''?'-':String(value))}</div></div>`;
+    }
+    function openLookupDetail(type,key){
+      const source=type==='recovery'?recoveryEntries:entries;
+      const r=source&&source[key]; if(!r) return;
+      const title=document.getElementById('lookup-detail-title');
+      const grid=document.getElementById('lookup-detail-grid');
+      if(type==='recovery'){
+        const state=recoveryState(r);
+        const stateLabel=state==='done'?'완료 | Completed':state==='active'?'진행중 | In progress':'미시작 | Not started';
+        title.textContent='회복교육 상세 | Recovery Record Details';
+        grid.innerHTML=[
+          detailItem('학생명 | Student',sName(r.studentName||'',r.englishName||'')),
+          detailItem('학반 | Class',r.className||'-'),
+          detailItem('대상 구분 | Type',r.typeLabel||'디텐션 전환 | Detention referral'),
+          detailItem('상태 | Status',stateLabel),
+          detailItem('배정일 | Assigned',String(r.assignedAt||r.createdAt||'').slice(0,10)||'-'),
+          detailItem('완료일 | Completed',String(r.completedAt||'').slice(0,10)||'-'),
+          detailItem('담당 교사 | Staff',r.staffName||'-'),
+          detailItem('처리자 이메일 | Staff email',r.staffEmail||r.completedByEmail||'-'),
+          detailItem('회복교육 내용 | Recovery activity',r.reasonsSnapshot||r.violationSnapshot||r.memo||'-',true),
+          detailItem('메모 | Memo',r.note||r.adminNote||r.completionMemo||'-',true)
+        ].join('');
+      }else{
+        title.textContent='디텐션 기록 상세 | Detention Record Details';
+        grid.innerHTML=[
+          detailItem('학생명 | Student',sName(r.studentName||'',r.englishName||'')),
+          detailItem('학반 | Class',r.className||'-'),
+          detailItem('일자 | Date',String(r.createdAt||r.confirmedAt||r.date||'').slice(0,10)||'-'),
+          detailItem('상태 | Status',recordStatusBilingual(r.status)),
+          detailItem('구분 | Category',r.category||'-'),
+          detailItem('점수 | Points',String(r.totalPoints??r.manualPoints??r.autoPoints??0)),
+          detailItem('입력 교사 | Entered by',r.teacherName||'-'),
+          detailItem('처리자 | Handled by',r.confirmedBy||r.rejectedBy||r.cancelledBy||'-'),
+          detailItem('위반 항목 | Violation',r.violation||'-',true),
+          detailItem('메모 | Memo',r.memo||'-',true),
+          detailItem('관리자 노트 | Admin note',r.adminNote||'-',true)
+        ].join('');
+      }
+      document.getElementById('lookup-detail-overlay').classList.add('open');
+      document.body.style.overflow='hidden';
+    }
+    function closeLookupDetail(){
+      const el=document.getElementById('lookup-detail-overlay'); if(el) el.classList.remove('open');
+      document.body.style.overflow='';
+    }
     function resetStudentRecordFilters(){
       document.getElementById('all-student-search').value=''; document.getElementById('all-class-filter').value='';
       document.getElementById('all-date-from').value=''; document.getElementById('all-date-to').value=''; allStudentFilterKey=''; allRecordsPage=1; renderAllEntries();
@@ -2564,9 +2626,9 @@
       document.getElementById('all-result-count').textContent=`${list.length}건`;
       allRecordsPage=clampPage(allRecordsPage,list.length,PAGE_SIZE); const pageData=slicePage(list,allRecordsPage,PAGE_SIZE);
       renderPager('all-records-pager',list.length,pageData.page,'setAllRecordsPage');
-      const rows=pageData.rows.map(r=>`<tr><td class="nowrap">${esc(String(r.createdAt||r.confirmedAt||'').slice(0,10)||'-')}</td><td><b>${esc(sName(r.studentName||'',r.englishName||''))}</b><div style="font-size:10px;color:#738096">${esc(r.className||'-')}</div></td><td>${esc(r.violation||r.category||'-')}</td><td class="tc"><b>${esc(String(r.totalPoints??r.manualPoints??0))}</b></td><td><span class="lookup-status ${recordStatusClass(r.status)}">${esc(r.status||'대기')}</span></td><td>${esc(r.memo||'-')}</td><td>${esc(r.confirmedBy||r.teacherName||'-')}</td></tr>`).join('');
-      document.getElementById('all-records-tbody').innerHTML=rows||'<tr><td colspan="7" class="empty">검색 결과가 없습니다.</td></tr>';
-      document.getElementById('all-records-mobile').innerHTML=pageData.rows.map(r=>`<div class="lookup-mobile-card"><div class="lookup-mobile-card-top"><span>${esc(sName(r.studentName||'',r.englishName||''))} · ${esc(r.className||'-')}</span><span class="lookup-status ${recordStatusClass(r.status)}">${esc(r.status||'대기')}</span></div><div class="lookup-mobile-card-body">${esc(r.violation||r.category||'-')}</div><div class="lookup-mobile-card-meta">${esc(String(r.createdAt||r.confirmedAt||'').slice(0,10)||'-')} · ${esc(String(r.totalPoints??r.manualPoints??0))}점 · ${esc(r.teacherName||'-')}</div></div>`).join('')||'<div class="empty">검색 결과가 없습니다.</div>';
+      const rows=pageData.rows.map(r=>`<tr tabindex="0" data-key="${esc(r.key)}" onclick="openLookupDetail('detention',this.dataset.key)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openLookupDetail('detention',this.dataset.key)}" title="상세보기 | View details"><td class="nowrap">${esc(String(r.createdAt||r.confirmedAt||'').slice(0,10)||'-')}</td><td><span class="cell-name cell-ellipsis">${esc(sName(r.studentName||'',r.englishName||''))}</span></td><td class="cell-class">${esc(r.className||'-')}</td><td><span class="cell-ellipsis" title="${esc(r.violation||r.category||'-')}">${esc(r.violation||r.category||'-')}</span></td><td class="tc"><b>${esc(String(r.totalPoints??r.manualPoints??0))}</b></td><td><span class="lookup-status ${recordStatusClass(r.status)}">${esc(recordStatusBilingual(r.status))}</span></td><td><span class="cell-ellipsis" title="${esc(r.memo||'-')}">${esc(r.memo||'-')}</span></td><td><span class="cell-ellipsis">${esc(r.confirmedBy||r.teacherName||'-')}</span></td></tr>`).join('');
+      document.getElementById('all-records-tbody').innerHTML=rows||'<tr><td colspan="8" class="empty">검색 결과가 없습니다. | No records found.</td></tr>';
+      document.getElementById('all-records-mobile').innerHTML=pageData.rows.map(r=>`<div class="lookup-mobile-card" tabindex="0" data-key="${esc(r.key)}" onclick="openLookupDetail('detention',this.dataset.key)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openLookupDetail('detention',this.dataset.key)}"><div class="lookup-mobile-card-top"><span>${esc(sName(r.studentName||'',r.englishName||''))} · ${esc(r.className||'-')}</span><span class="lookup-status ${recordStatusClass(r.status)}">${esc(recordStatusBilingual(r.status))}</span></div><div class="lookup-mobile-card-body">${esc(r.violation||r.category||'-')}</div><div class="lookup-mobile-card-meta">${esc(String(r.createdAt||r.confirmedAt||'').slice(0,10)||'-')} · ${esc(String(r.totalPoints??r.manualPoints??0))}점 · ${esc(r.teacherName||'-')} · 상세보기 | Details</div></div>`).join('')||'<div class="empty">검색 결과가 없습니다. | No records found.</div>';
     }
     function recoveryState(r){ if(r.completedAt) return 'done'; if(r.startedAt||r.assignedAt||r.createdAt) return 'active'; return 'not_started'; }
     function resetRecoveryViewFilters(){ ['recovery-view-level','recovery-view-class','recovery-view-staff','recovery-view-status'].forEach(id=>document.getElementById(id).value=''); allRecoveryPage=1; renderAllRecoveryEntries(); }
@@ -2577,12 +2639,12 @@
       if(cls) list=list.filter(r=>String(r.className||'')===cls); if(staff) list=list.filter(r=>String(r.staffName||'')===staff); if(status) list=list.filter(r=>recoveryState(r)===status);
       list.sort((a,b)=>String(b.completedAt||b.assignedAt||b.createdAt||'').localeCompare(String(a.completedAt||a.assignedAt||a.createdAt||'')));
       const totalAll=Object.values(recoveryEntries||{}); const count=s=>totalAll.filter(r=>recoveryState(r)===s).length;
-      document.getElementById('recovery-summary-grid').innerHTML=`<div class="recovery-summary-card ${!status?'active':''}" onclick="document.getElementById('recovery-view-status').value='';renderAllRecoveryEntries()"><div class="recovery-summary-icon">◎</div><div><div class="recovery-summary-label">전체</div><div class="recovery-summary-value">${totalAll.length}명</div></div></div><div class="recovery-summary-card ${status==='active'?'active':''}" onclick="document.getElementById('recovery-view-status').value='active';renderAllRecoveryEntries()"><div class="recovery-summary-icon">◷</div><div><div class="recovery-summary-label">진행중</div><div class="recovery-summary-value">${count('active')}명</div></div></div><div class="recovery-summary-card ${status==='done'?'active':''}" onclick="document.getElementById('recovery-view-status').value='done';renderAllRecoveryEntries()"><div class="recovery-summary-icon">✓</div><div><div class="recovery-summary-label">완료</div><div class="recovery-summary-value">${count('done')}명</div></div></div><div class="recovery-summary-card ${status==='not_started'?'active':''}" onclick="document.getElementById('recovery-view-status').value='not_started';renderAllRecoveryEntries()"><div class="recovery-summary-icon">○</div><div><div class="recovery-summary-label">미시작</div><div class="recovery-summary-value">${count('not_started')}명</div></div></div>`;
+      document.getElementById('recovery-summary-grid').innerHTML=`<div class="recovery-summary-card ${!status?'active':''}" onclick="document.getElementById('recovery-view-status').value='';renderAllRecoveryEntries()"><div class="recovery-summary-icon">◎</div><div><div class="recovery-summary-label">전체 | All</div><div class="recovery-summary-value">${totalAll.length}명</div></div></div><div class="recovery-summary-card ${status==='active'?'active':''}" onclick="document.getElementById('recovery-view-status').value='active';renderAllRecoveryEntries()"><div class="recovery-summary-icon">◷</div><div><div class="recovery-summary-label">진행중 | In progress</div><div class="recovery-summary-value">${count('active')}명</div></div></div><div class="recovery-summary-card ${status==='done'?'active':''}" onclick="document.getElementById('recovery-view-status').value='done';renderAllRecoveryEntries()"><div class="recovery-summary-icon">✓</div><div><div class="recovery-summary-label">완료 | Completed</div><div class="recovery-summary-value">${count('done')}명</div></div></div><div class="recovery-summary-card ${status==='not_started'?'active':''}" onclick="document.getElementById('recovery-view-status').value='not_started';renderAllRecoveryEntries()"><div class="recovery-summary-icon">○</div><div><div class="recovery-summary-label">미시작 | Not started</div><div class="recovery-summary-value">${count('not_started')}명</div></div></div>`;
       document.getElementById('recovery-result-count').textContent=`${list.length}건`; allRecoveryPage=clampPage(allRecoveryPage,list.length,PAGE_SIZE); const pageData=slicePage(list,allRecoveryPage,PAGE_SIZE); renderPager('all-recovery-pager',list.length,pageData.page,'setAllRecoveryPage');
-      const label=r=>recoveryState(r)==='done'?'완료':recoveryState(r)==='active'?'진행중':'미시작';
-      const rows=pageData.rows.map(r=>`<tr><td><b>${esc(sName(r.studentName,r.englishName))}</b><div style="font-size:10px;color:#738096">${esc(r.className||'-')}</div></td><td>${esc(r.typeLabel||'디텐션 전환')}</td><td>${esc(r.reasonsSnapshot||r.violationSnapshot||'-')}</td><td>${esc(String(r.assignedAt||r.createdAt||'').slice(0,10)||'-')}</td><td><span class="lookup-status ${recoveryState(r)==='done'?'done':'pending'}">${label(r)}</span></td><td>${esc(String(r.completedAt||'').slice(0,10)||'-')}</td><td>${esc(r.staffName||'-')}</td></tr>`).join('');
-      document.getElementById('all-recovery-tbody').innerHTML=rows||'<tr><td colspan="7" class="empty">회복교육 기록이 없습니다.</td></tr>';
-      document.getElementById('all-recovery-mobile').innerHTML=pageData.rows.map(r=>`<div class="lookup-mobile-card"><div class="lookup-mobile-card-top"><span>${esc(sName(r.studentName,r.englishName))} · ${esc(r.className||'-')}</span><span class="lookup-status ${recoveryState(r)==='done'?'done':'pending'}">${label(r)}</span></div><div class="lookup-mobile-card-body">${esc(r.reasonsSnapshot||r.violationSnapshot||'-')}</div><div class="lookup-mobile-card-meta">담당 ${esc(r.staffName||'-')} · 완료 ${esc(String(r.completedAt||'').slice(0,10)||'-')}</div></div>`).join('')||'<div class="empty">회복교육 기록이 없습니다.</div>';
+      const label=r=>recoveryState(r)==='done'?'완료 | Completed':recoveryState(r)==='active'?'진행중 | In progress':'미시작 | Not started';
+      const rows=pageData.rows.map(r=>`<tr tabindex="0" data-key="${esc(r.key)}" onclick="openLookupDetail('recovery',this.dataset.key)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openLookupDetail('recovery',this.dataset.key)}" title="상세보기 | View details"><td><span class="cell-name cell-ellipsis">${esc(sName(r.studentName,r.englishName))}</span></td><td class="cell-class">${esc(r.className||'-')}</td><td><span class="cell-ellipsis">${esc(r.typeLabel||'디텐션 전환')}</span></td><td><span class="cell-ellipsis" title="${esc(r.reasonsSnapshot||r.violationSnapshot||'-')}">${esc(r.reasonsSnapshot||r.violationSnapshot||'-')}</span></td><td>${esc(String(r.assignedAt||r.createdAt||'').slice(0,10)||'-')}</td><td><span class="lookup-status ${recoveryState(r)==='done'?'done':'pending'}">${label(r)}</span></td><td>${esc(String(r.completedAt||'').slice(0,10)||'-')}</td><td><span class="cell-ellipsis">${esc(r.staffName||'-')}</span></td></tr>`).join('');
+      document.getElementById('all-recovery-tbody').innerHTML=rows||'<tr><td colspan="8" class="empty">회복교육 기록이 없습니다. | No recovery records found.</td></tr>';
+      document.getElementById('all-recovery-mobile').innerHTML=pageData.rows.map(r=>`<div class="lookup-mobile-card" tabindex="0" data-key="${esc(r.key)}" onclick="openLookupDetail('recovery',this.dataset.key)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openLookupDetail('recovery',this.dataset.key)}"><div class="lookup-mobile-card-top"><span>${esc(sName(r.studentName,r.englishName))} · ${esc(r.className||'-')}</span><span class="lookup-status ${recoveryState(r)==='done'?'done':'pending'}">${label(r)}</span></div><div class="lookup-mobile-card-body">${esc(r.reasonsSnapshot||r.violationSnapshot||'-')}</div><div class="lookup-mobile-card-meta">담당 | Staff ${esc(r.staffName||'-')} · 완료 | Completed ${esc(String(r.completedAt||'').slice(0,10)||'-')} · 상세보기 | Details</div></div>`).join('')||'<div class="empty">회복교육 기록이 없습니다. | No recovery records found.</div>';
     }
 
     function renderConfirmEntries(){
@@ -3662,7 +3724,7 @@
       document.body.style.overflow = '';
     }
 
-    document.addEventListener('keydown', e => { if(e.key==='Escape') closeStudentModal(); });
+    document.addEventListener('keydown', e => { if(e.key==='Escape'){ closeStudentModal(); closeLookupDetail(); } });
 
     function getVisibleNoticeLevels(){
       const levels = ['ms','hs'].filter(level => canManageNoticeLevel(level));
