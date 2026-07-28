@@ -4335,14 +4335,22 @@
       const record = entries[key] || {};
       if(!record || !key) return toast('기록을 찾을 수 없습니다.', 'err');
       if(!canCancelDraftDetention(record)) return toast('입력 취소 권한이 없습니다.', 'err');
-      if(!confirm('이 디텐션 입력 기록을 취소하시겠습니까?\n임시저장 기록이 삭제됩니다.')) return;
+      if(!confirm('이 디텐션 입력 기록을 취소하시겠습니까?\n기록은 삭제하지 않고 취소 이력을 남깁니다.')) return;
       try{
         const studentKey = String(record.studentKey || '');
         const fallbackLevel = record.schoolLevel || getSchoolLevel(record.className || '');
-        await db.ref(DETENTION_DB_PATH + '/' + key).remove();
-        delete entries[key];
+        const cancelledAt = new Date().toISOString();
+        const updatePayload = {
+          status: '취소',
+          cancelledAt,
+          cancelledBy: String((teacher && teacher.name) || ''),
+          cancelledByEmail: String((teacher && teacher.email) || ''),
+          cancellationType: 'teacher_own_pending'
+        };
+        await db.ref(DETENTION_DB_PATH + '/' + key).update(updatePayload);
+        if(entries[key]) Object.assign(entries[key], updatePayload);
         if(studentKey) await recalcByStudentKey(studentKey, fallbackLevel);
-        toast('디텐션 입력이 취소되었습니다.', 'ok');
+        toast('디텐션 입력이 취소되었습니다. 기록은 보존됩니다.', 'ok');
         await loadData();
       }catch(e){ console.error(e); toast('입력 취소 실패', 'err'); }
     }
