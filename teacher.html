@@ -460,9 +460,9 @@
     .notice-table tbody tr.notice-inline-row.lookup-row-odd>td{background:#fbfdff!important}
     .notice-table tbody tr.notice-inline-row.lookup-row-even>td{background:#eef4ff!important}
     .notice-table tbody tr.notice-inline-row>td{padding:0 8px 11px!important;border-bottom:1px solid #d4deed}
-    .notice-student-cell{min-width:0}
-    .notice-student-ko{display:block;font-weight:850;color:#17233d;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-    .notice-student-en{display:block;margin-top:2px;font-size:10px;color:#6b7890;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .notice-student-cell{display:flex;align-items:baseline;gap:5px;min-width:0;white-space:nowrap;overflow:hidden}
+    .notice-student-ko{flex:0 0 auto;font-weight:850;color:#17233d;white-space:nowrap}
+    .notice-student-en{min-width:0;font-size:10px;color:#6b7890;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     .notice-level-badge,.notice-committee-badge,.notice-mail-badge{display:inline-flex;align-items:center;justify-content:center;border-radius:999px;font-size:10px;font-weight:800;line-height:1.2;white-space:nowrap}
     .notice-level-badge{min-width:38px;padding:4px 7px;background:#e9effa;color:#304c7f}
     .notice-committee-badge{padding:4px 7px;border:1px solid #e2c36f;background:#fff7dc;color:#6b4d00}
@@ -477,8 +477,7 @@
     .notice-progress-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#4c5c75;font-size:10px}
     .notice-mail-badge{padding:3px 7px;border:1px solid #cfd8e6;background:#fff;color:#67748a}
     .notice-mail-badge.sent{border-color:#b9dfc5;background:#e9f8ee;color:#16713a}
-    .notice-action-cell{display:flex;align-items:center;justify-content:center;gap:5px}
-    .notice-expand-toggle{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;width:22px;height:22px;border:1px solid #bfd0e9;border-radius:7px;background:#fff;color:#1455d9;font-size:11px;font-weight:900}
+    .notice-action-cell{display:flex;align-items:center;justify-content:center}
     .notice-inline-panel{border:1px solid #cbdcf5;border-radius:11px;background:#f8fbff;padding:10px;margin-top:4px;box-shadow:inset 4px 0 0 #1455d9}
     .notice-detail-identity{display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid #c9daf4;border-radius:9px;background:#eaf2ff;padding:9px 11px;margin-bottom:9px}
     .notice-detail-name{font-size:14px;font-weight:900;color:#102d69}
@@ -973,7 +972,7 @@
           <table class="notice-table">
             <thead>
               <tr>
-                <th style="width:17%;">학생<span class="th-en">Student</span></th>
+                <th style="width:22%;">학생<span class="th-en">Student</span></th>
                 <th class="tc" style="width:6%;">학반<span class="th-en">Class</span></th>
                 <th class="tc notice-col-level" style="width:6%;">구분<span class="th-en">Level</span></th>
                 <th class="tc" style="width:7%;">잔여점수<span class="th-en">Remaining</span></th>
@@ -981,7 +980,7 @@
                 <th class="tc" style="width:13%;">학부모 알림<span class="th-en">Parent Notice</span></th>
                 <th class="tc" style="width:15%;">학생·교사 알림<span class="th-en">Student / Teacher</span></th>
                 <th class="tc notice-col-committee" style="width:10%;">위원회<span class="th-en">Committee</span></th>
-                <th class="tc" style="width:19%;">처리<span class="th-en">Action / Detail</span></th>
+                <th class="tc" style="width:14%;">처리<span class="th-en">Action</span></th>
               </tr>
             </thead>
             <tbody id="notify-active-tbody"></tbody>
@@ -993,15 +992,14 @@
           <table class="notice-table">
             <thead>
               <tr>
-                <th style="width:17%;">학생<span class="th-en">Student</span></th>
-                <th class="tc" style="width:6%;">학반<span class="th-en">Class</span></th>
-                <th class="tc notice-col-level" style="width:6%;">구분<span class="th-en">Level</span></th>
-                <th class="tc" style="width:7%;">잔여점수<span class="th-en">Remaining</span></th>
-                <th class="tc" style="width:7%;">누적점수<span class="th-en">Total</span></th>
-                <th class="tc" style="width:13%;">학부모 알림<span class="th-en">Parent Notice</span></th>
-                <th class="tc" style="width:15%;">학생·교사 알림<span class="th-en">Student / Teacher</span></th>
-                <th class="tc" style="width:18%;">완료일<span class="th-en">Completed</span></th>
-                <th class="tc" style="width:11%;">상세<span class="th-en">Details</span></th>
+                <th style="width:22%;">학생<span class="th-en">Student</span></th>
+                <th class="tc" style="width:7%;">학반<span class="th-en">Class</span></th>
+                <th class="tc notice-col-level" style="width:7%;">구분<span class="th-en">Level</span></th>
+                <th class="tc" style="width:8%;">잔여점수<span class="th-en">Remaining</span></th>
+                <th class="tc" style="width:8%;">누적점수<span class="th-en">Total</span></th>
+                <th class="tc" style="width:14%;">학부모 알림<span class="th-en">Parent Notice</span></th>
+                <th class="tc" style="width:17%;">학생·교사 알림<span class="th-en">Student / Teacher</span></th>
+                <th class="tc" style="width:17%;">완료일<span class="th-en">Completed</span></th>
               </tr>
             </thead>
             <tbody id="notify-done-tbody"></tbody>
@@ -3872,7 +3870,7 @@
       function studentNameHtml(s){
         const ko = String(s.name || s.studentName || '').trim() || '-';
         const en = String(s.englishName || '').trim();
-        return `<div class="notice-student-cell"><span class="notice-student-ko">${esc(ko)}</span>${en ? `<span class="notice-student-en">${esc(en)}</span>` : ''}</div>`;
+        return `<div class="notice-student-cell" title="${esc(en ? ko + ' ' + en : ko)}"><span class="notice-student-ko">${esc(ko)}</span>${en ? `<span class="notice-student-en">${esc(en)}</span>` : ''}</div>`;
       }
 
       function levelBadge(level){
@@ -3971,7 +3969,6 @@
               <td class="tc" onclick="event.stopPropagation()">
                 <div class="notice-action-cell">
                   <button class="btn btn-primary btn-xs" onclick="completeNotice('${esc(s.key)}','${level}')" ${s.cycleCompleted ? 'disabled' : ''}>완료 | Complete</button>
-                  <button type="button" class="notice-expand-toggle" aria-label="${expanded ? '상세 접기' : '상세 펼치기'}" onclick="toggleNoticeRow('${level}','${esc(s.key)}')">${expanded ? '▴' : '▾'}</button>
                 </div>
               </td>
             </tr>
@@ -3984,7 +3981,7 @@
       activeTb.innerHTML = renderActiveRows(finalActiveList);
 
       if (!doneList.length){
-        doneTb.innerHTML = '<tr><td colspan="9" class="empty">해당 학생이 없습니다. | No matching students.</td></tr>';
+        doneTb.innerHTML = '<tr><td colspan="8" class="empty">해당 학생이 없습니다. | No matching students.</td></tr>';
         renderPager('notify-done-pager', 0, 1, 'setNoticeDonePage');
       } else {
         noticeDonePage = clampPage(noticeDonePage, doneList.length, PAGE_SIZE);
@@ -4056,9 +4053,8 @@
             <td class="notice-mail-cell">${mailBadge(notice.parentMailAt)}</td>
             <td class="notice-mail-cell">${mailBadge(notice.studentTeacherMailAt)}</td>
             <td class="tc"><span class="small-muted">${notice.completedAt ? fmt(notice.completedAt) : '-'}</span></td>
-            <td class="tc"><button type="button" class="notice-expand-toggle" aria-label="${expanded ? '상세 접기' : '상세 펼치기'}" onclick="event.stopPropagation();toggleNoticeRow('${level}','${esc(expandedKey)}')">${expanded ? '▴' : '▾'}</button></td>
           </tr>
-          <tr class="notice-inline-row ${stripeClass} ${expanded ? 'show' : ''}"><td colspan="9">${detail}</td></tr>`;
+          <tr class="notice-inline-row ${stripeClass} ${expanded ? 'show' : ''}"><td colspan="8">${detail}</td></tr>`;
         }).join('');
       }
     }
