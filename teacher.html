@@ -442,6 +442,80 @@
     .lookup-mobile-card:nth-child(even){background:#f4f7fd}
     .lookup-mobile-card:hover,.lookup-mobile-card:focus{border-color:#79a7ff;background:#f8fbff;outline:none}
     .lookup-mobile-card-top{display:flex;justify-content:space-between;gap:8px;font-weight:800}.lookup-mobile-card-meta{font-size:11px;color:#647086;margin-top:5px}.lookup-mobile-card-body{font-size:12px;margin-top:8px;line-height:1.45}
+
+    /* ===== 알림 화면: 조회 화면과 동일한 교차색상 + 인라인 상세 ===== */
+    .notice-table{width:100%;border-collapse:separate;border-spacing:0;table-layout:fixed;font-size:11px}
+    .notice-table th{background:#f7f9fc;color:#536078;font-size:10px!important;font-weight:800;padding:7px 6px!important;border-bottom:1px solid #dfe6f1;text-align:left;line-height:1.2;white-space:normal!important}
+    .notice-table td{padding:7px 6px!important;border-bottom:1px solid #edf1f7;vertical-align:middle;line-height:1.35;max-width:none!important}
+    .notice-table tbody tr.notice-main-row{cursor:pointer;transition:background .12s ease}
+    .notice-table tbody tr.notice-main-row.lookup-row-odd{background:#ffffff!important}
+    .notice-table tbody tr.notice-main-row.lookup-row-even{background:#eef4ff!important}
+    .notice-table tbody tr.notice-main-row.lookup-row-odd:hover,
+    .notice-table tbody tr.notice-main-row.lookup-row-even:hover,
+    .notice-table tbody tr.notice-main-row.lookup-row-odd:focus,
+    .notice-table tbody tr.notice-main-row.lookup-row-even:focus{background:#dfeaff!important;outline:none}
+    .notice-table tbody tr.notice-main-row.expanded{background:#d5e5ff!important;box-shadow:inset 4px 0 0 #1455d9}
+    .notice-table tbody tr.notice-inline-row{display:none}
+    .notice-table tbody tr.notice-inline-row.show{display:table-row}
+    .notice-table tbody tr.notice-inline-row.lookup-row-odd>td{background:#fbfdff!important}
+    .notice-table tbody tr.notice-inline-row.lookup-row-even>td{background:#eef4ff!important}
+    .notice-table tbody tr.notice-inline-row>td{padding:0 8px 11px!important;border-bottom:1px solid #d4deed}
+    .notice-student-cell{min-width:0}
+    .notice-student-ko{display:block;font-weight:850;color:#17233d;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .notice-student-en{display:block;margin-top:2px;font-size:10px;color:#6b7890;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .notice-level-badge,.notice-committee-badge,.notice-mail-badge{display:inline-flex;align-items:center;justify-content:center;border-radius:999px;font-size:10px;font-weight:800;line-height:1.2;white-space:nowrap}
+    .notice-level-badge{min-width:38px;padding:4px 7px;background:#e9effa;color:#304c7f}
+    .notice-committee-badge{padding:4px 7px;border:1px solid #e2c36f;background:#fff7dc;color:#6b4d00}
+    .notice-committee-badge.referral{border-color:#efb1b1;background:#fdeaea;color:#8a1f1f}
+    .notice-score{font-size:13px;font-weight:850;color:#183a84;white-space:nowrap}
+    .notice-score span{font-size:10px;font-weight:650;color:#768198}
+    .notice-score-label{display:block;margin-top:2px;font-size:9px;color:#768198;white-space:nowrap}
+    .notice-progress{display:grid;gap:4px}
+    .notice-progress-line{display:flex;align-items:center;justify-content:space-between;gap:6px;min-width:0}
+    .notice-progress-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#4c5c75;font-size:10px}
+    .notice-mail-badge{padding:3px 7px;border:1px solid #cfd8e6;background:#fff;color:#67748a}
+    .notice-mail-badge.sent{border-color:#b9dfc5;background:#e9f8ee;color:#16713a}
+    .notice-action-cell{display:flex;align-items:center;justify-content:center;gap:5px}
+    .notice-expand-toggle{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;width:22px;height:22px;border:1px solid #bfd0e9;border-radius:7px;background:#fff;color:#1455d9;font-size:11px;font-weight:900}
+    .notice-inline-panel{border:1px solid #cbdcf5;border-radius:11px;background:#f8fbff;padding:10px;margin-top:4px;box-shadow:inset 4px 0 0 #1455d9}
+    .notice-detail-identity{display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid #c9daf4;border-radius:9px;background:#eaf2ff;padding:9px 11px;margin-bottom:9px}
+    .notice-detail-name{font-size:14px;font-weight:900;color:#102d69}
+    .notice-detail-name-en{margin-left:5px;font-size:11px;font-weight:650;color:#5b6f94}
+    .notice-detail-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+    .notice-detail-chip{display:inline-flex;align-items:center;border-radius:999px;background:#fff;border:1px solid #bfd0e9;color:#36537f;padding:4px 8px;font-size:10px;font-weight:800;white-space:nowrap}
+    .notice-detail-grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:8px}
+    .notice-detail-section{border:1px solid #dce5f2;border-radius:9px;background:#fff;padding:9px 10px;min-width:0}
+    .notice-detail-section.full{grid-column:1/-1}
+    .notice-detail-title{font-size:10px;font-weight:850;color:#68758d;margin-bottom:5px}
+    .notice-detail-content{font-size:11px;color:#17233d;line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere}
+    .notice-detail-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px}
+    .notice-status-grid{display:grid;grid-template-columns:auto 1fr;gap:4px 8px;align-items:center;font-size:11px}
+    .notice-status-grid .k{color:#728097;white-space:nowrap}
+    .notice-date-edit-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+    .notice-date-edit-grid label{display:block;font-size:9px;font-weight:800;color:#6a7890;margin-bottom:3px}
+    .notice-date-edit-grid input{display:block;width:100%;min-width:0;box-sizing:border-box;border:1px solid #ccd7e7;border-radius:7px;padding:5px 6px;font-size:11px;background:#fff}
+    .notice-row-guide{font-size:10px;color:#6d7890;margin-top:7px}
+    @media(max-width:760px){
+      .notice-table th,.notice-table td{font-size:10px!important;padding:6px 4px!important}
+      .notice-table .notice-col-level,.notice-table .notice-col-committee,.notice-table .notice-col-completed{display:none}
+      .notice-table th:nth-child(1),.notice-table td:nth-child(1){width:27%!important}
+      .notice-table th:nth-child(2),.notice-table td:nth-child(2){width:10%!important}
+      .notice-table th:nth-child(4),.notice-table td:nth-child(4){width:15%!important}
+      .notice-table th:nth-child(5),.notice-table td:nth-child(5){width:28%!important}
+      .notice-table th:nth-child(7),.notice-table td:nth-child(7){width:20%!important}
+      .notice-action-en,.notice-score-label-en{display:none}
+      .notice-score-label{white-space:normal}
+      .notice-action-cell{gap:3px}
+      .notice-expand-toggle{width:20px;height:20px}
+      .notice-row-guide{white-space:normal;overflow-wrap:anywhere}
+      .notice-detail-grid{grid-template-columns:1fr}
+      .notice-detail-section.full{grid-column:1}
+      .notice-detail-identity{align-items:flex-start;flex-direction:column;gap:7px}
+      .notice-detail-meta{justify-content:flex-start}
+      .notice-date-edit-grid{grid-template-columns:1fr}
+      .notice-progress-label{display:none}
+    }
+
     @media(max-width:760px){
       .lookup-title{font-size:20px}.lookup-icon{width:36px;height:36px;font-size:18px}
       .lookup-filter-grid,.lookup-filter-grid.recovery{grid-template-columns:1fr 1fr}.lookup-field:first-child{grid-column:1/-1}.lookup-search-btn{grid-column:1/-1;width:100%}
@@ -899,24 +973,21 @@
         <div class="section-title-row" style="margin-top:6px;">
           <span class="stitle">진행 중 | Active</span>
           <div class="section-btn-group">
-            <button class="btn btn-secondary btn-xs" onclick="setNoticeExpanded('all', true)">전체 펼침</button>
-            <button class="btn btn-secondary btn-xs" onclick="setNoticeExpanded('all', false)">전체 접기</button>
+            <button class="btn btn-secondary btn-xs" onclick="setNoticeExpanded('all', true)">전체 펼침 | Expand all</button>
+            <button class="btn btn-secondary btn-xs" onclick="setNoticeExpanded('all', false)">전체 접기 | Collapse all</button>
           </div>
         </div>
         <div class="tbl-wrap">
-          <table style="table-layout:fixed;">
+          <table class="notice-table">
             <thead>
               <tr>
-                <th class="nowrap" style="width:15%;">학생</th>
-                <th class="nowrap tc" style="width:6%;">학반</th>
-                <th class="nowrap tc" style="width:6%;">구분</th>
-                <th style="width:21%;">사유</th>
-                <th class="nowrap tc" style="width:6%;">잔여</th>
-                <th class="nowrap tc" style="width:6%;">누적</th>
-                <th class="nowrap" style="width:13%;">학부모 메일</th>
-                <th class="nowrap" style="width:13%;">학생/교사 메일</th>
-                <th class="nowrap tc" style="width:7%;">위원회</th>
-                <th class="nowrap tc" style="width:7%;">완료</th>
+                <th style="width:21%;">학생<span class="th-en">Student</span></th>
+                <th class="tc" style="width:7%;">학반<span class="th-en">Class</span></th>
+                <th class="tc notice-col-level" style="width:7%;">구분<span class="th-en">Level</span></th>
+                <th class="tc" style="width:12%;">점수<span class="th-en">Points</span></th>
+                <th style="width:27%;">알림 진행<span class="th-en">Notice Progress</span></th>
+                <th class="tc notice-col-committee" style="width:10%;">위원회<span class="th-en">Committee</span></th>
+                <th class="tc" style="width:16%;">처리<span class="th-en">Action / Detail</span></th>
               </tr>
             </thead>
             <tbody id="notify-active-tbody"></tbody>
@@ -925,19 +996,16 @@
 
         <div class="section-title-row notice-divider"><span class="stitle">완료 | Completed</span></div>
         <div class="tbl-wrap">
-          <table style="table-layout:fixed;">
+          <table class="notice-table">
             <thead>
               <tr>
-                <th class="nowrap" style="width:15%">학생</th>
-                <th class="nowrap tc" style="width:6%">학반</th>
-                <th class="nowrap tc" style="width:6%">구분</th>
-                <th style="width:22%">사유</th>
-                <th class="nowrap tc" style="width:6%">잔여</th>
-                <th class="nowrap tc" style="width:6%">누적</th>
-                <th class="nowrap" style="width:12%">학부모 메일</th>
-                <th class="nowrap" style="width:12%">학생/교사 메일</th>
-                <th class="nowrap tc" style="width:9%">완료</th>
-                <th class="nowrap tc" style="width:6%">처리</th>
+                <th style="width:21%;">학생<span class="th-en">Student</span></th>
+                <th class="tc" style="width:7%;">학반<span class="th-en">Class</span></th>
+                <th class="tc notice-col-level" style="width:7%;">구분<span class="th-en">Level</span></th>
+                <th class="tc" style="width:12%;">점수<span class="th-en">Points</span></th>
+                <th style="width:29%;">알림 기록<span class="th-en">Notice Record</span></th>
+                <th class="tc notice-col-completed" style="width:14%;">완료일<span class="th-en">Completed</span></th>
+                <th class="tc" style="width:10%;">상세<span class="th-en">Details</span></th>
               </tr>
             </thead>
             <tbody id="notify-done-tbody"></tbody>
@@ -2258,19 +2326,20 @@
       const text=String(value||'').trim();
       if(!text)return{ko:'',en:''};
       const lines=text.split(/\r?\n/);
-      const englishLineIndex=lines.findIndex((line,index)=>{
-        if(index===0||!/[A-Za-z]/.test(line)||/[가-힣]/.test(line))return false;
-        return !/[가-힣]/.test(lines.slice(index).join('\n'));
-      });
+      const englishLineIndex=lines.findIndex((line,index)=>index>0&&/[A-Za-z]/.test(line)&&!/[가-힣]/.test(line));
       if(englishLineIndex>0){
         return{ko:lines.slice(0,englishLineIndex).join('\n').trim(),en:lines.slice(englishLineIndex).join('\n').trim()};
       }
-      for(let index=0;index<text.length;index+=1){
-        if(!/[A-Za-z]/.test(text[index]))continue;
-        if(index>0&&!/\s/.test(text[index-1]))continue;
-        const prefix=text.slice(0,index).trim(),tail=text.slice(index).trim();
-        if(prefix&&/[가-힣]/.test(prefix)&&tail&&/[A-Za-z]/.test(tail)&&!/[가-힣]/.test(tail))return{ko:prefix,en:tail};
+      const candidates=[];
+      const re=/(^|\s)([A-Za-z][A-Za-z0-9'’“”"()&,.\-\/ ]*)$/g;
+      let match;
+      while((match=re.exec(text))){
+        const start=match.index+(match[1]||'').length;
+        const prefix=text.slice(0,start).trim();
+        const tail=text.slice(start).trim();
+        if(prefix&&/[가-힣]/.test(prefix)&&tail&&/[A-Za-z]/.test(tail)&&!/[가-힣]/.test(tail))candidates.push({start,prefix,tail});
       }
+      if(candidates.length){const best=candidates[0];return{ko:best.prefix,en:best.tail};}
       if(/[가-힣]/.test(text))return{ko:text,en:''};
       return{ko:'',en:text};
     }
@@ -2282,7 +2351,7 @@
     function renderViolationOptions(){const category=document.getElementById('category-select').value,sel=document.getElementById('violation-select'),prev=sel.value,list=detentionStandards.filter(x=>x.category===category);sel.innerHTML=list.map(x=>`<option value="${esc(x.violation)}">${esc(x.violation)}</option>`).join('');if(prev&&list.some(x=>x.violation===prev))sel.value=prev;renderViolationCards();syncAutoPoints();}
     function renderViolationCards(){const category=document.getElementById('category-select').value,sel=document.getElementById('violation-select'),wrap=document.getElementById('violation-card-list'),count=document.getElementById('violation-choice-count');if(!wrap||!sel)return;const list=detentionStandards.filter(x=>x.category===category),selected=sel.value;if(count)count.textContent=`${list.length}개 | ${list.length} items`;wrap.innerHTML=list.map((x,i)=>{const active=x.violation===selected,parts=splitBilingualText(x.violation),ko=parts.ko||parts.en||x.violation,en=parts.ko?parts.en:'';return `<button type="button" role="option" aria-selected="${active?'true':'false'}" class="violation-item-card ${active?'active':''}" data-violation-index="${i}" onclick="selectViolationCard(Number(this.dataset.violationIndex))" title="${esc(x.violation)}"><span class="violation-item-title"><span class="violation-item-title-ko">${esc(ko)}</span>${en?`<span class="violation-item-title-en">${esc(en)}</span>`:''}</span><span class="violation-item-points">${esc(String(x.autoPoints||'-'))}점</span></button>`;}).join('');updateSelectedViolationDetail();}
     function selectViolationCard(index){const category=document.getElementById('category-select').value,list=detentionStandards.filter(x=>x.category===category),item=list[index];if(!item)return;document.getElementById('violation-select').value=item.violation;renderViolationCards();syncAutoPoints();}
-    function updateSelectedViolationDetail(){const box=document.getElementById('selected-violation-detail'),toggle=document.getElementById('selected-violation-toggle'),std=getSelectedStandard();if(!box)return;if(!std){box.classList.remove('visible','expanded');box.textContent='';if(toggle){toggle.hidden=true;toggle.setAttribute('aria-expanded','false');}return;}const violationParts=splitBilingualText(std.violation),detailLines=['선택됨 | Selected'];if(violationParts.ko)detailLines.push('한국어: '+violationParts.ko);if(violationParts.en)detailLines.push('English: '+violationParts.en);if(!violationParts.ko&&!violationParts.en)detailLines.push(String(std.violation||''));if(std.note)detailLines.push('', '안내 | Note:', String(std.note||''));const detail=detailLines.join('\n');box.textContent=detail;box.title=detail;box.classList.add('visible');box.classList.remove('expanded');if(toggle){toggle.hidden=detail.length<95;toggle.textContent='전체 내용 | Full text';toggle.setAttribute('aria-expanded','false');}}
+    function updateSelectedViolationDetail(){const box=document.getElementById('selected-violation-detail'),toggle=document.getElementById('selected-violation-toggle'),std=getSelectedStandard();if(!box)return;if(!std){box.classList.remove('visible','expanded');box.textContent='';if(toggle){toggle.hidden=true;toggle.setAttribute('aria-expanded','false');}return;}const violationParts=splitBilingualText(std.violation),detailLines=['선택됨 | Selected'];if(violationParts.ko)detailLines.push('한국어: '+violationParts.ko);if(violationParts.en)detailLines.push('English: '+violationParts.en);if(!violationParts.ko&&!violationParts.en)detailLines.push(String(std.violation||''));if(std.note){const noteParts=splitBilingualText(std.note);detailLines.push('', '안내 | Note');if(noteParts.ko)detailLines.push('한국어: '+noteParts.ko);if(noteParts.en)detailLines.push('English: '+noteParts.en);if(!noteParts.ko&&!noteParts.en)detailLines.push(String(std.note||''));}const detail=detailLines.join('\n');box.textContent=detail;box.title=detail;box.classList.add('visible');box.classList.remove('expanded');if(toggle){toggle.hidden=detail.length<95;toggle.textContent='전체 내용 | Full text';toggle.setAttribute('aria-expanded','false');}}
     function toggleSelectedViolationDetail(){const box=document.getElementById('selected-violation-detail'),toggle=document.getElementById('selected-violation-toggle');if(!box||!toggle)return;const expanded=box.classList.toggle('expanded');toggle.textContent=expanded?'접기 | Collapse':'전체 내용 | Full text';toggle.setAttribute('aria-expanded',expanded?'true':'false');}
     function getAutoChoicePoint(std){const raw=String((std&&std.autoPoints)||'').trim(),parts=raw.split(',').map(v=>Number(v.trim())).filter(Number.isFinite);if(parts.length<2)return parts[0]||0;const count=countSameDetention(selectedStudentKey||syncStudentSelectionWithoutUpdate(),std.category||'',std.violation||'');return count===0?parts[0]:parts[1];}
     function syncAutoPoints(){const std=getSelectedStandard(),raw=std?String(std.autoPoints||'').trim():'',count=std&&raw.includes(',')&&!raw.includes('-')?countSameDetention(selectedStudentKey||syncStudentSelectionWithoutUpdate(),std.category||'',std.violation||''):0;let display=raw||'-';if(std&&raw.includes(',')&&!raw.includes('-'))display=`${getAutoChoicePoint(std)}점 (${count+1}회차)`;else if(/^\d+$/.test(raw)||raw.includes('-'))display=`${raw}점`;document.getElementById('auto-points').textContent=display;updateSelectedViolationDetail();updateManualPointsMode();}
@@ -3804,127 +3873,194 @@
       const finalActiveList = getAllNoticeActiveList();
       const doneList = getAllCompletedNoticeList();
 
-      function renderActiveRows(arr){
-        if (!arr.length) return `<tr><td colspan="10" class="empty">해당 학생이 없습니다. | No matching students.</td></tr>`;
+      function studentNameHtml(s){
+        const ko = String(s.name || s.studentName || '').trim() || '-';
+        const en = String(s.englishName || '').trim();
+        return `<div class="notice-student-cell"><span class="notice-student-ko">${esc(ko)}</span>${en ? `<span class="notice-student-en">${esc(en)}</span>` : ''}</div>`;
+      }
 
-        return arr.map(s => {
+      function levelBadge(level){
+        const label = level === 'ms' ? 'MS' : 'HS';
+        const title = level === 'ms' ? '중등 | Middle School' : '고등 | High School';
+        return `<span class="notice-level-badge" title="${title}">${label}</span>`;
+      }
+
+      function mailBadge(at){
+        return at
+          ? '<span class="notice-mail-badge sent">완료 | Sent</span>'
+          : '<span class="notice-mail-badge">필요 | Pending</span>';
+      }
+
+      function mailProgressHtml(notice){
+        notice = notice || {};
+        return `<div class="notice-progress">
+          <div class="notice-progress-line"><span class="notice-progress-label">학부모 | Parent</span>${mailBadge(notice.parentMailAt)}</div>
+          <div class="notice-progress-line"><span class="notice-progress-label">학생·교사 | Student/Teacher</span>${mailBadge(notice.studentTeacherMailAt)}</div>
+        </div>`;
+      }
+
+      function scoreHtml(currentTotal, overallTotal){
+        return `<span class="notice-score">${esc(String(currentTotal ?? 0))} <span>/ ${esc(String(overallTotal ?? 0))}</span></span><span class="notice-score-label"><span>잔여 / 누적</span><span class="notice-score-label-en">Remaining / Total</span></span>`;
+      }
+
+      function committeeBadge(state){
+        const status = state && state.committeeStatus;
+        if(status === 'pending_referral') return '<span class="notice-committee-badge referral">회부 | Referral</span>';
+        if(status === 'pending_edu') return '<span class="notice-committee-badge">진행 | Active</span>';
+        return '<span class="small-muted">-</span>';
+      }
+
+      function identityHtml(s, level){
+        const ko = String(s.name || s.studentName || '').trim() || '-';
+        const en = String(s.englishName || '').trim();
+        const levelText = level === 'ms' ? '중등 | Middle School' : '고등 | High School';
+        return `<div class="notice-detail-identity">
+          <div><span class="notice-detail-name">${esc(ko)}</span>${en ? `<span class="notice-detail-name-en">${esc(en)}</span>` : ''}</div>
+          <div class="notice-detail-meta">
+            <span class="notice-detail-chip">학반 | Class ${esc(s.className || '-')}</span>
+            <span class="notice-detail-chip">${levelText}</span>
+            <span class="notice-detail-chip">잔여 ${esc(String(s.currentTotal ?? 0))} / 누적 ${esc(String(s.overallTotal ?? 0))}</span>
+          </div>
+        </div>`;
+      }
+
+      function activeDetailHtml(s, level){
+        const notice = s.notice || {};
+        return `<div class="notice-inline-panel">
+          ${identityHtml(s, level)}
+          <div class="notice-detail-grid">
+            <div class="notice-detail-section full">
+              <div class="notice-detail-title">사유 | Reasons</div>
+              <div class="notice-detail-content">${esc(s.reasons || buildNoticeReasonText(s.key) || '-')}</div>
+            </div>
+            <div class="notice-detail-section">
+              <div class="notice-detail-title">알림 상태 | Notice Status</div>
+              <div class="notice-status-grid">
+                <span class="k">최신 확정 | Latest confirmed</span><span>${s.latestConfirmedAt ? fmt(s.latestConfirmedAt) : '-'}</span>
+                <span class="k">학부모 메일 | Parent</span><span>${notice.parentMailAt ? fmt(notice.parentMailAt) : '미발송 | Not sent'}</span>
+                <span class="k">학생·교사 | Student/Teacher</span><span>${notice.studentTeacherMailAt ? fmt(notice.studentTeacherMailAt) : '미발송 | Not sent'}</span>
+                <span class="k">완료 | Completed</span><span>${notice.completedAt ? fmt(notice.completedAt) : '미완료 | Not completed'}</span>
+              </div>
+            </div>
+            <div class="notice-detail-section">
+              <div class="notice-detail-title">메일 처리 | Email Actions</div>
+              <div class="notice-detail-content">메일 발송 여부와 시간을 확인한 뒤 필요한 알림을 보냅니다.<br>Check the status and send the required notice.</div>
+              <div class="notice-detail-actions">
+                <button class="btn-mail" onclick="event.stopPropagation();sendParentMail('${esc(s.key)}','${level}')">학부모 메일 | Parent Email</button>
+                <button class="btn-mail" onclick="event.stopPropagation();sendStudentTeacherMail('${esc(s.key)}','${level}')">학생·교사 메일 | Student/Teacher Email</button>
+              </div>
+            </div>
+          </div>
+          <div class="notice-row-guide">위의 같은 학생 행을 다시 누르면 상세 내용이 접힙니다. | Click the same student row again to collapse.</div>
+        </div>`;
+      }
+
+      function renderActiveRows(arr){
+        if (!arr.length) return `<tr><td colspan="7" class="empty">해당 학생이 없습니다. | No matching students.</td></tr>`;
+
+        return arr.map((s, rowIndex) => {
           const level = s._level || getSchoolLevel(s.className || '') || 'ms';
           const expanded = expandedNoticeKeys[level] && expandedNoticeKeys[level].has(s.key);
-          const cs = s.state && s.state.committeeStatus;
-          const committeeCell = cs === 'pending_referral'
-            ? '<span style="display:inline-block;padding:3px 7px;border-radius:6px;font-size:11px;font-weight:700;background:#fde8e8;color:#7f1d1d;">위원회</span>'
-            : cs === 'pending_edu'
-            ? '<span style="display:inline-block;padding:3px 7px;border-radius:6px;font-size:11px;font-weight:700;background:#fff3cd;color:#5a3e00;">위원회</span>'
-            : '-';
+          const stripeClass = rowIndex % 2 === 0 ? 'lookup-row-odd' : 'lookup-row-even';
           return `
-            <tr class="summary-row" onclick="toggleNoticeRow('${level}','${esc(s.key)}')">
-              <td class="nowrap">${esc(sName(s.name||'',s.englishName||''))}</td>
-              <td class="nowrap tc">${esc(s.className || '')}</td>
-              <td class="nowrap tc">${esc(s._levelLabel || (level==='ms'?'중등':'고등'))}</td>
-              <td><span class="cell-reason-preview">${esc(buildNoticeReasonText(s.key).split('\n')[0])}</span></td>
-              <td class="nowrap tc">${s.currentTotal}</td>
-              <td class="nowrap tc">${s.overallTotal}</td>
-              <td onclick="event.stopPropagation()">
-                <button class="btn-mail" onclick="sendParentMail('${esc(s.key)}','${level}')">메일 보내기</button>
-                <div class="small-muted">${s.notice.parentMailAt ? fmt(s.notice.parentMailAt) : ''}</div>
-              </td>
-              <td onclick="event.stopPropagation()">
-                <button class="btn-mail" onclick="sendStudentTeacherMail('${esc(s.key)}','${level}')">메일 보내기</button>
-                <div class="small-muted">${s.notice.studentTeacherMailAt ? fmt(s.notice.studentTeacherMailAt) : ''}</div>
-              </td>
-              <td class="tc">${committeeCell}</td>
+            <tr class="notice-main-row ${stripeClass} ${expanded ? 'expanded' : ''}" tabindex="0" data-level="${level}" data-key="${esc(s.key)}" aria-expanded="${expanded ? 'true' : 'false'}" onclick="toggleNoticeRow(this.dataset.level,this.dataset.key)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleNoticeRow(this.dataset.level,this.dataset.key)}" title="${expanded ? '상세 접기 | Collapse details' : '상세 펼치기 | Expand details'}">
+              <td>${studentNameHtml(s)}</td>
+              <td class="tc"><b>${esc(s.className || '-')}</b></td>
+              <td class="tc notice-col-level">${levelBadge(level)}</td>
+              <td class="tc">${scoreHtml(s.currentTotal, s.overallTotal)}</td>
+              <td>${mailProgressHtml(s.notice)}</td>
+              <td class="tc notice-col-committee">${committeeBadge(s.state)}</td>
               <td class="tc" onclick="event.stopPropagation()">
-                  <button class="btn btn-primary btn-xs" onclick="completeNotice('${esc(s.key)}','${level}')" ${s.cycleCompleted ? 'disabled' : ''}>완료</button>
-                  <div class="small-muted">${s.notice.completedAt ? fmt(s.notice.completedAt) : ''}</div>
-              </td>
-            </tr>
-            <tr class="detail-row ${expanded ? 'show' : ''}">
-              <td colspan="10">
-                <div class="detail-box">
-                  <div class="detail-section">
-                    <div class="detail-title">사유 | Reasons</div>
-                    <div class="detail-content">${esc(s.reasons || '-')}</div>
-                  </div>
-                  <div class="detail-section">
-                    <div class="detail-title">알림 상태 | Notice Status</div>
-                    <div class="detail-content">구분: ${esc(s._levelLabel || (level==='ms'?'중등':'고등'))}
-최신 확정 시간: ${fmt(s.latestConfirmedAt)}
-학부모 메일: ${s.notice.parentMailAt ? fmt(s.notice.parentMailAt) : '-'}
-학생/교사 메일: ${s.notice.studentTeacherMailAt ? fmt(s.notice.studentTeacherMailAt) : '-'}
-완료 시간: ${s.notice.completedAt ? fmt(s.notice.completedAt) : '-'}
-이 사이클 완료 여부: ${s.cycleCompleted ? '완료' : '미완료'}</div>
-                  </div>
+                <div class="notice-action-cell">
+                  <button class="btn btn-primary btn-xs" onclick="completeNotice('${esc(s.key)}','${level}')" ${s.cycleCompleted ? 'disabled' : ''}>완료<span class="notice-action-en"> | Complete</span></button>
+                  <button type="button" class="notice-expand-toggle" aria-label="${expanded ? '상세 접기' : '상세 펼치기'}" onclick="toggleNoticeRow('${level}','${esc(s.key)}')">${expanded ? '▴' : '▾'}</button>
                 </div>
               </td>
             </tr>
-          `;
+            <tr class="notice-inline-row ${stripeClass} ${expanded ? 'show' : ''}">
+              <td colspan="7">${activeDetailHtml(s, level)}</td>
+            </tr>`;
         }).join('');
       }
 
       activeTb.innerHTML = renderActiveRows(finalActiveList);
 
       if (!doneList.length){
-        doneTb.innerHTML = '<tr><td colspan="10" class="empty">해당 학생이 없습니다. | No matching students.</td></tr>';
+        doneTb.innerHTML = '<tr><td colspan="7" class="empty">해당 학생이 없습니다. | No matching students.</td></tr>';
         renderPager('notify-done-pager', 0, 1, 'setNoticeDonePage');
       } else {
         noticeDonePage = clampPage(noticeDonePage, doneList.length, PAGE_SIZE);
         const pageData = slicePage(doneList, noticeDonePage, PAGE_SIZE);
         renderPager('notify-done-pager', doneList.length, pageData.page, 'setNoticeDonePage');
         const canEditDate = canEditRecordDate();
-        doneTb.innerHTML = pageData.rows.map((s,doneIdx) => {
-          const level = s._level || getSchoolLevel(s.className || '') || 'ms';
-          const expanded = expandedNoticeKeys[level] && expandedNoticeKeys[level].has(s.key+'_done');
-          const doneMapKey = 'done_'+String(s.noticeKey||((pageData.page-1)*PAGE_SIZE+doneIdx));
-          window._doneNoticeMap[doneMapKey] = s.noticeKey||'';
 
-          function dateCell(val, field){
-            const fmtd = val ? fmt(val) : '-';
-            if(!canEditDate) return `<td class="nowrap" style="font-size:11px;color:var(--sb)">${fmtd}</td>`;
+        doneTb.innerHTML = pageData.rows.map((s, doneIdx) => {
+          const level = s._level || getSchoolLevel(s.className || '') || 'ms';
+          const expandedKey = s.key + '_done';
+          const expanded = expandedNoticeKeys[level] && expandedNoticeKeys[level].has(expandedKey);
+          const stripeClass = doneIdx % 2 === 0 ? 'lookup-row-odd' : 'lookup-row-even';
+          const doneMapKey = 'done_' + String(s.noticeKey || ((pageData.page - 1) * PAGE_SIZE + doneIdx));
+          window._doneNoticeMap[doneMapKey] = s.noticeKey || '';
+          const notice = s.notice || {};
+
+          function dateEditor(labelKo, labelEn, val, field){
             const iso = val ? String(val).slice(0,10) : '';
-            return `<td class="nowrap" onclick="event.stopPropagation()" style="min-width:0">
-              <input type="date" class="edit-input" style="font-size:11px;padding:2px 3px;width:100%;max-width:100%;min-width:0"
-                value="${iso}"
-                onchange="updateNoticeDateField('${esc(s.noticeKey||'')}','${field}',this.value)">
-            </td>`;
+            return `<div><label>${labelKo}<br>${labelEn}</label><input type="date" value="${iso}" onchange="updateNoticeDateField('${esc(s.noticeKey || '')}','${field}',this.value)"></div>`;
           }
 
-          const completedColor = s.notice.completedAt ? 'color:var(--gn);font-weight:700' : 'color:var(--sb)';
-          const completedText  = s.notice.completedAt ? '✓ '+fmt(s.notice.completedAt) : '-';
+          const parentAction = notice.parentMailAt
+            ? `<span class="notice-mail-badge sent">발송 완료 | Sent</span>`
+            : `<button class="btn-mail" onclick="event.stopPropagation();sendParentMailForDone('${esc(s.key)}','${level}','${doneMapKey}')">학부모 메일 | Parent Email</button>`;
+          const studentAction = notice.studentTeacherMailAt
+            ? `<span class="notice-mail-badge sent">발송 완료 | Sent</span>`
+            : `<button class="btn-mail" onclick="event.stopPropagation();sendStudentTeacherMailForDone('${esc(s.key)}','${level}','${doneMapKey}')">학생·교사 메일 | Student/Teacher Email</button>`;
 
-          return `<tr class="summary-row" onclick="toggleNoticeRow('${level}','${esc(s.key)}_done')">
-            <td class="nowrap">${esc(sName(s.name||'',s.englishName||''))}</td>
-            <td class="nowrap tc">${esc(s.className||'')}</td>
-            <td class="nowrap tc">${esc(s._levelLabel || (level==='ms'?'중등':'고등'))}</td>
-            <td><span class="cell-reason-preview">${esc(String(s.reasons || '-').split('\n')[0])}</span></td>
-            <td class="nowrap tc">${s.currentTotal}</td>
-            <td class="nowrap tc">${s.overallTotal}</td>
-            ${canEditDate
-              ? dateCell(s.notice.parentMailAt,        'parentMailAt')
-              : `<td class="nowrap" style="font-size:11px;">${s.notice.parentMailAt ? '<span style="color:var(--sb)">'+fmt(s.notice.parentMailAt)+'</span>' : '<button class="btn-mail" onclick="event.stopPropagation();sendParentMailForDone(\''+esc(s.key)+'\',\''+level+'\',\''+doneMapKey+'\')">메일 보내기</button>'}</td>`
-            }
-            ${canEditDate
-              ? dateCell(s.notice.studentTeacherMailAt,'studentTeacherMailAt')
-              : `<td class="nowrap" style="font-size:11px;">${s.notice.studentTeacherMailAt ? '<span style="color:var(--sb)">'+fmt(s.notice.studentTeacherMailAt)+'</span>' : '<button class="btn-mail" onclick="event.stopPropagation();sendStudentTeacherMailForDone(\''+esc(s.key)+'\',\''+level+'\',\''+doneMapKey+'\')">메일 보내기</button>'}</td>`
-            }
-            ${canEditDate
-              ? dateCell(s.notice.completedAt,         'completedAt')
-              : `<td class="nowrap tc" style="font-size:11px;${completedColor}">${completedText}</td>`
-            }
-            <td class="nowrap tc">
-              <span style="font-size:11px;color:var(--sb)">${expanded?'▲':'▼'}</span>
-            </td>
+          const dateEditSection = canEditDate ? `<div class="notice-detail-section full">
+              <div class="notice-detail-title">날짜 수정 | Edit Dates</div>
+              <div class="notice-date-edit-grid">
+                ${dateEditor('학부모 메일', 'Parent Email', notice.parentMailAt, 'parentMailAt')}
+                ${dateEditor('학생·교사 메일', 'Student/Teacher Email', notice.studentTeacherMailAt, 'studentTeacherMailAt')}
+                ${dateEditor('완료일', 'Completed', notice.completedAt, 'completedAt')}
+              </div>
+            </div>` : '';
+
+          const detail = `<div class="notice-inline-panel">
+            ${identityHtml(s, level)}
+            <div class="notice-detail-grid">
+              <div class="notice-detail-section full">
+                <div class="notice-detail-title">사유 | Reasons</div>
+                <div class="notice-detail-content">${esc(s.reasons || '-')}</div>
+              </div>
+              <div class="notice-detail-section">
+                <div class="notice-detail-title">알림 상태 | Notice Status</div>
+                <div class="notice-status-grid">
+                  <span class="k">학부모 메일 | Parent</span><span>${notice.parentMailAt ? fmt(notice.parentMailAt) : '-'}</span>
+                  <span class="k">학생·교사 | Student/Teacher</span><span>${notice.studentTeacherMailAt ? fmt(notice.studentTeacherMailAt) : '-'}</span>
+                  <span class="k">완료일 | Completed</span><span>${notice.completedAt ? fmt(notice.completedAt) : '-'}</span>
+                  <span class="k">완료자 | Completed by</span><span>${esc(notice.completedBy || '-')}${notice.completedByEmail ? ' (' + esc(notice.completedByEmail) + ')' : ''}</span>
+                </div>
+              </div>
+              <div class="notice-detail-section">
+                <div class="notice-detail-title">처리 | Actions</div>
+                <div class="notice-detail-actions">${parentAction}${studentAction}${s.noticeKey ? `<button class="btn btn-secondary btn-xs" onclick="event.stopPropagation();cancelNoticeCompletion('${esc(s.noticeKey || '')}','${esc(s.key)}','${level}')">완료취소 | Cancel Completion</button>` : ''}</div>
+              </div>
+              ${dateEditSection}
+            </div>
+            <div class="notice-row-guide">위의 같은 학생 행을 다시 누르면 상세 내용이 접힙니다. | Click the same student row again to collapse.</div>
+          </div>`;
+
+          return `<tr class="notice-main-row ${stripeClass} ${expanded ? 'expanded' : ''}" tabindex="0" data-level="${level}" data-key="${esc(expandedKey)}" aria-expanded="${expanded ? 'true' : 'false'}" onclick="toggleNoticeRow(this.dataset.level,this.dataset.key)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleNoticeRow(this.dataset.level,this.dataset.key)}" title="${expanded ? '상세 접기 | Collapse details' : '상세 펼치기 | Expand details'}">
+            <td>${studentNameHtml(s)}</td>
+            <td class="tc"><b>${esc(s.className || '-')}</b></td>
+            <td class="tc notice-col-level">${levelBadge(level)}</td>
+            <td class="tc">${scoreHtml(s.currentTotal, s.overallTotal)}</td>
+            <td>${mailProgressHtml(notice)}</td>
+            <td class="tc notice-col-completed"><span class="small-muted">${notice.completedAt ? fmt(notice.completedAt) : '-'}</span></td>
+            <td class="tc"><button type="button" class="notice-expand-toggle" aria-label="${expanded ? '상세 접기' : '상세 펼치기'}" onclick="event.stopPropagation();toggleNoticeRow('${level}','${esc(expandedKey)}')">${expanded ? '▴' : '▾'}</button></td>
           </tr>
-          <tr class="detail-row ${expanded ? 'show' : ''}">
-            <td colspan="10"><div class="detail-box">
-              <div class="detail-section"><div class="detail-title">사유 | Reasons</div><div class="detail-content">${esc(s.reasons||'-')}</div></div>
-              <div class="detail-section"><div class="detail-title">알림 상태 | Notice Status</div><div class="detail-content">구분: ${esc(s._levelLabel || (level==='ms'?'중등':'고등'))}
-학부모 메일: ${s.notice.parentMailAt ? fmt(s.notice.parentMailAt) : '-'}\n학생/교사 메일: ${s.notice.studentTeacherMailAt ? fmt(s.notice.studentTeacherMailAt) : '-'}\n완료일: ${s.notice.completedAt ? fmt(s.notice.completedAt) : '-'}\n완료자: ${esc(s.notice.completedBy || '-')} ${s.notice.completedByEmail ? '('+esc(s.notice.completedByEmail)+')' : ''}</div></div>
-              ${s.noticeKey ? `<div class="detail-section"><div class="detail-title">취소 | Cancel</div><button class="btn btn-secondary btn-xs" onclick="event.stopPropagation();cancelNoticeCompletion('${esc(s.noticeKey||'')}','${esc(s.key)}','${level}')">완료취소</button></div>` : ''}
-            </div></td>
-          </tr>`;
+          <tr class="notice-inline-row ${stripeClass} ${expanded ? 'show' : ''}"><td colspan="7">${detail}</td></tr>`;
         }).join('');
       }
-      stripeAll();
     }
 
     function renderNotifyTableByLevel(level){
