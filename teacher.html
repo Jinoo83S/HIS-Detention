@@ -546,6 +546,57 @@
 
   
 
+    /* 2026-07-29 phase 5: five-screen visual consistency */
+    .management-page-head{display:flex;align-items:flex-start;gap:10px;margin:0 0 10px}
+    .management-page-icon{width:34px;height:34px;border-radius:10px;background:#eef4ff;color:#1455d9;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:900;flex:0 0 auto}
+    .management-page-title{font-size:18px;font-weight:900;color:#101d3a;line-height:1.2}
+    .management-page-subtitle{font-size:11px;color:#69758d;margin-top:4px;line-height:1.45}
+    .management-card{background:#fff;border:1px solid #dbe4f2;border-radius:12px;padding:12px;margin-bottom:12px;box-shadow:0 4px 14px rgba(17,42,90,.05)}
+    .management-intro{padding:8px 10px;border-radius:9px;background:#fffbeb;border:1px solid #f2cf66;color:#6b4f10;margin:0 0 10px;font-size:11px;line-height:1.45}
+    .management-section-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:0 0 7px}
+    .management-section-head.divided{margin-top:13px;padding-top:12px;border-top:1px solid #e5eaf2}
+    .management-section-title{display:flex;align-items:center;gap:6px;font-size:14px;font-weight:850;color:#17233d}
+    .management-status-dot{width:7px;height:7px;border-radius:999px;background:#64748b;flex:0 0 auto}
+    .management-status-dot.active{background:#dc2626}
+    .management-status-dot.done{background:#15803d}
+    .management-section-actions{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end}
+    .management-section-actions .btn{min-height:26px}
+    .management-card .tbl-wrap{border-radius:9px}
+    .management-card .pager{margin-top:7px}
+    .management-card .notice-table th,
+    .management-card #discipline-active-table th,
+    .management-card #discipline-done-table th{padding-top:6px!important;padding-bottom:6px!important}
+    .management-card .notice-table td,
+    .management-card #discipline-active-table td,
+    .management-card #discipline-done-table td{padding-top:6px!important;padding-bottom:6px!important}
+    #tab-entry .entry-main-card,#tab-entry .entry-recent-card,
+    .lookup-filter-card,.lookup-result-card,.management-card{border-radius:12px;box-shadow:0 4px 14px rgba(17,42,90,.05)}
+    .lookup-page-head{margin-bottom:10px}
+    .lookup-icon{width:34px;height:34px;border-radius:10px;font-size:17px}
+    .lookup-title{font-size:18px;font-weight:900}
+    .lookup-subtitle{font-size:11px;margin-top:4px;line-height:1.45}
+    .lookup-filter-card{padding:12px;margin-bottom:10px}
+    .lookup-result-card{padding:12px}
+    .lookup-result-head{margin-bottom:7px}
+    .lookup-result-title{font-size:14px}
+    .recovery-summary-grid{gap:8px;margin:10px 0}
+    .recovery-summary-card{padding:10px 11px;border-radius:10px}
+    .recovery-summary-icon{width:32px;height:32px;font-size:15px}
+    .recovery-summary-value{font-size:17px}
+    #tab-entry .entry-card-title{font-size:18px}
+    #tab-entry .entry-main-card,#tab-entry .entry-recent-card{border-color:#dbe4f2}
+    @media(max-width:760px){
+      .management-page-head{margin-bottom:8px}
+      .management-page-icon{width:32px;height:32px;font-size:16px}
+      .management-page-title,.lookup-title{font-size:17px}
+      .management-page-subtitle,.lookup-subtitle{font-size:10px}
+      .management-card{padding:10px}
+      .management-section-head{align-items:flex-start;flex-direction:column}
+      .management-section-actions{width:100%;justify-content:flex-end}
+      .lookup-filter-card,.lookup-result-card{padding:10px}
+      .recovery-summary-grid{margin:8px 0}
+    }
+
     /* 2026-07-28 compact entry layout: keep standards dynamic, reduce vertical scroll */
     #tab-entry .entry-main-card{padding:12px 14px}
     #tab-entry .entry-card-head{margin-bottom:5px}
@@ -977,16 +1028,19 @@
 
     <!-- NOTICE -->
     <div id="tab-notify" class="tab-panel">
-      <div class="card">
-        <div class="card-title">디텐션 알림 | Detention Notice</div>
-        <div class="notice">
+      <div class="management-page-head">
+        <div class="management-page-icon">♢</div>
+        <div><div class="management-page-title">디텐션 알림 | Detention Notice</div><div class="management-page-subtitle">알림 대상과 발송 상태를 확인하고 처리합니다. | Review notice targets, delivery status, and actions.</div></div>
+      </div>
+      <div class="management-card">
+        <div class="management-intro">
           <div>현재 잔여 디텐션점수가 3점 이상인 학생 목록입니다.</div>
-          <div>This list shows students whose remaining detention points is 3 points or more.</div>
+          <div>This list shows students whose remaining detention points are 3 or more.</div>
         </div>
 
-        <div class="section-title-row" style="margin-top:6px;">
-          <span class="stitle">진행 중 | Active</span>
-          <div class="section-btn-group">
+        <div class="management-section-head">
+          <span class="management-section-title"><span class="management-status-dot active"></span>진행 중 | Active</span>
+          <div class="management-section-actions">
             <button class="btn btn-secondary btn-xs" onclick="setNoticeExpanded('all', true)">전체 펼침 | Expand all</button>
             <button class="btn btn-secondary btn-xs" onclick="setNoticeExpanded('all', false)">전체 접기 | Collapse all</button>
           </div>
@@ -1010,7 +1064,7 @@
           </table>
         </div>
 
-        <div class="section-title-row notice-divider"><span class="stitle">완료 | Completed</span></div>
+        <div class="management-section-head divided"><span class="management-section-title"><span class="management-status-dot done"></span>완료 | Completed</span></div>
         <div class="tbl-wrap">
           <table class="notice-table">
             <thead>
@@ -1229,10 +1283,13 @@
 
     <!-- COMMITTEE -->
     <div id="tab-discipline" class="tab-panel">
-      <div class="card">
-        <div class="card-title">위원회 관리 | Committee Management</div>
-        <div class="card-title notice-divider" style="margin-top:8px;">🔴 위원회 진행 중 | Active Committee Cases</div>
-        <div class="notice">선도위원회: 반복위반 회부 항목 · 생활교육위원회: 잔여 12점 이상 또는 누적 30점 초과 (연 1회). 처리: [회부확정] → [완료] 2단계.<br>Guidance Committee: repeated violations · Student Education Committee: 12+ remaining points or over 30 total points. Process: Referral confirmed → Completed.</div>
+      <div class="management-page-head">
+        <div class="management-page-icon">♙</div>
+        <div><div class="management-page-title">위원회 관리 | Committee Management</div><div class="management-page-subtitle">회부 대상, 진행 상태와 완료 기록을 확인합니다. | Review referrals, active cases, and completed records.</div></div>
+      </div>
+      <div class="management-card">
+        <div class="management-intro">선도위원회: 반복위반 회부 항목 · 생활교육위원회: 잔여 12점 이상 또는 누적 30점 초과 (연 1회). 처리: [회부확정] → [완료] 2단계.<br>Guidance Committee: repeated violations · Student Education Committee: 12+ remaining points or over 30 total points. Process: Referral confirmed → Completed.</div>
+        <div class="management-section-head"><span class="management-section-title"><span class="management-status-dot active"></span>위원회 진행 중 | Active Committee Cases</span></div>
         <div class="tbl-wrap"><table id="discipline-active-table"><thead><tr>
           <th>학생<span class="th-en">Student</span></th>
           <th class="tc">학반<span class="th-en">Class</span></th>
@@ -1244,7 +1301,7 @@
           <th>노트<span class="th-en">Note</span></th>
           <th class="tc">처리<span class="th-en">Action</span></th>
         </tr></thead><tbody id="discipline-active-tbody"></tbody></table></div>
-        <div class="card-title notice-divider" style="margin-top:18px;">✅ 위원회 완료 | Completed Committee Cases</div>
+        <div class="management-section-head divided"><span class="management-section-title"><span class="management-status-dot done"></span>위원회 완료 | Completed Committee Cases</span></div>
         <div class="tbl-wrap"><table id="discipline-done-table"><thead><tr>
           <th>학생<span class="th-en">Student</span></th>
           <th class="tc">학반<span class="th-en">Class</span></th>
