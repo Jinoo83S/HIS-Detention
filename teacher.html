@@ -470,6 +470,8 @@
     .notice-score{font-size:13px;font-weight:850;color:#183a84;white-space:nowrap}
     .notice-score span{font-size:10px;font-weight:650;color:#768198}
     .notice-score-label{display:block;margin-top:2px;font-size:9px;color:#768198;white-space:nowrap}
+    .notice-score-value{display:inline-block;min-width:22px;font-size:13px;font-weight:850;color:#183a84;text-align:center}
+    .notice-mail-cell{text-align:center}
     .notice-progress{display:grid;gap:4px}
     .notice-progress-line{display:flex;align-items:center;justify-content:space-between;gap:6px;min-width:0}
     .notice-progress-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#4c5c75;font-size:10px}
@@ -497,17 +499,7 @@
     .notice-row-guide{font-size:10px;color:#6d7890;margin-top:7px}
     @media(max-width:760px){
       .notice-table th,.notice-table td{font-size:10px!important;padding:6px 4px!important}
-      .notice-table .notice-col-level,.notice-table .notice-col-committee,.notice-table .notice-col-completed{display:none}
-      .notice-table th:nth-child(1),.notice-table td:nth-child(1){width:27%!important}
-      .notice-table th:nth-child(2),.notice-table td:nth-child(2){width:10%!important}
-      .notice-table th:nth-child(4),.notice-table td:nth-child(4){width:15%!important}
-      .notice-table th:nth-child(5),.notice-table td:nth-child(5){width:28%!important}
-      .notice-table th:nth-child(7),.notice-table td:nth-child(7){width:20%!important}
-      .notice-action-en,.notice-score-label-en{display:none}
-      .notice-score-label{white-space:normal}
-      .notice-action-cell{gap:3px}
-      .notice-expand-toggle{width:20px;height:20px}
-      .notice-row-guide{white-space:normal;overflow-wrap:anywhere}
+      .notice-table .notice-col-level,.notice-table .notice-col-committee{display:none}
       .notice-detail-grid{grid-template-columns:1fr}
       .notice-detail-section.full{grid-column:1}
       .notice-detail-identity{align-items:flex-start;flex-direction:column;gap:7px}
@@ -981,13 +973,15 @@
           <table class="notice-table">
             <thead>
               <tr>
-                <th style="width:21%;">학생<span class="th-en">Student</span></th>
-                <th class="tc" style="width:7%;">학반<span class="th-en">Class</span></th>
-                <th class="tc notice-col-level" style="width:7%;">구분<span class="th-en">Level</span></th>
-                <th class="tc" style="width:12%;">점수<span class="th-en">Points</span></th>
-                <th style="width:27%;">알림 진행<span class="th-en">Notice Progress</span></th>
+                <th style="width:17%;">학생<span class="th-en">Student</span></th>
+                <th class="tc" style="width:6%;">학반<span class="th-en">Class</span></th>
+                <th class="tc notice-col-level" style="width:6%;">구분<span class="th-en">Level</span></th>
+                <th class="tc" style="width:7%;">잔여점수<span class="th-en">Remaining</span></th>
+                <th class="tc" style="width:7%;">누적점수<span class="th-en">Total</span></th>
+                <th class="tc" style="width:13%;">학부모 알림<span class="th-en">Parent Notice</span></th>
+                <th class="tc" style="width:15%;">학생·교사 알림<span class="th-en">Student / Teacher</span></th>
                 <th class="tc notice-col-committee" style="width:10%;">위원회<span class="th-en">Committee</span></th>
-                <th class="tc" style="width:16%;">처리<span class="th-en">Action / Detail</span></th>
+                <th class="tc" style="width:19%;">처리<span class="th-en">Action / Detail</span></th>
               </tr>
             </thead>
             <tbody id="notify-active-tbody"></tbody>
@@ -999,13 +993,15 @@
           <table class="notice-table">
             <thead>
               <tr>
-                <th style="width:21%;">학생<span class="th-en">Student</span></th>
-                <th class="tc" style="width:7%;">학반<span class="th-en">Class</span></th>
-                <th class="tc notice-col-level" style="width:7%;">구분<span class="th-en">Level</span></th>
-                <th class="tc" style="width:12%;">점수<span class="th-en">Points</span></th>
-                <th style="width:29%;">알림 기록<span class="th-en">Notice Record</span></th>
-                <th class="tc notice-col-completed" style="width:14%;">완료일<span class="th-en">Completed</span></th>
-                <th class="tc" style="width:10%;">상세<span class="th-en">Details</span></th>
+                <th style="width:17%;">학생<span class="th-en">Student</span></th>
+                <th class="tc" style="width:6%;">학반<span class="th-en">Class</span></th>
+                <th class="tc notice-col-level" style="width:6%;">구분<span class="th-en">Level</span></th>
+                <th class="tc" style="width:7%;">잔여점수<span class="th-en">Remaining</span></th>
+                <th class="tc" style="width:7%;">누적점수<span class="th-en">Total</span></th>
+                <th class="tc" style="width:13%;">학부모 알림<span class="th-en">Parent Notice</span></th>
+                <th class="tc" style="width:15%;">학생·교사 알림<span class="th-en">Student / Teacher</span></th>
+                <th class="tc" style="width:18%;">완료일<span class="th-en">Completed</span></th>
+                <th class="tc" style="width:11%;">상세<span class="th-en">Details</span></th>
               </tr>
             </thead>
             <tbody id="notify-done-tbody"></tbody>
@@ -3900,7 +3896,7 @@
       }
 
       function scoreHtml(currentTotal, overallTotal){
-        return `<span class="notice-score">${esc(String(currentTotal ?? 0))} <span>/ ${esc(String(overallTotal ?? 0))}</span></span><span class="notice-score-label"><span>잔여 / 누적</span><span class="notice-score-label-en">Remaining / Total</span></span>`;
+        return `<span class="notice-score">${esc(String(currentTotal ?? 0))} <span>/ ${esc(String(overallTotal ?? 0))}</span></span><span class="notice-score-label">잔여 / 누적<br>Remaining / Total</span>`;
       }
 
       function committeeBadge(state){
@@ -3956,7 +3952,7 @@
       }
 
       function renderActiveRows(arr){
-        if (!arr.length) return `<tr><td colspan="7" class="empty">해당 학생이 없습니다. | No matching students.</td></tr>`;
+        if (!arr.length) return `<tr><td colspan="9" class="empty">해당 학생이 없습니다. | No matching students.</td></tr>`;
 
         return arr.map((s, rowIndex) => {
           const level = s._level || getSchoolLevel(s.className || '') || 'ms';
@@ -3967,18 +3963,20 @@
               <td>${studentNameHtml(s)}</td>
               <td class="tc"><b>${esc(s.className || '-')}</b></td>
               <td class="tc notice-col-level">${levelBadge(level)}</td>
-              <td class="tc">${scoreHtml(s.currentTotal, s.overallTotal)}</td>
-              <td>${mailProgressHtml(s.notice)}</td>
+              <td class="tc"><span class="notice-score-value">${esc(String(s.currentTotal ?? 0))}</span></td>
+              <td class="tc"><span class="notice-score-value">${esc(String(s.overallTotal ?? 0))}</span></td>
+              <td class="notice-mail-cell">${mailBadge((s.notice || {}).parentMailAt)}</td>
+              <td class="notice-mail-cell">${mailBadge((s.notice || {}).studentTeacherMailAt)}</td>
               <td class="tc notice-col-committee">${committeeBadge(s.state)}</td>
               <td class="tc" onclick="event.stopPropagation()">
                 <div class="notice-action-cell">
-                  <button class="btn btn-primary btn-xs" onclick="completeNotice('${esc(s.key)}','${level}')" ${s.cycleCompleted ? 'disabled' : ''}>완료<span class="notice-action-en"> | Complete</span></button>
+                  <button class="btn btn-primary btn-xs" onclick="completeNotice('${esc(s.key)}','${level}')" ${s.cycleCompleted ? 'disabled' : ''}>완료 | Complete</button>
                   <button type="button" class="notice-expand-toggle" aria-label="${expanded ? '상세 접기' : '상세 펼치기'}" onclick="toggleNoticeRow('${level}','${esc(s.key)}')">${expanded ? '▴' : '▾'}</button>
                 </div>
               </td>
             </tr>
             <tr class="notice-inline-row ${stripeClass} ${expanded ? 'show' : ''}">
-              <td colspan="7">${activeDetailHtml(s, level)}</td>
+              <td colspan="9">${activeDetailHtml(s, level)}</td>
             </tr>`;
         }).join('');
       }
@@ -3986,7 +3984,7 @@
       activeTb.innerHTML = renderActiveRows(finalActiveList);
 
       if (!doneList.length){
-        doneTb.innerHTML = '<tr><td colspan="7" class="empty">해당 학생이 없습니다. | No matching students.</td></tr>';
+        doneTb.innerHTML = '<tr><td colspan="9" class="empty">해당 학생이 없습니다. | No matching students.</td></tr>';
         renderPager('notify-done-pager', 0, 1, 'setNoticeDonePage');
       } else {
         noticeDonePage = clampPage(noticeDonePage, doneList.length, PAGE_SIZE);
@@ -4053,12 +4051,14 @@
             <td>${studentNameHtml(s)}</td>
             <td class="tc"><b>${esc(s.className || '-')}</b></td>
             <td class="tc notice-col-level">${levelBadge(level)}</td>
-            <td class="tc">${scoreHtml(s.currentTotal, s.overallTotal)}</td>
-            <td>${mailProgressHtml(notice)}</td>
-            <td class="tc notice-col-completed"><span class="small-muted">${notice.completedAt ? fmt(notice.completedAt) : '-'}</span></td>
+            <td class="tc"><span class="notice-score-value">${esc(String(s.currentTotal ?? 0))}</span></td>
+            <td class="tc"><span class="notice-score-value">${esc(String(s.overallTotal ?? 0))}</span></td>
+            <td class="notice-mail-cell">${mailBadge(notice.parentMailAt)}</td>
+            <td class="notice-mail-cell">${mailBadge(notice.studentTeacherMailAt)}</td>
+            <td class="tc"><span class="small-muted">${notice.completedAt ? fmt(notice.completedAt) : '-'}</span></td>
             <td class="tc"><button type="button" class="notice-expand-toggle" aria-label="${expanded ? '상세 접기' : '상세 펼치기'}" onclick="event.stopPropagation();toggleNoticeRow('${level}','${esc(expandedKey)}')">${expanded ? '▴' : '▾'}</button></td>
           </tr>
-          <tr class="notice-inline-row ${stripeClass} ${expanded ? 'show' : ''}"><td colspan="7">${detail}</td></tr>`;
+          <tr class="notice-inline-row ${stripeClass} ${expanded ? 'show' : ''}"><td colspan="9">${detail}</td></tr>`;
         }).join('');
       }
     }
