@@ -219,36 +219,59 @@
     .modal-stat .lbl{font-size:11px;color:var(--sb);margin-top:2px}
     .modal-section-title{font-weight:800;font-size:13px;color:var(--nv);margin:14px 0 6px;padding-bottom:4px;border-bottom:2px solid var(--bd)}
 
-    /* 위원회 표 전용 레이아웃: 열 압축 방지 + 노트 한 줄 입력 */
-    #discipline-active-table{min-width:1000px;table-layout:fixed}
-    #discipline-done-table{min-width:1100px;table-layout:fixed}
+    /* 위원회 화면: 교차 행 색상 + 학생 식별형 인라인 상세 */
+    #discipline-active-table,#discipline-done-table{width:100%;table-layout:fixed;border-collapse:separate;border-spacing:0}
+    #discipline-active-table{min-width:880px}
+    #discipline-done-table{min-width:760px}
     #discipline-active-table th,#discipline-active-table td,
     #discipline-done-table th,#discipline-done-table td{vertical-align:middle}
-    #discipline-active-table th:nth-child(1){width:14%}
-    #discipline-active-table th:nth-child(2){width:5%}
-    #discipline-active-table th:nth-child(3){width:19%}
-    #discipline-active-table th:nth-child(4){width:7%}
+    #discipline-active-table th:nth-child(1){width:18%}
+    #discipline-active-table th:nth-child(2){width:6%}
+    #discipline-active-table th:nth-child(3){width:8%}
+    #discipline-active-table th:nth-child(4){width:8%}
     #discipline-active-table th:nth-child(5){width:7%}
-    #discipline-active-table th:nth-child(6){width:7%}
-    #discipline-active-table th:nth-child(7){width:9%}
-    #discipline-active-table th:nth-child(8){width:12%}
-    #discipline-active-table th:nth-child(9){width:14%}
-    #discipline-active-table th:nth-child(10){width:6%}
-    #discipline-done-table th:nth-child(1){width:13%}
-    #discipline-done-table th:nth-child(2){width:5%}
-    #discipline-done-table th:nth-child(3){width:17%}
-    #discipline-done-table th:nth-child(4){width:7%}
-    #discipline-done-table th:nth-child(5){width:7%}
-    #discipline-done-table th:nth-child(6){width:6%}
-    #discipline-done-table th:nth-child(7){width:9%}
-    #discipline-done-table th:nth-child(8){width:9%}
-    #discipline-done-table th:nth-child(9){width:11%}
-    #discipline-done-table th:nth-child(10){width:10%}
-    #discipline-done-table th:nth-child(11){width:10%}
+    #discipline-active-table th:nth-child(6){width:11%}
+    #discipline-active-table th:nth-child(7){width:14%}
+    #discipline-active-table th:nth-child(8){width:18%}
+    #discipline-active-table th:nth-child(9){width:10%}
+    #discipline-done-table th:nth-child(1){width:21%}
+    #discipline-done-table th:nth-child(2){width:7%}
+    #discipline-done-table th:nth-child(3){width:9%}
+    #discipline-done-table th:nth-child(4){width:9%}
+    #discipline-done-table th:nth-child(5){width:8%}
+    #discipline-done-table th:nth-child(6){width:13%}
+    #discipline-done-table th:nth-child(7){width:13%}
+    #discipline-done-table th:nth-child(8){width:20%}
+    .committee-main-row{cursor:pointer;transition:background .12s ease}
+    .committee-main-row.lookup-row-odd{background:#fff!important}
+    .committee-main-row.lookup-row-even{background:#eef4ff!important}
+    .committee-main-row.lookup-row-odd:hover,.committee-main-row.lookup-row-even:hover,
+    .committee-main-row.lookup-row-odd:focus,.committee-main-row.lookup-row-even:focus{background:#dfeaff!important;outline:none}
+    .committee-main-row.expanded{background:#d5e5ff!important;box-shadow:inset 4px 0 0 #1455d9}
+    .committee-detail-row{display:none}
+    .committee-detail-row.show{display:table-row}
+    .committee-detail-row.lookup-row-odd>td{background:#fbfdff!important}
+    .committee-detail-row.lookup-row-even>td{background:#eef4ff!important}
+    .committee-detail-row>td{padding:0 8px 11px!important;border-bottom:1px solid #d4deed;white-space:normal!important;overflow:visible!important;max-width:none!important}
+    .committee-inline-panel{border:1px solid #cfdcf0;border-radius:11px;background:#f8fbff;padding:10px;margin-top:3px;box-shadow:inset 4px 0 0 #1455d9}
+    .committee-detail-identity{display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid #c9daf4;border-radius:9px;background:#eaf2ff;padding:9px 11px;margin-bottom:9px}
+    .committee-detail-name{font-size:14px;font-weight:900;color:#10265f;white-space:nowrap}
+    .committee-detail-meta{display:flex;align-items:center;justify-content:flex-end;gap:6px;flex-wrap:wrap}
+    .committee-detail-chip{display:inline-flex;align-items:center;padding:4px 8px;border:1px solid #c9d8ef;border-radius:999px;background:#fff;color:#345078;font-size:10px;font-weight:750;white-space:nowrap}
+    .committee-detail-grid{display:grid;grid-template-columns:1.25fr .75fr;gap:8px}
+    .committee-detail-grid .detail-section.full{grid-column:1/-1}
+    .committee-row-guide{font-size:10px;color:#6d7890;margin-top:7px}
+    .committee-student-cell{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:850;color:#17233d}
     .committee-category-select{display:block;width:100%!important;min-width:0!important;height:30px;padding:3px 4px!important;font-size:11px!important;box-sizing:border-box}
     .committee-note-input{display:block;width:100%!important;min-width:0!important;height:30px!important;padding:4px 7px!important;font-size:11px!important;line-height:20px!important;box-sizing:border-box}
     .committee-action-btn{white-space:nowrap;padding:4px 7px!important;font-size:11px!important}
     .committee-cell-text{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+    @media(max-width:760px){
+      .committee-detail-identity{align-items:flex-start;flex-direction:column;gap:7px}
+      .committee-detail-meta{justify-content:flex-start}
+      .committee-detail-grid{grid-template-columns:1fr}
+      .committee-detail-grid .detail-section.full{grid-column:auto}
+    }
 
     /* teacher UI refinement */
     .teacher-shell{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;width:100%}
@@ -1208,18 +1231,29 @@
     <div id="tab-discipline" class="tab-panel">
       <div class="card">
         <div class="card-title">위원회 관리 | Committee Management</div>
-        <div class="card-title notice-divider" style="margin-top:8px;">🔴 위원회 진행 중</div>
-        <div class="notice">선도위원회: 반복위반 회부 항목 · 생활교육위원회: 잔여 12점 이상 또는 누적 30점 초과 (연 1회). 처리: [회부확정] → [완료] 2단계.</div>
+        <div class="card-title notice-divider" style="margin-top:8px;">🔴 위원회 진행 중 | Active Committee Cases</div>
+        <div class="notice">선도위원회: 반복위반 회부 항목 · 생활교육위원회: 잔여 12점 이상 또는 누적 30점 초과 (연 1회). 처리: [회부확정] → [완료] 2단계.<br>Guidance Committee: repeated violations · Student Education Committee: 12+ remaining points or over 30 total points. Process: Referral confirmed → Completed.</div>
         <div class="tbl-wrap"><table id="discipline-active-table"><thead><tr>
-          <th>학생</th><th class="tc">학반</th><th>사유</th>
-          <th class="tc">잔여디텐션<br><small>(12점이상)</small></th><th class="tc">누적디텐션<br><small>(30점이상)</small></th>
-          <th class="tc">위원회 횟수</th><th class="tc">회부일시</th><th class="tc">위원회 종류</th><th>노트</th><th class="tc">처리</th>
+          <th>학생<span class="th-en">Student</span></th>
+          <th class="tc">학반<span class="th-en">Class</span></th>
+          <th class="tc">잔여점수<span class="th-en">Remaining</span></th>
+          <th class="tc">누적점수<span class="th-en">Total</span></th>
+          <th class="tc">횟수<span class="th-en">Count</span></th>
+          <th class="tc">회부일<span class="th-en">Referred</span></th>
+          <th class="tc">위원회 종류<span class="th-en">Committee</span></th>
+          <th>노트<span class="th-en">Note</span></th>
+          <th class="tc">처리<span class="th-en">Action</span></th>
         </tr></thead><tbody id="discipline-active-tbody"></tbody></table></div>
-        <div class="card-title notice-divider" style="margin-top:18px;">✅ 위원회 완료</div>
+        <div class="card-title notice-divider" style="margin-top:18px;">✅ 위원회 완료 | Completed Committee Cases</div>
         <div class="tbl-wrap"><table id="discipline-done-table"><thead><tr>
-          <th>학생</th><th class="tc">학반</th><th>사유</th>
-          <th class="tc">잔여디텐션<br><small>(12점이상)</small></th><th class="tc">누적디텐션<br><small>(30점이상)</small></th>
-          <th class="tc">위원회 횟수</th><th class="tc">회부일시</th><th class="tc">완료일시</th><th class="tc">위원회 종류</th><th>메모</th><th>작성자</th>
+          <th>학생<span class="th-en">Student</span></th>
+          <th class="tc">학반<span class="th-en">Class</span></th>
+          <th class="tc">잔여점수<span class="th-en">Remaining</span></th>
+          <th class="tc">누적점수<span class="th-en">Total</span></th>
+          <th class="tc">횟수<span class="th-en">Count</span></th>
+          <th class="tc">회부일<span class="th-en">Referred</span></th>
+          <th class="tc">완료일<span class="th-en">Completed</span></th>
+          <th class="tc">위원회 종류<span class="th-en">Committee</span></th>
         </tr></thead><tbody id="discipline-done-tbody"></tbody></table></div>
       </div>
     </div>
@@ -4243,8 +4277,8 @@
       if(!activeTb||!doneTb)return;
       const catalog = getStudentCatalog();
       if(!catalog.length && !Object.keys(entries||{}).length && !Object.keys(committeeEntries||{}).length){
-        activeTb.innerHTML='<tr><td colspan="10" class="empty">로딩 중...</td></tr>';
-        doneTb.innerHTML='<tr><td colspan="11" class="empty">로딩 중...</td></tr>';
+        activeTb.innerHTML='<tr><td colspan="9" class="empty">로딩 중... | Loading...</td></tr>';
+        doneTb.innerHTML='<tr><td colspan="8" class="empty">로딩 중... | Loading...</td></tr>';
         return;
       }
       const yr=getCurrentYear();
@@ -4329,39 +4363,73 @@
         return '<input type="text" id="committee-note-'+token+'" class="edit-input committee-note-input committee-readonly-control" placeholder="위원회 메모" value="'+esc(oneLineNote)+'" title="'+esc(oneLineNote)+'" '+(editable?('oninput="'+oninput+'" '+(onblur?'onblur="'+onblur+'"':'')):'disabled')+'>';
       };
 
-      const mkRow=(c,isDone)=>{
-        const did=(isDone?'dcd_':'dca_')+c.type+'_'+String(c.entryKey||c.studentKey||'').replace(/\W/g,'_');
+      const committeeLevelText=(className)=>{
+        const level=getSchoolLevel(className||'');
+        return level==='ms'?'중등 | Middle School':level==='hs'?'고등 | High School':'학교급 미확인 | Level unknown';
+      };
+
+      const committeeIdentityHtml=(c,category,countText)=>{
+        return '<div class="committee-detail-identity">'+
+          '<div class="committee-detail-name">'+esc(c.name||'-')+'</div>'+
+          '<div class="committee-detail-meta">'+
+            '<span class="committee-detail-chip">학반 | Class '+esc(c.className||'-')+'</span>'+
+            '<span class="committee-detail-chip">'+esc(committeeLevelText(c.className))+'</span>'+
+            '<span class="committee-detail-chip">잔여 '+esc(String(c.cur??0))+' / 누적 '+esc(String(c.ovr??0))+'</span>'+
+            '<span class="committee-detail-chip">위원회 '+esc(countText)+'</span>'+
+            '<span class="committee-detail-chip">'+esc(committeeCategoryLabel(category))+'</span>'+
+          '</div></div>';
+      };
+
+      const mkRow=(c,isDone,rowIndex)=>{
         const record=isDone?(c.done||{}):(c.pending||{});
+        const uniquePart=String(record.committeeKey||c.entryKey||c.studentKey||rowIndex).replace(/\W/g,'_');
+        const did=(isDone?'dcd_':'dca_')+c.type+'_'+uniquePart+'_'+rowIndex;
+        const stripeClass=rowIndex%2===0?'lookup-row-odd':'lookup-row-even';
         const commKey=String(record.committeeKey||'');
         const token=committeeEditorToken(c.type,c.entryKey,c.studentKey);
         const category=getCommitteeCategory(record,c.type);
         const note=String(record.committeeNote||'').trim();
         const author=committeeNoteAuthorText(record);
+        const countText=cntLabel(c.studentKey);
+        const identity=committeeIdentityHtml(c,category,countText);
+        const fullHistory=buildReasonTextWithPoints(c.studentKey)||'-';
+        const rowAttrs='class="committee-main-row '+stripeClass+'" tabindex="0" aria-expanded="false" onclick="toggleCommitteeDetail(\''+did+'\')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();toggleCommitteeDetail(\''+did+'\')}" title="상세 펼치기 | Expand details"';
+
         if(isDone){
-          return '<tr class="summary-row" onclick="toggleDetailDiv(\''+did+'\')" style="cursor:pointer;">'+
-            '<td>'+esc(c.name)+'</td><td class="tc">'+esc(c.className)+'</td><td><span class="cell-reason-preview">'+esc(c.reason)+'</span></td>'+
-            ptsCell(c.cur,12)+ptsCell(c.ovr,31)+'<td class="tc">'+cntLabel(c.studentKey)+'</td><td class="tc">'+fmt(c.referredAt)+'</td>'+
+          return '<tr '+rowAttrs+'>'+
+            '<td><span class="committee-student-cell" title="'+esc(c.name||'-')+'">'+esc(c.name||'-')+'</span></td>'+
+            '<td class="tc"><b>'+esc(c.className||'-')+'</b></td>'+ptsCell(c.cur,12)+ptsCell(c.ovr,31)+
+            '<td class="tc">'+countText+'</td><td class="tc">'+fmt(c.referredAt)+'</td>'+
             '<td class="tc" style="font-size:11px;color:var(--gn);font-weight:700;">&#10003; '+fmt(record.completedAt)+'</td>'+
-            '<td class="tc">'+committeeCategoryBadge(category)+(record.committeeDecision==='recovery_exception'?'<div style="margin-top:3px;font-size:10px;font-weight:700;color:#9a3412;">예외→회복</div>':'')+'</td>'+
-            '<td title="'+esc(note||'-')+'"><span class="committee-cell-text">'+esc((note||'-').replace(/\s+/g,' '))+'</span></td>'+
-            '<td title="'+esc(author)+'"><span class="committee-cell-text" style="font-size:11px;">'+esc(author)+'</span></td></tr>'+
-            '<tr class="detail-row" id="'+did+'"><td colspan="11"><div class="detail-box">'+
-            '<div class="detail-section"><div class="detail-title">전체 위반 내역</div><div class="detail-content">'+esc(buildReasonTextWithPoints(c.studentKey))+'</div></div>'+
-            '<div class="detail-section"><div class="detail-title">위원회 메모 | Committee Note</div><div class="detail-content">'+esc(note||'-')+'</div><div class="small-muted" style="margin-top:6px;">작성자: '+esc(author)+' / 수정일: '+fmt(record.committeeNoteUpdatedAt||'')+'</div></div>'+
-            (canManageCommittee()&&commKey?'<div class="detail-section"><div class="detail-title">취소 | Cancel</div><button class="btn btn-secondary btn-xs" onclick="event.stopPropagation();cancelCommitteeCompletion(\''+esc(commKey)+'\')">완료취소</button></div>':'')+
-            '</div></td></tr>';
+            '<td class="tc">'+committeeCategoryBadge(category)+(record.committeeDecision==='recovery_exception'?'<div style="margin-top:3px;font-size:10px;font-weight:700;color:#9a3412;">예외→회복</div>':'')+'</td></tr>'+
+            '<tr class="committee-detail-row '+stripeClass+'" id="'+did+'"><td colspan="8"><div class="committee-inline-panel">'+identity+
+              '<div class="committee-detail-grid">'+
+                '<div class="detail-section"><div class="detail-title">위원회 사유 | Committee Reason</div><div class="detail-content">'+esc(c.reason||'-')+'</div></div>'+
+                '<div class="detail-section"><div class="detail-title">처리 정보 | Processing Information</div><div class="detail-content">회부일 | Referred: '+fmt(c.referredAt)+'\n완료일 | Completed: '+fmt(record.completedAt)+'\n위원회 | Committee: '+esc(committeeCategoryLabel(category))+'</div></div>'+
+                '<div class="detail-section full"><div class="detail-title">전체 위반 내역 | Full Violation History</div><div class="detail-content">'+esc(fullHistory)+'</div></div>'+
+                '<div class="detail-section full"><div class="detail-title">위원회 메모 | Committee Note</div><div class="detail-content">'+esc(note||'-')+'</div><div class="small-muted" style="margin-top:6px;">작성자 | Author: '+esc(author)+' / 수정일 | Updated: '+fmt(record.committeeNoteUpdatedAt||'')+'</div></div>'+
+                (canManageCommittee()&&commKey?'<div class="detail-section full"><div class="detail-title">완료 취소 | Cancel Completion</div><button class="btn btn-secondary btn-xs" onclick="event.stopPropagation();cancelCommitteeCompletion(\''+esc(commKey)+'\')">완료취소 | Cancel</button></div>':'')+
+              '</div><div class="committee-row-guide">위의 같은 학생 행을 다시 누르면 상세 내용이 접힙니다. | Click the same student row again to collapse.</div></div></td></tr>';
         }
 
         const pendingKey=String((c.pending&&c.pending.committeeKey)||'');
-        return '<tr class="summary-row" onclick="toggleDetailDiv(\''+did+'\')" style="cursor:pointer;">'+
-          '<td>'+esc(c.name)+'</td><td class="tc">'+esc(c.className)+'</td><td><span class="cell-reason-preview">'+esc(c.reason)+'</span></td>'+
-          ptsCell(c.cur,12)+ptsCell(c.ovr,31)+'<td class="tc">'+cntLabel(c.studentKey)+'</td><td class="tc">'+fmt(c.referredAt)+'</td>'+
+        const statusText=c.pending?'회부확정됨 | Referral confirmed':'회부 대기 | Pending referral';
+        return '<tr '+rowAttrs+'>'+
+          '<td><span class="committee-student-cell" title="'+esc(c.name||'-')+'">'+esc(c.name||'-')+'</span></td>'+
+          '<td class="tc"><b>'+esc(c.className||'-')+'</b></td>'+ptsCell(c.cur,12)+ptsCell(c.ovr,31)+
+          '<td class="tc">'+countText+'</td><td class="tc">'+fmt(c.referredAt)+'</td>'+
           '<td class="tc" onclick="event.stopPropagation()">'+categorySelectHtml(token,category,pendingKey,c.type)+'</td>'+
           '<td class="wrap-cell" onclick="event.stopPropagation()">'+noteEditorHtml(token,c.pending,pendingKey,c.type)+'</td>'+
           '<td class="tc" onclick="event.stopPropagation()"><div class="committee-action-group">'+(c.pending
             ? '<div style="width:100%;font-size:10px;color:var(--mut);margin-bottom:2px;">회부확정됨</div><button class="btn btn-primary committee-action-btn" '+(canManageCommittee()?'onclick="completeCommittee(\''+(c.type==='referral'?(c.pending.type||'referral'):(c.pending.type||'edu'))+'\',\''+esc(c.entryKey)+'\',\''+esc(c.studentKey)+'\',\''+esc(pendingKey)+'\',\''+token+'\')"':'disabled title="조회 전용 권한입니다"')+'>완료</button>'
             : '<button class="btn btn-secondary committee-action-btn" '+(canManageCommittee()?'onclick="referCommitteeCase(\''+c.type+'\',\''+esc(c.entryKey)+'\',\''+esc(c.studentKey)+'\',\''+token+'\')"':'disabled title="조회 전용 권한입니다"')+'>회부확정</button><button class="btn btn-exception committee-action-btn" '+(canManageCommittee()?'onclick="exceptionToRecovery(\''+c.type+'\',\''+esc(c.entryKey)+'\',\''+esc(c.studentKey)+'\',\''+token+'\')"':'disabled title="조회 전용 권한입니다"')+'>예외→회복</button>')+'</div></td></tr>'+
-          '<tr class="detail-row" id="'+did+'"><td colspan="10"><div class="detail-box"><div class="detail-section"><div class="detail-title">전체 위반 내역</div><div class="detail-content">'+esc(buildReasonTextWithPoints(c.studentKey))+'</div></div></div></td></tr>';
+          '<tr class="committee-detail-row '+stripeClass+'" id="'+did+'"><td colspan="9"><div class="committee-inline-panel">'+identity+
+            '<div class="committee-detail-grid">'+
+              '<div class="detail-section"><div class="detail-title">위원회 사유 | Committee Reason</div><div class="detail-content">'+esc(c.reason||'-')+'</div></div>'+
+              '<div class="detail-section"><div class="detail-title">진행 상태 | Status</div><div class="detail-content">'+esc(statusText)+'\n회부일 | Referred: '+fmt(c.referredAt)+'\n위원회 | Committee: '+esc(committeeCategoryLabel(category))+'</div></div>'+
+              '<div class="detail-section full"><div class="detail-title">전체 위반 내역 | Full Violation History</div><div class="detail-content">'+esc(fullHistory)+'</div></div>'+
+              '<div class="detail-section full"><div class="detail-title">저장된 노트 | Saved Note</div><div class="detail-content">'+esc(note||'-')+'</div><div class="small-muted" style="margin-top:6px;">작성자 | Author: '+esc(author)+' / 수정일 | Updated: '+fmt(record.committeeNoteUpdatedAt||'')+'</div></div>'+
+            '</div><div class="committee-row-guide">위의 같은 학생 행을 다시 누르면 상세 내용이 접힙니다. | Click the same student row again to collapse.</div></div></td></tr>';
       };
 
       const active=cases.filter(c=>!c.done).sort((a,b)=>String(b.referredAt||'').localeCompare(String(a.referredAt||'')));
@@ -4382,8 +4450,8 @@
           referredAt:record.createdAt||'', done:record, pending:null
         };
       }).sort((a,b)=>String((b.done&&b.done.completedAt)||'').localeCompare(String((a.done&&a.done.completedAt)||'')));
-      activeTb.innerHTML=active.length?active.map(c=>mkRow(c,false)).join(''):'<tr><td colspan="10" class="empty">진행 중인 위원회가 없습니다.</td></tr>';
-      doneTb.innerHTML=done.length?done.map(c=>mkRow(c,true)).join(''):'<tr><td colspan="11" class="empty">완료된 내역이 없습니다.</td></tr>';
+      activeTb.innerHTML=active.length?active.map((c,i)=>mkRow(c,false,i)).join(''):'<tr><td colspan="9" class="empty">진행 중인 위원회가 없습니다. | No active committee cases.</td></tr>';
+      doneTb.innerHTML=done.length?done.map((c,i)=>mkRow(c,true,i)).join(''):'<tr><td colspan="8" class="empty">완료된 내역이 없습니다. | No completed committee cases.</td></tr>';
     }
 
     // 예외처리: 위원회 회부 대신 완료 기록을 남기고 회복교육 단계로 전환
@@ -4568,6 +4636,18 @@
     }
 
     function toggleDetailDiv(id){const el=document.getElementById(id);if(el)el.classList.toggle('show');}
+    function toggleCommitteeDetail(id){
+      const detail=document.getElementById(id);
+      if(!detail)return;
+      const main=detail.previousElementSibling;
+      const willShow=!detail.classList.contains('show');
+      detail.classList.toggle('show',willShow);
+      if(main&&main.classList.contains('committee-main-row')){
+        main.classList.toggle('expanded',willShow);
+        main.setAttribute('aria-expanded',willShow?'true':'false');
+        main.title=willShow?'상세 접기 | Collapse details':'상세 펼치기 | Expand details';
+      }
+    }
     function toggleCommitteeBanner(){
       const banner=document.getElementById('committee-pending-banner');
       if(!banner) return;
