@@ -32,6 +32,62 @@
     .info-badges .badge{background:#dce6f7;color:var(--nv);font-size:12px;padding:4px 10px;border-radius:20px;font-weight:700;}
     .hidden{display:none !important}
 
+
+    /* 검색 추천: 네이티브 datalist 대신 선택 상태가 분명한 목록 사용 */
+    .entry-autocomplete-shell{position:relative}
+    .entry-autocomplete-shell .edit-input{padding-right:42px}
+    .entry-autocomplete-shell .edit-input.is-selected{
+      border-color:#15803d;
+      box-shadow:0 0 0 3px rgba(21,128,61,.12);
+      background:#fbfffc;
+    }
+    .entry-autocomplete-toggle{
+      position:absolute;top:1px;right:1px;width:38px;height:calc(100% - 2px);
+      border:0;border-left:1px solid #d8dded;border-radius:0 7px 7px 0;
+      background:#f7f9fd;color:var(--nv);font-weight:900;cursor:pointer;
+    }
+    .entry-autocomplete-toggle:hover,.entry-autocomplete-toggle:focus-visible{background:#e8eefb}
+    .entry-autocomplete-menu{
+      position:absolute;left:0;right:0;top:calc(100% + 6px);z-index:3000;
+      max-height:300px;overflow-y:auto;padding:5px;border:2px solid var(--nv2);
+      border-radius:11px;background:#fff;box-shadow:0 14px 34px rgba(15,31,92,.24);
+    }
+    .entry-autocomplete-menu[hidden]{display:none}
+    .entry-autocomplete-option{
+      width:100%;display:grid;grid-template-columns:52px minmax(0,1fr);align-items:center;gap:10px;
+      padding:9px 11px;border:0;border-radius:8px;background:#fff;color:var(--tx);text-align:left;cursor:pointer;
+    }
+    .entry-autocomplete-option + .entry-autocomplete-option{margin-top:2px}
+    .entry-autocomplete-option:hover,.entry-autocomplete-option.active{background:var(--nv);color:#fff}
+    .entry-autocomplete-class{
+      display:inline-flex;align-items:center;justify-content:center;min-height:28px;padding:3px 7px;
+      border-radius:7px;background:#e8eefb;color:var(--nv);font-size:12px;font-weight:900;
+    }
+    .entry-autocomplete-option:hover .entry-autocomplete-class,
+    .entry-autocomplete-option.active .entry-autocomplete-class{background:#fff;color:var(--nv)}
+    .entry-autocomplete-names{min-width:0}
+    .entry-autocomplete-ko{display:block;font-size:14px;font-weight:850;line-height:1.3}
+    .entry-autocomplete-en{
+      display:block;margin-top:2px;font-size:11px;color:var(--sb);line-height:1.3;
+      overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    }
+    .entry-autocomplete-option:hover .entry-autocomplete-en,
+    .entry-autocomplete-option.active .entry-autocomplete-en{color:#dbe5ff}
+    .entry-autocomplete-empty{
+      padding:12px;border-radius:8px;background:#fff8e7;color:#7c4a03;font-size:12px;text-align:center;
+    }
+    .entry-selection-confirm{
+      min-height:28px;margin-top:6px;padding:5px 8px;border:1px dashed #c8d0e2;border-radius:8px;
+      background:#f8faff;color:var(--sb);font-size:11px;line-height:1.4;
+    }
+    .entry-selection-confirm.selected{
+      border-style:solid;border-color:#86c99a;background:#effbf3;color:#11612c;font-weight:700;
+    }
+    .entry-selection-confirm .selection-check{
+      display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;margin-right:5px;
+      border-radius:50%;background:#15803d;color:#fff;font-size:11px;vertical-align:-2px;
+    }
+
     .stat-boxes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px}
     .stat-box{border:1px solid var(--bd);border-radius:10px;background:#f9fbff;padding:10px 12px}
     .stat-box .k{font-size:11px;color:var(--sb);margin-bottom:4px;line-height:1.4}
@@ -782,8 +838,12 @@
 
           <div class="entry-section">
             <div class="entry-section-title">학생 검색 <span class="entry-title-en">Student Search</span><span class="entry-section-help">이름 또는 학반을 입력하세요. | Enter a name or class.</span></div>
-            <input id="student-search-input" class="edit-input" list="student-list" placeholder="학생 이름 또는 학반 | Student name or class" oninput="syncStudentSelection()">
-            <datalist id="student-list"></datalist>
+            <div id="student-entry-autocomplete" class="entry-autocomplete-shell">
+              <input id="student-search-input" class="edit-input" placeholder="학생 이름, 영문명 또는 학반 | Student name or class" autocomplete="off" aria-autocomplete="list" aria-controls="student-search-suggestions" aria-expanded="false">
+              <button id="student-search-toggle" class="entry-autocomplete-toggle" type="button" aria-label="학생 목록 열기 | Open student list">▼</button>
+              <div id="student-search-suggestions" class="entry-autocomplete-menu" role="listbox" hidden></div>
+            </div>
+            <div id="student-selection-state" class="entry-selection-confirm" aria-live="polite">검색 결과에서 학생을 선택하세요. | Select a student from the results.</div>
           </div>
 
           <div class="entry-section">
@@ -1379,6 +1439,10 @@
     let recoveryEntries = {};
     let noticeEntries = {};
     let studentSearchMap = {};
+    let studentSearchItems = [];
+    let studentAutocompleteFiltered = [];
+    let studentAutocompleteIndex = -1;
+    let studentAutocompleteReady = false;
     let selectedStudentKey = '';
     let allStudentFilterKey = '';
     let expandedAllKeys = new Set();
@@ -2444,13 +2508,174 @@
     function renderStudentOptions(){
       const list = getStudentCatalog();
 
-      const dataList = document.getElementById('student-list');
       studentSearchMap = {};
-      dataList.innerHTML = list.map(s => {
-        const label = `${String(s.className || '-')} · ${String(s.name || '').trim()} · ${String(s.englishName || '').trim()}`;
-        studentSearchMap[label] = s.key;
-        return `<option value="${esc(label)}"></option>`;
-      }).join('');
+      studentSearchItems = list.map(s => {
+        const className = String(s.className || '-').trim() || '-';
+        const name = String(s.name || '').trim();
+        const englishName = String(s.englishName || '').trim();
+        const label = `${className} · ${name} · ${englishName}`;
+        const item = { key: String(s.key || ''), className, name, englishName, label };
+        studentSearchMap[label] = item.key;
+        return item;
+      });
+
+      setupStudentEntryAutocomplete();
+      const input = document.getElementById('student-search-input');
+      if(input && input.value) syncStudentSelection();
+    }
+
+    function studentSearchText(value){
+      return String(value || '').trim().toLocaleLowerCase('ko');
+    }
+
+    function getStudentSearchItemByLabel(label){
+      const value = String(label || '').trim();
+      return studentSearchItems.find(item => item.label === value) || null;
+    }
+
+    function updateStudentSelectionState(item){
+      const input = document.getElementById('student-search-input');
+      const state = document.getElementById('student-selection-state');
+      if(!input || !state) return;
+
+      if(!item){
+        input.classList.remove('is-selected');
+        state.classList.remove('selected');
+        state.textContent = '검색 결과에서 학생을 선택하세요. | Select a student from the results.';
+        return;
+      }
+
+      input.classList.add('is-selected');
+      state.classList.add('selected');
+      const english = item.englishName ? ` · ${esc(item.englishName)}` : '';
+      state.innerHTML = `<span class="selection-check">✓</span>선택됨 | Selected: ${esc(item.className)} · ${esc(item.name)}${english}`;
+    }
+
+    function closeStudentSuggestions(){
+      const input = document.getElementById('student-search-input');
+      const menu = document.getElementById('student-search-suggestions');
+      if(!input || !menu) return;
+      menu.hidden = true;
+      input.setAttribute('aria-expanded','false');
+      studentAutocompleteIndex = -1;
+    }
+
+    function setStudentAutocompleteIndex(index){
+      const menu = document.getElementById('student-search-suggestions');
+      if(!menu || !studentAutocompleteFiltered.length) return;
+      studentAutocompleteIndex = Math.max(0, Math.min(index, studentAutocompleteFiltered.length - 1));
+      menu.querySelectorAll('.entry-autocomplete-option').forEach((button, i) => {
+        button.classList.toggle('active', i === studentAutocompleteIndex);
+        button.setAttribute('aria-selected', i === studentAutocompleteIndex ? 'true' : 'false');
+        if(i === studentAutocompleteIndex) button.scrollIntoView({block:'nearest'});
+      });
+    }
+
+    function renderStudentSuggestions(forceOpen=false){
+      const input = document.getElementById('student-search-input');
+      const menu = document.getElementById('student-search-suggestions');
+      if(!input || !menu) return;
+
+      const query = studentSearchText(input.value);
+      studentAutocompleteFiltered = studentSearchItems.filter(item => {
+        if(!query) return true;
+        return studentSearchText(`${item.className} ${item.name} ${item.englishName} ${item.label}`).includes(query);
+      }).slice(0, 14);
+
+      if(!studentAutocompleteFiltered.length){
+        menu.innerHTML = '<div class="entry-autocomplete-empty">일치하는 학생이 없습니다. | No matching student.</div>';
+        studentAutocompleteIndex = -1;
+      }else{
+        menu.innerHTML = studentAutocompleteFiltered.map((item,index) => `
+          <button type="button" class="entry-autocomplete-option" role="option" aria-selected="false" data-student-index="${index}">
+            <span class="entry-autocomplete-class">${esc(item.className)}</span>
+            <span class="entry-autocomplete-names">
+              <span class="entry-autocomplete-ko">${esc(item.name || '-')}</span>
+              <span class="entry-autocomplete-en">${esc(item.englishName || 'English name not provided')}</span>
+            </span>
+          </button>
+        `).join('');
+        studentAutocompleteIndex = 0;
+        setStudentAutocompleteIndex(0);
+      }
+
+      if(forceOpen || document.activeElement === input){
+        menu.hidden = false;
+        input.setAttribute('aria-expanded','true');
+      }
+    }
+
+    function selectStudentSuggestion(item){
+      if(!item) return;
+      const input = document.getElementById('student-search-input');
+      input.value = item.label;
+      selectedStudentKey = item.key;
+      updateStudentSelectionState(item);
+      closeStudentSuggestions();
+      syncAutoPoints();
+    }
+
+    function setupStudentEntryAutocomplete(){
+      if(studentAutocompleteReady) return;
+      const shell = document.getElementById('student-entry-autocomplete');
+      const input = document.getElementById('student-search-input');
+      const menu = document.getElementById('student-search-suggestions');
+      const toggle = document.getElementById('student-search-toggle');
+      if(!shell || !input || !menu || !toggle) return;
+      studentAutocompleteReady = true;
+
+      input.addEventListener('input', () => {
+        const item = getStudentSearchItemByLabel(input.value);
+        selectedStudentKey = item ? item.key : '';
+        updateStudentSelectionState(item);
+        renderStudentSuggestions(true);
+        syncAutoPoints();
+      });
+
+      input.addEventListener('focus', () => renderStudentSuggestions(true));
+
+      input.addEventListener('keydown', event => {
+        if(event.key === 'ArrowDown'){
+          event.preventDefault();
+          if(menu.hidden) renderStudentSuggestions(true);
+          else setStudentAutocompleteIndex(studentAutocompleteIndex + 1);
+          return;
+        }
+        if(event.key === 'ArrowUp'){
+          event.preventDefault();
+          if(menu.hidden) renderStudentSuggestions(true);
+          else setStudentAutocompleteIndex(studentAutocompleteIndex - 1);
+          return;
+        }
+        if(event.key === 'Escape'){
+          closeStudentSuggestions();
+          return;
+        }
+        if(event.key === 'Enter' && !menu.hidden && studentAutocompleteFiltered.length){
+          event.preventDefault();
+          selectStudentSuggestion(studentAutocompleteFiltered[Math.max(0,studentAutocompleteIndex)]);
+        }
+      });
+
+      menu.addEventListener('mousedown', event => event.preventDefault());
+      menu.addEventListener('click', event => {
+        const button = event.target.closest('[data-student-index]');
+        if(!button) return;
+        selectStudentSuggestion(studentAutocompleteFiltered[Number(button.dataset.studentIndex)]);
+      });
+
+      toggle.addEventListener('click', () => {
+        if(menu.hidden){
+          input.focus();
+          renderStudentSuggestions(true);
+        }else{
+          closeStudentSuggestions();
+        }
+      });
+
+      document.addEventListener('mousedown', event => {
+        if(!shell.contains(event.target)) closeStudentSuggestions();
+      });
     }
 
     function renderAllStudentSearchOptions(){
@@ -2477,13 +2702,17 @@
 
     function syncStudentSelectionWithoutUpdate(){
       const inputValue = (document.getElementById('student-search-input').value || '').trim();
-      selectedStudentKey = studentSearchMap[inputValue] || '';
+      const item = getStudentSearchItemByLabel(inputValue);
+      selectedStudentKey = item ? item.key : '';
+      updateStudentSelectionState(item);
       return selectedStudentKey;
     }
 
     function syncStudentSelection(){
       const inputValue = (document.getElementById('student-search-input').value || '').trim();
-      selectedStudentKey = studentSearchMap[inputValue] || '';
+      const item = getStudentSearchItemByLabel(inputValue);
+      selectedStudentKey = item ? item.key : '';
+      updateStudentSelectionState(item);
       syncAutoPoints(); // 회차 표기 갱신
       return selectedStudentKey;
     }
@@ -5473,6 +5702,8 @@
     function resetEntryForm(){
       document.getElementById('student-search-input').value = '';
       selectedStudentKey = '';
+      updateStudentSelectionState(null);
+      closeStudentSuggestions();
       document.getElementById('category-select').selectedIndex = 0;
       renderViolationOptions();
       document.getElementById('manual-points').value = 0;

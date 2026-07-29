@@ -56,6 +56,146 @@
       margin-top:2px;
       font-weight:500;
     }
+
+
+    .autocomplete-shell{
+      position:relative;
+    }
+
+    .autocomplete-shell .edit-input{
+      padding-right:42px;
+    }
+
+    .autocomplete-shell .edit-input.is-selected{
+      border-color:#15803d;
+      box-shadow:0 0 0 3px rgba(21,128,61,.12);
+      background:#fbfffc;
+    }
+
+    .autocomplete-toggle{
+      position:absolute;
+      top:1px;
+      right:1px;
+      width:38px;
+      height:calc(100% - 2px);
+      border:0;
+      border-left:1px solid #d8dded;
+      border-radius:0 7px 7px 0;
+      background:#f7f9fd;
+      color:var(--nv);
+      font-weight:900;
+      cursor:pointer;
+    }
+
+    .autocomplete-toggle:hover,
+    .autocomplete-toggle:focus-visible{
+      background:#e8eefb;
+    }
+
+    .autocomplete-menu{
+      position:absolute;
+      left:0;
+      right:0;
+      top:calc(100% + 6px);
+      z-index:3000;
+      max-height:292px;
+      overflow-y:auto;
+      padding:5px;
+      border:2px solid var(--nv2);
+      border-radius:11px;
+      background:#fff;
+      box-shadow:0 14px 34px rgba(15,31,92,.24);
+    }
+
+    .autocomplete-menu[hidden]{display:none}
+
+    .autocomplete-option{
+      width:100%;
+      display:block;
+      padding:9px 11px;
+      border:0;
+      border-radius:8px;
+      background:#fff;
+      color:var(--tx);
+      text-align:left;
+      cursor:pointer;
+    }
+
+    .autocomplete-option + .autocomplete-option{
+      margin-top:2px;
+    }
+
+    .autocomplete-option:hover,
+    .autocomplete-option.active{
+      background:var(--nv);
+      color:#fff;
+    }
+
+    .autocomplete-option-name{
+      display:block;
+      font-size:14px;
+      font-weight:800;
+      line-height:1.35;
+    }
+
+    .autocomplete-option-email{
+      display:block;
+      margin-top:2px;
+      font-size:11px;
+      color:var(--sb);
+      line-height:1.35;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
+
+    .autocomplete-option:hover .autocomplete-option-email,
+    .autocomplete-option.active .autocomplete-option-email{
+      color:#dbe5ff;
+    }
+
+    .autocomplete-empty{
+      padding:12px;
+      color:#7c4a03;
+      background:#fff8e7;
+      border-radius:8px;
+      font-size:12px;
+      text-align:center;
+    }
+
+    .selection-confirm{
+      min-height:28px;
+      margin-top:6px;
+      padding:5px 8px;
+      border:1px dashed #c8d0e2;
+      border-radius:8px;
+      background:#f8faff;
+      color:var(--sb);
+      font-size:11px;
+      line-height:1.4;
+    }
+
+    .selection-confirm.selected{
+      border-style:solid;
+      border-color:#86c99a;
+      background:#effbf3;
+      color:#11612c;
+      font-weight:700;
+    }
+
+    .selection-confirm .selection-check{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      width:17px;
+      height:17px;
+      margin-right:5px;
+      border-radius:50%;
+      background:#15803d;
+      color:#fff;
+      font-size:11px;
+      vertical-align:-2px;
+    }
   </style>
 </head>
 
@@ -86,16 +226,20 @@
             <span class="label-en">You can search by teacher name.</span>
           </label>
 
-          <input
-            id="teacher-search"
-            class="edit-input"
-            list="teacher-list"
-            placeholder="교사 이름 검색 / Search teacher name"
-            oninput="syncTeacherSelection()"
-            onkeydown="if(event.key === 'Enter') login()"
-          />
-
-          <datalist id="teacher-list"></datalist>
+          <div id="teacher-autocomplete" class="autocomplete-shell">
+            <input
+              id="teacher-search"
+              class="edit-input"
+              placeholder="교사 이름 또는 이메일 / Teacher name or email"
+              autocomplete="off"
+              aria-autocomplete="list"
+              aria-controls="teacher-suggestions"
+              aria-expanded="false"
+            />
+            <button id="teacher-dropdown-toggle" class="autocomplete-toggle" type="button" aria-label="교사 목록 열기 | Open teacher list">▼</button>
+            <div id="teacher-suggestions" class="autocomplete-menu" role="listbox" hidden></div>
+          </div>
+          <div id="teacher-selection-state" class="selection-confirm" aria-live="polite">검색 결과에서 교사를 선택하세요. | Select a teacher from the results.</div>
         </div>
 
         <div>
@@ -124,6 +268,11 @@
   <script>
     let teachers = {};
     let teacherSearchMap = {};
+    let teacherSearchItems = [];
+    let teacherAutocompleteFiltered = [];
+    let teacherAutocompleteIndex = -1;
+    let selectedTeacherEmail = '';
+    let teacherAutocompleteReady = false;
 
     async function init() {
       try {
@@ -142,19 +291,181 @@
         .filter(t => t && t.active !== false)
         .sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'ko'));
 
-      const dataList = document.getElementById('teacher-list');
       teacherSearchMap = {};
+      teacherSearchItems = list.map(t => {
+        const name = String(t.name || '').trim();
+        const email = String(t.email || '').trim();
+        const label = `${name} | ${email}`;
+        const item = { name, email, label, emailKey: email.toLowerCase() };
+        teacherSearchMap[label] = item.emailKey;
+        return item;
+      });
 
-      dataList.innerHTML = list.map(t => {
-        const label = `${String(t.name || '').trim()} | ${String(t.email || '').trim()}`;
-        teacherSearchMap[label] = String(t.email || '').trim().toLowerCase();
-        return `<option value="${esc(label)}"></option>`;
-      }).join('');
+      setupTeacherAutocomplete();
+    }
+
+    function teacherSearchText(value) {
+      return String(value || '').trim().toLocaleLowerCase('ko');
+    }
+
+    function getTeacherItemByLabel(label) {
+      const value = String(label || '').trim();
+      return teacherSearchItems.find(item => item.label === value) || null;
+    }
+
+    function updateTeacherSelectionState(item) {
+      const input = document.getElementById('teacher-search');
+      const state = document.getElementById('teacher-selection-state');
+      if (!input || !state) return;
+
+      if (!item) {
+        input.classList.remove('is-selected');
+        state.classList.remove('selected');
+        state.textContent = '검색 결과에서 교사를 선택하세요. | Select a teacher from the results.';
+        return;
+      }
+
+      input.classList.add('is-selected');
+      state.classList.add('selected');
+      state.innerHTML = `<span class="selection-check">✓</span>선택됨 | Selected: ${esc(item.name)} · ${esc(item.email)}`;
+    }
+
+    function closeTeacherSuggestions() {
+      const input = document.getElementById('teacher-search');
+      const menu = document.getElementById('teacher-suggestions');
+      if (!input || !menu) return;
+      menu.hidden = true;
+      input.setAttribute('aria-expanded', 'false');
+      teacherAutocompleteIndex = -1;
+    }
+
+    function setTeacherAutocompleteIndex(index) {
+      const menu = document.getElementById('teacher-suggestions');
+      if (!menu || !teacherAutocompleteFiltered.length) return;
+      teacherAutocompleteIndex = Math.max(0, Math.min(index, teacherAutocompleteFiltered.length - 1));
+      menu.querySelectorAll('.autocomplete-option').forEach((button, i) => {
+        button.classList.toggle('active', i === teacherAutocompleteIndex);
+        button.setAttribute('aria-selected', i === teacherAutocompleteIndex ? 'true' : 'false');
+        if (i === teacherAutocompleteIndex) button.scrollIntoView({ block: 'nearest' });
+      });
+    }
+
+    function renderTeacherSuggestions(forceOpen = false) {
+      const input = document.getElementById('teacher-search');
+      const menu = document.getElementById('teacher-suggestions');
+      if (!input || !menu) return;
+
+      const query = teacherSearchText(input.value);
+      teacherAutocompleteFiltered = teacherSearchItems.filter(item => {
+        if (!query) return true;
+        return teacherSearchText(`${item.name} ${item.email} ${item.label}`).includes(query);
+      }).slice(0, 12);
+
+      if (!teacherAutocompleteFiltered.length) {
+        menu.innerHTML = '<div class="autocomplete-empty">일치하는 교사가 없습니다. | No matching teacher.</div>';
+        teacherAutocompleteIndex = -1;
+      } else {
+        menu.innerHTML = teacherAutocompleteFiltered.map((item, index) => `
+          <button type="button" class="autocomplete-option" role="option" aria-selected="false" data-teacher-index="${index}">
+            <span class="autocomplete-option-name">${esc(item.name)}</span>
+            <span class="autocomplete-option-email">${esc(item.email)}</span>
+          </button>
+        `).join('');
+        teacherAutocompleteIndex = 0;
+        setTeacherAutocompleteIndex(0);
+      }
+
+      if (forceOpen || document.activeElement === input) {
+        menu.hidden = false;
+        input.setAttribute('aria-expanded', 'true');
+      }
+    }
+
+    function selectTeacherSuggestion(item, moveToPassword = true) {
+      if (!item) return;
+      const input = document.getElementById('teacher-search');
+      input.value = item.label;
+      selectedTeacherEmail = item.emailKey;
+      updateTeacherSelectionState(item);
+      closeTeacherSuggestions();
+      if (moveToPassword) setTimeout(() => document.getElementById('pw')?.focus(), 0);
     }
 
     function syncTeacherSelection() {
       const inputValue = (document.getElementById('teacher-search').value || '').trim();
-      return teacherSearchMap[inputValue] || '';
+      const item = getTeacherItemByLabel(inputValue);
+      selectedTeacherEmail = item ? item.emailKey : '';
+      updateTeacherSelectionState(item);
+      return selectedTeacherEmail;
+    }
+
+    function setupTeacherAutocomplete() {
+      if (teacherAutocompleteReady) return;
+      const shell = document.getElementById('teacher-autocomplete');
+      const input = document.getElementById('teacher-search');
+      const menu = document.getElementById('teacher-suggestions');
+      const toggle = document.getElementById('teacher-dropdown-toggle');
+      if (!shell || !input || !menu || !toggle) return;
+      teacherAutocompleteReady = true;
+
+      input.addEventListener('input', () => {
+        const item = getTeacherItemByLabel(input.value);
+        selectedTeacherEmail = item ? item.emailKey : '';
+        updateTeacherSelectionState(item);
+        renderTeacherSuggestions(true);
+      });
+
+      input.addEventListener('focus', () => renderTeacherSuggestions(true));
+
+      input.addEventListener('keydown', event => {
+        if (event.key === 'ArrowDown') {
+          event.preventDefault();
+          if (menu.hidden) renderTeacherSuggestions(true);
+          else setTeacherAutocompleteIndex(teacherAutocompleteIndex + 1);
+          return;
+        }
+        if (event.key === 'ArrowUp') {
+          event.preventDefault();
+          if (menu.hidden) renderTeacherSuggestions(true);
+          else setTeacherAutocompleteIndex(teacherAutocompleteIndex - 1);
+          return;
+        }
+        if (event.key === 'Escape') {
+          closeTeacherSuggestions();
+          return;
+        }
+        if (event.key === 'Enter') {
+          if (!menu.hidden && teacherAutocompleteFiltered.length) {
+            event.preventDefault();
+            selectTeacherSuggestion(teacherAutocompleteFiltered[Math.max(0, teacherAutocompleteIndex)]);
+            return;
+          }
+          if (syncTeacherSelection()) {
+            event.preventDefault();
+            document.getElementById('pw')?.focus();
+          }
+        }
+      });
+
+      menu.addEventListener('mousedown', event => event.preventDefault());
+      menu.addEventListener('click', event => {
+        const button = event.target.closest('[data-teacher-index]');
+        if (!button) return;
+        selectTeacherSuggestion(teacherAutocompleteFiltered[Number(button.dataset.teacherIndex)]);
+      });
+
+      toggle.addEventListener('click', () => {
+        if (menu.hidden) {
+          input.focus();
+          renderTeacherSuggestions(true);
+        } else {
+          closeTeacherSuggestions();
+        }
+      });
+
+      document.addEventListener('mousedown', event => {
+        if (!shell.contains(event.target)) closeTeacherSuggestions();
+      });
     }
 
     function normalizeRoles(roles) {
