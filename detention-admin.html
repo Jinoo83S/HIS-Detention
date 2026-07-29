@@ -1367,7 +1367,9 @@
       const p=getDetentionAdminPermissions();
       const teacher=getAdminCenterSessionTeacher();
       const user=document.getElementById('admin-center-user');
-      if(user) user.textContent=(teacher.name|| (p.isAdmin?'관리자':'Master'))+' · '+(p.isAdmin?'Admin':'Master')+(teacher.email?' · '+teacher.email:'');
+      const userLabel=(teacher.name|| (p.isAdmin?'관리자':'Master'))+' · '+(p.isAdmin?'Admin':'Master')+(teacher.email?' · '+teacher.email:'');
+      // MutationObserver가 같은 문구를 반복해서 다시 쓰며 무한 갱신되는 것을 방지합니다.
+      if(user&&user.textContent!==userLabel) user.textContent=userLabel;
       const reset=document.getElementById('btn-admin-reset-db');
       if(reset){reset.disabled=!p.canReset;reset.style.display=p.canReset?'inline-flex':'none';}
       document.querySelectorAll('[onclick*="toggleSelectedAdminDeleted"],[onclick*="toggleCommitteeDeleted"],[onclick*="markEntryDeleted"],[onclick*="markNoticeDeleted"],[onclick*="markRecoveryDeleted"]').forEach(btn=>{
@@ -2498,8 +2500,17 @@
       }
     }
 
-    const permissionObserver=new MutationObserver(()=>applyDetentionAdminUiPermissions());
+    let permissionUiFrame=0;
+    const permissionObserver=new MutationObserver(()=>{
+      // 대량 행 렌더링 중 발생하는 여러 DOM 변경을 한 번의 권한 UI 갱신으로 합칩니다.
+      if(permissionUiFrame)return;
+      permissionUiFrame=requestAnimationFrame(()=>{
+        permissionUiFrame=0;
+        applyDetentionAdminUiPermissions();
+      });
+    });
     permissionObserver.observe(document.body,{childList:true,subtree:true});
+    applyDetentionAdminUiPermissions();
     bootstrapDetentionAdmin();
   </script>
 </body>
