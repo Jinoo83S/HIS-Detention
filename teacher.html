@@ -2269,6 +2269,11 @@
       try {
         await loadData();
         setupRealtimeListeners();
+        const requestedTab = new URLSearchParams(location.search).get('tab');
+        if (requestedTab) {
+          activateTeacherTab(requestedTab, {silent:false});
+          history.replaceState(null, '', location.pathname + location.hash);
+        }
       } catch (e) {
         console.error('Detention screen initialization stopped:', e);
       }

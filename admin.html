@@ -77,14 +77,35 @@
     #admin-screen .card-title{color:#0f2a67;font-weight:900;}
     @media(max-width:760px){.admin-center-topbar{align-items:flex-start;flex-direction:column}.admin-center-nav{overflow-x:auto;padding:0 8px}.admin-center-nav a,.admin-center-nav button{white-space:nowrap;padding:0 10px}}
 
-    .admin-dashboard-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:12px}
-    .admin-dashboard-card{background:#fff;border:1px solid var(--bd);border-radius:12px;padding:16px;box-shadow:0 3px 12px rgba(15,23,42,.05)}
-    .admin-dashboard-label{font-size:12px;color:var(--sb);font-weight:700}.admin-dashboard-value{margin-top:6px;font-size:26px;font-weight:900;color:#142b70}
     .admin-dashboard-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
     .admin-dashboard-actions button,.admin-dashboard-actions a{min-height:58px;display:flex;align-items:center;justify-content:center;text-align:center;text-decoration:none}
     .admin-page-heading{margin:0 0 12px}.admin-page-heading h2{margin:0;color:#142b70;font-size:20px}.admin-page-heading p{margin:4px 0 0;color:var(--sb);font-size:12px}
-    @media(max-width:900px){.admin-dashboard-grid,.admin-dashboard-actions{grid-template-columns:1fr 1fr}}
-    @media(max-width:560px){.admin-dashboard-grid,.admin-dashboard-actions{grid-template-columns:1fr}}
+
+    /* 관리자 홈: 처리 업무 중심 요약 */
+    .admin-home-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:12px}
+    .admin-home-head h2{margin:0;color:#142b70;font-size:19px;line-height:1.25}
+    .admin-home-head h2 span{font-size:12px;font-weight:700;color:var(--sb);margin-left:5px}
+    .admin-home-head p{margin:4px 0 0;color:var(--sb);font-size:11px}
+    .admin-home-totals{display:flex;align-items:center;gap:7px;color:var(--sb);font-size:11px;white-space:nowrap}
+    .admin-home-totals strong{color:#142b70;font-size:12px}
+    .admin-task-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:12px}
+    .admin-task-card{min-height:86px;padding:13px 14px;border:1px solid #d8deea;border-radius:11px;background:#fff;color:inherit;text-decoration:none;display:flex;align-items:center;justify-content:space-between;gap:10px;box-sizing:border-box;transition:background .15s,border-color .15s,transform .15s}
+    .admin-task-card:hover{background:#f5f8ff;border-color:#9db9ef;transform:translateY(-1px)}
+    .admin-task-title{font-size:14px;font-weight:900;color:#142b70;line-height:1.25}
+    .admin-task-sub{margin-top:4px;font-size:10px;color:var(--sb);line-height:1.3}
+    .admin-task-value{min-width:44px;text-align:right;font-size:25px;font-weight:900;color:#142b70;line-height:1}.admin-task-value.compact{min-width:64px;font-size:11px;line-height:1.25}
+    .admin-management-card{background:#fff;border:1px solid var(--bd);border-radius:12px;overflow:hidden;box-shadow:0 3px 12px rgba(15,23,42,.05)}
+    .admin-management-title{padding:10px 13px;border-bottom:1px solid var(--bd);font-size:13px;font-weight:900;color:#142b70}
+    .admin-management-title span{font-size:10px;font-weight:700;color:var(--sb);margin-left:5px}
+    .admin-management-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+    .admin-management-item{appearance:none;border:0;border-right:1px solid var(--bd);border-bottom:1px solid var(--bd);background:#fff;padding:12px 13px;text-align:left;text-decoration:none;color:inherit;display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer;font-family:inherit;min-height:66px;box-sizing:border-box}
+    .admin-management-item:nth-child(2n){border-right:0}.admin-management-item:nth-last-child(-n+2){border-bottom:0}
+    .admin-management-item:hover{background:#f5f8ff}
+    .admin-management-main{font-size:13px;font-weight:900;color:#142b70}
+    .admin-management-sub{margin-top:3px;font-size:10px;color:var(--sb);line-height:1.35}
+    .admin-management-arrow{font-size:19px;color:#7b8ba9;line-height:1}
+    @media(max-width:900px){.admin-task-grid{grid-template-columns:1fr 1fr}.admin-dashboard-actions{grid-template-columns:1fr 1fr}}
+    @media(max-width:620px){.admin-home-head{align-items:flex-start;flex-direction:column}.admin-home-totals{white-space:normal}.admin-task-grid,.admin-management-list{grid-template-columns:1fr}.admin-management-item{border-right:0}.admin-management-item:nth-last-child(-n+2){border-bottom:1px solid var(--bd)}.admin-management-item:last-child{border-bottom:0}.admin-dashboard-actions{grid-template-columns:1fr}}
   
     /* Unified administrator center shell */
     .admin-center-topbar{min-height:76px;background:linear-gradient(110deg,#102863,#173b86);color:#fff;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;gap:16px;box-sizing:border-box;}
@@ -125,24 +146,21 @@
   <div id="admin-screen" class="hidden">
     <header class="admin-center-topbar">
       <div class="admin-center-brand">
-        <h1>한동글로벌학교 관리자 센터</h1>
-        <div class="sub">교사·학생·디텐션 운영 데이터를 한 곳에서 관리합니다.</div>
+        <h1>관리자 센터 <span style="font-size:13px;font-weight:500;color:#dbe7ff;">Admin Center</span></h1>
+        <div id="admin-center-identity" class="sub">관리자 · Admin</div>
       </div>
       <div class="admin-center-actions">
-        <span class="admin-center-user">관리자</span>
-        <button class="btn btn-secondary" onclick="refreshAll()">새로고침</button>
-        <a href="import-data.html" class="btn btn-secondary" style="text-decoration:none;display:inline-flex;align-items:center;">데이터 가져오기</a>
-        <button class="btn btn-danger" onclick="adminLogout()">로그아웃</button>
+        <a href="teacher.html" class="btn btn-secondary">디텐션 메인 | Main</a>
+        <button class="btn btn-secondary" onclick="refreshAll()">새로고침 | Refresh</button>
+        <button class="btn btn-danger" onclick="adminLogout()">로그아웃 | Logout</button>
       </div>
     </header>
     <nav class="admin-center-nav" aria-label="관리자 메뉴">
-      <button type="button" data-admin-tab="home" onclick="switchAdminView('home')">관리자 홈</button>
-      <button type="button" data-admin-tab="teachers" onclick="switchAdminView('teachers')">교사 계정</button>
-      <button type="button" data-admin-tab="students" onclick="switchAdminView('students')">학생 명단</button>
-      <a href="detention-admin.html#entries" data-admin-link="detention">디텐션 DB</a>
-      <a href="teacher.html" data-admin-link="teacher-main">디텐션 메인</a>
-      <button type="button" data-admin-tab="csv" onclick="switchAdminView('csv')">CSV 업로드</button>
-      <button type="button" data-admin-tab="settings" onclick="switchAdminView('settings')">설정</button>
+      <button type="button" data-admin-tab="home" onclick="switchAdminView('home')">홈 | Home</button>
+      <button type="button" data-admin-tab="teachers" onclick="switchAdminView('teachers')">교사 계정 | Teachers</button>
+      <button type="button" data-admin-tab="students" onclick="switchAdminView('students')">학생 명단 | Students</button>
+      <a href="detention-admin.html#entries" data-admin-link="detention">디텐션 DB | Database</a>
+      <button type="button" data-admin-tab="settings" onclick="switchAdminView('settings')">설정 | Settings</button>
     </nav>
 
     <div class="content">
@@ -178,24 +196,56 @@
       </div>
 
       <div id="tab-home" class="tab-panel active">
-        <div class="admin-page-heading"><h2>관리자 홈</h2><p>학교 운영 데이터를 한눈에 확인하고 필요한 관리 화면으로 이동합니다.</p></div>
-        <div class="admin-dashboard-grid">
-          <div class="admin-dashboard-card"><div class="admin-dashboard-label">학생 수</div><div id="dash-students" class="admin-dashboard-value">-</div></div>
-          <div class="admin-dashboard-card"><div class="admin-dashboard-label">교사 수</div><div id="dash-teachers" class="admin-dashboard-value">-</div></div>
-          <div class="admin-dashboard-card"><div class="admin-dashboard-label">디텐션 대기</div><div id="dash-pending" class="admin-dashboard-value">-</div></div>
-          <div class="admin-dashboard-card"><div class="admin-dashboard-label">알림 미완료</div><div id="dash-notices" class="admin-dashboard-value">-</div></div>
-          <div class="admin-dashboard-card"><div class="admin-dashboard-label">회복교육 진행</div><div id="dash-recovery" class="admin-dashboard-value">-</div></div>
-          <div class="admin-dashboard-card"><div class="admin-dashboard-label">위원회 진행</div><div id="dash-committee" class="admin-dashboard-value">-</div></div>
+        <div class="admin-home-head">
+          <div>
+            <h2>오늘의 관리 현황 <span>Management Status</span></h2>
+            <p>처리가 필요한 항목을 선택하세요. | Select an item that needs attention.</p>
+          </div>
+          <div class="admin-home-totals" aria-label="전체 학생 및 교사 수">
+            <span>학생 <strong id="dash-students">-</strong></span><span>·</span><span>교사 <strong id="dash-teachers">-</strong></span>
+          </div>
         </div>
-        <div class="card">
-          <div class="card-title">빠른 이동</div>
-          <div class="admin-dashboard-actions">
-            <button class="btn btn-secondary" onclick="switchAdminView('teachers')">교사 계정 관리</button>
-            <button class="btn btn-secondary" onclick="switchAdminView('students')">학생 명단 관리</button>
-            <a class="btn btn-secondary" href="detention-admin.html#entries">디텐션 DB 관리</a>
-            <button class="btn btn-secondary" onclick="switchAdminView('csv')">CSV 업로드</button>
-            <button class="btn btn-secondary" onclick="switchAdminView('settings')">설정</button>
-            <button class="btn btn-secondary" onclick="refreshAll()">전체 새로고침</button>
+
+        <div class="admin-task-grid">
+          <a class="admin-task-card" href="detention-admin.html#entries">
+            <div><div class="admin-task-title">디텐션 확정</div><div class="admin-task-sub">Detention Review</div></div>
+            <div id="dash-pending" class="admin-task-value">-</div>
+          </a>
+          <a class="admin-task-card" href="teacher.html?tab=notify">
+            <div><div class="admin-task-title">알림 미완료</div><div class="admin-task-sub">Pending Notices</div></div>
+            <div id="dash-notices" class="admin-task-value">-</div>
+          </a>
+          <a class="admin-task-card" href="teacher.html?tab=recovery-view">
+            <div><div class="admin-task-title">회복교육 진행</div><div class="admin-task-sub">Active Recovery</div></div>
+            <div id="dash-recovery" class="admin-task-value">-</div>
+          </a>
+          <a class="admin-task-card" href="teacher.html?tab=discipline">
+            <div><div class="admin-task-title">위원회 진행</div><div class="admin-task-sub">Active Committee</div></div>
+            <div id="dash-committee" class="admin-task-value">-</div>
+          </a>
+        </div>
+
+        <div class="admin-management-card">
+          <div class="admin-management-title">관리 메뉴 <span>Management</span></div>
+          <div class="admin-management-list">
+            <button type="button" class="admin-management-item" onclick="switchAdminView('teachers')">
+              <span><span class="admin-management-main">교사 계정·권한</span><span class="admin-management-sub">교사 정보와 역할 권한 관리 | Teacher accounts and roles</span></span><span class="admin-management-arrow">›</span>
+            </button>
+            <button type="button" class="admin-management-item" onclick="switchAdminView('students')">
+              <span><span class="admin-management-main">학생 명단</span><span class="admin-management-sub">학생·학반·보호자 이메일 관리 | Student roster and emails</span></span><span class="admin-management-arrow">›</span>
+            </button>
+            <button type="button" class="admin-management-item" onclick="switchAdminView('csv')">
+              <span><span class="admin-management-main">CSV 업로드</span><span class="admin-management-sub">교사·학생 명단 대량 등록 | Bulk roster upload</span></span><span class="admin-management-arrow">›</span>
+            </button>
+            <a class="admin-management-item" href="import-data.html">
+              <span><span class="admin-management-main">데이터 가져오기</span><span class="admin-management-sub">기존 운영 데이터 가져오기 | Import existing data</span></span><span class="admin-management-arrow">›</span>
+            </a>
+            <a class="admin-management-item" href="detention-admin.html#entries">
+              <span><span class="admin-management-main">디텐션 DB</span><span class="admin-management-sub">입력 기록 확인·확정·반려 | Review detention records</span></span><span class="admin-management-arrow">›</span>
+            </a>
+            <button type="button" class="admin-management-item" onclick="switchAdminView('settings')">
+              <span><span class="admin-management-main">설정</span><span class="admin-management-sub">관리자 비밀번호와 운영 설정 | Admin settings</span></span><span class="admin-management-arrow">›</span>
+            </button>
           </div>
         </div>
       </div>
@@ -604,6 +654,25 @@
       return getSessionRoleNames().some(role => role === 'admin' || role === 'master');
     }
 
+    function updateAdminIdentity() {
+      const el = document.getElementById('admin-center-identity');
+      if (!el) return;
+      if (sessionStorage.getItem('his_admin_session') === '1') {
+        el.textContent = '관리자 · Admin';
+        return;
+      }
+      try {
+        const current = JSON.parse(sessionStorage.getItem('his_teacher') || '{}');
+        const roles = normalizeRoles(current.roles ?? current.role ?? []);
+        const roleLabel = roles.includes('admin') ? 'Admin' : (roles.includes('master') ? 'Master' : 'Manager');
+        const name = String(current.name || '관리자').trim();
+        const email = String(current.email || '').trim();
+        el.textContent = `${name} · ${roleLabel}${email ? ' · ' + email : ''}`;
+      } catch (e) {
+        el.textContent = '관리자 · Admin';
+      }
+    }
+
     async function checkAdmin() {
       try { await ensureFirebaseAuth(); }
       catch (e) { console.error(e); return toast('Firebase 인증에 실패했습니다.\nFirebase authentication failed.', 'err'); }
@@ -615,6 +684,7 @@
       sessionStorage.setItem('his_admin_session', '1');
       document.getElementById('login-screen').classList.add('hidden');
       document.getElementById('admin-screen').classList.remove('hidden');
+      updateAdminIdentity();
       await refreshAll();
       applyAdminHash();
     }
@@ -652,10 +722,10 @@
       document.getElementById('pw-change-box').classList.add('hidden');
     }
 
-    function setDash(id, value) { const el=document.getElementById(id); if(el) el.textContent = value; }
+    function setDash(id, value) { const el=document.getElementById(id); if(!el) return; el.textContent = value; el.classList.toggle('compact', el.classList.contains('admin-task-value') && String(value).length > 4); }
     function renderDashboardBase() {
-      setDash('dash-students', `${studentRows.filter(r=>!r._delete).length}명`);
-      setDash('dash-teachers', `${teacherRows.filter(r=>!r._delete).length}명`);
+      setDash('dash-students', studentRows.filter(r=>!r._delete).length);
+      setDash('dash-teachers', teacherRows.filter(r=>!r._delete).length);
     }
     async function loadDashboardOperationalCounts() {
       const specs = [
@@ -665,12 +735,13 @@
         ['committeeRecords','dash-committee', obj => Object.values(obj||{}).filter(v => !v?._delete && !v.completedAt && !v.completedDate && String(v.status||'').toLowerCase() !== 'completed').length]
       ];
       await Promise.all(specs.map(async ([path,id,count]) => {
-        try { const snap=await db.ref(path).once('value'); setDash(id, `${count(snap.val())}건`); }
+        try { const snap=await db.ref(path).once('value'); setDash(id, count(snap.val())); }
         catch(e) { setDash(id, '확인 불가'); console.warn('dashboard path failed', path, e); }
       }));
     }
 
     async function refreshAll() {
+      updateAdminIdentity();
       try {
         await ensureFirebaseAuth();
         const [t, s] = await Promise.all([
@@ -1136,7 +1207,7 @@
         if(snap.val()) ADMIN_PW = snap.val();
       }catch(e){ console.warn('adminConfig load failed, using default'); }
 
-      if (hasAdminSession) { applyAdminHash(); refreshAll(); }
+      if (hasAdminSession) { updateAdminIdentity(); applyAdminHash(); refreshAll(); }
     })();
   </script>
 </body>
