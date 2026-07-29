@@ -375,7 +375,11 @@
     .violation-category-card{border:1px solid #d7e0ee;border-radius:11px;background:#fff;min-height:76px;padding:10px 7px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;cursor:pointer;color:#273858;font-weight:800;font-size:11px;text-align:center;transition:.15s ease}
     .violation-category-card:hover{border-color:#7eabff;background:#f7faff;transform:translateY(-1px)}
     .violation-category-card.active{border:2px solid #1662e8;background:#edf5ff;color:#0b4dc2;box-shadow:0 3px 10px rgba(22,98,232,.12)}
-    .violation-category-icon{font-size:22px;line-height:1}.violation-category-name{display:-webkit-box;line-clamp:2;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.25}
+    .violation-category-icon{font-size:22px;line-height:1}.violation-category-name{display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:0;line-height:1.12;overflow:hidden}
+    .violation-category-name-ko{font-weight:800;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+    .violation-category-name-en{font-size:.82em;font-weight:600;color:#65738a;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+    .violation-category-card.active .violation-category-name-en{color:#315fae}
+    .entry-title-en{font-size:10px;color:#718096;font-weight:700;margin-left:3px}
     .violation-choice-head{display:flex;justify-content:space-between;align-items:center;margin:4px 0 7px;color:#26385d;font-size:12px}
     .violation-item-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;max-height:232px;overflow:auto;padding:2px 3px 3px 2px;overscroll-behavior:contain}
     .violation-item-card{position:relative;border:1px solid #dbe3ef;border-radius:10px;background:#fff;padding:10px 48px 10px 11px;min-height:58px;text-align:left;cursor:pointer;color:#26354f;transition:.14s ease;overflow:hidden}
@@ -493,7 +497,8 @@
     #tab-entry .violation-category-cards{grid-template-columns:repeat(6,minmax(68px,1fr));gap:5px;margin-bottom:7px}
     #tab-entry .violation-category-card{min-height:46px;padding:5px 3px;border-radius:8px;gap:2px;font-size:9.5px}
     #tab-entry .violation-category-icon{font-size:15px}
-    #tab-entry .violation-category-name{line-height:1.15;line-clamp:1;-webkit-line-clamp:1}
+    #tab-entry .violation-category-name{line-height:1.08}
+    #tab-entry .violation-category-name-en{font-size:7.5px}
     #tab-entry .violation-choice-head{margin:2px 0 4px;font-size:11px}
     #tab-entry .violation-item-cards{gap:5px;max-height:118px;padding:1px}
     #tab-entry .violation-item-card{min-height:42px;padding:7px 43px 7px 8px;border-radius:8px}
@@ -660,78 +665,64 @@
 
     <!-- ENTRY -->
     <div id="tab-entry" class="tab-panel active">
-      <details class="entry-beginner-guide">
-        <summary><span class="entry-info-icon">i</span><strong>처음 사용 안내</strong><span class="entry-guide-summary">학생 검색 → 위반 선택 → 점수 확인 → 저장</span></summary>
-        <div class="entry-guide-body">학생 이름이나 학반을 검색하고, 위반 구분과 위반행위를 선택하세요. 점수가 자동 산정되는지 직접 입력해야 하는지 확인한 뒤 저장합니다.</div>
-      </details>
-
       <div class="entry-redesign-grid">
         <section class="entry-main-card" aria-labelledby="entry-main-title">
           <div class="entry-card-head">
             <div id="entry-main-title" class="entry-card-title">디텐션 입력 <small>Detention Entry</small></div>
-            <div class="entry-help">ⓘ 학생 검색 → 위반 선택 → 점수 확인 → 저장</div>
           </div>
 
-          <ol class="entry-steps" aria-label="디텐션 입력 단계">
-            <li class="entry-step"><span class="entry-step-num">1</span><span class="entry-step-text">학생 검색</span></li>
-            <li class="entry-step"><span class="entry-step-num">2</span><span class="entry-step-text">위반 항목 선택</span></li>
-            <li class="entry-step"><span class="entry-step-num">3</span><span class="entry-step-text">점수 확인</span></li>
-            <li class="entry-step"><span class="entry-step-num">4</span><span class="entry-step-text">메모 입력</span></li>
-            <li class="entry-step"><span class="entry-step-num">5</span><span class="entry-step-text">저장</span></li>
-          </ol>
-
           <div class="entry-section">
-            <div class="entry-section-title"><span class="entry-badge">1</span>학생 검색 <span class="entry-section-help">학생 이름 또는 학반을 입력하여 검색하세요.</span></div>
-            <input id="student-search-input" class="edit-input" list="student-list" placeholder="학생 이름 또는 학반 입력" oninput="syncStudentSelection()">
+            <div class="entry-section-title"><span class="entry-badge">1</span>학생 검색 <span class="entry-title-en">Student Search</span><span class="entry-section-help">이름 또는 학반을 입력하세요. | Enter a name or class.</span></div>
+            <input id="student-search-input" class="edit-input" list="student-list" placeholder="학생 이름 또는 학반 | Student name or class" oninput="syncStudentSelection()">
             <datalist id="student-list"></datalist>
           </div>
 
           <div class="entry-section">
-            <div class="entry-section-title"><span class="entry-badge">2</span>위반 항목 선택 <span class="entry-section-help">먼저 구분을 누른 뒤 해당 위반행위를 선택하세요.</span></div>
+            <div class="entry-section-title"><span class="entry-badge">2</span>위반 항목 선택 <span class="entry-title-en">Select Violation</span><span class="entry-section-help">구분을 선택한 후 위반행위를 선택하세요. | Choose a category, then a violation.</span></div>
             <select id="category-select" class="entry-native-select" aria-hidden="true" tabindex="-1"></select>
             <select id="violation-select" class="entry-native-select" aria-hidden="true" tabindex="-1"></select>
-            <div id="category-card-list" class="violation-category-cards" role="list" aria-label="위반 구분"></div>
-            <div class="violation-choice-head"><strong>위반행위</strong><span id="violation-choice-count" class="small"></span></div>
-            <div id="violation-card-list" class="violation-item-cards" role="listbox" aria-label="위반행위"></div>
+            <div id="category-card-list" class="violation-category-cards" role="list" aria-label="위반 구분 | Violation category"></div>
+            <div class="violation-choice-head"><strong>위반행위 | Violation</strong><span id="violation-choice-count" class="small"></span></div>
+            <div id="violation-card-list" class="violation-item-cards" role="listbox" aria-label="위반행위 | Violation"></div>
             <div class="selected-violation-detail-wrap">
               <div id="selected-violation-detail" class="selected-violation-detail" aria-live="polite"></div>
-              <button id="selected-violation-toggle" type="button" class="selected-violation-toggle" onclick="toggleSelectedViolationDetail()" aria-expanded="false" hidden>전체 내용 보기</button>
+              <button id="selected-violation-toggle" type="button" class="selected-violation-toggle" onclick="toggleSelectedViolationDetail()" aria-expanded="false" hidden>전체 내용 | Full text</button>
             </div>
           </div>
 
           <div class="entry-section">
-            <div class="entry-section-title"><span class="entry-badge">3</span>점수 확인 <span class="entry-section-help">자동 산정인지 직접 입력이 필요한지 아래 안내를 확인하세요.</span></div>
+            <div class="entry-section-title"><span class="entry-badge">3</span>점수 확인 <span class="entry-title-en">Score</span><span class="entry-section-help">자동 산정 또는 직접 입력 여부를 확인하세요. | Check whether the score is automatic or manual.</span></div>
             <div id="points-mode-panel" class="points-mode-panel mode-empty">
               <div class="points-mode-summary">
-                <span id="points-mode-badge" class="points-mode-badge">항목 선택 필요</span>
-                <strong id="points-mode-title">위반행위를 먼저 선택하세요.</strong>
-                <span id="points-mode-description">선택한 기준에 따라 점수 입력 방식이 자동으로 바뀝니다.</span>
+                <span id="points-mode-badge" class="points-mode-badge">항목 선택 | Select item</span>
+                <strong id="points-mode-title">위반행위를 선택하세요. | Select a violation.</strong>
+                <span id="points-mode-description">기준표에 따라 점수 입력 방식이 자동 설정됩니다. | The scoring mode is set automatically.</span>
               </div>
               <div class="entry-points-layout">
-                <div class="entry-point-card auto-card"><label class="label">기준표 점수</label><div id="auto-points" class="entry-point-value">-</div><div id="auto-point-caption" class="point-caption">기준표에 등록된 점수</div></div>
+                <div class="entry-point-card auto-card"><label class="label">기준표 점수 | Standard</label><div id="auto-points" class="entry-point-value">-</div><div id="auto-point-caption" class="point-caption">기준표에 등록된 점수 | Standard score</div></div>
                 <div class="entry-point-arrow">→</div>
-                <div id="manual-point-card" class="entry-point-card manual-card"><label class="label" for="manual-points">최종 적용 점수</label><input id="manual-points" type="number" min="0" class="edit-input" value="0"><div id="manual-point-caption" class="point-caption">항목 선택 후 자동 설정됩니다.</div></div>
-                <div id="entry-point-tip" class="entry-point-tip">위반행위를 선택하면 자동점수 또는 직접 입력 안내가 표시됩니다.</div>
+                <div id="manual-point-card" class="entry-point-card manual-card"><label class="label" for="manual-points">최종 적용 점수 | Final Score</label><input id="manual-points" type="number" min="0" class="edit-input" value="0"><div id="manual-point-caption" class="point-caption">항목 선택 후 자동 설정 | Set after selection</div></div>
+                <div id="entry-point-tip" class="entry-point-tip">위반행위를 선택하면 점수 입력 안내가 표시됩니다. | Select a violation to see scoring instructions.</div>
               </div>
             </div>
           </div>
 
           <div class="entry-section entry-bottom-grid">
             <div>
-              <div class="entry-section-title"><span class="entry-badge">4</span>메모 입력 <span class="entry-section-help">선택사항 · 최대 300자</span></div>
-              <textarea id="memo" class="edit-input" maxlength="300" placeholder="상황 설명이나 추가 내용을 입력하세요."></textarea>
+              <div class="entry-section-title"><span class="entry-badge">4</span>메모 <span class="entry-title-en">Memo</span><span class="entry-section-help">선택사항 · 최대 300자 | Optional · Up to 300 characters</span></div>
+              <textarea id="memo" class="edit-input" maxlength="300" placeholder="상황 설명 또는 추가 내용 | Situation details or additional notes"></textarea>
             </div>
             <div>
-              <div class="entry-section-title"><span class="entry-badge">5</span>기본 정보</div>
+              <div class="entry-section-title"><span class="entry-badge">5</span>기본 정보 <span class="entry-title-en">Basic Information</span></div>
               <div class="entry-basic-grid">
                 <div>
-                  <label class="label" for="entry-teacher">교사</label>
-                  <input id="entry-teacher" class="edit-input" list="entry-teacher-list" placeholder="교사 검색" oninput="syncEntryTeacher()">
+                  <label class="label" for="entry-teacher">교사 | Teacher</label>
+                  <input id="entry-teacher" class="edit-input" list="entry-teacher-list" placeholder="교사 검색 | Search teacher" oninput="syncEntryTeacher()">
                   <datalist id="entry-teacher-list"></datalist>
-                  <div class="small" id="entry-teacher-hint" style="display:none">admin/master 권한으로 변경 가능</div>
+                  <div class="small" id="entry-teacher-hint" style="display:none">Admin/Master만 변경 가능 | Editable by Admin/Master</div>
                 </div>
                 <div>
-                  <label class="label" for="entry-date">날짜</label>
+                  <label class="label" for="entry-date">날짜 | Date</label>
                   <input id="entry-date" type="date" class="edit-input">
                 </div>
               </div>
@@ -739,18 +730,18 @@
           </div>
 
           <div class="entry-save-row">
-            <button class="btn btn-secondary" onclick="resetEntryForm()">초기화</button>
-            <button class="btn btn-primary" onclick="saveDetention()">💾 디텐션 저장</button>
+            <button class="btn btn-secondary" onclick="resetEntryForm()">초기화 | Reset</button>
+            <button class="btn btn-primary" onclick="saveDetention()">💾 디텐션 저장 | Save Entry</button>
           </div>
         </section>
 
         <aside class="entry-recent-card" aria-labelledby="recent-entry-title">
           <div class="entry-card-head">
-            <div id="recent-entry-title" class="entry-card-title" style="font-size:16px;">최근 입력 내역</div>
+            <div id="recent-entry-title" class="entry-card-title" style="font-size:16px;">최근 입력 내역 <small>Recent Entries</small></div>
             <span id="recent-entry-scope" class="small" style="font-weight:700;color:#5b657a;"></span>
           </div>
           <div id="recent-entry-list" class="recent-entry-list"></div>
-          <button class="btn btn-secondary entry-recent-more" type="button" data-tab="all" onclick="activateTab('all')">전체 보기</button>
+          <button class="btn btn-secondary entry-recent-more" type="button" data-tab="all" onclick="activateTab('all')">전체 보기 | View All</button>
         </aside>
       </div>
 
@@ -1885,7 +1876,39 @@
         .sort((a,b)=>String(b.completedAt || '').localeCompare(String(a.completedAt || '')));
     }
 
-    function updateManualPointsMode(){const input=document.getElementById('manual-points'),panel=document.getElementById('points-mode-panel'),badge=document.getElementById('points-mode-badge'),title=document.getElementById('points-mode-title'),desc=document.getElementById('points-mode-description'),caption=document.getElementById('manual-point-caption'),tip=document.getElementById('entry-point-tip'),std=getSelectedStandard();if(!input||!panel)return;panel.classList.remove('mode-empty','mode-auto','mode-manual');if(!std){panel.classList.add('mode-empty');input.disabled=true;input.value='0';badge.textContent='항목 선택 필요';title.textContent='위반행위를 먼저 선택하세요.';desc.textContent='선택한 기준에 따라 점수 입력 방식이 자동으로 바뀝니다.';caption.textContent='항목 선택 후 자동 설정됩니다.';tip.textContent='위반행위를 선택하면 자동점수 또는 직접 입력 안내가 표시됩니다.';return;}const raw=String(std.autoPoints||'').trim(),m=raw.match(/^(\d+)\s*-\s*(\d+)$/);if(m){panel.classList.add('mode-manual');input.disabled=false;input.readOnly=false;input.min=m[1];input.max=m[2];if(Number(input.value)<Number(m[1])||Number(input.value)>Number(m[2]))input.value='';badge.textContent='직접 입력 필수';title.textContent=`${raw}점 범위에서 최종 점수를 입력하세요.`;desc.textContent='상황의 정도를 판단하여 담당 교사가 점수를 결정합니다.';caption.textContent=`허용 범위: ${raw}점 · 입력 필수`;tip.textContent='저장 전에 최종 적용 점수를 반드시 입력해야 합니다.';}else{panel.classList.add('mode-auto');input.disabled=true;input.readOnly=true;input.removeAttribute('max');input.min='0';const point=raw.includes(',')?getAutoChoicePoint(std):Number(raw||0);input.value=String(point||0);badge.textContent='자동 산정';title.textContent=`최종 점수 ${point||0}점이 자동 적용됩니다.`;desc.textContent=raw.includes(',')?'동일 위반의 이전 기록 횟수를 확인해 자동으로 점수를 선택했습니다.':'기준표의 고정 점수가 자동으로 적용됩니다.';caption.textContent='직접 입력할 필요 없음';tip.textContent='자동 산정된 점수로 저장됩니다. 입력칸은 수정할 수 없습니다.';}}
+    function updateManualPointsMode(){
+      const input=document.getElementById('manual-points'),panel=document.getElementById('points-mode-panel'),badge=document.getElementById('points-mode-badge'),title=document.getElementById('points-mode-title'),desc=document.getElementById('points-mode-description'),caption=document.getElementById('manual-point-caption'),tip=document.getElementById('entry-point-tip'),std=getSelectedStandard();
+      if(!input||!panel)return;
+      panel.classList.remove('mode-empty','mode-auto','mode-manual');
+      if(!std){
+        panel.classList.add('mode-empty');input.disabled=true;input.value='0';
+        badge.textContent='항목 선택 | Select item';
+        title.textContent='위반행위를 선택하세요. | Select a violation.';
+        desc.textContent='기준표에 따라 점수 입력 방식이 자동 설정됩니다. | The scoring mode is set automatically.';
+        caption.textContent='항목 선택 후 자동 설정 | Set after selection';
+        tip.textContent='위반행위를 선택하면 점수 입력 안내가 표시됩니다. | Select a violation to see scoring instructions.';
+        return;
+      }
+      const raw=String(std.autoPoints||'').trim(),m=raw.match(/^(\d+)\s*-\s*(\d+)$/);
+      if(m){
+        panel.classList.add('mode-manual');input.disabled=false;input.readOnly=false;input.min=m[1];input.max=m[2];
+        if(Number(input.value)<Number(m[1])||Number(input.value)>Number(m[2]))input.value='';
+        badge.textContent='직접 입력 | Manual';
+        title.textContent=`${raw}점 범위에서 입력 | Enter ${raw} points`;
+        desc.textContent='상황의 정도에 맞는 최종 점수를 입력하세요. | Enter the final score based on severity.';
+        caption.textContent=`허용 ${raw}점 · 필수 | Allowed ${raw} · Required`;
+        tip.textContent='저장 전에 최종 점수를 입력하세요. | Enter the final score before saving.';
+      }else{
+        panel.classList.add('mode-auto');input.disabled=true;input.readOnly=true;input.removeAttribute('max');input.min='0';
+        const point=raw.includes(',')?getAutoChoicePoint(std):Number(raw||0);input.value=String(point||0);
+        badge.textContent='자동 산정 | Auto';
+        title.textContent=`최종 ${point||0}점 자동 적용 | ${point||0} points applied automatically`;
+        desc.textContent=raw.includes(',')?'이전 위반 횟수에 따라 점수가 자동 선택됩니다. | The score is selected from prior occurrences.':'기준표의 고정 점수가 적용됩니다. | The standard score is applied.';
+        caption.textContent='직접 입력 불필요 | No manual entry';
+        tip.textContent='자동 산정된 점수로 저장됩니다. | The automatically calculated score will be saved.';
+      }
+    }
+
 
 
     function toggleRecoveryHistory(level){
@@ -2261,15 +2284,16 @@
 
     const CATEGORY_ICON_MAP={'수업':'🔊','표절':'📄','언어':'💬','복장':'👕','두발':'✂️','화장':'💄','시설':'🏫','이성교제':'🤝','흡연':'🚭','음주':'🚫','폭력':'🛡️','교외':'🚌','전자':'💻','그 외':'•••'};
     function categoryIcon(category){const text=String(category||'');const key=Object.keys(CATEGORY_ICON_MAP).find(k=>text.includes(k));return key?CATEGORY_ICON_MAP[key]:'⚑';}
-    function shortCategoryName(category){const text=String(category||'').trim();const korean=(text.match(/^[^A-Za-z]+/)||[''])[0].trim();return korean||text;}
+    function splitCategoryLabel(category){const text=String(category||'').trim();const match=text.match(/^([^A-Za-z]*?)([A-Za-z].*)$/);if(!match)return{ko:text,en:''};return{ko:String(match[1]||'').trim()||text,en:String(match[2]||'').trim()};}
+    function shortCategoryName(category){return splitCategoryLabel(category).ko;}
     function setupSelectors(){const sel=document.getElementById('category-select');const cats=[...new Set(detentionStandards.map(x=>x.category).filter(Boolean))];const prev=sel.value;sel.innerHTML=cats.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');if(prev&&cats.includes(prev))sel.value=prev;renderCategoryCards();renderViolationOptions();}
-    function renderCategoryCards(){const sel=document.getElementById('category-select'),wrap=document.getElementById('category-card-list');if(!sel||!wrap)return;const selected=sel.value;wrap.innerHTML=Array.from(sel.options).map(opt=>{const v=opt.value;return `<button type="button" class="violation-category-card ${v===selected?'active':''}" data-category="${esc(v)}" onclick="selectCategoryCard(this.dataset.category)" title="${esc(v)}"><span class="violation-category-icon">${categoryIcon(v)}</span><span class="violation-category-name">${esc(shortCategoryName(v))}</span></button>`;}).join('');}
+    function renderCategoryCards(){const sel=document.getElementById('category-select'),wrap=document.getElementById('category-card-list');if(!sel||!wrap)return;const selected=sel.value;wrap.innerHTML=Array.from(sel.options).map(opt=>{const v=opt.value,parts=splitCategoryLabel(v);return `<button type="button" class="violation-category-card ${v===selected?'active':''}" data-category="${esc(v)}" onclick="selectCategoryCard(this.dataset.category)" title="${esc(v)}"><span class="violation-category-icon">${categoryIcon(v)}</span><span class="violation-category-name"><span class="violation-category-name-ko">${esc(parts.ko)}</span>${parts.en?`<span class="violation-category-name-en">${esc(parts.en)}</span>`:''}</span></button>`;}).join('');}
     function selectCategoryCard(category){const sel=document.getElementById('category-select');if(!sel)return;sel.value=category;renderCategoryCards();renderViolationOptions();}
     function renderViolationOptions(){const category=document.getElementById('category-select').value,sel=document.getElementById('violation-select'),prev=sel.value,list=detentionStandards.filter(x=>x.category===category);sel.innerHTML=list.map(x=>`<option value="${esc(x.violation)}">${esc(x.violation)}</option>`).join('');if(prev&&list.some(x=>x.violation===prev))sel.value=prev;renderViolationCards();syncAutoPoints();}
-    function renderViolationCards(){const category=document.getElementById('category-select').value,sel=document.getElementById('violation-select'),wrap=document.getElementById('violation-card-list'),count=document.getElementById('violation-choice-count');if(!wrap||!sel)return;const list=detentionStandards.filter(x=>x.category===category),selected=sel.value;if(count)count.textContent=`${list.length}개 항목`;wrap.innerHTML=list.map((x,i)=>{const active=x.violation===selected;return `<button type="button" role="option" aria-selected="${active?'true':'false'}" class="violation-item-card ${active?'active':''}" data-violation-index="${i}" onclick="selectViolationCard(Number(this.dataset.violationIndex))" title="${esc(x.violation)}"><span class="violation-item-title">${esc(x.violation)}</span><span class="violation-item-points">${esc(String(x.autoPoints||'-'))}점</span></button>`;}).join('');updateSelectedViolationDetail();}
+    function renderViolationCards(){const category=document.getElementById('category-select').value,sel=document.getElementById('violation-select'),wrap=document.getElementById('violation-card-list'),count=document.getElementById('violation-choice-count');if(!wrap||!sel)return;const list=detentionStandards.filter(x=>x.category===category),selected=sel.value;if(count)count.textContent=`${list.length}개 | ${list.length} items`;wrap.innerHTML=list.map((x,i)=>{const active=x.violation===selected;return `<button type="button" role="option" aria-selected="${active?'true':'false'}" class="violation-item-card ${active?'active':''}" data-violation-index="${i}" onclick="selectViolationCard(Number(this.dataset.violationIndex))" title="${esc(x.violation)}"><span class="violation-item-title">${esc(x.violation)}</span><span class="violation-item-points">${esc(String(x.autoPoints||'-'))}점</span></button>`;}).join('');updateSelectedViolationDetail();}
     function selectViolationCard(index){const category=document.getElementById('category-select').value,list=detentionStandards.filter(x=>x.category===category),item=list[index];if(!item)return;document.getElementById('violation-select').value=item.violation;renderViolationCards();syncAutoPoints();}
-    function updateSelectedViolationDetail(){const box=document.getElementById('selected-violation-detail'),toggle=document.getElementById('selected-violation-toggle'),std=getSelectedStandard();if(!box)return;if(!std){box.classList.remove('visible','expanded');box.textContent='';if(toggle){toggle.hidden=true;toggle.setAttribute('aria-expanded','false');}return;}const detail=`선택됨: ${std.violation}${std.note?'\n안내: '+std.note:''}`;box.textContent=detail;box.title=detail;box.classList.add('visible');box.classList.remove('expanded');if(toggle){toggle.hidden=detail.length<95;toggle.textContent='전체 내용 보기';toggle.setAttribute('aria-expanded','false');}}
-    function toggleSelectedViolationDetail(){const box=document.getElementById('selected-violation-detail'),toggle=document.getElementById('selected-violation-toggle');if(!box||!toggle)return;const expanded=box.classList.toggle('expanded');toggle.textContent=expanded?'내용 접기':'전체 내용 보기';toggle.setAttribute('aria-expanded',expanded?'true':'false');}
+    function updateSelectedViolationDetail(){const box=document.getElementById('selected-violation-detail'),toggle=document.getElementById('selected-violation-toggle'),std=getSelectedStandard();if(!box)return;if(!std){box.classList.remove('visible','expanded');box.textContent='';if(toggle){toggle.hidden=true;toggle.setAttribute('aria-expanded','false');}return;}const detail=`선택됨 | Selected: ${std.violation}${std.note?'\n안내 | Note: '+std.note:''}`;box.textContent=detail;box.title=detail;box.classList.add('visible');box.classList.remove('expanded');if(toggle){toggle.hidden=detail.length<95;toggle.textContent='전체 내용 | Full text';toggle.setAttribute('aria-expanded','false');}}
+    function toggleSelectedViolationDetail(){const box=document.getElementById('selected-violation-detail'),toggle=document.getElementById('selected-violation-toggle');if(!box||!toggle)return;const expanded=box.classList.toggle('expanded');toggle.textContent=expanded?'접기 | Collapse':'전체 내용 | Full text';toggle.setAttribute('aria-expanded',expanded?'true':'false');}
     function getAutoChoicePoint(std){const raw=String((std&&std.autoPoints)||'').trim(),parts=raw.split(',').map(v=>Number(v.trim())).filter(Number.isFinite);if(parts.length<2)return parts[0]||0;const count=countSameDetention(selectedStudentKey||syncStudentSelectionWithoutUpdate(),std.category||'',std.violation||'');return count===0?parts[0]:parts[1];}
     function syncAutoPoints(){const std=getSelectedStandard(),raw=std?String(std.autoPoints||'').trim():'',count=std&&raw.includes(',')&&!raw.includes('-')?countSameDetention(selectedStudentKey||syncStudentSelectionWithoutUpdate(),std.category||'',std.violation||''):0;let display=raw||'-';if(std&&raw.includes(',')&&!raw.includes('-'))display=`${getAutoChoicePoint(std)}점 (${count+1}회차)`;else if(/^\d+$/.test(raw)||raw.includes('-'))display=`${raw}점`;document.getElementById('auto-points').textContent=display;updateSelectedViolationDetail();updateManualPointsMode();}
 
