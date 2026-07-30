@@ -107,6 +107,17 @@ function studentKey(name, className) {
 function requireTeacherSession() {
   const raw = sessionStorage.getItem('his_teacher');
   if (!raw) {
+    // 관리자 화면에서 먼저 로그인한 경우, 관리자 세션을 교사 화면의 Admin 권한으로 이어갑니다.
+    // 별도의 교사 로그인 정보를 만들거나 기존 교사 세션을 덮어쓰지 않습니다.
+    if (sessionStorage.getItem('his_admin_session') === '1') {
+      return {
+        name: '관리자',
+        email: 'admin',
+        homeroom: '',
+        roles: ['admin'],
+        source: 'admin-session'
+      };
+    }
     location.href = 'index.html';
     return null;
   }
@@ -114,6 +125,15 @@ function requireTeacherSession() {
   try {
     return JSON.parse(raw);
   } catch (e) {
+    if (sessionStorage.getItem('his_admin_session') === '1') {
+      return {
+        name: '관리자',
+        email: 'admin',
+        homeroom: '',
+        roles: ['admin'],
+        source: 'admin-session'
+      };
+    }
     location.href = 'index.html';
     return null;
   }

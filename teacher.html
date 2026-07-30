@@ -49,26 +49,26 @@
     .entry-autocomplete-toggle:hover,.entry-autocomplete-toggle:focus-visible{background:#e8eefb}
     .entry-autocomplete-menu{
       position:absolute;left:0;right:0;top:calc(100% + 6px);z-index:3000;
-      max-height:300px;overflow-y:auto;padding:5px;border:2px solid var(--nv2);
-      border-radius:11px;background:#fff;box-shadow:0 14px 34px rgba(15,31,92,.24);
+      max-height:220px;overflow-y:auto;padding:4px;border:1px solid #b8c4dc;
+      border-radius:8px;background:#fff;box-shadow:0 10px 24px rgba(15,31,92,.18);
     }
     .entry-autocomplete-menu[hidden]{display:none}
     .entry-autocomplete-option{
-      width:100%;display:grid;grid-template-columns:52px minmax(0,1fr);align-items:center;gap:10px;
-      padding:9px 11px;border:0;border-radius:8px;background:#fff;color:var(--tx);text-align:left;cursor:pointer;
+      width:100%;display:grid;grid-template-columns:44px minmax(0,1fr);align-items:center;gap:8px;
+      padding:6px 8px;border:0;border-radius:6px;background:#fff;color:var(--tx);text-align:left;cursor:pointer;
     }
     .entry-autocomplete-option + .entry-autocomplete-option{margin-top:2px}
     .entry-autocomplete-option:hover,.entry-autocomplete-option.active{background:var(--nv);color:#fff}
     .entry-autocomplete-class{
-      display:inline-flex;align-items:center;justify-content:center;min-height:28px;padding:3px 7px;
-      border-radius:7px;background:#e8eefb;color:var(--nv);font-size:12px;font-weight:900;
+      display:inline-flex;align-items:center;justify-content:center;min-height:24px;padding:2px 6px;
+      border-radius:6px;background:#e8eefb;color:var(--nv);font-size:11px;font-weight:900;
     }
     .entry-autocomplete-option:hover .entry-autocomplete-class,
     .entry-autocomplete-option.active .entry-autocomplete-class{background:#fff;color:var(--nv)}
     .entry-autocomplete-names{min-width:0}
-    .entry-autocomplete-ko{display:block;font-size:14px;font-weight:850;line-height:1.3}
+    .entry-autocomplete-ko{display:block;font-size:13px;font-weight:850;line-height:1.25}
     .entry-autocomplete-en{
-      display:block;margin-top:2px;font-size:11px;color:var(--sb);line-height:1.3;
+      display:block;margin-top:1px;font-size:10px;color:var(--sb);line-height:1.25;
       overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
     }
     .entry-autocomplete-option:hover .entry-autocomplete-en,
@@ -883,7 +883,7 @@
             <div class="entry-section-title">학생 검색 <span class="entry-title-en">Student Search</span><span class="entry-section-help">이름 또는 학반을 입력하세요. | Enter a name or class.</span></div>
             <div id="student-entry-autocomplete" class="entry-autocomplete-shell">
               <input id="student-search-input" class="edit-input" placeholder="학생 이름, 영문명 또는 학반 | Student name or class" autocomplete="off" aria-autocomplete="list" aria-controls="student-search-suggestions" aria-expanded="false">
-              <button id="student-search-toggle" class="entry-autocomplete-toggle" type="button" aria-label="학생 목록 열기 | Open student list">▼</button>
+              <button id="student-search-toggle" class="entry-autocomplete-toggle" type="button" tabindex="-1" aria-label="학생 목록 열기 | Open student list">▼</button>
               <div id="student-search-suggestions" class="entry-autocomplete-menu" role="listbox" hidden></div>
             </div>
             <div id="student-selection-state" class="entry-selection-confirm" aria-live="polite">검색 결과에서 학생을 선택하세요. | Select a student from the results.</div>
@@ -2718,16 +2718,24 @@
       menu.hidden = true;
       input.setAttribute('aria-expanded','false');
       studentAutocompleteIndex = -1;
+      input.removeAttribute('aria-activedescendant');
     }
 
-    function setStudentAutocompleteIndex(index){
+    function setStudentAutocompleteIndex(index, focusOption=false){
+      const input = document.getElementById('student-search-input');
       const menu = document.getElementById('student-search-suggestions');
       if(!menu || !studentAutocompleteFiltered.length) return;
       studentAutocompleteIndex = Math.max(0, Math.min(index, studentAutocompleteFiltered.length - 1));
       menu.querySelectorAll('.entry-autocomplete-option').forEach((button, i) => {
-        button.classList.toggle('active', i === studentAutocompleteIndex);
-        button.setAttribute('aria-selected', i === studentAutocompleteIndex ? 'true' : 'false');
-        if(i === studentAutocompleteIndex) button.scrollIntoView({block:'nearest'});
+        const active = i === studentAutocompleteIndex;
+        button.classList.toggle('active', active);
+        button.setAttribute('aria-selected', active ? 'true' : 'false');
+        button.tabIndex = active ? 0 : -1;
+        if(active){
+          input?.setAttribute('aria-activedescendant', button.id);
+          button.scrollIntoView({block:'nearest'});
+          if(focusOption) button.focus();
+        }
       });
     }
 
@@ -2747,7 +2755,7 @@
         studentAutocompleteIndex = -1;
       }else{
         menu.innerHTML = studentAutocompleteFiltered.map((item,index) => `
-          <button type="button" class="entry-autocomplete-option" role="option" aria-selected="false" data-student-index="${index}">
+          <button type="button" id="student-suggestion-${index}" class="entry-autocomplete-option" role="option" aria-selected="false" tabindex="-1" data-student-index="${index}">
             <span class="entry-autocomplete-class">${esc(item.className)}</span>
             <span class="entry-autocomplete-names">
               <span class="entry-autocomplete-ko">${esc(item.name || '-')}</span>
@@ -2811,6 +2819,11 @@
           closeStudentSuggestions();
           return;
         }
+        if(event.key === 'Tab' && !event.shiftKey && !menu.hidden && studentAutocompleteFiltered.length){
+          event.preventDefault();
+          setStudentAutocompleteIndex(Math.max(0,studentAutocompleteIndex), true);
+          return;
+        }
         if(event.key === 'Enter' && !menu.hidden && studentAutocompleteFiltered.length){
           event.preventDefault();
           selectStudentSuggestion(studentAutocompleteFiltered[Math.max(0,studentAutocompleteIndex)]);
@@ -2818,6 +2831,32 @@
       });
 
       menu.addEventListener('mousedown', event => event.preventDefault());
+      menu.addEventListener('keydown', event => {
+        const button = event.target.closest('[data-student-index]');
+        if(!button) return;
+        const index = Number(button.dataset.studentIndex);
+        if(event.key === 'ArrowDown'){
+          event.preventDefault();
+          setStudentAutocompleteIndex(index + 1, true);
+        }else if(event.key === 'ArrowUp'){
+          event.preventDefault();
+          if(index <= 0){
+            document.getElementById('student-search-input')?.focus();
+            setStudentAutocompleteIndex(0);
+          }else{
+            setStudentAutocompleteIndex(index - 1, true);
+          }
+        }else if(event.key === 'Enter' || event.key === ' '){
+          event.preventDefault();
+          selectStudentSuggestion(studentAutocompleteFiltered[index]);
+        }else if(event.key === 'Escape'){
+          event.preventDefault();
+          closeStudentSuggestions();
+          document.getElementById('student-search-input')?.focus();
+        }else if(event.key === 'Tab' && !event.shiftKey){
+          selectStudentSuggestion(studentAutocompleteFiltered[index]);
+        }
+      });
       menu.addEventListener('click', event => {
         const button = event.target.closest('[data-student-index]');
         if(!button) return;

@@ -98,13 +98,13 @@
       right:0;
       top:calc(100% + 6px);
       z-index:3000;
-      max-height:292px;
+      max-height:218px;
       overflow-y:auto;
-      padding:5px;
-      border:2px solid var(--nv2);
-      border-radius:11px;
+      padding:4px;
+      border:1px solid #b8c4dc;
+      border-radius:8px;
       background:#fff;
-      box-shadow:0 14px 34px rgba(15,31,92,.24);
+      box-shadow:0 10px 24px rgba(15,31,92,.18);
     }
 
     .autocomplete-menu[hidden]{display:none}
@@ -112,9 +112,9 @@
     .autocomplete-option{
       width:100%;
       display:block;
-      padding:9px 11px;
+      padding:6px 8px;
       border:0;
-      border-radius:8px;
+      border-radius:6px;
       background:#fff;
       color:var(--tx);
       text-align:left;
@@ -133,17 +133,17 @@
 
     .autocomplete-option-name{
       display:block;
-      font-size:14px;
+      font-size:13px;
       font-weight:800;
-      line-height:1.35;
+      line-height:1.25;
     }
 
     .autocomplete-option-email{
       display:block;
-      margin-top:2px;
-      font-size:11px;
+      margin-top:1px;
+      font-size:10px;
       color:var(--sb);
-      line-height:1.35;
+      line-height:1.25;
       overflow:hidden;
       text-overflow:ellipsis;
       white-space:nowrap;
@@ -236,7 +236,7 @@
               aria-controls="teacher-suggestions"
               aria-expanded="false"
             />
-            <button id="teacher-dropdown-toggle" class="autocomplete-toggle" type="button" aria-label="교사 목록 열기 | Open teacher list">▼</button>
+            <button id="teacher-dropdown-toggle" class="autocomplete-toggle" type="button" tabindex="-1" aria-label="교사 목록 열기 | Open teacher list">▼</button>
             <div id="teacher-suggestions" class="autocomplete-menu" role="listbox" hidden></div>
           </div>
           <div id="teacher-selection-state" class="selection-confirm" aria-live="polite">검색 결과에서 교사를 선택하세요. | Select a teacher from the results.</div>
@@ -337,16 +337,24 @@
       menu.hidden = true;
       input.setAttribute('aria-expanded', 'false');
       teacherAutocompleteIndex = -1;
+      input.removeAttribute('aria-activedescendant');
     }
 
-    function setTeacherAutocompleteIndex(index) {
+    function setTeacherAutocompleteIndex(index, focusOption = false) {
+      const input = document.getElementById('teacher-search');
       const menu = document.getElementById('teacher-suggestions');
       if (!menu || !teacherAutocompleteFiltered.length) return;
       teacherAutocompleteIndex = Math.max(0, Math.min(index, teacherAutocompleteFiltered.length - 1));
       menu.querySelectorAll('.autocomplete-option').forEach((button, i) => {
-        button.classList.toggle('active', i === teacherAutocompleteIndex);
-        button.setAttribute('aria-selected', i === teacherAutocompleteIndex ? 'true' : 'false');
-        if (i === teacherAutocompleteIndex) button.scrollIntoView({ block: 'nearest' });
+        const active = i === teacherAutocompleteIndex;
+        button.classList.toggle('active', active);
+        button.setAttribute('aria-selected', active ? 'true' : 'false');
+        button.tabIndex = active ? 0 : -1;
+        if (active) {
+          input?.setAttribute('aria-activedescendant', button.id);
+          button.scrollIntoView({ block: 'nearest' });
+          if (focusOption) button.focus();
+        }
       });
     }
 
@@ -366,7 +374,7 @@
         teacherAutocompleteIndex = -1;
       } else {
         menu.innerHTML = teacherAutocompleteFiltered.map((item, index) => `
-          <button type="button" class="autocomplete-option" role="option" aria-selected="false" data-teacher-index="${index}">
+          <button type="button" id="teacher-suggestion-${index}" class="autocomplete-option" role="option" aria-selected="false" tabindex="-1" data-teacher-index="${index}">
             <span class="autocomplete-option-name">${esc(item.name)}</span>
             <span class="autocomplete-option-email">${esc(item.email)}</span>
           </button>
@@ -434,6 +442,11 @@
           closeTeacherSuggestions();
           return;
         }
+        if (event.key === 'Tab' && !event.shiftKey && !menu.hidden && teacherAutocompleteFiltered.length) {
+          event.preventDefault();
+          setTeacherAutocompleteIndex(Math.max(0, teacherAutocompleteIndex), true);
+          return;
+        }
         if (event.key === 'Enter') {
           if (!menu.hidden && teacherAutocompleteFiltered.length) {
             event.preventDefault();
@@ -448,6 +461,32 @@
       });
 
       menu.addEventListener('mousedown', event => event.preventDefault());
+      menu.addEventListener('keydown', event => {
+        const button = event.target.closest('[data-teacher-index]');
+        if (!button) return;
+        const index = Number(button.dataset.teacherIndex);
+        if (event.key === 'ArrowDown') {
+          event.preventDefault();
+          setTeacherAutocompleteIndex(index + 1, true);
+        } else if (event.key === 'ArrowUp') {
+          event.preventDefault();
+          if (index <= 0) {
+            document.getElementById('teacher-search')?.focus();
+            setTeacherAutocompleteIndex(0);
+          } else {
+            setTeacherAutocompleteIndex(index - 1, true);
+          }
+        } else if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          selectTeacherSuggestion(teacherAutocompleteFiltered[index]);
+        } else if (event.key === 'Escape') {
+          event.preventDefault();
+          closeTeacherSuggestions();
+          document.getElementById('teacher-search')?.focus();
+        } else if (event.key === 'Tab' && !event.shiftKey) {
+          selectTeacherSuggestion(teacherAutocompleteFiltered[index], false);
+        }
+      });
       menu.addEventListener('click', event => {
         const button = event.target.closest('[data-teacher-index]');
         if (!button) return;
