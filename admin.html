@@ -152,6 +152,33 @@
     @media(max-width:760px){.admin-center-topbar{align-items:flex-start;flex-direction:column}.admin-center-actions{justify-content:flex-start}.admin-center-nav{padding:0 8px}.admin-center-nav a,.admin-center-nav button{padding:0 10px}}
 
     .role-group{padding:8px 0;border-bottom:1px solid #e5e7eb}.role-group:last-child{border-bottom:0}.role-box input:disabled{cursor:not-allowed;opacity:.55}
+
+
+    /* 2026-07-30 settings: separate access and data tools without changing actions */
+    .settings-page-head{margin-bottom:14px}
+    .settings-page-head h2{margin:0;color:#14213d;font-size:22px;line-height:1.2}
+    .settings-page-head h2 span{font-size:14px;font-weight:600;color:#6b7280}
+    .settings-page-head p{margin:6px 0 0;color:#68758b;font-size:13px}
+    .settings-grid{display:grid;gap:14px}
+    .settings-section{overflow:hidden;border:1px solid #dce4f0;border-radius:13px;background:#fff;box-shadow:0 4px 14px rgba(17,42,90,.05)}
+    .settings-section-head{padding:10px 13px;border-bottom:1px solid #e4e9f1;background:#f7f9fc;color:#17233d;font-size:14px;font-weight:850}
+    .settings-action-row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px}
+    .settings-action-copy{min-width:0}
+    .settings-action-title{font-size:14px;font-weight:850;color:#17233d}
+    .settings-action-sub{margin-top:3px;color:#68758b;font-size:11px;line-height:1.45}
+    .settings-tool-list{display:grid}
+    .settings-tool-item{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px;color:#17233d;text-decoration:none;border-top:1px solid #e8edf4;background:#fff;transition:background .15s ease}
+    .settings-tool-item:first-child{border-top:0}
+    .settings-tool-item:hover{background:#f5f8ff}
+    .settings-tool-main{display:block;font-size:14px;font-weight:850}
+    .settings-tool-sub{display:block;margin-top:3px;color:#68758b;font-size:11px;line-height:1.45}
+    .settings-tool-arrow{font-size:24px;color:#6c7b94;line-height:1}
+    @media(max-width:680px){
+      .settings-page-head h2{font-size:19px}
+      .settings-action-row{align-items:flex-start;flex-direction:column}
+      .settings-action-row .btn{width:100%}
+    }
+
 </style>
 </head>
 <body>
@@ -434,14 +461,36 @@
         </div>
       </div>
       <div id="tab-settings" class="tab-panel">
-        <div class="admin-page-heading"><h2>설정</h2><p>관리자 인증과 데이터 관리 기능을 설정합니다.</p></div>
-        <div class="card">
-          <div class="card-title">관리자 설정</div>
-          <div class="admin-dashboard-actions">
-            <button class="btn btn-secondary" onclick="togglePwChangeBox();document.getElementById('pw-change-box').scrollIntoView({behavior:'smooth'})">관리자 비밀번호 변경</button>
-            <a href="import-data.html" class="btn btn-secondary">데이터 가져오기</a>
-            <a href="detention-admin.html#entries" class="btn btn-secondary">디텐션 DB 열기</a>
-          </div>
+        <div class="settings-page-head">
+          <h2>설정 <span>Settings</span></h2>
+          <p>관리자 인증과 데이터 관리 도구를 구분합니다. | Manage administrator access and data tools.</p>
+        </div>
+
+        <div class="settings-grid">
+          <section class="settings-section" aria-labelledby="settings-access-title">
+            <div id="settings-access-title" class="settings-section-head">관리자 인증 | Administrator Access</div>
+            <div class="settings-action-row">
+              <div class="settings-action-copy">
+                <div class="settings-action-title">관리자 비밀번호 | Administrator Password</div>
+                <div class="settings-action-sub">관리자 센터 접속 비밀번호를 변경합니다. | Change the password used to access the Admin Center.</div>
+              </div>
+              <button class="btn btn-secondary" onclick="togglePwChangeBox();document.getElementById('pw-change-box').scrollIntoView({behavior:'smooth'})">비밀번호 변경 | Change Password</button>
+            </div>
+          </section>
+
+          <section class="settings-section" aria-labelledby="settings-data-title">
+            <div id="settings-data-title" class="settings-section-head">데이터 도구 | Data Tools</div>
+            <div class="settings-tool-list">
+              <a href="import-data.html" class="settings-tool-item">
+                <span><span class="settings-tool-main">데이터 가져오기 | Import Data</span><span class="settings-tool-sub">기존 운영 자료를 Firebase 데이터로 가져옵니다. | Import existing operational data.</span></span>
+                <span class="settings-tool-arrow" aria-hidden="true">›</span>
+              </a>
+              <a href="detention-admin.html#entries" class="settings-tool-item">
+                <span><span class="settings-tool-main">디텐션 DB 관리 | Detention Database</span><span class="settings-tool-sub">기록 조회·수정·상태 점검 화면을 엽니다. | Open record review, editing, and status checks.</span></span>
+                <span class="settings-tool-arrow" aria-hidden="true">›</span>
+              </a>
+            </div>
+          </section>
         </div>
       </div>
     </div>

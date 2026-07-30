@@ -717,7 +717,50 @@
       #tab-entry textarea.edit-input{min-height:52px}
     }
 
-  </style>
+  
+
+    /* 2026-07-30 detention standards: grouped view mode, existing table edit mode */
+    .standard-card{padding:14px}
+    .standard-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:12px}
+    .standard-title{font-size:18px;font-weight:900;color:#101d3a;line-height:1.25}
+    .standard-title span{font-size:12px;font-weight:700;color:#6b7280}
+    .standard-meta{margin-top:4px;color:#6c778c;font-size:10.5px;line-height:1.45}
+    .standard-head-actions{display:flex;align-items:flex-start;justify-content:flex-end;gap:10px;flex-wrap:wrap}
+    .standard-status{text-align:right;min-width:180px}
+    .standard-status .small+ .small{margin-top:2px}
+    .standard-toolbar{display:grid;grid-template-columns:minmax(0,1fr) 190px;gap:8px;margin-bottom:10px}
+    .standard-toolbar .edit-input{min-height:36px}
+    .standard-view-list{display:grid;gap:8px}
+    .standard-category{overflow:hidden;border:1px solid #dbe4f2;border-radius:11px;background:#fff}
+    .standard-category summary{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 13px;cursor:pointer;list-style:none;font-size:13px;font-weight:900;color:#18243f;background:#f8faff}
+    .standard-category summary::-webkit-details-marker{display:none}
+    .standard-category summary::after{content:'+';display:flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:999px;border:1px solid #cbd7ea;color:#3562ad;font-size:14px;line-height:1;flex:0 0 auto}
+    .standard-category[open] summary::after{content:'−'}
+    .standard-category-name{min-width:0;flex:1}
+    .standard-category-name-en{margin-left:5px;color:#68758b;font-size:11px;font-weight:700}
+    .standard-category-count{margin-left:auto;border:1px solid #cfd9ea;border-radius:999px;padding:2px 7px;color:#52627d;background:#fff;font-size:9.5px;font-weight:800;white-space:nowrap}
+    .standard-items{border-top:1px solid #e4eaf3}
+    .standard-item{display:grid;grid-template-columns:minmax(0,1fr) 64px;gap:12px;align-items:start;padding:11px 13px;border-top:1px solid #e8edf4}
+    .standard-item:first-child{border-top:0}
+    .standard-item:nth-child(even){background:#f5f8ff}
+    .standard-item-ko{font-size:12.5px;font-weight:850;color:#16223c;line-height:1.4;white-space:pre-wrap}
+    .standard-item-en{margin-top:3px;color:#60708a;font-size:10.5px;line-height:1.4;white-space:pre-wrap}
+    .standard-item-note{margin-top:6px;color:#7a5b12;font-size:9.5px;line-height:1.4;white-space:pre-wrap}
+    .standard-points{display:flex;align-items:center;justify-content:center;min-height:34px;border-radius:9px;background:#edf4ff;color:#174ea6;font-size:13px;font-weight:900;text-align:center;padding:5px}
+    .standard-empty{padding:25px 14px;border:1px dashed #cbd5e1;border-radius:11px;color:#6b7280;text-align:center;font-size:12px}
+    .standard-edit-note-box{margin-bottom:10px;padding:8px 10px;border:1px solid #d9e3f2;border-radius:9px;background:#f4f7ff;color:#34476d;font-size:10.5px;line-height:1.45}
+    #standard-edit-panel .tbl-wrap{margin-top:0}
+    @media(max-width:760px){
+      .standard-card{padding:11px}
+      .standard-head{flex-direction:column;gap:8px}
+      .standard-head-actions{width:100%;justify-content:space-between}
+      .standard-status{text-align:left;min-width:0}
+      .standard-toolbar{grid-template-columns:1fr}
+      .standard-item{grid-template-columns:minmax(0,1fr) 52px;padding:10px}
+      .standard-points{font-size:12px}
+    }
+
+</style>
 </head>
 <body>
   <div id="toast"></div>
@@ -924,16 +967,19 @@
 
     <!-- STANDARDS -->
     <div id="tab-standard" class="tab-panel">
-      <div class="card">
-        <div class="card-title">
-          <span>디텐션 기준표 | Detention Standards</span>
-          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-            <div style="text-align:right;">
+      <div class="card standard-card">
+        <div class="standard-head">
+          <div>
+            <div class="standard-title">디텐션 기준표 <span>Detention Standards</span></div>
+            <div class="standard-meta"><span id="standard-count-label">0개 항목 | 0 items</span></div>
+          </div>
+          <div class="standard-head-actions">
+            <div class="standard-status">
               <div class="small" id="standard-edit-note">기본 보기 모드 | View Mode</div>
               <div class="small" id="standard-save-status">저장 이력 없음 | Not saved yet</div>
             </div>
             <div id="standard-actions" class="mini-actions role-only" data-role="master" style="margin:0">
-              <button id="btn-enable-edit" class="btn btn-secondary" onclick="enableStandardEdit()">편집 활성화 | Enable Edit</button>
+              <button id="btn-enable-edit" class="btn btn-secondary" onclick="enableStandardEdit()">편집 | Edit</button>
               <button id="btn-add-criteria" class="btn btn-secondary hidden" onclick="addCriteriaRow()">행 추가 | Add Row</button>
               <button id="btn-save-criteria" class="btn btn-primary hidden" onclick="saveCriteriaTable()" disabled style="opacity:.4;cursor:not-allowed;">저장할 내용 없음 | No Changes</button>
               <button id="btn-cancel-edit" class="btn btn-danger hidden" onclick="cancelStandardEdit()">편집 취소 | Cancel</button>
@@ -941,24 +987,35 @@
           </div>
         </div>
 
-        <div class="section-note">
-          <div>권한에 따라 보기 또는 편집이 가능합니다.</div>
-          <div>View or edit access is available depending on your role.</div>
+        <div id="standard-view-panel">
+          <div class="standard-toolbar">
+            <input id="standard-search" class="edit-input" placeholder="위반행위 검색 | Search violations" oninput="renderStandardView()">
+            <select id="standard-category-filter" class="edit-input" onchange="renderStandardView()">
+              <option value="">전체 구분 | All Categories</option>
+            </select>
+          </div>
+          <div id="standard-view-list" class="standard-view-list"></div>
         </div>
 
-        <div class="tbl-wrap" style="margin-top:10px;">
-          <table class="criteria-table">
-            <thead>
-              <tr>
-                <th>구분<span class="th-en">Category</span></th>
-                <th>위반행위<span class="th-en">Violation</span></th>
-                <th>자동 점수<span class="th-en">Auto Points</span></th>
-                <th>비고<span class="th-en">Notes</span></th>
-                <th id="criteria-action-head" class="hidden">삭제<span class="th-en">Delete</span></th>
-              </tr>
-            </thead>
-            <tbody id="criteria-tbody"></tbody>
-          </table>
+        <div id="standard-edit-panel" class="hidden">
+          <div class="standard-edit-note-box">
+            <div>편집 모드에서는 기존 데이터 구조와 동일한 전체 표를 사용합니다.</div>
+            <div>Editing uses the existing full table and preserves the current data structure.</div>
+          </div>
+          <div class="tbl-wrap" id="criteria-table-wrap">
+            <table class="criteria-table">
+              <thead>
+                <tr>
+                  <th>구분<span class="th-en">Category</span></th>
+                  <th>위반행위<span class="th-en">Violation</span></th>
+                  <th>자동 점수<span class="th-en">Auto Points</span></th>
+                  <th>비고<span class="th-en">Notes</span></th>
+                  <th id="criteria-action-head" class="hidden">삭제<span class="th-en">Delete</span></th>
+                </tr>
+              </thead>
+              <tbody id="criteria-tbody"></tbody>
+            </table>
+          </div>
         </div>
 
         <div class="notice" style="margin-top:12px;border-color:#d8dded;background:#f0f4ff;color:#1f2d6b;">
@@ -2348,7 +2405,8 @@
       const currentBtn = document.querySelector('.tab-btn.active[data-tab]');
       if(!currentBtn || !canAccessTeacherTab(currentBtn.dataset.tab)) activateTeacherTab('entry', {silent:true});
 
-      document.getElementById('standard-edit-note').textContent = '기본 보기 모드 | View Mode';
+      const standardModeNote = document.getElementById('standard-edit-note');
+      if(standardModeNote && window._standardEditMode !== true) standardModeNote.textContent = '기본 보기 모드 | View Mode';
     }
 
     let _standardSnapshot = '';
@@ -2385,25 +2443,102 @@
     }
 
     /* ---------- 5) 기준표 / 선택 UI 렌더링 ---------- */
-    function renderCriteriaTable(){
-      const tb = document.getElementById('criteria-tbody');
-      const editable = window._standardEditMode === true && canEditStandard();
-      document.getElementById('criteria-action-head').classList.toggle('hidden', !editable);
+    function standardBilingual(value){
+      const parts = splitBilingualText(value);
+      return { ko:parts.ko || String(value || '').trim(), en:parts.en || '' };
+    }
 
-      if (!detentionStandards.length){
-        tb.innerHTML = `<tr><td colspan="${editable ? 5 : 4}" class="empty">기준표 항목이 없습니다. | No standards available.</td></tr>`;
+    function refreshStandardCategoryFilter(){
+      const sel = document.getElementById('standard-category-filter');
+      if(!sel) return;
+      const previous = sel.value;
+      const categories = [...new Set(detentionStandards.map(row => String(row.category || '').trim()).filter(Boolean))];
+      sel.innerHTML = '<option value="">전체 구분 | All Categories</option>' + categories.map(category => {
+        const name = standardBilingual(category);
+        const label = name.en ? `${name.ko} | ${name.en}` : name.ko;
+        return `<option value="${esc(category)}">${esc(label)}</option>`;
+      }).join('');
+      if(categories.includes(previous)) sel.value = previous;
+    }
+
+    function renderStandardView(){
+      const list = document.getElementById('standard-view-list');
+      if(!list) return;
+      refreshStandardCategoryFilter();
+      const query = String(document.getElementById('standard-search')?.value || '').trim().toLowerCase();
+      const selectedCategory = String(document.getElementById('standard-category-filter')?.value || '');
+      const filtered = detentionStandards.filter(row => {
+        const category = String(row.category || '');
+        if(selectedCategory && category !== selectedCategory) return false;
+        if(!query) return true;
+        return [row.category,row.violation,row.autoPoints,row.note]
+          .map(value => String(value || '').toLowerCase())
+          .some(value => value.includes(query));
+      });
+
+      const countLabel = document.getElementById('standard-count-label');
+      if(countLabel) countLabel.textContent = `${detentionStandards.length}개 항목 | ${detentionStandards.length} items`;
+
+      if(!filtered.length){
+        list.innerHTML = '<div class="standard-empty">검색 결과가 없습니다. | No matching standards.</div>';
         return;
       }
 
-      if (!editable){
-        tb.innerHTML = detentionStandards.map(row => `
-          <tr>
-            <td style="white-space:pre-wrap;">${esc(row.category || '')}</td>
-            <td style="white-space:pre-wrap;">${esc(row.violation || '')}</td>
-            <td>${esc(String(row.autoPoints ?? ''))}</td>
-            <td style="white-space:pre-wrap;">${esc(row.note || '')}</td>
-          </tr>
-        `).join('');
+      const groups = new Map();
+      filtered.forEach(row => {
+        const category = String(row.category || '').trim() || '기타 Other';
+        if(!groups.has(category)) groups.set(category, []);
+        groups.get(category).push(row);
+      });
+
+      let groupIndex = 0;
+      list.innerHTML = [...groups.entries()].map(([category, rows]) => {
+        const categoryName = standardBilingual(category);
+        const shouldOpen = Boolean(query || selectedCategory || groupIndex === 0);
+        groupIndex += 1;
+        const items = rows.map(row => {
+          const violation = standardBilingual(row.violation || '');
+          const note = standardBilingual(row.note || '');
+          const noteHtml = (note.ko || note.en) ? `<div class="standard-item-note">${note.ko ? esc(note.ko) : ''}${note.en ? `<br>${esc(note.en)}` : ''}</div>` : '';
+          return `<div class="standard-item">
+            <div>
+              <div class="standard-item-ko">${esc(violation.ko || row.violation || '')}</div>
+              ${violation.en ? `<div class="standard-item-en">${esc(violation.en)}</div>` : ''}
+              ${noteHtml}
+            </div>
+            <div class="standard-points">${esc(String(row.autoPoints ?? '') || '-')}</div>
+          </div>`;
+        }).join('');
+        return `<details class="standard-category" ${shouldOpen ? 'open' : ''}>
+          <summary>
+            <span class="standard-category-name">${esc(categoryName.ko || category)}${categoryName.en ? `<span class="standard-category-name-en">${esc(categoryName.en)}</span>` : ''}</span>
+            <span class="standard-category-count">${rows.length}개 | ${rows.length}</span>
+          </summary>
+          <div class="standard-items">${items}</div>
+        </details>`;
+      }).join('');
+    }
+
+    function renderCriteriaTable(){
+      const tb = document.getElementById('criteria-tbody');
+      const editable = window._standardEditMode === true && canEditStandard();
+      const viewPanel = document.getElementById('standard-view-panel');
+      const editPanel = document.getElementById('standard-edit-panel');
+      if(viewPanel) viewPanel.classList.toggle('hidden', editable);
+      if(editPanel) editPanel.classList.toggle('hidden', !editable);
+      const actionHead = document.getElementById('criteria-action-head');
+      if(actionHead) actionHead.classList.toggle('hidden', !editable);
+
+      const countLabel = document.getElementById('standard-count-label');
+      if(countLabel) countLabel.textContent = `${detentionStandards.length}개 항목 | ${detentionStandards.length} items`;
+
+      if(!editable){
+        renderStandardView();
+        return;
+      }
+
+      if (!detentionStandards.length){
+        tb.innerHTML = '<tr><td colspan="5" class="empty">기준표 항목이 없습니다. | No standards available.</td></tr>';
         return;
       }
 
