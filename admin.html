@@ -173,6 +173,11 @@
     .settings-tool-main{display:block;font-size:14px;font-weight:850}
     .settings-tool-sub{display:block;margin-top:3px;color:#68758b;font-size:11px;line-height:1.45}
     .settings-tool-arrow{font-size:24px;color:#6c7b94;line-height:1}
+    .settings-tool-button{width:100%;border:0;text-align:left;font:inherit;cursor:pointer}
+    .settings-tool-button:disabled{cursor:wait;opacity:.62}
+    .settings-tool-status{padding:0 14px 13px;color:#68758b;font-size:11px;line-height:1.45}
+    .settings-tool-status.ok{color:#087443}
+    .settings-tool-status.err{color:#b42318}
     @media(max-width:680px){
       .settings-page-head h2{font-size:19px}
       .settings-action-row{align-items:flex-start;flex-direction:column}
@@ -482,9 +487,14 @@
             <div id="settings-data-title" class="settings-section-head">데이터 도구 | Data Tools</div>
             <div class="settings-tool-list">
               <a href="import-data.html" class="settings-tool-item">
-                <span><span class="settings-tool-main">데이터 가져오기 | Import Data</span><span class="settings-tool-sub">기존 운영 자료를 Firebase 데이터로 가져옵니다. | Import existing operational data.</span></span>
+                <span><span class="settings-tool-main">Firebase 데이터 가져오기 | Import to Firebase</span><span class="settings-tool-sub">기존 운영 자료를 Firebase 데이터로 가져옵니다. | Import existing operational data into Firebase.</span></span>
                 <span class="settings-tool-arrow" aria-hidden="true">›</span>
               </a>
+              <button id="btn-firebase-diagnostic" type="button" class="settings-tool-item settings-tool-button" onclick="downloadFirebaseDiagnostic()">
+                <span><span class="settings-tool-main">Firebase 진단 데이터 다운로드 | Download Diagnostic Data</span><span class="settings-tool-sub">DB 점검용 JSON 파일을 내려받습니다. 비밀번호는 자동으로 제외됩니다. | Download a diagnostic JSON file with passwords removed.</span></span>
+                <span class="settings-tool-arrow" aria-hidden="true">↓</span>
+              </button>
+              <div id="firebase-diagnostic-status" class="settings-tool-status" aria-live="polite"></div>
               <a href="detention-admin.html#entries" class="settings-tool-item">
                 <span><span class="settings-tool-main">디텐션 DB 관리 | Detention Database</span><span class="settings-tool-sub">기록 조회·수정·상태 점검 화면을 엽니다. | Open record review, editing, and status checks.</span></span>
                 <span class="settings-tool-arrow" aria-hidden="true">›</span>
@@ -854,6 +864,158 @@
       document.getElementById('new-admin-pw-confirm').value = '';
       toast('관리자 비밀번호가 변경되었습니다.\nAdmin password changed.', 'ok');
       document.getElementById('pw-change-box').classList.add('hidden');
+    }
+
+    function setFirebaseDiagnosticStatus(message, type = '') {
+      const el = document.getElementById('firebase-diagnostic-status');
+      if (!el) return;
+      el.textContent = message || '';
+      el.className = 'settings-tool-status' + (type ? ' ' + type : '');
+    }
+
+    function diagnosticSafeMessage(error) {
+      if (!error) return 'Unknown error';
+      const code = String(error.code || '').trim();
+      const message = String(error.message || error).trim();
+      return [code, message].filter(Boolean).join(': ');
+    }
+
+    function sanitizeFirebaseDiagnostic(value, keyName = '') {
+      const sensitiveKey = /^(password|passwd|pwd|secret|token|accessToken|refreshToken|authorization)$/i;
+      if (sensitiveKey.test(String(keyName || ''))) return '[REDACTED]';
+      if (Array.isArray(value)) return value.map(item => sanitizeFirebaseDiagnostic(item, ''));
+      if (value && typeof value === 'object') {
+        const out = {};
+        Object.entries(value).forEach(([key, child]) => {
+          out[key] = sanitizeFirebaseDiagnostic(child, key);
+        });
+        return out;
+      }
+      return value;
+    }
+
+    function diagnosticItemCount(value) {
+      if (Array.isArray(value)) return value.filter(item => item !== null && item !== undefined).length;
+      if (value && typeof value === 'object') return Object.keys(value).length;
+      return value === null || value === undefined ? 0 : 1;
+    }
+
+    function downloadDiagnosticJson(filename, payload) {
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    async function downloadFirebaseDiagnostic() {
+      const button = document.getElementById('btn-firebase-diagnostic');
+      if (button && button.disabled) return;
+      if (!isCurrentMaster()) {
+        toast('Firebase 진단 데이터 다운로드 권한이 없습니다.\nYou do not have permission to download diagnostic data.', 'err');
+        return;
+      }
+
+      const paths = [
+        'teachers',
+        'students',
+        'detentionEntries',
+        'detentionNotices',
+        'recoveryEntries',
+        'committeeRecords',
+        'studentCycleState',
+        'detentionStandards',
+        'detentionStandards_meta',
+        'adminConfig'
+      ];
+
+      try {
+        if (button) button.disabled = true;
+        setFirebaseDiagnosticStatus('Firebase 데이터를 읽는 중입니다… | Reading Firebase data…');
+        await ensureFirebaseAuth();
+
+        const results = await Promise.allSettled(paths.map(path => db.ref(path).once('value')));
+        const data = {};
+        const readStatus = {};
+        const counts = {};
+
+        results.forEach((result, index) => {
+          const path = paths[index];
+          if (result.status === 'fulfilled') {
+            const sanitized = sanitizeFirebaseDiagnostic(result.value.val(), path);
+            data[path] = sanitized;
+            counts[path] = diagnosticItemCount(sanitized);
+            readStatus[path] = { ok: true, count: counts[path] };
+          } else {
+            const message = diagnosticSafeMessage(result.reason);
+            data[path] = null;
+            counts[path] = 0;
+            readStatus[path] = { ok: false, error: message };
+          }
+        });
+
+        const failedPaths = Object.entries(readStatus).filter(([, status]) => !status.ok).map(([path]) => path);
+        const manager = (() => {
+          try {
+            const teacher = JSON.parse(sessionStorage.getItem('his_teacher') || '{}') || {};
+            return {
+              name: String(teacher.name || '').trim(),
+              email: String(teacher.email || '').trim(),
+              roles: normalizeRoles(teacher.roles ?? teacher.role ?? [])
+            };
+          } catch (_) {
+            return { name: '', email: '', roles: currentManagerRoles() };
+          }
+        })();
+
+        const exportedAt = new Date();
+        const payload = {
+          diagnosticFormat: 'his-firebase-diagnostic-v1',
+          exportedAt: exportedAt.toISOString(),
+          project: {
+            projectId: firebaseConfig.projectId,
+            databaseURL: firebaseConfig.databaseURL
+          },
+          firebaseAuth: {
+            authenticated: !!(window.firebaseAuth && window.firebaseAuth.currentUser),
+            uid: window.firebaseAuth && window.firebaseAuth.currentUser ? window.firebaseAuth.currentUser.uid : ''
+          },
+          exportedBy: manager,
+          privacy: {
+            passwordFields: 'redacted',
+            note: 'Teacher and administrator password-like fields are replaced with [REDACTED].'
+          },
+          summary: {
+            requestedPaths: paths.length,
+            successfulPaths: paths.length - failedPaths.length,
+            failedPaths,
+            counts
+          },
+          readStatus,
+          data
+        };
+
+        const stamp = exportedAt.toISOString().replace(/[:.]/g, '-');
+        downloadDiagnosticJson(`his-firebase-diagnostic-${stamp}.json`, payload);
+
+        if (failedPaths.length) {
+          setFirebaseDiagnosticStatus(`일부 경로를 제외하고 진단 파일을 저장했습니다: ${failedPaths.join(', ')} | Diagnostic file saved with partial read errors.`, 'err');
+          toast('Firebase 진단 파일을 저장했지만 일부 경로를 읽지 못했습니다.\nDiagnostic file saved with partial read errors.', 'err');
+        } else {
+          setFirebaseDiagnosticStatus('Firebase 진단 파일을 저장했습니다. 이 JSON 파일을 DB 점검용으로 업로드할 수 있습니다. | Diagnostic file downloaded.', 'ok');
+          toast('Firebase 진단 데이터 다운로드 완료 | Diagnostic data downloaded.', 'ok');
+        }
+      } catch (error) {
+        console.error('Firebase diagnostic export failed:', error);
+        setFirebaseDiagnosticStatus('다운로드 실패: ' + diagnosticSafeMessage(error), 'err');
+        toast('Firebase 진단 데이터 다운로드 실패\nDiagnostic download failed.', 'err');
+      } finally {
+        if (button) button.disabled = false;
+      }
     }
 
     function setDash(id, value) { const el=document.getElementById(id); if(!el) return; el.textContent = value; el.classList.toggle('compact', el.classList.contains('admin-task-value') && String(value).length > 4); }
