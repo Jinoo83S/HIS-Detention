@@ -1448,6 +1448,7 @@
     const CYCLE_STATE_PATH = 'studentCycleState';
     const TEACHER_DB_PATH = 'teachers';
 
+        let detentionStandardsMeta = {};
         let detentionStandards = [
       { category:'수업 Class', violation:'다음 사항에서 3회 이상 위반 시 디텐션 포인트 발생\n- 과제 미제출\n- 수업 지각\n- 수업 중 자는 행위\n- 수업 방해\n- 수업 준비물 미지참\n3 or more violations of the following:\n- Not submitting assignments\n- Being late for class\n- Sleeping in class\n- Disrupting the class\n- Not preparing class materials', autoPoints:'1-12', note:'' },
       { category:'표절 및 부정행위 Plagiarism & Cheating', violation:'표절 Plagiarism', autoPoints:'9', note:'' },
@@ -2593,11 +2594,30 @@
           [DETENTION_STANDARD_PATH + '_meta']: {
             savedAt,
             savedBy:teacher.name || '',
-            savedByEmail:teacher.email || ''
+            savedByEmail:teacher.email || '',
+            updatedAt:savedAt,
+            updatedBy:teacher.name || '',
+            updatedByEmail:teacher.email || '',
+            version:Number(detentionStandardsMeta.version || 0) + 1,
+            itemCount:cleaned.length,
+            source:'teacher-standard-editor',
+            event:'standards_saved'
           }
         });
 
         detentionStandards = cleaned;
+        detentionStandardsMeta = {
+          savedAt,
+          savedBy:teacher.name || '',
+          savedByEmail:teacher.email || '',
+          updatedAt:savedAt,
+          updatedBy:teacher.name || '',
+          updatedByEmail:teacher.email || '',
+          version:Number(detentionStandardsMeta.version || 0) + 1,
+          itemCount:cleaned.length,
+          source:'teacher-standard-editor',
+          event:'standards_saved'
+        };
         renderCriteriaTable();
         setupSelectors();
         renderViolationOptions();
@@ -3017,7 +3037,8 @@
 
         if (metaResult.status === 'fulfilled') {
           const meta = metaResult.value.val() || {};
-          if (meta.savedAt) setStandardSaveStatus(`마지막 저장: ${fmt(meta.savedAt)} | Last saved: ${fmt(meta.savedAt)}`);
+          detentionStandardsMeta = meta;
+          if (meta.savedAt) setStandardSaveStatus(`마지막 저장: ${fmt(meta.savedAt)} · v${Number(meta.version||1)} | Last saved: ${fmt(meta.savedAt)}`);
           else if (standardResult.status === 'fulfilled') setStandardSaveStatus('저장 이력 없음 | Not saved yet');
         } else {
           console.error('detentionStandards_meta read failed:', metaResult.reason);
