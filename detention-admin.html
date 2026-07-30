@@ -395,7 +395,7 @@
 
 
     /* 학생별 조회: 기록 비교·다중 수정 대시보드 */
-    #panel-student-data .admin-workspace{grid-template-columns:minmax(340px,390px) minmax(0,1fr);gap:12px}
+    #panel-student-data .admin-workspace{grid-template-columns:minmax(220px,250px) minmax(0,1fr);gap:12px}
     #panel-student-data .admin-editor-pane{position:static;max-height:none;overflow:visible;border:0;background:transparent;box-shadow:none}
     #panel-student-data .admin-list-wrap{max-height:72vh}
     #panel-student-data .student-index-table{font-size:10px;table-layout:fixed}
@@ -432,9 +432,9 @@
     .student-review-tabs{display:flex;gap:5px;flex-wrap:wrap;padding:9px 10px;border-bottom:1px solid #e5eaf2}
     .student-review-tab{border:1px solid #cbd5e1;background:#fff;color:#475569;border-radius:6px;padding:5px 9px;font-size:10px;font-weight:800;cursor:pointer}
     .student-review-tab.active{border-color:#2563eb;background:#eff6ff;color:#1d4ed8}
-    .student-review-grid{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:8px;padding:10px;align-items:start}
+    .student-review-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(420px,460px);gap:8px;padding:10px;align-items:start}
     .student-review-table-wrap{overflow:auto;border:1px solid #e2e8f0;border-radius:7px;max-height:430px}
-    .student-review-table{width:100%;min-width:590px;border-collapse:collapse;font-size:10px;table-layout:fixed}
+    .student-review-table{width:100%;min-width:540px;border-collapse:collapse;font-size:10px;table-layout:fixed}
     .student-review-table th{position:sticky;top:0;z-index:2;background:#f8fafc;color:#334155;padding:7px;border-bottom:1px solid #dbe3ef;text-align:left}
     .student-review-table td{padding:7px;border-bottom:1px solid #edf1f6;vertical-align:middle}
     .student-review-table tbody tr:nth-child(even){background:#f8fafc}.student-review-table tbody tr.selected{background:#dbeafe!important;box-shadow:inset 3px 0 #2563eb}
@@ -444,7 +444,7 @@
     .student-record-kind.entry{background:#fff1f2;color:#be123c}.student-record-kind.notice{background:#fffbeb;color:#b45309}.student-record-kind.recovery{background:#ecfdf5;color:#047857}.student-record-kind.committee{background:#f5f3ff;color:#6d28d9}
     .student-compare-panel{border:1px solid #dbe3ef;border-radius:8px;background:#f8fafc;overflow:hidden;position:sticky;top:8px}
     .student-compare-head{padding:9px 11px;border-bottom:1px solid #dbe3ef;background:#eef4ff;font-size:11px;font-weight:900;color:#173d7a;display:flex;justify-content:space-between;gap:8px}
-    .student-compare-cards{display:grid;grid-template-columns:1fr;gap:7px;padding:8px}
+    .student-compare-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;padding:8px}
     .student-compare-card{border:1px solid #dbe3ef;border-radius:7px;background:#fff;overflow:hidden;min-width:0}
     .student-compare-card-head{display:flex;justify-content:space-between;align-items:center;gap:6px;padding:7px 8px;border-bottom:1px solid #e5eaf2;font-size:10px;font-weight:900}
     .student-compare-card-body{padding:8px;display:grid;gap:7px}
@@ -455,8 +455,8 @@
     .student-bulk-edit{border-top:1px solid #dbe3ef;padding:9px;background:#fff}
     .student-bulk-edit-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:7px}.student-bulk-edit-grid>div:last-child{grid-column:1/-1}
     .student-bulk-actions{display:flex;justify-content:flex-end;gap:6px;margin-top:8px}
-    @media(max-width:1200px){#panel-student-data .admin-workspace{grid-template-columns:300px minmax(0,1fr)}.student-review-metrics{grid-template-columns:repeat(3,1fr)}.student-review-grid{grid-template-columns:minmax(0,1fr) 300px}.student-compare-panel{position:sticky}.student-compare-cards{grid-template-columns:1fr}}
-    @media(max-width:950px){#panel-student-data .admin-workspace{grid-template-columns:1fr}.student-review-metrics{grid-template-columns:repeat(2,1fr)}.student-review-grid{grid-template-columns:1fr}.student-compare-panel{position:static}.student-compare-cards{grid-template-columns:1fr 1fr}.student-bulk-edit-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.student-bulk-edit-grid>div:last-child{grid-column:auto}}@media(max-width:650px){.student-compare-cards{grid-template-columns:1fr}.student-bulk-edit-grid{grid-template-columns:1fr}.student-bulk-edit-grid>div:last-child{grid-column:auto}}
+    @media(max-width:1300px){#panel-student-data .admin-workspace{grid-template-columns:210px minmax(0,1fr)}.student-review-metrics{grid-template-columns:repeat(3,1fr)}.student-review-grid{grid-template-columns:minmax(0,1fr) minmax(390px,430px)}.student-compare-panel{position:sticky}.student-compare-cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media(max-width:1050px){#panel-student-data .admin-workspace{grid-template-columns:1fr}.student-review-metrics{grid-template-columns:repeat(2,1fr)}.student-review-grid{grid-template-columns:1fr}.student-compare-panel{position:static}.student-compare-cards{grid-template-columns:repeat(2,minmax(0,1fr))}.student-bulk-edit-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.student-bulk-edit-grid>div:last-child{grid-column:auto}}@media(max-width:650px){.student-compare-cards{grid-template-columns:1fr}.student-bulk-edit-grid{grid-template-columns:1fr}.student-bulk-edit-grid>div:last-child{grid-column:auto}}
 
     /* ── 위원회 기록 전용 작업 화면 ── */
     #panel-committee .card{overflow:visible}
