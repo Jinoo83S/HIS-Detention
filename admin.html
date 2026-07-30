@@ -57,6 +57,21 @@
     .admin-detail-actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;padding-top:4px}
     .admin-count-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.admin-count-pill{padding:4px 8px;border-radius:999px;background:#eef3ff;color:var(--nv);font-size:11px;font-weight:800}
     .delete-toggle{display:flex;align-items:center;gap:7px;padding:8px 10px;border:1px solid #fecaca;background:#fff7f7;border-radius:8px;color:#b91c1c;font-weight:700;font-size:12px}
+
+    /* 교사 계정·권한 화면 */
+    .teacher-account-head{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 15px;border-radius:11px 11px 0 0;background:#142b70;color:#fff}
+    .teacher-account-title{font-size:16px;font-weight:900;line-height:1.25}.teacher-account-title span{font-size:11px;font-weight:700;color:#dbe5ff;margin-left:4px}
+    .teacher-account-sub{margin-top:4px;font-size:10px;color:#dbe5ff}.teacher-account-actions{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}
+    .teacher-account-actions .btn{min-height:34px;padding:7px 11px}.teacher-account-actions .btn-secondary{background:#fff;color:#142b70}.teacher-account-actions .btn-primary{background:#e8f0fe;color:#174ea6}
+    .teacher-filter-row{display:grid;grid-template-columns:minmax(0,1fr) 150px;gap:8px;padding:12px 0}
+    .teacher-role-badges{display:flex;align-items:center;gap:4px;flex-wrap:wrap}.teacher-role-badge{display:inline-flex;align-items:center;min-height:22px;padding:3px 7px;border:1px solid #cdd8ea;border-radius:999px;background:#fff;color:#41516f;font-size:10px;font-weight:800;line-height:1.1;white-space:nowrap}
+    .teacher-role-badge.primary{border-color:#b8cef4;background:#eaf2ff;color:#174ea6}.teacher-role-badge.admin{border-color:#c7bdf5;background:#f0edff;color:#5536a7}.teacher-role-badge.more{background:#f5f7fb;color:#64748b}
+    .teacher-detail-identity{margin:-14px -14px 12px;padding:13px 15px;background:#1a73e8;color:#fff}.teacher-detail-identity.locked{background:#52627e}
+    .teacher-detail-name{font-size:15px;font-weight:900;line-height:1.25}.teacher-detail-meta{margin-top:4px;font-size:10px;color:#e5efff;overflow-wrap:anywhere}.teacher-detail-identity.locked .teacher-detail-meta{color:#e2e8f0}
+    .teacher-permission-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:10px}.teacher-permission-item{display:flex;align-items:center;gap:7px;min-height:34px;padding:7px 9px;border:1px solid #dce3ef;border-radius:8px;background:#fff;font-size:12px;font-weight:700;color:#334155}.teacher-permission-item input{margin:0}
+    .teacher-permission-matrix{width:100%;border-collapse:collapse;table-layout:fixed;font-size:12px}.teacher-permission-matrix th,.teacher-permission-matrix td{padding:9px 8px;border-top:1px solid #e4e9f2;text-align:center}.teacher-permission-matrix thead th{border-top:0;background:#f8faff;color:#52627e;font-size:10px}.teacher-permission-matrix tbody th{text-align:left;color:#263a60}.teacher-permission-matrix tbody tr:nth-child(even){background:#f7f9fd}
+    .teacher-permission-note{padding:8px 10px;border-top:1px solid #e4e9f2;background:#fbfcfe;color:var(--sb);font-size:10px}.teacher-save-footer{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding-top:3px}
+    @media(max-width:720px){.teacher-account-head{align-items:flex-start;flex-direction:column}.teacher-account-actions{width:100%;justify-content:flex-start}.teacher-filter-row{grid-template-columns:1fr}.teacher-permission-grid{grid-template-columns:1fr}}
     @media (max-width: 1000px){.admin-workspace{grid-template-columns:1fr}.admin-detail-card{position:static}.admin-list-card,.admin-detail-card{min-height:0}.admin-list-scroll,.admin-detail-body{max-height:none}}
     @media (max-width: 900px) { .role-box { grid-template-columns: 1fr; }.admin-form-grid{grid-template-columns:1fr} }
 
@@ -251,29 +266,46 @@
       </div>
 
       <div id="tab-teachers" class="tab-panel">
-        <div class="card">
-          <div class="card-title">교사 계정 관리 | Teacher Account Management</div>
-          <div class="filter-bar">
-            <input id="teacher-search" class="edit-input flex1" placeholder="교사명/이메일/학반/권한 검색 | Search teachers">
-            <button class="btn btn-secondary" onclick="addTeacherRow()">교사 추가 | Add</button>
-            <button id="btn-save-teachers" class="btn btn-primary" onclick="saveTeachers()" disabled style="opacity:.4;cursor:not-allowed;">저장할 내용 없음 | No Changes</button>
-          </div>
-          <div class="admin-workspace">
-            <div class="admin-list-card">
-              <div class="admin-list-head">
-                <b>교사 목록 | Teachers</b>
-                <div id="teacher-list-summary" class="admin-count-row"></div>
-              </div>
-              <div class="admin-list-scroll">
-                <table class="admin-list-table">
-                  <thead><tr><th style="width:38%">교사</th><th style="width:25%">담당학반</th><th style="width:37%">권한</th></tr></thead>
-                  <tbody id="teacher-tbody"></tbody>
-                </table>
-              </div>
+        <div class="card" style="padding:0;overflow:hidden">
+          <div class="teacher-account-head">
+            <div>
+              <div class="teacher-account-title">교사 계정·권한 <span>Teacher Accounts & Roles</span></div>
+              <div id="teacher-page-summary" class="teacher-account-sub">교사 0명 · 수정 대기 0건</div>
             </div>
-            <div class="admin-detail-card">
-              <div class="admin-detail-head"><b>교사 상세 편집 | Teacher Details</b><span id="teacher-selected-label" style="float:right;font-size:11px;color:var(--sb)"></span></div>
-              <div id="teacher-detail" class="admin-detail-body"><div class="admin-detail-empty">왼쪽 목록에서 교사를 선택하세요.</div></div>
+            <div class="teacher-account-actions">
+              <button class="btn btn-secondary" onclick="addTeacherRow()">교사 추가 | Add</button>
+              <button id="btn-save-teachers" class="btn btn-primary" onclick="saveTeachers()" disabled style="opacity:.4;cursor:not-allowed;">저장할 내용 없음 | No Changes</button>
+            </div>
+          </div>
+          <div style="padding:0 14px 14px">
+            <div class="teacher-filter-row">
+              <input id="teacher-search" class="edit-input" placeholder="교사명, 이메일, 학반, 권한 검색 | Search teachers">
+              <select id="teacher-role-filter" class="edit-input" aria-label="권한 필터">
+                <option value="all">전체 권한 | All Roles</option>
+                <option value="basic">기본 교사 | Basic</option>
+                <option value="confirm">디텐션 확정 | Confirm</option>
+                <option value="notice_recovery">알림·회복교육 | Notice/Recovery</option>
+                <option value="committee">위원회 | Committee</option>
+                <option value="admin">Master·Admin</option>
+              </select>
+            </div>
+            <div class="admin-workspace">
+              <div class="admin-list-card">
+                <div class="admin-list-head">
+                  <b>교사 목록 | Teachers</b>
+                  <div id="teacher-list-summary" class="admin-count-row"></div>
+                </div>
+                <div class="admin-list-scroll">
+                  <table class="admin-list-table">
+                    <thead><tr><th style="width:47%">교사</th><th style="width:15%">학반</th><th style="width:38%">주요 권한</th></tr></thead>
+                    <tbody id="teacher-tbody"></tbody>
+                  </table>
+                </div>
+              </div>
+              <div class="admin-detail-card">
+                <div class="admin-detail-head"><b>교사 상세 편집 | Teacher Details</b><span id="teacher-selected-label" style="float:right;font-size:11px;color:var(--sb)"></span></div>
+                <div id="teacher-detail" class="admin-detail-body"><div class="admin-detail-empty">왼쪽 목록에서 교사를 선택하세요.</div></div>
+              </div>
             </div>
           </div>
         </div>
@@ -438,8 +470,33 @@
       btn.style.cursor   = dirty ? 'pointer' : 'not-allowed';
       btn.textContent    = dirty ? '변경 저장 | Save Changes' : '저장할 내용 없음 | No Changes';
     }
+    function teacherIsDirty() {
+      return JSON.stringify([...teacherRows.map(teacherRowSig)].sort()) !== teacherSnapshot;
+    }
+    function teacherPendingCount() {
+      return teacherRows.filter(row => {
+        if (!row.oldKey) return true;
+        const original = teachersRaw[row.oldKey];
+        if (!original) return true;
+        return teacherRowSig(row) !== teacherRowSig({
+          ...original,
+          oldKey: row.oldKey,
+          roles: normalizeRoles(original.roles),
+          _delete: false
+        });
+      }).length;
+    }
+    function updateTeacherPageSummary() {
+      const el = document.getElementById('teacher-page-summary');
+      if (!el) return;
+      const total = teacherRows.filter(row => !row._delete).length;
+      const pending = teacherPendingCount();
+      el.textContent = `교사 ${total}명 · 수정 대기 ${pending}건 | ${total} teachers · ${pending} pending`;
+    }
     function checkTeacherDirty() {
-      setButtonState('btn-save-teachers', JSON.stringify([...teacherRows.map(teacherRowSig)].sort()) !== teacherSnapshot);
+      const dirty = teacherIsDirty();
+      setButtonState('btn-save-teachers', dirty);
+      updateTeacherPageSummary();
     }
     function checkStudentDirty() {
       setButtonState('btn-save-students', JSON.stringify([...studentRows.map(studentRowSig)].sort()) !== studentSnapshot);
@@ -790,19 +847,60 @@
       const map={default:'기본권한',confirm:'디텐션 확정',ms_notice:'중등 알림',hs_notice:'고등 알림',ms_restore:'중등 회복교육',hs_restore:'고등 회복교육',committee_view:'위원회 조회',committee_edit:'위원회 수정',master:'Master',admin:'Admin'};
       return normalizeRoles(roles).map(r=>map[r]||r).join(', ') || '-';
     }
+    function teacherMatchesRoleFilter(roles, filter) {
+      const set = new Set(normalizeRoles(roles));
+      if (!filter || filter === 'all') return true;
+      if (filter === 'basic') return set.has('default') && !['confirm','ms_notice','hs_notice','ms_restore','hs_restore','committee_view','committee_edit','master','admin'].some(role => set.has(role));
+      if (filter === 'confirm') return set.has('confirm');
+      if (filter === 'notice_recovery') return ['ms_notice','hs_notice','ms_restore','hs_restore'].some(role => set.has(role));
+      if (filter === 'committee') return set.has('committee_view') || set.has('committee_edit');
+      if (filter === 'admin') return set.has('master') || set.has('admin');
+      return true;
+    }
+    function teacherRoleBadgeHtml(roles) {
+      const set = new Set(normalizeRoles(roles));
+      const badges = [];
+      if (set.has('admin')) badges.push(['Admin','admin']);
+      else if (set.has('master')) badges.push(['Master','admin']);
+      if (set.has('confirm')) badges.push(['확정','primary']);
+      const notices = [set.has('ms_notice'), set.has('hs_notice')];
+      if (notices[0] && notices[1]) badges.push(['알림','']);
+      else if (notices[0]) badges.push(['MS 알림','']);
+      else if (notices[1]) badges.push(['HS 알림','']);
+      const recovery = [set.has('ms_restore'), set.has('hs_restore')];
+      if (recovery[0] && recovery[1]) badges.push(['회복','']);
+      else if (recovery[0]) badges.push(['MS 회복','']);
+      else if (recovery[1]) badges.push(['HS 회복','']);
+      if (set.has('committee_edit')) badges.push(['위원회 수정','']);
+      else if (set.has('committee_view')) badges.push(['위원회 조회','']);
+      if (!badges.length && set.has('default')) badges.push(['기본','primary']);
+      if (!badges.length) badges.push(['권한 없음','']);
+      const shown = badges.slice(0, 5);
+      const more = badges.length - shown.length;
+      return `<div class="teacher-role-badges">${shown.map(([label,type])=>`<span class="teacher-role-badge ${type}">${label}</span>`).join('')}${more>0?`<span class="teacher-role-badge more">+${more}</span>`:''}</div>`;
+    }
+    function teacherPrimaryRole(roles) {
+      const set = new Set(normalizeRoles(roles));
+      if (set.has('admin')) return 'Admin';
+      if (set.has('master')) return 'Master';
+      if (set.has('confirm')) return '디텐션 확정';
+      return '일반 교사';
+    }
 
     function renderTeachers() {
       const q=(document.getElementById('teacher-search')?.value||'').trim().toLowerCase();
+      const roleFilter=document.getElementById('teacher-role-filter')?.value||'all';
       const tb=document.getElementById('teacher-tbody');
-      const visible=teacherRows.map((r,idx)=>({r,idx})).filter(({r})=>!r._delete && (!q || [r.name,r.email,r.homeroom,roleLabels(r.roles)].some(v=>String(v||'').toLowerCase().includes(q))))
+      const visible=teacherRows.map((r,idx)=>({r,idx})).filter(({r})=>!r._delete && teacherMatchesRoleFilter(r.roles, roleFilter) && (!q || [r.name,r.email,r.homeroom,roleLabels(r.roles)].some(v=>String(v||'').toLowerCase().includes(q))))
         .sort((a,b)=>String(a.r.name||'').localeCompare(String(b.r.name||''),'ko'));
       const deleted=teacherRows.filter(r=>r._delete).length;
       document.getElementById('teacher-list-summary').innerHTML=`<span class="admin-count-pill">전체 ${teacherRows.length}</span><span class="admin-count-pill">표시 ${visible.length}</span>${deleted?`<span class="admin-count-pill" style="background:#fee2e2;color:#b91c1c">삭제 표시 ${deleted}</span>`:''}`;
-      if(!visible.length){tb.innerHTML='<tr><td colspan="3" class="empty">교사 데이터가 없습니다.</td></tr>';renderTeacherDetail();return;}
+      updateTeacherPageSummary();
+      if(!visible.length){selectedTeacherIndex=-1;tb.innerHTML='<tr><td colspan="3" class="empty">조건에 맞는 교사 데이터가 없습니다.<br><span class="admin-secondary">No teachers match the current filters.</span></td></tr>';renderTeacherDetail();return;}
+      if(selectedTeacherIndex<0 || !teacherRows[selectedTeacherIndex] || teacherRows[selectedTeacherIndex]._delete || !visible.some(item=>item.idx===selectedTeacherIndex)){selectedTeacherIndex=visible[0].idx;}
       tb.innerHTML=visible.map(({r,idx})=>`<tr class="admin-list-row ${idx===selectedTeacherIndex?'selected':''}" onclick="selectTeacher(${idx})">
         <td><div class="admin-primary">${esc(r.name||'(이름 없음)')}</div><div class="admin-secondary">${esc(r.email||'-')}</div></td>
-        <td>${esc(r.homeroom||'-')}</td><td><div class="admin-secondary" style="white-space:normal">${esc(roleLabels(r.roles))}</div></td></tr>`).join('');
-      if(selectedTeacherIndex<0 || !teacherRows[selectedTeacherIndex] || teacherRows[selectedTeacherIndex]._delete){selectedTeacherIndex=visible[0].idx;}
+        <td style="text-align:center">${r.homeroom?`<span class="teacher-role-badge">${esc(r.homeroom)}</span>`:'-'}</td><td>${teacherRoleBadgeHtml(r.roles)}</td></tr>`).join('');
       renderTeacherDetail();
     }
 
@@ -827,30 +925,55 @@
       const box=document.getElementById('teacher-detail'); const label=document.getElementById('teacher-selected-label');
       const r=teacherRows[selectedTeacherIndex];
       if(!r||r._delete){label.textContent='';box.innerHTML='<div class="admin-detail-empty">왼쪽 목록에서 교사를 선택하세요.</div>';return;}
-      label.textContent=(r.name||'신규 교사')+(r._status==='신규'?' · 신규':'');
       const roles=normalizeRoles(r.roles);
       const editable = masterCanEditRow(r);
       const disabledAttr = editable ? '' : 'disabled';
-      const groups = [...new Set(ROLE_OPTIONS.map(o => o.group))];
-      const rolesHtml = groups.map(group => {
-        const items = ROLE_OPTIONS.filter(o => o.group === group).map(o => {
-          const roleDisabled = canEditRole(r, o.key) ? '' : 'disabled';
-          return `<label><input type="checkbox" ${roles.includes(o.key)?'checked':''} ${roleDisabled} onchange="updateTeacherRole(${selectedTeacherIndex},'${o.key}',this.checked)">${o.label}</label>`;
-        }).join('');
-        return `<div class="role-group"><div class="admin-secondary" style="font-weight:800;margin-bottom:6px">${group}</div><div class="role-box">${items}</div></div>`;
-      }).join('');
+      const statusText = r._status === '신규' ? '신규' : r._status === '저장됨' ? '저장됨' : '저장된 계정';
+      label.textContent=(r.name||'신규 교사')+(r.homeroom?` · ${r.homeroom}`:'');
+      const roleCheck = (key, labelText) => {
+        const roleDisabled = canEditRole(r, key) ? '' : 'disabled';
+        return `<label class="teacher-permission-item"><input type="checkbox" ${roles.includes(key)?'checked':''} ${roleDisabled} onchange="updateTeacherRole(${selectedTeacherIndex},'${key}',this.checked)"><span>${labelText}</span></label>`;
+      };
+      const matrixCheck = (key, labelText) => {
+        const roleDisabled = canEditRole(r, key) ? '' : 'disabled';
+        return `<input type="checkbox" aria-label="${labelText}" ${roles.includes(key)?'checked':''} ${roleDisabled} onchange="updateTeacherRole(${selectedTeacherIndex},'${key}',this.checked)">`;
+      };
       const lockNotice = editable ? '' : '<div class="notice" style="margin-bottom:10px">Master는 Admin/Master 계정을 수정할 수 없습니다. | Master cannot edit Admin/Master accounts.</div>';
       box.innerHTML=`
+        <div class="teacher-detail-identity ${editable?'':'locked'}">
+          <div class="teacher-detail-name">${esc(r.name||'신규 교사')} · ${esc(r.homeroom||'학반 미지정')}</div>
+          <div class="teacher-detail-meta">${esc(r.email||'이메일 미입력')} · ${esc(teacherPrimaryRole(r.roles))} · ${esc(statusText)}</div>
+        </div>
         ${lockNotice}
-        <div class="admin-form-section"><div class="admin-form-title">기본 정보</div><div class="admin-form-grid">
+        <div class="admin-form-section"><div class="admin-form-title">기본 정보 | Account</div><div class="admin-form-grid">
           <div><label class="label">이름 | Name</label><input class="edit-input" ${disabledAttr} value="${esc(r.name||'')}" oninput="teacherRows[${selectedTeacherIndex}].name=this.value;checkTeacherDirty()" onblur="renderTeachers()"></div>
-          <div><label class="label">이메일 | Email</label><input class="edit-input" ${disabledAttr} value="${esc(r.email||'')}" oninput="teacherRows[${selectedTeacherIndex}].email=this.value;checkTeacherDirty()" onblur="renderTeachers()"></div>
-          <div><label class="label">비밀번호 | Password</label><input class="edit-input" ${disabledAttr} value="${esc(r.password||'')}" oninput="teacherRows[${selectedTeacherIndex}].password=this.value;checkTeacherDirty()"></div>
           <div><label class="label">담당학반 | Homeroom</label><input class="edit-input" ${disabledAttr} value="${esc(r.homeroom||'')}" oninput="teacherRows[${selectedTeacherIndex}].homeroom=this.value;checkTeacherDirty()" onblur="renderTeachers();renderStudents()"></div>
+          <div style="grid-column:1/-1"><label class="label">이메일 | Email</label><input class="edit-input" ${disabledAttr} value="${esc(r.email||'')}" oninput="teacherRows[${selectedTeacherIndex}].email=this.value;checkTeacherDirty()" onblur="renderTeachers()"></div>
+          <div style="grid-column:1/-1"><label class="label">비밀번호 | Password</label><input class="edit-input" ${disabledAttr} value="${esc(r.password||'')}" oninput="teacherRows[${selectedTeacherIndex}].password=this.value;checkTeacherDirty()"></div>
         </div></div>
-        <div class="admin-form-section"><div class="admin-form-title">권한 | Roles</div><div class="admin-form-grid one">${rolesHtml}</div></div>
-        <div class="admin-form-section"><div class="admin-form-title">저장 상태</div><div class="admin-form-grid one"><div>${statusPill(r._status||'기존')}</div><label class="delete-toggle"><input type="checkbox" ${editable?'':'disabled'} onchange="teacherRows[${selectedTeacherIndex}]._delete=this.checked;checkTeacherDirty();renderTeachers()"> 이 교사를 삭제 표시</label></div></div>
-        <div class="admin-detail-actions"><button class="btn btn-primary" ${editable?'':'disabled'} onclick="saveTeachers()">교사 데이터 저장</button></div>`;
+        <div class="admin-form-section"><div class="admin-form-title">기본 업무 | Basic</div><div class="teacher-permission-grid">
+          ${roleCheck('default','기본권한 | Default')}
+          ${roleCheck('confirm','디텐션 확정 | Confirm')}
+        </div></div>
+        <div class="admin-form-section"><div class="admin-form-title">알림·회복교육 | Notice & Recovery</div>
+          <table class="teacher-permission-matrix"><thead><tr><th style="width:32%;text-align:left"></th><th>알림 | Notice</th><th>회복교육 | Recovery</th></tr></thead><tbody>
+            <tr><th>중등 | MS</th><td>${matrixCheck('ms_notice','중등 알림')}</td><td>${matrixCheck('ms_restore','중등 회복교육')}</td></tr>
+            <tr><th>고등 | HS</th><td>${matrixCheck('hs_notice','고등 알림')}</td><td>${matrixCheck('hs_restore','고등 회복교육')}</td></tr>
+          </tbody></table>
+        </div>
+        <div class="admin-form-section"><div class="admin-form-title">위원회 | Committee</div><div class="teacher-permission-grid">
+          ${roleCheck('committee_view','조회 | View')}
+          ${roleCheck('committee_edit','수정 | Edit')}
+        </div><div class="teacher-permission-note">수정 권한을 선택하면 조회 권한도 함께 유지됩니다. | Edit permission includes view access.</div></div>
+        <div class="admin-form-section"><div class="admin-form-title">관리 권한 | Administration</div><div class="teacher-permission-grid">
+          ${roleCheck('master','Master')}
+          ${roleCheck('admin','Admin')}
+        </div></div>
+        <div class="admin-form-section"><div class="admin-form-title">저장 상태 | Save Status</div><div class="admin-form-grid one"><div>${statusPill(r._status||'기존')}</div></div></div>
+        <div class="teacher-save-footer">
+          <label class="delete-toggle"><input type="checkbox" ${editable?'':'disabled'} onchange="teacherRows[${selectedTeacherIndex}]._delete=this.checked;checkTeacherDirty();renderTeachers()"> 이 교사를 삭제 표시</label>
+          <button class="btn btn-primary" ${editable?'':'disabled'} onclick="saveTeachers()">교사 데이터 저장</button>
+        </div>`;
     }
 
     function deleteTeacherRow(idx) {
@@ -1118,6 +1241,7 @@
     }
 
     document.getElementById('teacher-search').addEventListener('input', renderTeachers);
+    document.getElementById('teacher-role-filter').addEventListener('change', renderTeachers);
     document.getElementById('student-search').addEventListener('input', renderStudents);
 
     document.addEventListener('click', e => {
