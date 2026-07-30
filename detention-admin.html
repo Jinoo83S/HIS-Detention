@@ -1976,9 +1976,8 @@
     function studentIndexPreparedRows(){
       const refs=[studentRows,entryRows,noticeRows,recoveryRows,committeeRows,cycleRows];
       if(studentIndexPreparedCache&&studentIndexPreparedCache.refs.every(function(r,i){return r===refs[i];}))return studentIndexPreparedCache;
-      const prepared=studentIndexPreparedRows();
-      const all=prepared.all;
-      const enriched=prepared.enriched;
+      const all=studentAggregateRows();
+      const enriched=all.map(function(x){return {row:x,issues:studentReviewIssueStats(x)};});
       studentIndexPreparedCache={refs:refs,all:all,enriched:enriched};
       return studentIndexPreparedCache;
     }
