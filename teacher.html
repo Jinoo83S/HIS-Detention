@@ -489,7 +489,8 @@
     .student-detention-flow-card .flow-date{font-size:10px;color:#64748b;font-weight:700}
     .student-detention-flow-card .flow-title{font-size:11px;color:#1f2937;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:3px}
     .student-detention-flow-card .flow-meta{display:flex;justify-content:space-between;gap:5px;margin-top:6px;font-size:10px;color:#475569}
-    .student-detention-flow-card.pending{border-top-color:#f59e0b}.student-detention-flow-card.rejected{border-top-color:#94a3b8}.student-detention-flow-card.confirmed{border-top-color:#ef4444}
+    .student-detention-flow-card.detention{border-top-color:#ef4444}.student-detention-flow-card.notice{border-top-color:#f59e0b}.student-detention-flow-card.recovery{border-top-color:#10b981}.student-detention-flow-card.committee{border-top-color:#7c3aed}
+    .student-detention-flow-card.rejected{opacity:.72;border-top-color:#94a3b8}.student-detention-flow-card.pending{background:#fffdf5}
     @media(max-width:1450px){.student-detention-flow-grid{grid-template-columns:repeat(5,minmax(0,1fr))}}
     @media(max-width:1180px){.student-detention-flow-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
     .lookup-result-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
@@ -3946,12 +3947,16 @@
       if (row) row.classList.toggle('show');
     }
 
-    function openStudentDetailDetentionRecord(rowId){
+    function openStudentDetailProcessRecord(rowId){
       const row = document.getElementById(rowId);
       if(!row) return;
       row.classList.add('show');
       const summary = row.previousElementSibling;
       if(summary) summary.scrollIntoView({behavior:'smooth',block:'center'});
+    }
+
+    function openStudentDetailDetentionRecord(rowId){
+      openStudentDetailProcessRecord(rowId);
     }
 
     function setStudentDetailExpanded(expanded){
@@ -4533,17 +4538,60 @@
         </tr>`;
       }).join('');
 
-      const detentionTimeline = detList.slice().reverse().map(function(r){
-        const detailIndex = detList.findIndex(function(item){ return String(item.key)===String(r.key); });
-        const rowId = `student-det-detail-${detailIndex}`;
-        const state = String(r.status||'')==='확정'?'confirmed':String(r.status||'')==='반려'?'rejected':'pending';
-        return {r:r,rowId:rowId,state:state};
+      const studentProcessTimeline = [];
+      detList.forEach(function(r, detailIndex){
+        studentProcessTimeline.push({
+          type:'detention', rowId:`student-det-detail-${detailIndex}`,
+          date:r.confirmedAt||r.createdAt||'',
+          title:r.violation||'-',
+          left:`${String(r.totalPoints??0)}점`,
+          right:recordStatusBilingual(r.status),
+          state:String(r.status||'')==='확정'?'confirmed':String(r.status||'')==='반려'?'rejected':'pending'
+        });
       });
-      const timelineCols = detentionTimeline.length>14?6:(detentionTimeline.length>8?5:Math.max(1,Math.min(6,detentionTimeline.length)));
-      const detentionTimelineCards = detentionTimeline.map(function(item,index){
-        const rowEnd=((index+1)%timelineCols===0)||(index===detentionTimeline.length-1);
-        const r=item.r;
-        return `<button type="button" class="student-detention-flow-card ${item.state}${rowEnd?' row-end':''}" onclick="openStudentDetailDetentionRecord('${item.rowId}')" title="${esc(r.violation||'-')}"><div class="flow-date">${esc(String(r.confirmedAt||r.createdAt||'').slice(0,10)||'-')}</div><div class="flow-title">${esc(r.violation||'-')}</div><div class="flow-meta"><span>${esc(String(r.totalPoints??0))}점</span><span>${esc(recordStatusBilingual(r.status))}</span></div></button>`;
+      noticeList.forEach(function(r, detailIndex){
+        const reason=String(r.cycleViolationsSnapshot||'-').split('\n')[0];
+        studentProcessTimeline.push({
+          type:'notice', rowId:`student-notice-detail-${detailIndex}`,
+          date:r.completedAt||r.studentTeacherMailAt||r.parentMailAt||r.createdAt||'',
+          title:reason||'알림',
+          left:'알림',
+          right:r.completedAt?'완료':'진행중',
+          state:r.completedAt?'completed':'pending'
+        });
+      });
+      recList.forEach(function(r, detailIndex){
+        const reason=String(r.reasonsSnapshot||r.violationSnapshot||'-').split('\n')[0];
+        studentProcessTimeline.push({
+          type:'recovery', rowId:`student-rec-detail-${detailIndex}`,
+          date:r.completedAt||r.createdAt||'',
+          title:reason||'회복교육',
+          left:`-${String(r.recoveryPoints||0)}점`,
+          right:r.completedAt?'완료':'진행중',
+          state:r.completedAt?'completed':'pending'
+        });
+      });
+      committeeList.forEach(function(r, detailIndex){
+        studentProcessTimeline.push({
+          type:'committee', rowId:`student-com-detail-${detailIndex}`,
+          date:committeeCreatedAt(r)||r.completedAt||'',
+          title:getCommitteeReasonText(r)||committeeTypeLabel(r.type,r)||'위원회',
+          left:committeeTypeLabel(r.type,r),
+          right:r.completedAt?'완료':'진행중',
+          state:r.completedAt?'completed':'pending'
+        });
+      });
+      studentProcessTimeline.sort(function(a,b){
+        const ad=Date.parse(a.date||'')||0, bd=Date.parse(b.date||'')||0;
+        if(ad!==bd) return ad-bd;
+        const order={detention:1,notice:2,recovery:3,committee:4};
+        return (order[a.type]||9)-(order[b.type]||9);
+      });
+      const timelineCols = studentProcessTimeline.length>14?6:(studentProcessTimeline.length>8?5:Math.max(1,Math.min(6,studentProcessTimeline.length)));
+      const processTimelineCards = studentProcessTimeline.map(function(item,index){
+        const rowEnd=((index+1)%timelineCols===0)||(index===studentProcessTimeline.length-1);
+        const typeLabel={detention:'디텐션',notice:'알림',recovery:'회복교육',committee:'위원회'}[item.type]||item.type;
+        return `<button type="button" class="student-detention-flow-card ${item.type} ${item.state}${rowEnd?' row-end':''}" onclick="openStudentDetailProcessRecord('${item.rowId}')" title="${esc(item.title||'-')}"><div class="flow-date">${esc(String(item.date||'').slice(0,10)||'-')} · ${esc(typeLabel)}</div><div class="flow-title">${esc(item.title||'-')}</div><div class="flow-meta"><span>${esc(item.left||'')}</span><span>${esc(item.right||'')}</span></div></button>`;
       }).join('');
 
       panel.innerHTML = `
@@ -4567,9 +4615,9 @@
             .map(([l,c,v])=>`<div style="background:#eef3ff;border-radius:8px;padding:8px;text-align:center"><div style="font-size:20px;font-weight:800;color:${c}">${v}</div><div style="font-size:10px;color:var(--sb)">${l}</div></div>`).join('')}
         </div>
 
-        <section class="student-detention-flow show" aria-label="학생 디텐션 순서 | Student detention timeline" style="margin:0 0 14px">
-          <div class="student-detention-flow-head"><div><div class="student-detention-flow-title">디텐션 순서 | Detention Timeline</div><div class="student-detention-flow-sub">오래된 기록부터 시간순입니다. 카드를 누르면 아래 해당 기록이 펼쳐집니다.</div></div><b>${detentionTimeline.length}건</b></div>
-          <div class="student-detention-flow-grid" style="grid-template-columns:repeat(${timelineCols},minmax(0,1fr))">${detentionTimelineCards||'<div class="empty">디텐션 기록이 없습니다. | No detention records.</div>'}</div>
+        <section class="student-detention-flow show" aria-label="학생 생활지도 과정 | Student guidance timeline" style="margin:0 0 14px">
+          <div class="student-detention-flow-head"><div><div class="student-detention-flow-title">벌점·알림·회복교육·위원회 과정 | Student Guidance Timeline</div><div class="student-detention-flow-sub">모든 기록을 오래된 순서로 합쳤습니다. 카드를 누르면 아래 해당 기록이 펼쳐집니다.</div></div><b>${studentProcessTimeline.length}건</b></div>
+          <div class="student-detention-flow-grid" style="grid-template-columns:repeat(${timelineCols},minmax(0,1fr))">${processTimelineCards||'<div class="empty">생활지도 기록이 없습니다. | No guidance records.</div>'}</div>
         </section>
 
         <!-- 연락처 -->
