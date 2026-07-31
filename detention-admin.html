@@ -2829,7 +2829,7 @@
       if(!String(row.studentKey||'').trim()) issues.push({code:'missing',level:'danger',text:'학생 Key 없음'});
       if(!String(row.studentName||'').trim()) issues.push({code:'missing',level:'warn',text:'학생명 없음'});
       if(!String(row.className||'').trim()) issues.push({code:'missing',level:'warn',text:'학반 없음'});
-      if(row.currentPointsAtReferral===null || row.currentPointsAtReferral===undefined || String(row.currentPointsAtReferral).trim()==='') issues.push({code:'missing',level:'warn',text:'회부점수 없음'});
+      if((row.currentPointsAtReferral===null || row.currentPointsAtReferral===undefined || String(row.currentPointsAtReferral).trim()==='') && row.referralScoreCheckExcluded!==true) issues.push({code:'missing',level:'warn',text:'회부점수 없음'});
       if(!String(row.year??'').trim())issues.push({code:'missing',level:'warn',text:'학년도 누락'});
       if(!keys.length) issues.push({code:'missing',level:'warn',text:'연결 위반 없음'});
       if((!String(row.createdBy||'').trim()||!String(row.createdByEmail||'').trim())&&!committeeHandledByAdmin(row))issues.push({code:'audit',level:'warn',text:'생성자 이력 누락'});
@@ -2916,6 +2916,32 @@
       renderCommitteeTable();
     }
 
+    function toggleCommitteeReferralScoreExclusion(key){
+      const row=committeeRows.find(function(r){return String(r.key)===String(key);});
+      if(!row)return;
+      const excluding=row.referralScoreCheckExcluded===true;
+      if(!excluding){
+        if(!confirm('이 기록을 과거 데이터 이동 기록으로 처리하여 회부 점수 없음 점검에서 제외하시겠습니까?\n다른 점검 항목은 계속 유지됩니다.'))return;
+        const identity=adminEditorIdentity();
+        row.referralScoreCheckExcluded=true;
+        row.referralScoreCheckExcludedReason='과거 개발 과정 중 이동된 데이터';
+        row.referralScoreCheckExcludedAt=new Date().toISOString();
+        row.referralScoreCheckExcludedBy=identity.name||'관리자';
+        row.referralScoreCheckExcludedByEmail=identity.id||'admin';
+      }else{
+        if(!confirm('회부 점수 점검 제외를 취소하시겠습니까?'))return;
+        row.referralScoreCheckExcluded=null;
+        row.referralScoreCheckExcludedReason=null;
+        row.referralScoreCheckExcludedAt=null;
+        row.referralScoreCheckExcludedBy=null;
+        row.referralScoreCheckExcludedByEmail=null;
+      }
+      invalidateStudentIndexCache();
+      checkCommitteeDirty();
+      renderCommitteeTable();
+      toast(excluding?'회부 점수 점검 제외를 취소했습니다. 저장 버튼을 눌러 반영하세요.':'회부 점수 없음 점검에서 제외했습니다. 저장 버튼을 눌러 반영하세요.','ok');
+    }
+
     function renderCommitteeEditor(row){
       const pane=document.getElementById('committee-editor-pane');
       if(!pane) return;
@@ -2929,9 +2955,12 @@
       const statsContext=buildCommitteeStudentStats();
       const rowStats=statsContext.rowStats[String(row.key||'')]||{overallPoints:0,round:1,total:1};
       const linkedCount=committeeLinkedKeys(row).length;
-      const issueHtml=issues.issues.length
+      const exclusionNotice=row.referralScoreCheckExcluded===true
+        ? '<div class="committee-editor-alert ok"><b>회부 점수 점검 제외</b><br>'+esc(row.referralScoreCheckExcludedReason||'과거 이동 데이터')+' · '+esc(row.referralScoreCheckExcludedBy||'관리자')+'</div>'
+        : '';
+      const issueHtml=exclusionNotice+(issues.issues.length
         ? '<div class="committee-editor-alert warn"><b>데이터 점검 필요</b><br>'+issues.issues.map(function(i){return '• '+esc(i.text);}).join('<br>')+'</div>'
-        : '<div class="committee-editor-alert ok">현재 자동 점검에서 발견된 문제가 없습니다.</div>';
+        : '<div class="committee-editor-alert ok">현재 자동 점검에서 발견된 문제가 없습니다.</div>');
       const key=String(row.key||'');
       const disabled=row._deleted?' disabled':'';
       function input(label,field,type,kind,full,readOnly){
@@ -2955,7 +2984,7 @@
             input('학생명','studentName','text','text',false,false)+input('학반','className','text','text',false,false)+
             area('연결된 디텐션 Key · 쉼표 또는 줄바꿈으로 구분','linkedEntryKeys','links',3,true)+
           '</div></div></div>'+committeeLinkSuggestionHtml(row)+
-          '<div class="committee-edit-section"><div class="committee-edit-section-title">회부 및 메모</div><div class="committee-edit-section-body"><div class="committee-edit-grid">'+
+          '<div class="committee-edit-section"><div class="committee-edit-section-title" style="display:flex;justify-content:space-between;align-items:center;gap:8px;"><span>회부 및 메모</span><button type="button" class="btn '+'btn-secondary'+' small-btn" onclick="toggleCommitteeReferralScoreExclusion(\''+esc(key)+'\')">'+(row.referralScoreCheckExcluded===true?'회부 점수 점검 제외 취소':'과거 이동 데이터 · 점검 제외')+'</button></div><div class="committee-edit-section-body"><div class="committee-edit-grid">'+
             input('회부 당시 점수','currentPointsAtReferral','number','number',false,false)+input('학년도','year','text','text',false,false)+
             area('회부 기준 / 위반 내역','reasonSnapshot','reason',5,true)+
             area('위원회 메모','committeeNote','note',5,true)+

@@ -477,6 +477,21 @@
     .lookup-search-btn{height:38px;min-width:94px;border:0;border-radius:9px;background:#1455d9;color:#fff;font-weight:800;cursor:pointer}
     .lookup-reset-btn{border:0;background:transparent;color:#6b7280;font-size:11px;cursor:pointer;padding:6px 10px}
     .lookup-result-card{background:#fff;border:1px solid #dbe4f2;border-radius:14px;padding:14px;box-shadow:0 4px 14px rgba(17,42,90,.05)}
+    .student-detention-flow{display:none;background:#fff;border:1px solid #dbe4f2;border-radius:14px;padding:12px 14px;margin:12px 0;box-shadow:0 4px 14px rgba(17,42,90,.05)}
+    .student-detention-flow.show{display:block}
+    .student-detention-flow-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:9px}
+    .student-detention-flow-title{font-size:13px;font-weight:800;color:#173a7a}
+    .student-detention-flow-sub{font-size:10px;color:#64748b}
+    .student-detention-flow-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:18px 22px;overflow:visible}
+    .student-detention-flow-card{position:relative;min-width:0;border:1px solid #d9e2f1;border-top:4px solid #ef4444;border-radius:8px;background:#fff;padding:8px 9px;cursor:pointer;text-align:left;transition:.15s ease}
+    .student-detention-flow-card:hover,.student-detention-flow-card:focus{outline:none;border-color:#8fb3e8;box-shadow:0 3px 10px rgba(32,72,140,.14);transform:translateY(-1px)}
+    .student-detention-flow-card:not(.row-end)::after{content:'→';position:absolute;right:-17px;top:50%;transform:translateY(-50%);font-size:17px;font-weight:900;color:#7890b5;pointer-events:none}
+    .student-detention-flow-card .flow-date{font-size:10px;color:#64748b;font-weight:700}
+    .student-detention-flow-card .flow-title{font-size:11px;color:#1f2937;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:3px}
+    .student-detention-flow-card .flow-meta{display:flex;justify-content:space-between;gap:5px;margin-top:6px;font-size:10px;color:#475569}
+    .student-detention-flow-card.pending{border-top-color:#f59e0b}.student-detention-flow-card.rejected{border-top-color:#94a3b8}.student-detention-flow-card.confirmed{border-top-color:#ef4444}
+    @media(max-width:1450px){.student-detention-flow-grid{grid-template-columns:repeat(5,minmax(0,1fr))}}
+    @media(max-width:1180px){.student-detention-flow-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
     .lookup-result-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
     .lookup-result-title{font-size:16px;font-weight:850;color:#17233d}.lookup-count{color:#1455d9;font-size:12px;margin-left:5px}
     .lookup-table{width:100%;border-collapse:separate;border-spacing:0;font-size:11px;table-layout:fixed}
@@ -591,6 +606,7 @@
       .lookup-filter-grid,.lookup-filter-grid.recovery{grid-template-columns:1fr 1fr}.lookup-field:first-child{grid-column:1/-1}.lookup-search-btn{grid-column:1/-1;width:100%}
       .recovery-summary-grid{grid-template-columns:repeat(4,1fr);gap:6px}.recovery-summary-card{padding:9px 5px;display:block;text-align:center}.recovery-summary-icon{display:none}.recovery-summary-value{font-size:16px}.recovery-summary-label{font-size:9px}
       .lookup-desktop-table{display:none}.lookup-mobile-cards{display:block}.lookup-result-card{padding:11px}.lookup-page-head{margin-bottom:12px}
+      .student-detention-flow{padding:10px}.student-detention-flow-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 20px}.student-detention-flow-card:not(.row-end)::after{right:-15px}
       .lookup-detail-grid{grid-template-columns:1fr 1fr}.lookup-detail-item.full{grid-column:1/-1}.lookup-detail-hint{display:none}
       .lookup-mobile-card.expanded{border-color:#2e6df6;background:#f8fbff}
       .lookup-mobile-detail{display:none;margin-top:9px;padding-top:9px;border-top:1px solid #dce6f4}
@@ -1040,6 +1056,7 @@
         </div>
         <input id="all-search" style="display:none" value="">
       </div>
+      <section id="all-student-detention-flow" class="student-detention-flow" aria-live="polite"></section>
       <div class="lookup-result-card">
         <div class="lookup-result-head"><div class="lookup-result-title">검색 결과 | Results <span id="all-result-count" class="lookup-count">0건</span></div><span class="lookup-detail-hint">행을 누르면 상세 내용 펼치기 | Click a row to expand</span><button class="lookup-reset-btn" onclick="resetStudentRecordFilters()">초기화 | Reset</button></div>
         <div class="tbl-wrap lookup-desktop-table"><table class="lookup-table lookup-detention-table">
@@ -3214,6 +3231,45 @@
       document.getElementById('all-student-search').value=''; document.getElementById('all-class-filter').value='';
       document.getElementById('all-date-from').value=''; document.getElementById('all-date-to').value=''; allStudentFilterKey=''; expandedLookupDetentionKey=''; allRecordsPage=1; renderAllEntries();
     }
+    function openDetentionFlowRecord(key){
+      const classFilter=document.getElementById('all-class-filter').value;
+      const dateFrom=document.getElementById('all-date-from').value;
+      const dateTo=document.getElementById('all-date-to').value;
+      let list=Object.entries(entries||{}).map(([rowKey,value])=>({key:rowKey,...value}));
+      if(classFilter)list=list.filter(r=>String(r.className||'')===classFilter);
+      if(allStudentFilterKey)list=list.filter(r=>String(r.studentKey||'')===String(allStudentFilterKey));
+      if(dateFrom)list=list.filter(r=>String(r.createdAt||r.confirmedAt||'').slice(0,10)>=dateFrom);
+      if(dateTo)list=list.filter(r=>String(r.createdAt||r.confirmedAt||'').slice(0,10)<=dateTo);
+      list.sort((a,b)=>String(b.confirmedAt||b.createdAt||'').localeCompare(String(a.confirmedAt||a.createdAt||'')));
+      const idx=list.findIndex(r=>String(r.key)===String(key));
+      if(idx<0)return;
+      allRecordsPage=Math.floor(idx/PAGE_SIZE)+1;
+      expandedLookupDetentionKey=String(key);
+      renderAllEntries();
+      requestAnimationFrame(function(){
+        const row=document.querySelector('#all-records-tbody tr[data-key="'+CSS.escape(String(key))+'"]');
+        if(row)row.scrollIntoView({behavior:'smooth',block:'center'});
+      });
+    }
+
+    function renderAllStudentDetentionFlow(list){
+      const wrap=document.getElementById('all-student-detention-flow');
+      if(!wrap)return;
+      if(!allStudentFilterKey){wrap.classList.remove('show');wrap.innerHTML='';return;}
+      const profile=getStudentProfile(allStudentFilterKey)||{};
+      const chronological=list.slice().sort((a,b)=>String(a.confirmedAt||a.createdAt||'').localeCompare(String(b.confirmedAt||b.createdAt||'')));
+      const cols=chronological.length>14?6:(chronological.length>8?5:Math.max(1,Math.min(6,chronological.length)));
+      const cards=chronological.map(function(r,i){
+        const rowEnd=((i+1)%cols===0)||(i===chronological.length-1);
+        const state=String(r.status||'')==='확정'?'confirmed':String(r.status||'')==='반려'?'rejected':'pending';
+        const stateLabel=recordStatusBilingual(r.status);
+        return '<button type="button" class="student-detention-flow-card '+state+(rowEnd?' row-end':'')+'" onclick="openDetentionFlowRecord(\''+esc(r.key)+'\')" title="'+esc(r.violation||'-')+'"><div class="flow-date">'+esc(String(r.confirmedAt||r.createdAt||'').slice(0,10)||'-')+'</div><div class="flow-title">'+esc(r.violation||'-')+'</div><div class="flow-meta"><span>'+esc(String(r.totalPoints??0))+'점</span><span>'+esc(stateLabel)+'</span></div></button>';
+      }).join('');
+      wrap.style.setProperty('--flow-cols',String(cols));
+      wrap.innerHTML='<div class="student-detention-flow-head"><div><div class="student-detention-flow-title">'+esc(sName(profile.name||'',profile.englishName||''))+' · 디텐션 순서 | Detention Timeline</div><div class="student-detention-flow-sub">오래된 기록부터 시간순으로 표시됩니다. 카드를 누르면 아래 상세 기록이 열립니다.</div></div><b>'+chronological.length+'건</b></div><div class="student-detention-flow-grid" style="grid-template-columns:repeat('+cols+',minmax(0,1fr))">'+(cards||'<div class="empty">디텐션 기록이 없습니다. | No detention records.</div>')+'</div>';
+      wrap.classList.add('show');
+    }
+
     function renderAllEntries(){
       const classFilter=document.getElementById('all-class-filter').value;
       const dateFrom=document.getElementById('all-date-from').value;
@@ -3224,6 +3280,7 @@
       if(dateFrom) list=list.filter(r=>String(r.createdAt||r.confirmedAt||'').slice(0,10)>=dateFrom);
       if(dateTo) list=list.filter(r=>String(r.createdAt||r.confirmedAt||'').slice(0,10)<=dateTo);
       list.sort((a,b)=>String(b.confirmedAt||b.createdAt||'').localeCompare(String(a.confirmedAt||a.createdAt||'')));
+      renderAllStudentDetentionFlow(list);
       document.getElementById('all-result-count').textContent=`${list.length}건`;
       allRecordsPage=clampPage(allRecordsPage,list.length,PAGE_SIZE); const pageData=slicePage(list,allRecordsPage,PAGE_SIZE);
       renderPager('all-records-pager',list.length,pageData.page,'setAllRecordsPage');
