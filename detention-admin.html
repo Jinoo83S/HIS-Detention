@@ -420,7 +420,14 @@
     .student-review-help{font-size:10px;color:#64748b;font-weight:600}
     .student-timeline{display:flex;flex-direction:column;gap:8px;padding:9px;overflow:visible}
     .student-timeline-row{display:flex;align-items:stretch;gap:5px;min-width:0}
-    .student-timeline-item{flex:1 1 0;min-width:0;border:1px solid #dbe3ef;border-top:4px solid #64748b;border-radius:7px;padding:7px 8px;background:#fff;min-height:78px;cursor:pointer;transition:transform .12s ease,box-shadow .12s ease,background .12s ease}
+    .student-timeline-item{position:relative;flex:1 1 0;min-width:0;border:1px solid #dbe3ef;border-top:4px solid #64748b;border-radius:7px;padding:7px 8px;background:#fff;min-height:78px;cursor:pointer;transition:transform .12s ease,box-shadow .12s ease,background .12s ease}
+    .student-timeline-item.issue-warn{border-color:#f59e0b;border-top-color:#f59e0b;background:#fffbeb}
+    .student-timeline-item.issue-bad{border-color:#ef4444;border-top-color:#ef4444;background:#fff7f7}
+    .student-timeline-issue-badge{position:absolute;top:5px;right:5px;z-index:1;border-radius:999px;padding:2px 5px;font-size:7.5px;font-weight:900;line-height:1.15;border:1px solid transparent}
+    .student-timeline-issue-badge.warn{color:#92400e;background:#fef3c7;border-color:#f59e0b}
+    .student-timeline-issue-badge.bad{color:#991b1b;background:#fee2e2;border-color:#ef4444}
+    .student-timeline-issue-text{margin-top:4px;padding-top:4px;border-top:1px dashed currentColor;font-size:7.5px;font-weight:800;line-height:1.25;color:#b45309;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .student-timeline-item.issue-bad .student-timeline-issue-text{color:#b91c1c}
     .student-timeline-item:hover,.student-timeline-item:focus{transform:translateY(-1px);box-shadow:0 5px 14px rgba(15,23,42,.12);outline:none}
     .student-timeline-item.active{background:#eff6ff;box-shadow:0 0 0 2px #2563eb inset}
     .student-timeline-item.entry{border-top-color:#ef4444}.student-timeline-item.notice{border-top-color:#f59e0b}.student-timeline-item.recovery{border-top-color:#10b981}.student-timeline-item.committee{border-top-color:#8b5cf6}
@@ -2075,7 +2082,45 @@
     function studentReviewStatus(kind,row){if(kind==='entry')return entryStatusLabel(row);if(kind==='notice')return row.completedAt?'완료':'진행 중';if(kind==='recovery')return row.completedAt?'완료':'기록';return row.completedAt?'완료':'진행 중';}
     function studentReviewScore(kind,row){if(kind==='entry')return '+'+Number(row.totalPoints||0);if(kind==='recovery')return '-'+Number(row.recoveryPoints||row.points||0);return '0';}
     function studentReviewDesc(kind,row){if(kind==='entry')return row.violation||row.category||'-';if(kind==='notice')return row.cycleViolationsSnapshot||row.reasonSnapshot||row.level||'-';if(kind==='recovery')return row.reasonsSnapshot||row.staffName||'-';return row.committeeNote||row.note||row.reason||'-';}
-    function studentReviewTimeline(x){const all=[];x.entries.forEach(r=>all.push({kind:'entry',row:r}));x.notices.forEach(r=>all.push({kind:'notice',row:r}));x.recovery.forEach(r=>all.push({kind:'recovery',row:r}));x.committee.forEach(r=>all.push({kind:'committee',row:r}));all.sort(function(a,b){return String(adminRecordDate(a.row)).localeCompare(String(adminRecordDate(b.row)));});if(!all.length)return '<div class="student-data-empty" style="margin:12px;">관련 기록이 없습니다.</div>';const rowCount=all.length>14?3:(all.length>6?2:1);const perRow=Math.ceil(all.length/rowCount);const rows=[];for(let start=0;start<all.length;start+=perRow){const chunk=all.slice(start,start+perRow);const cards=chunk.map(function(v,index){const active=studentReviewKind===v.kind&&String(studentReviewFocusKey)===String(v.row.key);const card='<div class="student-timeline-item '+v.kind+(active?' active':'')+'" tabindex="0" role="button" onclick="openStudentReviewTimeline(\''+v.kind+'\',\''+esc(v.row.key)+'\')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();openStudentReviewTimeline(\''+v.kind+'\',\''+esc(v.row.key)+'\');}"><div class="student-timeline-date">'+esc(adminRecordDate(v.row))+'</div><div class="student-timeline-title">'+studentReviewKindLabel(v.kind)+' · '+esc(studentReviewStatus(v.kind,v.row))+'</div><div class="student-timeline-desc">'+esc(studentReviewDesc(v.kind,v.row))+'</div><div class="student-timeline-score">'+esc(studentReviewScore(v.kind,v.row))+'점</div></div>';return card+(index<chunk.length-1?'<div class="student-timeline-arrow" aria-hidden="true">→</div>':'');}).join('');rows.push('<div class="student-timeline-row">'+cards+'</div>');if(start+perRow<all.length)rows.push('<div class="student-timeline-row-link"><span>다음 과정 ↓</span></div>');}return '<div class="student-timeline">'+rows.join('')+'</div>'; }
+    function studentReviewTimelineIssue(kind,row,entryDup){
+      const actionable=actionableAdminIssues(studentReviewIssues(kind,row,entryDup));
+      if(!actionable.length)return {count:0,bad:false,label:'',summary:''};
+      const bad=actionable.some(function(issue){return issue.level==='bad'||issue.level==='danger';});
+      const labels=[];
+      actionable.forEach(function(issue){
+        const text=String(issue&&issue.text||'').trim();
+        if(text&&!labels.includes(text))labels.push(text);
+      });
+      return {count:actionable.length,bad:bad,label:bad?'오류':'확인',summary:labels.slice(0,2).join(' · ')};
+    }
+    function studentReviewTimeline(x){
+      const all=[];
+      x.entries.forEach(function(r){all.push({kind:'entry',row:r});});
+      x.notices.forEach(function(r){all.push({kind:'notice',row:r});});
+      x.recovery.forEach(function(r){all.push({kind:'recovery',row:r});});
+      x.committee.forEach(function(r){all.push({kind:'committee',row:r});});
+      all.sort(function(a,b){return String(adminRecordDate(a.row)).localeCompare(String(adminRecordDate(b.row)));});
+      if(!all.length)return '<div class="student-data-empty" style="margin:12px;">관련 기록이 없습니다.</div>';
+      const entryDup=buildEntryDuplicateMap();
+      const rowCount=all.length>14?3:(all.length>6?2:1);
+      const perRow=Math.ceil(all.length/rowCount);
+      const rows=[];
+      for(let start=0;start<all.length;start+=perRow){
+        const chunk=all.slice(start,start+perRow);
+        const cards=chunk.map(function(v,index){
+          const active=studentReviewKind===v.kind&&String(studentReviewFocusKey)===String(v.row.key);
+          const issue=studentReviewTimelineIssue(v.kind,v.row,entryDup);
+          const issueClass=issue.count?(issue.bad?' issue-bad':' issue-warn'):'';
+          const badge=issue.count?'<span class="student-timeline-issue-badge '+(issue.bad?'bad':'warn')+'">'+issue.label+' '+issue.count+'</span>':'';
+          const issueText=issue.summary?'<div class="student-timeline-issue-text" title="'+esc(issue.summary)+'">'+esc(issue.summary)+'</div>':'';
+          const card='<div class="student-timeline-item '+v.kind+issueClass+(active?' active':'')+'" tabindex="0" role="button" onclick="openStudentReviewTimeline(\''+v.kind+'\',\''+esc(v.row.key)+'\')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();openStudentReviewTimeline(\''+v.kind+'\',\''+esc(v.row.key)+'\');}">'+badge+'<div class="student-timeline-date">'+esc(adminRecordDate(v.row))+'</div><div class="student-timeline-title">'+studentReviewKindLabel(v.kind)+' · '+esc(studentReviewStatus(v.kind,v.row))+'</div><div class="student-timeline-desc">'+esc(studentReviewDesc(v.kind,v.row))+'</div><div class="student-timeline-score">'+esc(studentReviewScore(v.kind,v.row))+'점</div>'+issueText+'</div>';
+          return card+(index<chunk.length-1?'<div class="student-timeline-arrow" aria-hidden="true">→</div>':'');
+        }).join('');
+        rows.push('<div class="student-timeline-row">'+cards+'</div>');
+        if(start+perRow<all.length)rows.push('<div class="student-timeline-row-link"><span>다음 과정 ↓</span></div>');
+      }
+      return '<div class="student-timeline">'+rows.join('')+'</div>';
+    }
     function studentReviewTable(x){
       const dup=buildEntryDuplicateMap();
       const kinds=[['entry','디텐션',x.entries],['notice','알림',x.notices],['recovery','회복교육',x.recovery],['committee','위원회',x.committee]];
