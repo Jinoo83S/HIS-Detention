@@ -2815,6 +2815,13 @@
       checkCommitteeDirty();renderCommitteeTable();toast('연결 Key 후보를 반영했습니다. 저장 버튼을 눌러 DB에 적용하세요.','ok');
     }
 
+    function committeeHandledByAdmin(row){
+      row=row||{};
+      const nameTokens=[row.completedBy,row.processedBy,row.updatedBy,row.referredBy].map(normalizeAdminIdentityToken);
+      const emailTokens=[row.completedByEmail,row.processedByEmail,row.updatedByEmail,row.referredByEmail].map(normalizeAdminIdentityToken);
+      return nameTokens.includes('관리자') || nameTokens.includes('admin') || emailTokens.includes('admin');
+    }
+
     function getCommitteeIssues(row){
       const ctx=committeeIssueContext || buildCommitteeIssueContext();
       const issues=[];
@@ -2825,7 +2832,7 @@
       if(row.currentPointsAtReferral===null || row.currentPointsAtReferral===undefined || String(row.currentPointsAtReferral).trim()==='') issues.push({code:'missing',level:'warn',text:'회부점수 없음'});
       if(!String(row.year??'').trim())issues.push({code:'missing',level:'warn',text:'학년도 누락'});
       if(!keys.length) issues.push({code:'missing',level:'warn',text:'연결 위반 없음'});
-      if(!String(row.createdBy||'').trim()||!String(row.createdByEmail||'').trim())issues.push({code:'audit',level:'warn',text:'생성자 이력 누락'});
+      if((!String(row.createdBy||'').trim()||!String(row.createdByEmail||'').trim())&&!committeeHandledByAdmin(row))issues.push({code:'audit',level:'warn',text:'생성자 이력 누락'});
       const created=committeeDateOnly(row.createdAt), completed=committeeDateOnly(row.completedAt);
       if(created && completed && completed < created) issues.push({code:'date',level:'danger',text:'완료일이 회부일보다 빠름'});
       const duplicated=keys.filter(function(key){const owners=(ctx.linkedOwners[key]||[]).filter(function(k){return k!==row.key;});if(!owners.length)return false;if(committeeLinkReuseConfirmed(row,key))return false;return !owners.some(function(ownerKey){const owner=committeeRows.find(function(r){return String(r.key)===String(ownerKey);});return committeeLinkReuseConfirmed(owner,key);});});
