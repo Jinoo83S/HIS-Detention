@@ -1527,6 +1527,27 @@
       }catch(err){console.error(err);toast('학년도 일괄 채우기 실패: '+(err&&err.message?err.message:err),'err');}
     }
 
+    function operationalDataQualitySummary(){
+      const missingCommitteeLinks=(committeeRows||[]).filter(function(row){return row&&!row._deleted&&!committeeLinkedKeys(row).length;});
+      const noticeProblems=(noticeRows||[]).filter(function(row){return row&&!row._deleted&&actionableAdminIssues(noticeIssues(row)).length;});
+      const recoveryProblems=(recoveryRows||[]).filter(function(row){return row&&!row._deleted&&actionableAdminIssues(recoveryIssues(row)).length;});
+      const recoveryDuplicateCandidates=[];
+      const seen={};
+      (recoveryRows||[]).forEach(function(row){
+        if(!row||row._deleted)return;
+        const key=[dbAdminRowStudentKey(row),String(row.noticeKey||row.linkedNoticeKey||row.noticeId||''),String(row.currentTotalBefore??''),String(row.currentTotalAfter??''),String(row.recoveryPoints??row.points??'')].join('|');
+        if(!dbAdminRowStudentKey(row)||!String(row.noticeKey||row.linkedNoticeKey||row.noticeId||'').trim())return;
+        if(seen[key]){recoveryDuplicateCandidates.push(row);if(!recoveryDuplicateCandidates.includes(seen[key]))recoveryDuplicateCandidates.push(seen[key]);}
+        else seen[key]=row;
+      });
+      return {missingCommitteeLinks,noticeProblems,recoveryProblems,recoveryDuplicateCandidates:Array.from(new Set(recoveryDuplicateCandidates))};
+    }
+    function openOperationalIssuePanel(kind){
+      if(kind==='committee'){openPanel('committees');const filter=document.getElementById('committee-issue-filter');if(filter)filter.value='missing';renderCommitteeTable();return;}
+      if(kind==='notice'){openPanel('notices');const filter=document.getElementById('notice-issue-filter');if(filter)filter.value='problem';renderNoticesTable();return;}
+      if(kind==='recovery'){openPanel('recovery');const filter=document.getElementById('recovery-issue-filter');if(filter)filter.value='problem';renderRecoveryTable();}
+    }
+
     async function previewDataQualityBackfill(){
       if(!requireDetentionAdminPermission('canForceCorrect','학년도·메타데이터 보완은 Admin만 가능합니다.'))return;
       configureDataQualityApplyButton('combined');
@@ -1542,7 +1563,10 @@
       const panel=document.getElementById('data-quality-backfill-panel');
       const summary=document.getElementById('data-quality-backfill-summary');
       if(panel)panel.style.display='block';
-      if(summary)summary.innerHTML='날짜에서 학년도를 확정적으로 계산할 수 있는 누락 기록만 채웁니다.<br>디텐션 '+c.detentionEntries+'건 · 알림 '+c.detentionNotices+'건 · 회복교육 '+c.recoveryEntries+'건 · 위원회 '+c.committeeRecords+'건<br>기준표 메타데이터 초기화: '+(p.standardsMetaPending?'예정':'불필요')+'<br><b>과거 작성자·반려자는 추정하여 채우지 않습니다.</b>';
+      if(summary){
+        const ops=operationalDataQualitySummary();
+        summary.innerHTML='날짜에서 학년도를 확정적으로 계산할 수 있는 누락 기록만 채웁니다.<br>디텐션 '+c.detentionEntries+'건 · 알림 '+c.detentionNotices+'건 · 회복교육 '+c.recoveryEntries+'건 · 위원회 '+c.committeeRecords+'건<br>기준표 메타데이터 초기화: '+(p.standardsMetaPending?'예정':'불필요')+'<hr style="border:0;border-top:1px solid #e2e8f0;margin:8px 0;"><b>운영 점검</b><br>위원회 연결 Key 누락 '+ops.missingCommitteeLinks.length+'건 · 알림 실제 문제 '+ops.noticeProblems.length+'건 · 회복교육 실제 문제 '+ops.recoveryProblems.length+'건 · 회복교육 중복 후보 '+ops.recoveryDuplicateCandidates.length+'건<br><span style="display:flex;gap:6px;flex-wrap:wrap;margin-top:7px;"><button type="button" class="btn btn-secondary small-btn" onclick="openOperationalIssuePanel(\'committee\')">위원회 문제 열기</button><button type="button" class="btn btn-secondary small-btn" onclick="openOperationalIssuePanel(\'notice\')">알림 문제 열기</button><button type="button" class="btn btn-secondary small-btn" onclick="openOperationalIssuePanel(\'recovery\')">회복교육 문제 열기</button></span><b>과거 작성자·반려자는 추정하여 채우지 않습니다.</b>';
+      }
     }
     function closeDataQualityBackfill(){const panel=document.getElementById('data-quality-backfill-panel');if(panel)panel.style.display='none';pendingDataQualityPlan=null;configureDataQualityApplyButton('combined');}
     async function applyDataQualityBackfill(){
@@ -1582,7 +1606,16 @@
 
     // 관리자 비밀번호 세션과 Admin/Master 교사 세션을 동일한 관리자센터 권한으로 처리합니다.
     function getAdminCenterSessionTeacher(){
-      try{return JSON.parse(sessionStorage.getItem('his_teacher')||'{}')||{};}catch(e){return {};}
+      try{
+        const teacher=JSON.parse(sessionStorage.getItem('his_teacher')||'{}')||{};
+        if(String(teacher.name||'').trim())return teacher;
+      }catch(e){}
+      if(sessionStorage.getItem('his_admin_session')==='1'){
+        const synthetic={name:'관리자',email:'admin',id:'admin',roles:['admin'],source:'admin-password-session'};
+        try{sessionStorage.setItem('his_teacher',JSON.stringify(synthetic));}catch(e){}
+        return synthetic;
+      }
+      return {};
     }
     function getAdminCenterSessionRoles() {
       const teacher=getAdminCenterSessionTeacher();

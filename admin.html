@@ -798,11 +798,24 @@
       return getSessionRoleNames().some(role => role === 'admin' || role === 'master');
     }
 
+    function ensurePasswordAdminIdentity() {
+      if (sessionStorage.getItem('his_admin_session') !== '1') return null;
+      try {
+        const current = JSON.parse(sessionStorage.getItem('his_teacher') || '{}') || {};
+        const roles = normalizeRoles(current.roles ?? current.role ?? []);
+        if (String(current.name || '').trim() && roles.some(role => role === 'admin' || role === 'master')) return current;
+      } catch (_) {}
+      const synthetic = { name: '관리자', email: 'admin', id: 'admin', roles: ['admin'], source: 'admin-password-session' };
+      sessionStorage.setItem('his_teacher', JSON.stringify(synthetic));
+      return synthetic;
+    }
+
     function updateAdminIdentity() {
       const el = document.getElementById('admin-center-identity');
       if (!el) return;
       if (sessionStorage.getItem('his_admin_session') === '1') {
-        el.textContent = '관리자 · Admin';
+        const current = ensurePasswordAdminIdentity() || {};
+        el.textContent = `${String(current.name || '관리자')} · Admin${current.email ? ' · ' + current.email : ''}`;
         return;
       }
       try {
@@ -826,6 +839,7 @@
         return toast('비밀번호가 올바르지 않습니다.\nInvalid password.', 'err');
       }
       sessionStorage.setItem('his_admin_session', '1');
+      ensurePasswordAdminIdentity();
       document.getElementById('login-screen').classList.add('hidden');
       document.getElementById('admin-screen').classList.remove('hidden');
       updateAdminIdentity();
@@ -962,14 +976,16 @@
         const failedPaths = Object.entries(readStatus).filter(([, status]) => !status.ok).map(([path]) => path);
         const manager = (() => {
           try {
-            const teacher = JSON.parse(sessionStorage.getItem('his_teacher') || '{}') || {};
+            const teacher = (sessionStorage.getItem('his_admin_session') === '1' ? ensurePasswordAdminIdentity() : null) || JSON.parse(sessionStorage.getItem('his_teacher') || '{}') || {};
+            const roles = normalizeRoles(teacher.roles ?? teacher.role ?? currentManagerRoles());
             return {
-              name: String(teacher.name || '').trim(),
-              email: String(teacher.email || '').trim(),
-              roles: normalizeRoles(teacher.roles ?? teacher.role ?? [])
+              name: String(teacher.name || (roles.includes('admin') ? '관리자' : '')).trim(),
+              email: String(teacher.email || (roles.includes('admin') ? 'admin' : '')).trim(),
+              roles
             };
           } catch (_) {
-            return { name: '', email: '', roles: currentManagerRoles() };
+            const roles = currentManagerRoles();
+            return { name: roles.includes('admin') ? '관리자' : '', email: roles.includes('admin') ? 'admin' : '', roles };
           }
         })();
 
