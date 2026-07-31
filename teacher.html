@@ -1056,7 +1056,6 @@
         </div>
         <input id="all-search" style="display:none" value="">
       </div>
-      <section id="all-student-detention-flow" class="student-detention-flow" aria-live="polite"></section>
       <div class="lookup-result-card">
         <div class="lookup-result-head"><div class="lookup-result-title">검색 결과 | Results <span id="all-result-count" class="lookup-count">0건</span></div><span class="lookup-detail-hint">행을 누르면 상세 내용 펼치기 | Click a row to expand</span><button class="lookup-reset-btn" onclick="resetStudentRecordFilters()">초기화 | Reset</button></div>
         <div class="tbl-wrap lookup-desktop-table"><table class="lookup-table lookup-detention-table">
@@ -1340,7 +1339,11 @@
         <div style="padding:10px 14px;border-bottom:1px solid var(--bd);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
           <span style="font-weight:800;font-size:15px;color:var(--nv)">조회 | Search</span>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-            <input id="student-mgmt-search" class="edit-input" style="width:150px;font-size:12px" placeholder="이름 검색 / Search name" oninput="refreshStudentLookup()">
+            <div id="student-mgmt-autocomplete" class="entry-autocomplete-shell" style="width:250px;max-width:100%">
+              <input id="student-mgmt-search" class="edit-input" style="width:100%;font-size:12px;padding-right:32px" placeholder="학생 이름, 영문명 또는 학반 | Student name or class" autocomplete="off" aria-autocomplete="list" aria-controls="student-mgmt-suggestions" aria-expanded="false">
+              <button id="student-mgmt-search-toggle" class="entry-autocomplete-toggle" type="button" tabindex="-1" aria-label="학생 목록 열기 | Open student list">▼</button>
+              <div id="student-mgmt-suggestions" class="entry-autocomplete-menu" role="listbox" hidden></div>
+            </div>
             <select id="student-mgmt-level" class="edit-input" style="width:100px;font-size:12px" onchange="refreshStudentLookup()">
               <option value="">전체 학년</option>
               <option value="ms">중등 (7-9)</option>
@@ -3231,45 +3234,6 @@
       document.getElementById('all-student-search').value=''; document.getElementById('all-class-filter').value='';
       document.getElementById('all-date-from').value=''; document.getElementById('all-date-to').value=''; allStudentFilterKey=''; expandedLookupDetentionKey=''; allRecordsPage=1; renderAllEntries();
     }
-    function openDetentionFlowRecord(key){
-      const classFilter=document.getElementById('all-class-filter').value;
-      const dateFrom=document.getElementById('all-date-from').value;
-      const dateTo=document.getElementById('all-date-to').value;
-      let list=Object.entries(entries||{}).map(([rowKey,value])=>({key:rowKey,...value}));
-      if(classFilter)list=list.filter(r=>String(r.className||'')===classFilter);
-      if(allStudentFilterKey)list=list.filter(r=>String(r.studentKey||'')===String(allStudentFilterKey));
-      if(dateFrom)list=list.filter(r=>String(r.createdAt||r.confirmedAt||'').slice(0,10)>=dateFrom);
-      if(dateTo)list=list.filter(r=>String(r.createdAt||r.confirmedAt||'').slice(0,10)<=dateTo);
-      list.sort((a,b)=>String(b.confirmedAt||b.createdAt||'').localeCompare(String(a.confirmedAt||a.createdAt||'')));
-      const idx=list.findIndex(r=>String(r.key)===String(key));
-      if(idx<0)return;
-      allRecordsPage=Math.floor(idx/PAGE_SIZE)+1;
-      expandedLookupDetentionKey=String(key);
-      renderAllEntries();
-      requestAnimationFrame(function(){
-        const row=document.querySelector('#all-records-tbody tr[data-key="'+CSS.escape(String(key))+'"]');
-        if(row)row.scrollIntoView({behavior:'smooth',block:'center'});
-      });
-    }
-
-    function renderAllStudentDetentionFlow(list){
-      const wrap=document.getElementById('all-student-detention-flow');
-      if(!wrap)return;
-      if(!allStudentFilterKey){wrap.classList.remove('show');wrap.innerHTML='';return;}
-      const profile=getStudentProfile(allStudentFilterKey)||{};
-      const chronological=list.slice().sort((a,b)=>String(a.confirmedAt||a.createdAt||'').localeCompare(String(b.confirmedAt||b.createdAt||'')));
-      const cols=chronological.length>14?6:(chronological.length>8?5:Math.max(1,Math.min(6,chronological.length)));
-      const cards=chronological.map(function(r,i){
-        const rowEnd=((i+1)%cols===0)||(i===chronological.length-1);
-        const state=String(r.status||'')==='확정'?'confirmed':String(r.status||'')==='반려'?'rejected':'pending';
-        const stateLabel=recordStatusBilingual(r.status);
-        return '<button type="button" class="student-detention-flow-card '+state+(rowEnd?' row-end':'')+'" onclick="openDetentionFlowRecord(\''+esc(r.key)+'\')" title="'+esc(r.violation||'-')+'"><div class="flow-date">'+esc(String(r.confirmedAt||r.createdAt||'').slice(0,10)||'-')+'</div><div class="flow-title">'+esc(r.violation||'-')+'</div><div class="flow-meta"><span>'+esc(String(r.totalPoints??0))+'점</span><span>'+esc(stateLabel)+'</span></div></button>';
-      }).join('');
-      wrap.style.setProperty('--flow-cols',String(cols));
-      wrap.innerHTML='<div class="student-detention-flow-head"><div><div class="student-detention-flow-title">'+esc(sName(profile.name||'',profile.englishName||''))+' · 디텐션 순서 | Detention Timeline</div><div class="student-detention-flow-sub">오래된 기록부터 시간순으로 표시됩니다. 카드를 누르면 아래 상세 기록이 열립니다.</div></div><b>'+chronological.length+'건</b></div><div class="student-detention-flow-grid" style="grid-template-columns:repeat('+cols+',minmax(0,1fr))">'+(cards||'<div class="empty">디텐션 기록이 없습니다. | No detention records.</div>')+'</div>';
-      wrap.classList.add('show');
-    }
-
     function renderAllEntries(){
       const classFilter=document.getElementById('all-class-filter').value;
       const dateFrom=document.getElementById('all-date-from').value;
@@ -3280,7 +3244,6 @@
       if(dateFrom) list=list.filter(r=>String(r.createdAt||r.confirmedAt||'').slice(0,10)>=dateFrom);
       if(dateTo) list=list.filter(r=>String(r.createdAt||r.confirmedAt||'').slice(0,10)<=dateTo);
       list.sort((a,b)=>String(b.confirmedAt||b.createdAt||'').localeCompare(String(a.confirmedAt||a.createdAt||'')));
-      renderAllStudentDetentionFlow(list);
       document.getElementById('all-result-count').textContent=`${list.length}건`;
       allRecordsPage=clampPage(allRecordsPage,list.length,PAGE_SIZE); const pageData=slicePage(list,allRecordsPage,PAGE_SIZE);
       renderPager('all-records-pager',list.length,pageData.page,'setAllRecordsPage');
@@ -3688,9 +3651,91 @@
 
 
     function refreshStudentLookup(){
+      initStudentMgmtAutocomplete();
       renderStudentOverview();
       const sp = document.getElementById('student-split-view');
       if(sp && sp.style.display !== 'none') renderStudentGrid();
+    }
+
+    let studentMgmtSuggestions = [];
+    let studentMgmtSuggestionIndex = -1;
+
+    function studentMgmtSearchText(value){
+      return String(value || '').trim().toLowerCase().replace(/\s+/g, ' ');
+    }
+
+    function closeStudentMgmtSuggestions(){
+      const menu = document.getElementById('student-mgmt-suggestions');
+      const input = document.getElementById('student-mgmt-search');
+      if(menu) menu.hidden = true;
+      if(input) input.setAttribute('aria-expanded','false');
+      studentMgmtSuggestionIndex = -1;
+    }
+
+    function renderStudentMgmtSuggestions(showAll){
+      const input = document.getElementById('student-mgmt-search');
+      const menu = document.getElementById('student-mgmt-suggestions');
+      if(!input || !menu) return;
+      const query = studentMgmtSearchText(input.value);
+      const level = document.getElementById('student-mgmt-level')?.value || '';
+      const cls = document.getElementById('student-mgmt-class')?.value || '';
+      studentMgmtSuggestions = getStudentCatalog().filter(function(item){
+        const grade = parseInt(item.className)||0;
+        if(level==='ms' && grade>=10) return false;
+        if(level==='hs' && grade<10) return false;
+        if(cls && String(item.className||'')!==cls) return false;
+        if(showAll || !query) return true;
+        return studentMgmtSearchText([item.className,item.name,item.englishName,item.key].join(' ')).includes(query);
+      }).sort(function(a,b){
+        return String(a.className||'').localeCompare(String(b.className||''),'ko',{numeric:true}) || String(a.name||'').localeCompare(String(b.name||''),'ko');
+      }).slice(0,80);
+      studentMgmtSuggestionIndex = studentMgmtSuggestions.length ? 0 : -1;
+      menu.innerHTML = studentMgmtSuggestions.map(function(item,index){
+        return '<button type="button" class="entry-autocomplete-option'+(index===studentMgmtSuggestionIndex?' active':'')+'" data-student-mgmt-index="'+index+'" role="option"><span class="entry-option-main">'+esc(item.name||'')+(item.englishName?' <small>'+esc(item.englishName)+'</small>':'')+'</span><span class="entry-option-class">'+esc(item.className||'-')+'</span></button>';
+      }).join('') || '<div class="entry-autocomplete-empty">검색 결과가 없습니다. | No students found.</div>';
+      menu.hidden = false;
+      input.setAttribute('aria-expanded','true');
+      menu.querySelectorAll('[data-student-mgmt-index]').forEach(function(button){
+        button.addEventListener('mousedown',function(event){event.preventDefault();});
+        button.addEventListener('click',function(){selectStudentMgmtSuggestion(Number(button.dataset.studentMgmtIndex));});
+      });
+    }
+
+    function selectStudentMgmtSuggestion(index){
+      const item = studentMgmtSuggestions[index];
+      const input = document.getElementById('student-mgmt-search');
+      if(!item || !input) return;
+      input.value = [item.name,item.englishName?'('+item.englishName+')':'',item.className].filter(Boolean).join(' · ');
+      closeStudentMgmtSuggestions();
+      switchToSplitView(item.key);
+    }
+
+    function initStudentMgmtAutocomplete(){
+      const input = document.getElementById('student-mgmt-search');
+      const toggle = document.getElementById('student-mgmt-search-toggle');
+      const root = document.getElementById('student-mgmt-autocomplete');
+      if(!input || input.dataset.autocompleteReady==='1') return;
+      input.dataset.autocompleteReady='1';
+      input.addEventListener('input',function(){ renderStudentOverview(); renderStudentMgmtSuggestions(false); });
+      input.addEventListener('focus',function(){ renderStudentMgmtSuggestions(false); });
+      input.addEventListener('keydown',function(event){
+        if(event.key==='ArrowDown' || event.key==='ArrowUp'){
+          event.preventDefault();
+          if(document.getElementById('student-mgmt-suggestions')?.hidden) renderStudentMgmtSuggestions(false);
+          if(!studentMgmtSuggestions.length) return;
+          const step = event.key==='ArrowDown'?1:-1;
+          studentMgmtSuggestionIndex = (studentMgmtSuggestionIndex + step + studentMgmtSuggestions.length) % studentMgmtSuggestions.length;
+          renderStudentMgmtSuggestions(false);
+          return;
+        }
+        if(event.key==='Enter' && studentMgmtSuggestionIndex>=0){ event.preventDefault(); selectStudentMgmtSuggestion(studentMgmtSuggestionIndex); }
+        if(event.key==='Escape') closeStudentMgmtSuggestions();
+      });
+      if(toggle) toggle.addEventListener('click',function(){
+        const menu=document.getElementById('student-mgmt-suggestions');
+        if(menu && !menu.hidden) closeStudentMgmtSuggestions(); else renderStudentMgmtSuggestions(true);
+      });
+      document.addEventListener('mousedown',function(event){ if(root && !root.contains(event.target)) closeStudentMgmtSuggestions(); });
     }
 
     function resetStudentOverview(){
@@ -3899,6 +3944,14 @@
     function toggleStudentDetailRow(rowId){
       const row = document.getElementById(rowId);
       if (row) row.classList.toggle('show');
+    }
+
+    function openStudentDetailDetentionRecord(rowId){
+      const row = document.getElementById(rowId);
+      if(!row) return;
+      row.classList.add('show');
+      const summary = row.previousElementSibling;
+      if(summary) summary.scrollIntoView({behavior:'smooth',block:'center'});
     }
 
     function setStudentDetailExpanded(expanded){
@@ -4480,6 +4533,19 @@
         </tr>`;
       }).join('');
 
+      const detentionTimeline = detList.slice().reverse().map(function(r){
+        const detailIndex = detList.findIndex(function(item){ return String(item.key)===String(r.key); });
+        const rowId = `student-det-detail-${detailIndex}`;
+        const state = String(r.status||'')==='확정'?'confirmed':String(r.status||'')==='반려'?'rejected':'pending';
+        return {r:r,rowId:rowId,state:state};
+      });
+      const timelineCols = detentionTimeline.length>14?6:(detentionTimeline.length>8?5:Math.max(1,Math.min(6,detentionTimeline.length)));
+      const detentionTimelineCards = detentionTimeline.map(function(item,index){
+        const rowEnd=((index+1)%timelineCols===0)||(index===detentionTimeline.length-1);
+        const r=item.r;
+        return `<button type="button" class="student-detention-flow-card ${item.state}${rowEnd?' row-end':''}" onclick="openStudentDetailDetentionRecord('${item.rowId}')" title="${esc(r.violation||'-')}"><div class="flow-date">${esc(String(r.confirmedAt||r.createdAt||'').slice(0,10)||'-')}</div><div class="flow-title">${esc(r.violation||'-')}</div><div class="flow-meta"><span>${esc(String(r.totalPoints??0))}점</span><span>${esc(recordStatusBilingual(r.status))}</span></div></button>`;
+      }).join('');
+
       panel.innerHTML = `
         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;flex-wrap:wrap;gap:8px">
           <div>
@@ -4500,6 +4566,11 @@
           ${[['디텐션 횟수 | Detention Count', 'var(--nv)', detList.filter(r=>r.status==='확정').length], ['누적디텐션점수 | Total Detention Points', 'var(--rd)', confirmedPts], ['회복교육횟수 | Restorative Education Count', '#2563eb', recList.length], ['회복점수 | Restorative Points', '#7c3aed', recoveredPts], ['잔여 디텐션점수 | Remaining Detention Points', 'var(--nv)', currentPts], ['위원회회부 | Committee Referral', '#b45309', committeeList.length]]
             .map(([l,c,v])=>`<div style="background:#eef3ff;border-radius:8px;padding:8px;text-align:center"><div style="font-size:20px;font-weight:800;color:${c}">${v}</div><div style="font-size:10px;color:var(--sb)">${l}</div></div>`).join('')}
         </div>
+
+        <section class="student-detention-flow show" aria-label="학생 디텐션 순서 | Student detention timeline" style="margin:0 0 14px">
+          <div class="student-detention-flow-head"><div><div class="student-detention-flow-title">디텐션 순서 | Detention Timeline</div><div class="student-detention-flow-sub">오래된 기록부터 시간순입니다. 카드를 누르면 아래 해당 기록이 펼쳐집니다.</div></div><b>${detentionTimeline.length}건</b></div>
+          <div class="student-detention-flow-grid" style="grid-template-columns:repeat(${timelineCols},minmax(0,1fr))">${detentionTimelineCards||'<div class="empty">디텐션 기록이 없습니다. | No detention records.</div>'}</div>
+        </section>
 
         <!-- 연락처 -->
         ${(s.fatherEmail||s.motherEmail||s.parentEmail||s.selfEmail||s.homeroomTeacherEmail)?`
