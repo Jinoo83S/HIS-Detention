@@ -53,10 +53,36 @@
       border-radius:8px;background:#fff;box-shadow:0 10px 24px rgba(15,31,92,.18);
     }
     .entry-autocomplete-menu[hidden]{display:none}
+    /* 좁은 검색 입력칸에서도 이름·영문명·학반이 세로로 깨지지 않도록 추천창은 독립 폭 사용 */
+    #all-student-suggestions,
+    #recovery-student-suggestions,
+    #student-mgmt-suggestions{
+      right:auto;
+      width:420px;
+      max-width:calc(100vw - 32px);
+    }
     .entry-autocomplete-option{
       width:100%;display:grid;grid-template-columns:44px minmax(0,1fr);align-items:center;gap:8px;
       padding:6px 8px;border:0;border-radius:6px;background:#fff;color:var(--tx);text-align:left;cursor:pointer;
     }
+    .entry-autocomplete-option:has(.entry-option-main){
+      grid-template-columns:minmax(0,1fr) 48px;
+    }
+    .entry-option-main{
+      min-width:0;display:flex;align-items:center;gap:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+      font-size:13px;font-weight:850;line-height:1.25;
+    }
+    .entry-option-main small{
+      min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--sb);font-size:11px;font-weight:500;
+    }
+    .entry-option-class{
+      display:inline-flex;align-items:center;justify-content:center;min-height:24px;padding:2px 6px;
+      border-radius:6px;background:#e8eefb;color:var(--nv);font-size:11px;font-weight:900;
+    }
+    .entry-autocomplete-option:hover .entry-option-main small,
+    .entry-autocomplete-option.active .entry-option-main small{color:#dbe5ff}
+    .entry-autocomplete-option:hover .entry-option-class,
+    .entry-autocomplete-option.active .entry-option-class{background:#fff;color:var(--nv)}
     .entry-autocomplete-option + .entry-autocomplete-option{margin-top:2px}
     .entry-autocomplete-option:hover,.entry-autocomplete-option.active{background:var(--nv);color:#fff}
     .entry-autocomplete-class{
