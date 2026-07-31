@@ -1049,8 +1049,7 @@
       </div>
       <div class="lookup-filter-card">
         <div class="lookup-filter-grid">
-          <div class="lookup-field"><label>학생 검색 | Student</label><input id="all-student-search" list="all-student-list" placeholder="이름 또는 학반 | Name or class" oninput="syncAllStudentFilter()"><datalist id="all-student-list"></datalist></div>
-          <div class="lookup-field"><label>학반 | Class</label><select id="all-class-filter"><option value="">전체 | All</option></select></div>
+          <div class="lookup-field" style="grid-column:span 2"><label>학생 검색 | Student</label><div id="all-student-autocomplete" class="entry-autocomplete-shell"><input id="all-student-search" placeholder="학생 이름, 영문명 또는 학반 | Student name or class" autocomplete="off" aria-autocomplete="list" aria-controls="all-student-suggestions" aria-expanded="false"><button id="all-student-search-toggle" class="entry-autocomplete-toggle" type="button" tabindex="-1" aria-label="학생 목록 열기 | Open student list">▼</button><div id="all-student-suggestions" class="entry-autocomplete-menu" role="listbox" hidden></div></div></div>
           <div class="lookup-field"><label>시작일 | From</label><input type="date" id="all-date-from"></div>
           <div class="lookup-field"><label>종료일 | To</label><input type="date" id="all-date-to"></div>
           <button class="lookup-search-btn" type="button" onclick="allRecordsPage=1;renderAllEntries()">검색 | Search</button>
@@ -1071,11 +1070,10 @@
     <div id="tab-recovery-view" class="tab-panel">
       <div class="lookup-page-head"><div class="lookup-title-wrap"><div class="lookup-icon">▤</div><div><div class="lookup-title">회복교육 조회 | Recovery Records</div><div class="lookup-subtitle">회복교육 진행 현황과 학생별 이력을 확인합니다. | Review recovery education status and history.</div></div></div></div>
       <div class="lookup-filter-card">
-        <div class="lookup-filter-grid recovery">
-          <div class="lookup-field"><label>구분 | Level</label><select id="recovery-view-level"><option value="">전체 | All</option><option value="ms">중등 | Middle</option><option value="hs">고등 | High</option></select></div>
-          <div class="lookup-field"><label>학반 | Class</label><select id="recovery-view-class"><option value="">전체 | All</option></select></div>
-          <div class="lookup-field"><label>담당 교사 | Staff</label><select id="recovery-view-staff"><option value="">전체 | All</option></select></div>
-          <div class="lookup-field"><label>상태 | Status</label><select id="recovery-view-status"><option value="">전체 | All</option><option value="active">진행중 | In progress</option><option value="done">완료 | Completed</option><option value="not_started">미시작 | Not started</option></select></div>
+        <div class="lookup-filter-grid">
+          <div class="lookup-field" style="grid-column:span 2"><label>학생 검색 | Student</label><div id="recovery-student-autocomplete" class="entry-autocomplete-shell"><input id="recovery-student-search" placeholder="학생 이름, 영문명 또는 학반 | Student name or class" autocomplete="off" aria-autocomplete="list" aria-controls="recovery-student-suggestions" aria-expanded="false"><button id="recovery-student-search-toggle" class="entry-autocomplete-toggle" type="button" tabindex="-1" aria-label="학생 목록 열기 | Open student list">▼</button><div id="recovery-student-suggestions" class="entry-autocomplete-menu" role="listbox" hidden></div></div></div>
+          <div class="lookup-field"><label>시작일 | From</label><input type="date" id="recovery-date-from"></div>
+          <div class="lookup-field"><label>종료일 | To</label><input type="date" id="recovery-date-to"></div>
           <button class="lookup-search-btn" type="button" onclick="allRecoveryPage=1;renderAllRecoveryEntries()">검색 | Search</button>
         </div>
       </div>
@@ -1524,6 +1522,8 @@
     let studentAutocompleteReady = false;
     let selectedStudentKey = '';
     let allStudentFilterKey = '';
+    let recoveryStudentFilterKey = '';
+    const recordLookupAutocompleteState = { all:{items:[],index:-1,ready:false}, recovery:{items:[],index:-1,ready:false} };
     let expandedAllKeys = new Set();
     let expandedConfirmKeys = new Set();
     let expandedNoticeKeys = { ms:new Set(), hs:new Set() };
@@ -2387,6 +2387,9 @@
       document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
       btn.classList.add('active');
       panel.classList.add('active');
+      if(target==='students'){ refreshStudentLookup(); }
+      if(target==='all'){ initRecordLookupAutocomplete('all'); renderAllEntries(); }
+      if(target==='recovery-view'){ initRecordLookupAutocomplete('recovery'); renderAllRecoveryEntries(); }
 
       if(requested !== target && !(options && options.silent)){
         toast('이 메뉴에 접근할 권한이 없습니다. | You do not have permission to access this menu.', 'err');
@@ -2899,25 +2902,66 @@
     }
 
     function renderAllStudentSearchOptions(){
-      const list = getStudentCatalog();
+      initRecordLookupAutocomplete('all');
+      initRecordLookupAutocomplete('recovery');
+    }
 
-      const dataList = document.getElementById('all-student-list');
-      if (!dataList) return;
-
-      window.allStudentSearchMap = {};
-      dataList.innerHTML = list.map(s => {
-        const label = `${String(s.name || '').trim()} · ${String(s.englishName || '').trim()} · ${String(s.className || '').trim()}`;
-        window.allStudentSearchMap[label] = s.key;
-        return `<option value="${esc(label)}"></option>`;
-      }).join('');
+    function recordLookupIds(kind){
+      return kind==='recovery'
+        ? {root:'recovery-student-autocomplete',input:'recovery-student-search',toggle:'recovery-student-search-toggle',menu:'recovery-student-suggestions'}
+        : {root:'all-student-autocomplete',input:'all-student-search',toggle:'all-student-search-toggle',menu:'all-student-suggestions'};
+    }
+    function closeRecordLookupSuggestions(kind){
+      const ids=recordLookupIds(kind), menu=document.getElementById(ids.menu), input=document.getElementById(ids.input);
+      if(menu) menu.hidden=true; if(input) input.setAttribute('aria-expanded','false');
+      recordLookupAutocompleteState[kind].index=-1;
+    }
+    function renderRecordLookupSuggestions(kind,showAll){
+      const ids=recordLookupIds(kind), input=document.getElementById(ids.input), menu=document.getElementById(ids.menu);
+      if(!input||!menu) return;
+      const q=studentSearchText(input.value);
+      const items=getStudentCatalog().filter(item=>showAll||!q||studentSearchText([item.className,item.name,item.englishName,item.key].join(' ')).includes(q))
+        .sort((a,b)=>String(a.className||'').localeCompare(String(b.className||''),'ko',{numeric:true})||String(a.name||'').localeCompare(String(b.name||''),'ko')).slice(0,80);
+      const state=recordLookupAutocompleteState[kind]; state.items=items; state.index=items.length?0:-1;
+      menu.innerHTML=items.map((item,index)=>`<button type="button" class="entry-autocomplete-option${index===state.index?' active':''}" data-record-lookup-kind="${kind}" data-record-lookup-index="${index}" role="option"><span class="entry-option-main">${esc(item.name||'')}${item.englishName?' <small>'+esc(item.englishName)+'</small>':''}</span><span class="entry-option-class">${esc(item.className||'-')}</span></button>`).join('')||'<div class="entry-autocomplete-empty">검색 결과가 없습니다. | No students found.</div>';
+      menu.hidden=false; input.setAttribute('aria-expanded','true');
+    }
+    function selectRecordLookupSuggestion(kind,index){
+      const state=recordLookupAutocompleteState[kind], item=state.items[index], ids=recordLookupIds(kind), input=document.getElementById(ids.input);
+      if(!item||!input) return;
+      input.value=[item.name,item.englishName?'('+item.englishName+')':'',item.className].filter(Boolean).join(' · ');
+      if(kind==='recovery'){ recoveryStudentFilterKey=item.key; allRecoveryPage=1; renderAllRecoveryEntries(); }
+      else { allStudentFilterKey=item.key; allRecordsPage=1; renderAllEntries(); }
+      closeRecordLookupSuggestions(kind);
+    }
+    function clearRecordLookupFilter(kind){
+      const ids=recordLookupIds(kind), input=document.getElementById(ids.input);
+      if(input && !String(input.value||'').trim()){
+        if(kind==='recovery'){ recoveryStudentFilterKey=''; allRecoveryPage=1; renderAllRecoveryEntries(); }
+        else { allStudentFilterKey=''; allRecordsPage=1; renderAllEntries(); }
+      }
+    }
+    function initRecordLookupAutocomplete(kind){
+      const ids=recordLookupIds(kind), input=document.getElementById(ids.input), toggle=document.getElementById(ids.toggle), root=document.getElementById(ids.root), menu=document.getElementById(ids.menu);
+      const state=recordLookupAutocompleteState[kind]; if(!input||!root||!menu||state.ready) return; state.ready=true;
+      input.addEventListener('input',()=>{ clearRecordLookupFilter(kind); renderRecordLookupSuggestions(kind,false); });
+      input.addEventListener('focus',()=>renderRecordLookupSuggestions(kind,false));
+      input.addEventListener('keydown',event=>{
+        if(event.key==='ArrowDown'||event.key==='ArrowUp'){
+          event.preventDefault(); if(menu.hidden) renderRecordLookupSuggestions(kind,false); if(!state.items.length) return;
+          state.index=(state.index+(event.key==='ArrowDown'?1:-1)+state.items.length)%state.items.length; renderRecordLookupSuggestions(kind,false); return;
+        }
+        if(event.key==='Enter'&&state.index>=0){ event.preventDefault(); selectRecordLookupSuggestion(kind,state.index); }
+        if(event.key==='Escape') closeRecordLookupSuggestions(kind);
+      });
+      menu.addEventListener('mousedown',event=>event.preventDefault());
+      menu.addEventListener('click',event=>{ const btn=event.target.closest('[data-record-lookup-index]'); if(btn) selectRecordLookupSuggestion(kind,Number(btn.dataset.recordLookupIndex)); });
+      if(toggle) toggle.addEventListener('click',()=>menu.hidden?renderRecordLookupSuggestions(kind,true):closeRecordLookupSuggestions(kind));
+      document.addEventListener('mousedown',event=>{ if(!root.contains(event.target)) closeRecordLookupSuggestions(kind); });
     }
 
     function syncAllStudentFilter(){
-      const inputValue = (document.getElementById('all-student-search').value || '').trim();
-      allStudentFilterKey = (window.allStudentSearchMap && window.allStudentSearchMap[inputValue]) || '';
-      resetAllRecordPages();
-      renderAllEntries();
-      renderAllRecoveryEntries();
+      clearRecordLookupFilter('all');
     }
 
     function syncStudentSelectionWithoutUpdate(){
@@ -2937,15 +2981,7 @@
       return selectedStudentKey;
     }
 
-    function renderFilters(){
-      const classes = [...new Set(Object.values(students).map(s => String(s.className || '').trim()).filter(Boolean))]
-        .sort((a,b) => a.localeCompare(b, 'ko', { numeric:true }));
-
-      const classFilter = document.getElementById('all-class-filter');
-      classFilter.innerHTML =
-        '<option value="">전체 학반 | All Classes</option>' +
-        classes.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
-    }
+    function renderFilters(){ /* 학생 추천 검색이 학반 검색도 함께 처리합니다. */ }
 
     function toggleAllRow(key){
       if (expandedAllKeys.has(key)) expandedAllKeys.delete(key);
@@ -3003,23 +3039,13 @@
       document.getElementById('category-select').addEventListener('change', renderViolationOptions);
       document.getElementById('violation-select').addEventListener('change', syncAutoPoints);
 
-      const rvClass=document.getElementById('recovery-view-class');
-      if(rvClass){ const vals=[...new Set(Object.values(recoveryEntries||{}).map(r=>r.className).filter(Boolean))].sort(); rvClass.innerHTML='<option value="">전체</option>'+vals.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join(''); }
-      const rvStaff=document.getElementById('recovery-view-staff');
-      if(rvStaff){ const vals=[...new Set(Object.values(recoveryEntries||{}).map(r=>r.staffName).filter(Boolean))].sort(); rvStaff.innerHTML='<option value="">전체</option>'+vals.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join(''); }
-      ['recovery-view-level','recovery-view-class','recovery-view-staff','recovery-view-status'].forEach(id=>{
-        const el=document.getElementById(id); if(el) el.addEventListener('change',()=>{allRecoveryPage=1;renderAllRecoveryEntries();});
-      });
-      document.getElementById('all-class-filter').addEventListener('change', () => {
-        resetAllRecordPages();
-        renderAllEntries();
-        renderAllRecoveryEntries();
-      });
       document.getElementById('all-search').addEventListener('input', () => {
         resetAllRecordPages();
         renderAllEntries();
         renderAllRecoveryEntries();
       });
+      ['all-date-from','all-date-to'].forEach(id=>document.getElementById(id)?.addEventListener('change',()=>{allRecordsPage=1;renderAllEntries();}));
+      ['recovery-date-from','recovery-date-to'].forEach(id=>document.getElementById(id)?.addEventListener('change',()=>{allRecoveryPage=1;renderAllRecoveryEntries();}));
 
       document.getElementById('confirm-status-filter').addEventListener('change', () => { confirmProcessedPage = 1; renderConfirmEntries(); });
       document.getElementById('confirm-search').addEventListener('input', () => { confirmProcessedPage = 1; renderConfirmEntries(); });
@@ -3232,15 +3258,13 @@
       }
     }
     function resetStudentRecordFilters(){
-      document.getElementById('all-student-search').value=''; document.getElementById('all-class-filter').value='';
-      document.getElementById('all-date-from').value=''; document.getElementById('all-date-to').value=''; allStudentFilterKey=''; expandedLookupDetentionKey=''; allRecordsPage=1; renderAllEntries();
+      document.getElementById('all-student-search').value='';
+      document.getElementById('all-date-from').value=''; document.getElementById('all-date-to').value=''; allStudentFilterKey=''; closeRecordLookupSuggestions('all'); expandedLookupDetentionKey=''; allRecordsPage=1; renderAllEntries();
     }
     function renderAllEntries(){
-      const classFilter=document.getElementById('all-class-filter').value;
       const dateFrom=document.getElementById('all-date-from').value;
       const dateTo=document.getElementById('all-date-to').value;
       let list=Object.entries(entries||{}).map(([key,value])=>({key,...value}));
-      if(classFilter) list=list.filter(r=>String(r.className||'')===classFilter);
       if(allStudentFilterKey) list=list.filter(r=>String(r.studentKey||'')===String(allStudentFilterKey));
       if(dateFrom) list=list.filter(r=>String(r.createdAt||r.confirmedAt||'').slice(0,10)>=dateFrom);
       if(dateTo) list=list.filter(r=>String(r.createdAt||r.confirmedAt||'').slice(0,10)<=dateTo);
@@ -3260,15 +3284,22 @@
       }).join('')||'<div class="empty">검색 결과가 없습니다. | No records found.</div>';
     }
     function recoveryState(r){ if(r.completedAt) return 'done'; if(r.startedAt||r.assignedAt||r.createdAt) return 'active'; return 'not_started'; }
-    function resetRecoveryViewFilters(){ ['recovery-view-level','recovery-view-class','recovery-view-staff','recovery-view-status'].forEach(id=>document.getElementById(id).value=''); expandedLookupRecoveryKey=''; allRecoveryPage=1; renderAllRecoveryEntries(); }
+    function resetRecoveryViewFilters(){
+      const input=document.getElementById('recovery-student-search'); if(input) input.value='';
+      const from=document.getElementById('recovery-date-from'); if(from) from.value='';
+      const to=document.getElementById('recovery-date-to'); if(to) to.value='';
+      recoveryStudentFilterKey=''; closeRecordLookupSuggestions('recovery'); expandedLookupRecoveryKey=''; allRecoveryPage=1; renderAllRecoveryEntries();
+    }
     function renderAllRecoveryEntries(){
-      const level=document.getElementById('recovery-view-level').value, cls=document.getElementById('recovery-view-class').value, staff=document.getElementById('recovery-view-staff').value, status=document.getElementById('recovery-view-status').value;
+      const dateFrom=document.getElementById('recovery-date-from')?.value||'';
+      const dateTo=document.getElementById('recovery-date-to')?.value||'';
       let list=Object.entries(recoveryEntries||{}).map(([key,value])=>({key,...value}));
-      if(level) list=list.filter(r=>String(r.schoolLevel||'').toLowerCase()===level || (level==='ms'?/^([7-9])/.test(String(r.className||'')):/^(1[0-2])/.test(String(r.className||''))));
-      if(cls) list=list.filter(r=>String(r.className||'')===cls); if(staff) list=list.filter(r=>String(r.staffName||'')===staff); if(status) list=list.filter(r=>recoveryState(r)===status);
+      if(recoveryStudentFilterKey) list=list.filter(r=>String(r.studentKey||'')===String(recoveryStudentFilterKey));
+      if(dateFrom) list=list.filter(r=>String(r.completedAt||r.assignedAt||r.createdAt||'').slice(0,10)>=dateFrom);
+      if(dateTo) list=list.filter(r=>String(r.completedAt||r.assignedAt||r.createdAt||'').slice(0,10)<=dateTo);
       list.sort((a,b)=>String(b.completedAt||b.assignedAt||b.createdAt||'').localeCompare(String(a.completedAt||a.assignedAt||a.createdAt||'')));
-      const totalAll=Object.values(recoveryEntries||{}); const count=s=>totalAll.filter(r=>recoveryState(r)===s).length;
-      document.getElementById('recovery-summary-grid').innerHTML=`<div class="recovery-summary-card ${!status?'active':''}" onclick="document.getElementById('recovery-view-status').value='';renderAllRecoveryEntries()"><div class="recovery-summary-icon">◎</div><div><div class="recovery-summary-label">전체 | All</div><div class="recovery-summary-value">${totalAll.length}명</div></div></div><div class="recovery-summary-card ${status==='active'?'active':''}" onclick="document.getElementById('recovery-view-status').value='active';renderAllRecoveryEntries()"><div class="recovery-summary-icon">◷</div><div><div class="recovery-summary-label">진행중 | In progress</div><div class="recovery-summary-value">${count('active')}명</div></div></div><div class="recovery-summary-card ${status==='done'?'active':''}" onclick="document.getElementById('recovery-view-status').value='done';renderAllRecoveryEntries()"><div class="recovery-summary-icon">✓</div><div><div class="recovery-summary-label">완료 | Completed</div><div class="recovery-summary-value">${count('done')}명</div></div></div><div class="recovery-summary-card ${status==='not_started'?'active':''}" onclick="document.getElementById('recovery-view-status').value='not_started';renderAllRecoveryEntries()"><div class="recovery-summary-icon">○</div><div><div class="recovery-summary-label">미시작 | Not started</div><div class="recovery-summary-value">${count('not_started')}명</div></div></div>`;
+      const totalAll=list; const count=state=>totalAll.filter(r=>recoveryState(r)===state).length;
+      document.getElementById('recovery-summary-grid').innerHTML=`<div class="recovery-summary-card active"><div class="recovery-summary-icon">◎</div><div><div class="recovery-summary-label">검색 결과 | Results</div><div class="recovery-summary-value">${totalAll.length}건</div></div></div><div class="recovery-summary-card"><div class="recovery-summary-icon">◷</div><div><div class="recovery-summary-label">진행중 | In progress</div><div class="recovery-summary-value">${count('active')}건</div></div></div><div class="recovery-summary-card"><div class="recovery-summary-icon">✓</div><div><div class="recovery-summary-label">완료 | Completed</div><div class="recovery-summary-value">${count('done')}건</div></div></div><div class="recovery-summary-card"><div class="recovery-summary-icon">○</div><div><div class="recovery-summary-label">미시작 | Not started</div><div class="recovery-summary-value">${count('not_started')}건</div></div></div>`;
       document.getElementById('recovery-result-count').textContent=`${list.length}건`; allRecoveryPage=clampPage(allRecoveryPage,list.length,PAGE_SIZE); const pageData=slicePage(list,allRecoveryPage,PAGE_SIZE); renderPager('all-recovery-pager',list.length,pageData.page,'setAllRecoveryPage');
       const label=r=>recoveryState(r)==='done'?'완료 | Completed':recoveryState(r)==='active'?'진행중 | In progress':'미시작 | Not started';
       const rows=pageData.rows.map((r,rowIndex)=>{
