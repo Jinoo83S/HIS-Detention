@@ -609,6 +609,26 @@
       return null;
     }
 
+
+    function teacherKeyFromEmail(email) {
+      return String(email || '').trim().toLowerCase().replace(/\./g, '_');
+    }
+
+    async function loadGoogleTeacherByEmail(email) {
+      const normalizedEmail = String(email || '').trim().toLowerCase();
+      const teacherKey = teacherKeyFromEmail(normalizedEmail);
+      if (!normalizedEmail || !teacherKey) return null;
+
+      const snapshot = await db.ref(`teachers/${teacherKey}`).once('value');
+      const teacher = snapshot.val() || null;
+      if (!teacher) return null;
+
+      const registeredEmail = String(teacher.email || '').trim().toLowerCase();
+      if (registeredEmail !== normalizedEmail) return null;
+
+      return { key: teacherKey, teacher };
+    }
+
     function saveTeacherSession(key, teacher, roles, authProvider, authUser) {
       const user = authUser || null;
       sessionStorage.setItem(
@@ -715,7 +735,7 @@
           return toast('학교에서 승인한 @his.sc.kr Google 계정으로 로그인해 주세요.\nPlease sign in with an approved HIS Google account.', 'err');
         }
 
-        const matched = findTeacherByEmail(email);
+        const matched = await loadGoogleTeacherByEmail(email);
         if (!matched || matched.teacher.active === false) {
           await firebaseAuth.signOut();
           await restoreAnonymousAuth();
