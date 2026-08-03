@@ -609,7 +609,8 @@
       return null;
     }
 
-    function saveTeacherSession(key, teacher, roles, authProvider) {
+    function saveTeacherSession(key, teacher, roles, authProvider, authUser) {
+      const user = authUser || null;
       sessionStorage.setItem(
         'his_teacher',
         JSON.stringify({
@@ -618,7 +619,11 @@
           email: teacher.email || '',
           roles: roles,
           homeroom: teacher.homeroom || '',
-          authProvider: authProvider || 'legacy'
+          authProvider: authProvider || 'legacy',
+          authUid: user && user.uid ? user.uid : '',
+          authEmail: user && user.email ? String(user.email).trim().toLowerCase() : '',
+          authEmailVerified: !!(user && user.emailVerified),
+          authProviderId: user && user.providerData && user.providerData[0] ? String(user.providerData[0].providerId || '') : ''
         })
       );
     }
@@ -667,7 +672,7 @@
         }
 
         const roles = normalizeRoles(matched.teacher.roles || matched.teacher.role || []);
-        saveTeacherSession(matched.key, matched.teacher, roles, 'google');
+        saveTeacherSession(matched.key, matched.teacher, roles, 'google', user);
         location.href = 'teacher.html';
       } catch (e) {
         console.error('Google login failed:', e);

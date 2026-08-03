@@ -71,6 +71,16 @@
     .teacher-permission-matrix{width:100%;border-collapse:collapse;table-layout:fixed;font-size:12px}.teacher-permission-matrix th,.teacher-permission-matrix td{padding:9px 8px;border-top:1px solid #e4e9f2;text-align:center}.teacher-permission-matrix thead th{border-top:0;background:#f8faff;color:#52627e;font-size:10px}.teacher-permission-matrix tbody th{text-align:left;color:#263a60}.teacher-permission-matrix tbody tr:nth-child(even){background:#f7f9fd}
     .teacher-permission-note{padding:8px 10px;border-top:1px solid #e4e9f2;background:#fbfcfe;color:var(--sb);font-size:10px}.teacher-save-footer{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding-top:3px}
     @media(max-width:720px){.teacher-account-head{align-items:flex-start;flex-direction:column}.teacher-account-actions{width:100%;justify-content:flex-start}.teacher-filter-row{grid-template-columns:1fr}.teacher-permission-grid{grid-template-columns:1fr}}
+    .google-verify-panel{margin:12px 0 0;border:1px solid #cdd8ea;border-radius:10px;background:#f8faff;overflow:hidden}
+    .google-verify-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 11px;background:#edf4ff;border-bottom:1px solid #d7e2f2}
+    .google-verify-title{font-size:12px;font-weight:900;color:#17366f}.google-verify-title span{font-size:10px;color:#5c6f91;margin-left:4px}
+    .google-verify-body{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;padding:10px}
+    .google-verify-item{min-width:0;padding:8px 9px;border:1px solid #dde5f1;border-radius:8px;background:#fff}
+    .google-verify-label{font-size:9px;font-weight:800;color:#70809d}.google-verify-value{margin-top:3px;font-size:11px;font-weight:900;color:#263a60;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .google-verify-value.ok{color:#137333}.google-verify-value.warn{color:#9a6700}.google-verify-value.err{color:#b42318}
+    .google-verify-note{padding:0 10px 10px;font-size:10px;color:#66758f;line-height:1.45}
+    @media(max-width:900px){.google-verify-body{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media(max-width:520px){.google-verify-body{grid-template-columns:1fr}}
 
     /* 학생 명단 화면: 기존 편집 구조를 유지한 최소 가독성 개선 */
     .student-account-head{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 15px;border-radius:11px 11px 0 0;background:#142b70;color:#fff}
@@ -327,6 +337,14 @@
             </div>
           </div>
           <div style="padding:0 14px 14px">
+            <div class="google-verify-panel">
+              <div class="google-verify-head">
+                <div class="google-verify-title">Google 로그인 연결 점검 <span>Google Sign-in Verification</span></div>
+                <button type="button" class="btn btn-secondary" onclick="renderGoogleLoginVerification()">새로고침 | Refresh</button>
+              </div>
+              <div id="google-login-verification" class="google-verify-body"></div>
+              <div id="google-login-verification-note" class="google-verify-note"></div>
+            </div>
             <div class="teacher-filter-row">
               <input id="teacher-search" class="edit-input" placeholder="교사명, 이메일, 학반, 권한 검색 | Search teachers">
               <select id="teacher-role-filter" class="edit-input" aria-label="권한 필터">
@@ -812,6 +830,53 @@
       return synthetic;
     }
 
+    function googleVerifyItem(label, value, state) {
+      const safeLabel = escapeHtml(String(label || ''));
+      const safeValue = escapeHtml(String(value || '-'));
+      const cls = state === 'ok' ? 'ok' : (state === 'err' ? 'err' : (state === 'warn' ? 'warn' : ''));
+      return `<div class="google-verify-item"><div class="google-verify-label">${safeLabel}</div><div class="google-verify-value ${cls}">${safeValue}</div></div>`;
+    }
+
+    function renderGoogleLoginVerification() {
+      const box = document.getElementById('google-login-verification');
+      const note = document.getElementById('google-login-verification-note');
+      if (!box || !note) return;
+
+      let session = {};
+      try { session = JSON.parse(sessionStorage.getItem('his_teacher') || '{}') || {}; }
+      catch (_) { session = {}; }
+
+      const provider = String(session.authProvider || session.source || '').trim();
+      const sessionEmail = String(session.authEmail || session.email || '').trim().toLowerCase();
+      const matched = teacherRows.find(row => !row._delete && String(row.email || '').trim().toLowerCase() === sessionEmail) || null;
+      const googleSession = provider === 'google';
+      const emailMatch = !!(matched && sessionEmail);
+      const active = !!(matched && matched.active !== false);
+      const providerReady = !!(matched && String(matched.loginProvider || '').trim() === 'google');
+      const roles = normalizeRoles(session.roles ?? session.role ?? []);
+      const registered = teacherRows.filter(row => !row._delete).length;
+      const prepared = teacherRows.filter(row => !row._delete && row.active !== false && String(row.loginProvider || '').trim() === 'google').length;
+
+      box.innerHTML = [
+        googleVerifyItem('현재 로그인 | Current Login', googleSession ? 'Google' : '기존 로그인 | Legacy', googleSession ? 'ok' : 'warn'),
+        googleVerifyItem('Google 이메일 | Google Email', sessionEmail || '확인되지 않음 | Not available', googleSession && sessionEmail.endsWith('@his.sc.kr') ? 'ok' : 'warn'),
+        googleVerifyItem('교사 등록 일치 | Teacher Match', emailMatch ? '일치 | Matched' : '미확인 | Not verified', emailMatch ? 'ok' : 'warn'),
+        googleVerifyItem('계정 상태 | Account Status', active ? '사용 | Active' : (matched ? '사용 중지 | Inactive' : '미확인 | Unknown'), active ? 'ok' : (matched ? 'err' : 'warn')),
+        googleVerifyItem('로그인 필드 | Login Fields', providerReady ? 'Google 준비 완료' : (matched ? '보완 필요 | Needs setup' : '미확인 | Unknown'), providerReady ? 'ok' : 'warn'),
+        googleVerifyItem('이메일 인증 | Email Verified', session.authEmailVerified === true ? '확인됨 | Verified' : (googleSession ? '확인되지 않음' : 'Google 로그인 후 확인'), session.authEmailVerified === true ? 'ok' : 'warn'),
+        googleVerifyItem('적용 권한 | Applied Roles', roles.length ? roles.join(', ') : '권한 없음 | No roles', roles.length ? 'ok' : 'err'),
+        googleVerifyItem('전체 준비 현황 | Readiness', `${prepared} / ${registered}명`, prepared === registered && registered > 0 ? 'ok' : 'warn')
+      ].join('');
+
+      if (googleSession) {
+        note.textContent = emailMatch && active
+          ? '현재 Google 계정이 교사 명단과 연결되었고 기존 roles 권한이 적용되었습니다. Firebase Rules는 아직 기존 상태이므로 서버 권한 강화는 다음 단계에서 진행합니다.'
+          : '현재 Google 로그인 정보와 교사 명단 연결을 확인해 주세요. 교사 이메일, active 상태, loginProvider 값을 점검해야 합니다.';
+      } else {
+        note.textContent = '현재는 기존 로그인 또는 관리자 비밀번호 세션입니다. Google 로그인 검증은 로그인 화면에서 학교 Google 계정으로 다시 로그인한 뒤 확인할 수 있습니다. 기존 로그인은 계속 유지됩니다.';
+      }
+    }
+
     function updateAdminIdentity() {
       const el = document.getElementById('admin-center-identity');
       if (!el) return;
@@ -1089,6 +1154,7 @@
         });
 
         renderTeachers();
+        renderGoogleLoginVerification();
         renderStudents();
         takeTeacherSnapshot();
         takeStudentSnapshot();
