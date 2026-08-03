@@ -321,6 +321,7 @@
               <div id="teacher-page-summary" class="teacher-account-sub">교사 0명 · 수정 대기 0건</div>
             </div>
             <div class="teacher-account-actions">
+              <button class="btn btn-secondary" onclick="prepareGoogleLoginFieldsForAllTeachers()">Google 로그인 필드 보완 | Prepare Google Login</button>
               <button class="btn btn-secondary" onclick="addTeacherRow()">교사 추가 | Add</button>
               <button id="btn-save-teachers" class="btn btn-primary" onclick="saveTeachers()" disabled style="opacity:.4;cursor:not-allowed;">저장할 내용 없음 | No Changes</button>
             </div>
@@ -540,7 +541,8 @@
     function teacherRowSig(r) {
       return [String(r.name||'').trim(), String(r.email||'').trim().toLowerCase(),
               String(r.password||'').trim(), String(r.homeroom||'').trim(),
-              [...normalizeRoles(r.roles)].sort().join(','), !!r._delete].join('|');
+              [...normalizeRoles(r.roles)].sort().join(','), r.active !== false,
+              String(r.loginProvider||'').trim(), !!r._delete].join('|');
     }
     function studentRowSig(r) {
       return [String(r.name||'').trim(), String(r.englishName||'').trim(),
@@ -1068,6 +1070,7 @@
         teacherRows = Object.entries(teachersRaw).map(([k, v]) => ({
           oldKey: k, name: v.name || '', email: v.email || '', password: v.password || '',
           homeroom: v.homeroom || '', roles: normalizeRoles(v.roles || v.role || []),
+          active: v.active !== false, loginProvider: v.loginProvider || '',
           _delete: false, _status: '기존'
         }));
 
@@ -1206,6 +1209,8 @@
           <div><label class="label">담당학반 | Homeroom</label><input class="edit-input" ${disabledAttr} value="${esc(r.homeroom||'')}" oninput="teacherRows[${selectedTeacherIndex}].homeroom=this.value;checkTeacherDirty()" onblur="renderTeachers();renderStudents()"></div>
           <div style="grid-column:1/-1"><label class="label">이메일 | Email</label><input class="edit-input" ${disabledAttr} value="${esc(r.email||'')}" oninput="teacherRows[${selectedTeacherIndex}].email=this.value;checkTeacherDirty()" onblur="renderTeachers()"></div>
           <div style="grid-column:1/-1"><label class="label">비밀번호 | Password</label><input class="edit-input" ${disabledAttr} value="${esc(r.password||'')}" oninput="teacherRows[${selectedTeacherIndex}].password=this.value;checkTeacherDirty()"></div>
+          <div><label class="label">계정 상태 | Account Status</label><select class="edit-input" ${disabledAttr} onchange="teacherRows[${selectedTeacherIndex}].active=this.value==='active';checkTeacherDirty();renderTeacherDetail()"><option value="active" ${r.active!==false?'selected':''}>사용 | Active</option><option value="inactive" ${r.active===false?'selected':''}>사용 중지 | Inactive</option></select></div>
+          <div><label class="label">로그인 방식 | Login Provider</label><select class="edit-input" ${disabledAttr} onchange="teacherRows[${selectedTeacherIndex}].loginProvider=this.value;checkTeacherDirty()"><option value="google" ${r.loginProvider==='google'?'selected':''}>학교 Google 계정 | Google</option><option value="legacy" ${r.loginProvider==='legacy'?'selected':''}>기존 로그인 | Legacy</option><option value="" ${!r.loginProvider?'selected':''}>미지정 | Not set</option></select></div>
         </div></div>
         <div class="admin-form-section"><div class="admin-form-title">기본 업무 | Basic</div><div class="teacher-permission-grid">
           ${roleCheck('default','기본권한 | Default')}
@@ -1331,10 +1336,36 @@
 
     function addTeacherRow() {
       if (!isCurrentMaster()) return toast('교사 계정 관리 권한이 없습니다.', 'err');
-      teacherRows.unshift({ oldKey:'', name:'', email:'', password:'', homeroom:'', roles:[], _delete:false, _status:'신규' });
+      teacherRows.unshift({ oldKey:'', name:'', email:'', password:'', homeroom:'', roles:[], active:true, loginProvider:'google', _delete:false, _status:'신규' });
       selectedTeacherIndex=0;
       renderTeachers();
       checkTeacherDirty();
+    }
+
+    function prepareGoogleLoginFieldsForAllTeachers() {
+      if (!isCurrentMaster()) return toast('교사 계정 관리 권한이 없습니다.', 'err');
+      let changed = 0;
+      teacherRows.forEach(row => {
+        if (!row || row._delete) return;
+        let rowChanged = false;
+        if (row.active !== true) {
+          row.active = true;
+          rowChanged = true;
+        }
+        if (String(row.loginProvider || '').trim() !== 'google') {
+          row.loginProvider = 'google';
+          rowChanged = true;
+        }
+        if (rowChanged) changed += 1;
+      });
+      checkTeacherDirty();
+      renderTeachers();
+      renderTeacherDetail();
+      if (changed) {
+        toast(`${changed}명의 교사에 Google 로그인 필드를 저장 대기 상태로 준비했습니다.\nPrepared Google login fields for ${changed} teachers.`, 'ok');
+      } else {
+        toast('모든 교사에 Google 로그인 필드가 이미 설정되어 있습니다.\nGoogle login fields are already set for all teachers.', 'ok');
+      }
     }
 
     function addStudentRow() {
@@ -1369,12 +1400,18 @@
             return;
           }
 
+          const existing = (r.oldKey && teachersRaw[r.oldKey] && typeof teachersRaw[r.oldKey] === 'object')
+            ? teachersRaw[r.oldKey]
+            : {};
           const data = {
+            ...existing,
             name: String(r.name || '').trim(),
             email: String(r.email || '').trim().toLowerCase(),
             password: String(r.password || '').trim(),
             homeroom: String(r.homeroom || '').trim(),
             roles: normalizeRoles(r.roles),
+            active: r.active !== false,
+            loginProvider: String(r.loginProvider || 'google').trim() || 'google',
             updatedAt: new Date().toISOString()
           };
 
@@ -1523,6 +1560,8 @@
           password: String(r.password || '').trim(),
           homeroom: String(r.homeroom || '').trim(),
           roles: normalizeRoles(r.roles || ''),
+          active: true,
+          loginProvider: 'google',
           _delete: false,
           _status: '업로드됨'
         }));
@@ -1606,7 +1645,7 @@
       const COLS = ['name','email','password','homeroom','roles'];
       const loaded = dataRows.map(cols => { const o={}; COLS.forEach((k,i) => { o[k]=cols[i]||''; }); return o; }).filter(r => r.name);
       if (!loaded.length) { msg.textContent = '유효한 데이터가 없습니다.'; return; }
-      teacherRows = loaded.map(r => ({ oldKey:'', name:r.name, email:String(r.email||'').toLowerCase(), password:r.password, homeroom:r.homeroom, roles:normalizeRoles(r.roles), _delete:false, _status:'업로드됨' }));
+      teacherRows = loaded.map(r => ({ oldKey:'', name:r.name, email:String(r.email||'').toLowerCase(), password:r.password, homeroom:r.homeroom, roles:normalizeRoles(r.roles), active:true, loginProvider:'google', _delete:false, _status:'업로드됨' }));
       msg.textContent = `✅ ${teacherRows.length}명 불러옴`;
       toast('붙여넣기 완료', 'ok');
       switchToTab('teachers'); renderTeachers(); renderStudents(); checkTeacherDirty();
