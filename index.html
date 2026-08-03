@@ -628,6 +628,43 @@
       );
     }
 
+    async function syncGoogleAuthLink(teacherKeyValue, teacher, roles, user) {
+      if (!user || !user.uid || !teacherKeyValue) return { teacherUpdated: false, indexUpdated: false };
+
+      const authEmail = String(user.email || '').trim().toLowerCase();
+      const linkedAt = new Date().toISOString();
+      let teacherUpdated = false;
+      let indexUpdated = false;
+
+      try {
+        await db.ref(`teachers/${teacherKeyValue}`).update({
+          active: teacher.active !== false,
+          loginProvider: 'google',
+          authUid: user.uid,
+          authEmail,
+          authEmailVerified: !!user.emailVerified,
+          lastGoogleLoginAt: linkedAt
+        });
+        teacherUpdated = true;
+      } catch (teacherLinkError) {
+        console.error('Teacher Google auth link update failed:', teacherLinkError);
+      }
+
+      try {
+        await db.ref(`teacherAuthIndex/${user.uid}`).set({
+          teacherKey: teacherKeyValue,
+          email: authEmail,
+          linkedAt,
+          updatedAt: linkedAt
+        });
+        indexUpdated = true;
+      } catch (indexLinkError) {
+        console.warn('teacherAuthIndex is not writable yet. Apply the transition rules before the next verification step.', indexLinkError);
+      }
+
+      return { teacherUpdated, indexUpdated };
+    }
+
     async function restoreAnonymousAuth() {
       try {
         if (firebaseAuth && !firebaseAuth.currentUser) {
@@ -672,7 +709,17 @@
         }
 
         const roles = normalizeRoles(matched.teacher.roles || matched.teacher.role || []);
-        saveTeacherSession(matched.key, matched.teacher, roles, 'google', user);
+        const linkResult = await syncGoogleAuthLink(matched.key, matched.teacher, roles, user);
+        const linkedTeacher = {
+          ...matched.teacher,
+          active: matched.teacher.active !== false,
+          loginProvider: 'google',
+          authUid: user.uid,
+          authEmail: email,
+          authEmailVerified: emailVerified
+        };
+        saveTeacherSession(matched.key, linkedTeacher, roles, 'google', user);
+        sessionStorage.setItem('his_google_auth_link', JSON.stringify(linkResult));
         location.href = 'teacher.html';
       } catch (e) {
         console.error('Google login failed:', e);

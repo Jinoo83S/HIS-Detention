@@ -846,7 +846,7 @@
       return `<div class="google-verify-item"><div class="google-verify-label">${safeLabel}</div><div class="google-verify-value ${cls}">${safeValue}</div></div>`;
     }
 
-    function renderGoogleLoginVerification() {
+    async function renderGoogleLoginVerification() {
       const box = document.getElementById('google-login-verification');
       const note = document.getElementById('google-login-verification-note');
       if (!box || !note) return;
@@ -865,6 +865,30 @@
       const roles = normalizeRoles(session.roles ?? session.role ?? []);
       const registered = teacherRows.filter(row => !row._delete).length;
       const prepared = teacherRows.filter(row => !row._delete && row.active !== false && String(row.loginProvider || '').trim() === 'google').length;
+      const linked = teacherRows.filter(row => !row._delete && String(row.authUid || '').trim()).length;
+      const sessionUid = String(session.authUid || '').trim();
+      let authIndexState = '미확인 | Not checked';
+      let authIndexClass = 'warn';
+
+      if (googleSession && sessionUid) {
+        try {
+          const indexSnap = await db.ref(`teacherAuthIndex/${sessionUid}`).once('value');
+          const indexData = indexSnap.val() || null;
+          if (indexData && String(indexData.teacherKey || '') === String(session.key || matched?.oldKey || matched?.keyCandidate || '')) {
+            authIndexState = '연결됨 | Linked';
+            authIndexClass = 'ok';
+          } else if (indexData) {
+            authIndexState = '교사 키 불일치 | Teacher key mismatch';
+            authIndexClass = 'err';
+          } else {
+            authIndexState = '인덱스 없음 | Not linked';
+          }
+        } catch (indexError) {
+          authIndexState = indexError && String(indexError.code || '').toUpperCase().includes('PERMISSION_DENIED')
+            ? 'Rules 적용 전 | Transition rules required'
+            : '확인 실패 | Check failed';
+        }
+      }
 
       box.innerHTML = [
         googleVerifyItem('현재 로그인 | Current Login', googleSession ? 'Google' : '기존 로그인 | Legacy', googleSession ? 'ok' : 'warn'),
@@ -874,7 +898,9 @@
         googleVerifyItem('로그인 필드 | Login Fields', providerReady ? 'Google 준비 완료' : (matched ? '보완 필요 | Needs setup' : '미확인 | Unknown'), providerReady ? 'ok' : 'warn'),
         googleVerifyItem('이메일 인증 | Email Verified', session.authEmailVerified === true ? '확인됨 | Verified' : (googleSession ? '확인되지 않음' : 'Google 로그인 후 확인'), session.authEmailVerified === true ? 'ok' : 'warn'),
         googleVerifyItem('적용 권한 | Applied Roles', roles.length ? roles.join(', ') : '권한 없음 | No roles', roles.length ? 'ok' : 'err'),
-        googleVerifyItem('전체 준비 현황 | Readiness', `${prepared} / ${registered}명`, prepared === registered && registered > 0 ? 'ok' : 'warn')
+        googleVerifyItem('UID 연결 | UID Link', matched && String(matched.authUid || '') === sessionUid && sessionUid ? '교사 정보 연결됨 | Teacher linked' : (googleSession ? '연결 필요 | Link required' : 'Google 로그인 후 확인'), matched && String(matched.authUid || '') === sessionUid && sessionUid ? 'ok' : 'warn'),
+        googleVerifyItem('인증 인덱스 | Auth Index', authIndexState, authIndexClass),
+        googleVerifyItem('전체 준비 현황 | Readiness', `${prepared} / ${registered}명 · UID 연결 ${linked}명`, prepared === registered && linked > 0 && registered > 0 ? 'ok' : 'warn')
       ].join('');
 
       if (googleSession) {
@@ -1145,6 +1171,7 @@
           oldKey: k, name: v.name || '', email: v.email || '', password: v.password || '',
           homeroom: v.homeroom || '', roles: normalizeRoles(v.roles || v.role || []),
           active: v.active !== false, loginProvider: v.loginProvider || '',
+          authUid: v.authUid || '', authEmail: v.authEmail || '',
           _delete: false, _status: '기존'
         }));
 
