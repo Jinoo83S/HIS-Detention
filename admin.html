@@ -869,6 +869,8 @@
       const sessionUid = String(session.authUid || '').trim();
       let authIndexState = '미확인 | Not checked';
       let authIndexClass = 'warn';
+      let auditAccessState = googleSession ? '권한 인덱스 갱신 필요 | Re-login required' : 'Google 로그인 후 확인';
+      let auditAccessClass = 'warn';
 
       if (googleSession && sessionUid) {
         try {
@@ -877,6 +879,9 @@
           if (indexData && String(indexData.teacherKey || '') === String(session.key || matched?.oldKey || matched?.keyCandidate || '')) {
             authIndexState = '연결됨 | Linked';
             authIndexClass = 'ok';
+            const auditManager = indexData.isAuditManager === true || indexData.isAdmin === true || indexData.isMaster === true;
+            auditAccessState = auditManager ? '관리자·마스터 읽기/작성 가능 | Audit access ready' : '작성만 가능 | Write only';
+            auditAccessClass = auditManager ? 'ok' : 'warn';
           } else if (indexData) {
             authIndexState = '교사 키 불일치 | Teacher key mismatch';
             authIndexClass = 'err';
@@ -900,6 +905,7 @@
         googleVerifyItem('적용 권한 | Applied Roles', roles.length ? roles.join(', ') : '권한 없음 | No roles', roles.length ? 'ok' : 'err'),
         googleVerifyItem('UID 연결 | UID Link', matched && String(matched.authUid || '') === sessionUid && sessionUid ? '교사 정보 연결됨 | Teacher linked' : (googleSession ? '연결 필요 | Link required' : 'Google 로그인 후 확인'), matched && String(matched.authUid || '') === sessionUid && sessionUid ? 'ok' : 'warn'),
         googleVerifyItem('인증 인덱스 | Auth Index', authIndexState, authIndexClass),
+        googleVerifyItem('감사 로그 권한 | Audit Logs', auditAccessState, auditAccessClass),
         googleVerifyItem('전체 준비 현황 | Readiness', `${prepared} / ${registered}명 · UID 연결 ${linked}명`, prepared === registered && linked > 0 && registered > 0 ? 'ok' : 'warn')
       ].join('');
 

@@ -636,6 +636,11 @@
       let teacherUpdated = false;
       let indexUpdated = false;
 
+      const normalizedRoles = normalizeRoles(roles || []);
+      const isAdmin = normalizedRoles.includes('admin');
+      const isMaster = normalizedRoles.includes('master');
+      const isAuditManager = isAdmin || isMaster;
+
       try {
         await db.ref(`teachers/${teacherKeyValue}`).update({
           active: teacher.active !== false,
@@ -643,6 +648,11 @@
           authUid: user.uid,
           authEmail,
           authEmailVerified: !!user.emailVerified,
+          roleFlags: {
+            admin: isAdmin,
+            master: isMaster,
+            auditManager: isAuditManager
+          },
           lastGoogleLoginAt: linkedAt
         });
         teacherUpdated = true;
@@ -654,6 +664,10 @@
         await db.ref(`teacherAuthIndex/${user.uid}`).set({
           teacherKey: teacherKeyValue,
           email: authEmail,
+          active: teacher.active !== false,
+          isAdmin,
+          isMaster,
+          isAuditManager,
           linkedAt,
           updatedAt: linkedAt
         });
