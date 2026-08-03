@@ -81,6 +81,21 @@
     .google-verify-note{padding:0 10px 10px;font-size:10px;color:#66758f;line-height:1.45}
     @media(max-width:900px){.google-verify-body{grid-template-columns:repeat(2,minmax(0,1fr))}}
     @media(max-width:520px){.google-verify-body{grid-template-columns:1fr}}
+    .google-readiness-panel{margin:10px 0 0;border:1px solid #d8e0ec;border-radius:10px;background:#fff;overflow:hidden}
+    .google-readiness-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 11px;background:#f5f7fb;border-bottom:1px solid #e0e6ef}
+    .google-readiness-title{font-size:12px;font-weight:900;color:#17366f}.google-readiness-title span{font-size:10px;color:#5c6f91;margin-left:4px}
+    .google-readiness-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;padding:10px}
+    .google-readiness-card{padding:8px 9px;border:1px solid #dde5f1;border-radius:8px;background:#fbfcfe}
+    .google-readiness-card-label{font-size:9px;font-weight:800;color:#70809d}.google-readiness-card-value{margin-top:3px;font-size:15px;font-weight:900;color:#263a60}
+    .google-readiness-card-value.ok{color:#137333}.google-readiness-card-value.warn{color:#9a6700}.google-readiness-card-value.err{color:#b42318}
+    .google-readiness-list{max-height:220px;overflow:auto;border-top:1px solid #e5eaf2}
+    .google-readiness-table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:10px}
+    .google-readiness-table th,.google-readiness-table td{padding:7px 8px;border-bottom:1px solid #edf0f5;text-align:left;vertical-align:top;overflow-wrap:anywhere}
+    .google-readiness-table th{position:sticky;top:0;background:#f8faff;color:#52627e;font-size:9px;z-index:1}
+    .google-readiness-empty{padding:10px 11px;color:#137333;font-size:10px;font-weight:800}
+    .google-readiness-note{padding:8px 10px;color:#66758f;background:#fbfcfe;font-size:9px;line-height:1.45}
+    @media(max-width:900px){.google-readiness-summary{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media(max-width:520px){.google-readiness-summary{grid-template-columns:1fr}.google-readiness-table th:nth-child(2),.google-readiness-table td:nth-child(2){display:none}}
 
     /* 학생 명단 화면: 기존 편집 구조를 유지한 최소 가독성 개선 */
     .student-account-head{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 15px;border-radius:11px 11px 0 0;background:#142b70;color:#fff}
@@ -344,6 +359,15 @@
               </div>
               <div id="google-login-verification" class="google-verify-body"></div>
               <div id="google-login-verification-note" class="google-verify-note"></div>
+            </div>
+            <div class="google-readiness-panel">
+              <div class="google-readiness-head">
+                <div class="google-readiness-title">Google 로그인 사전 점검 <span>Google Sign-in Readiness</span></div>
+                <button type="button" class="btn btn-secondary" onclick="renderGoogleEmailReadinessAudit()">다시 점검 | Recheck</button>
+              </div>
+              <div id="google-email-readiness-summary" class="google-readiness-summary"></div>
+              <div id="google-email-readiness-list" class="google-readiness-list"></div>
+              <div class="google-readiness-note">실제 로그인 전에도 등록 이메일, 사용 상태, 로그인 방식, Firebase 교사 키를 점검합니다. UID 연결 여부는 로그인 허용 조건에 포함하지 않습니다.</div>
             </div>
             <div class="teacher-filter-row">
               <input id="teacher-search" class="edit-input" placeholder="교사명, 이메일, 학반, 권한 검색 | Search teachers">
@@ -890,6 +914,73 @@
       } else {
         note.textContent = '현재는 기존 로그인입니다. 기존 로그인은 전환 기간 동안 유지되며, Google 로그인은 관리자·마스터가 등록한 교사 이메일을 기준으로 허용됩니다.';
       }
+      renderGoogleEmailReadinessAudit();
+    }
+
+    function renderGoogleEmailReadinessAudit() {
+      const summary = document.getElementById('google-email-readiness-summary');
+      const list = document.getElementById('google-email-readiness-list');
+      if (!summary || !list) return;
+
+      const rows = teacherRows.filter(row => row && !row._delete);
+      const emailCounts = new Map();
+      rows.forEach(row => {
+        const email = String(row.email || '').trim().toLowerCase();
+        if (email) emailCounts.set(email, (emailCounts.get(email) || 0) + 1);
+      });
+
+      let ready = 0;
+      let inactive = 0;
+      let excluded = 0;
+      const issues = [];
+
+      rows.forEach(row => {
+        const name = String(row.name || '').trim() || '(이름 없음)';
+        const email = String(row.email || '').trim().toLowerCase();
+        const isSchoolEmail = /^[^\s@]+@his\.sc\.kr$/.test(email);
+        const isLegacyAdmin = email === 'admin' || (!email.includes('@') && normalizeRoles(row.roles).includes('admin'));
+        const isActive = row.active !== false;
+        const providerReady = String(row.loginProvider || '').trim() === 'google';
+        const expectedKey = teacherKey(email, name);
+        const currentKey = String(row.oldKey || '').trim();
+        const keyReady = !currentKey || currentKey === expectedKey;
+        const duplicate = !!email && (emailCounts.get(email) || 0) > 1;
+        const roles = normalizeRoles(row.roles);
+        const rowIssues = [];
+
+        if (isLegacyAdmin) {
+          excluded += 1;
+          return;
+        }
+        if (!isSchoolEmail) rowIssues.push(email ? '학교 이메일 아님' : '이메일 없음');
+        if (!isActive) {
+          inactive += 1;
+          rowIssues.push('사용 중지');
+        }
+        if (isSchoolEmail && !providerReady) rowIssues.push('로그인 방식 미설정');
+        if (isSchoolEmail && !keyReady) rowIssues.push('Firebase 교사 키 불일치');
+        if (duplicate) rowIssues.push('중복 이메일');
+        if (!roles.length) rowIssues.push('권한 없음');
+
+        if (isSchoolEmail && isActive && providerReady && keyReady && !duplicate && roles.length) ready += 1;
+        if (rowIssues.length) issues.push({ name, email: email || '-', issues: rowIssues.join(', ') });
+      });
+
+      const schoolTargets = rows.filter(row => /^[^\s@]+@his\.sc\.kr$/.test(String(row.email || '').trim().toLowerCase())).length;
+      const problemCount = issues.length;
+      summary.innerHTML = [
+        `<div class="google-readiness-card"><div class="google-readiness-card-label">Google 로그인 가능 | Ready</div><div class="google-readiness-card-value ${ready === schoolTargets && schoolTargets > 0 ? 'ok' : 'warn'}">${ready} / ${schoolTargets}</div></div>`,
+        `<div class="google-readiness-card"><div class="google-readiness-card-label">점검 필요 | Needs Review</div><div class="google-readiness-card-value ${problemCount ? 'err' : 'ok'}">${problemCount}</div></div>`,
+        `<div class="google-readiness-card"><div class="google-readiness-card-label">사용 중지 | Inactive</div><div class="google-readiness-card-value ${inactive ? 'warn' : 'ok'}">${inactive}</div></div>`,
+        `<div class="google-readiness-card"><div class="google-readiness-card-label">Google 대상 제외 | Excluded</div><div class="google-readiness-card-value">${excluded}</div></div>`
+      ].join('');
+
+      if (!issues.length) {
+        list.innerHTML = '<div class="google-readiness-empty">등록된 학교 Google 계정의 사전 점검 항목이 모두 정상입니다. | All registered HIS Google accounts are ready.</div>';
+        return;
+      }
+
+      list.innerHTML = `<table class="google-readiness-table"><thead><tr><th style="width:22%">교사 | Teacher</th><th style="width:35%">이메일 | Email</th><th style="width:43%">점검 항목 | Review</th></tr></thead><tbody>${issues.map(item => `<tr><td>${googleVerifyEscapeHtml(item.name)}</td><td>${googleVerifyEscapeHtml(item.email)}</td><td>${googleVerifyEscapeHtml(item.issues)}</td></tr>`).join('')}</tbody></table>`;
     }
 
     function updateAdminIdentity() {
@@ -1237,6 +1328,7 @@
       const deleted=teacherRows.filter(r=>r._delete).length;
       document.getElementById('teacher-list-summary').innerHTML=`<span class="admin-count-pill">전체 ${teacherRows.length}</span><span class="admin-count-pill">표시 ${visible.length}</span>${deleted?`<span class="admin-count-pill" style="background:#fee2e2;color:#b91c1c">삭제 표시 ${deleted}</span>`:''}`;
       updateTeacherPageSummary();
+      renderGoogleEmailReadinessAudit();
       if(!visible.length){tb.innerHTML='<tr><td colspan="3" class="empty">조건에 맞는 교사 데이터가 없습니다.<br><span class="admin-secondary">No teachers match the current filters.</span></td></tr>';renderTeacherDetail();return;}
       if(selectedTeacherIndex<0 || !teacherRows[selectedTeacherIndex] || teacherRows[selectedTeacherIndex]._delete || !visible.some(item=>item.idx===selectedTeacherIndex)){selectedTeacherIndex=visible[0].idx;}
       tb.innerHTML=visible.map(({r,idx})=>`<tr class="admin-list-row ${idx===selectedTeacherIndex?'selected':''}" onclick="selectTeacher(${idx})">
