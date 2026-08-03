@@ -196,6 +196,68 @@
       font-size:11px;
       vertical-align:-2px;
     }
+
+
+    .login-divider{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      margin:18px 0 14px;
+      color:var(--sb);
+      font-size:11px;
+      font-weight:700;
+    }
+
+    .login-divider::before,
+    .login-divider::after{
+      content:"";
+      flex:1;
+      height:1px;
+      background:#d8deec;
+    }
+
+    .google-login-btn{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+      width:100%;
+      min-height:44px;
+      border:1px solid #c9d2e3;
+      border-radius:9px;
+      background:#fff;
+      color:#26334f;
+      font-size:13px;
+      font-weight:800;
+      cursor:pointer;
+      box-shadow:0 2px 7px rgba(15,31,92,.06);
+    }
+
+    .google-login-btn:hover,
+    .google-login-btn:focus-visible{
+      border-color:#8ea2c8;
+      background:#f8faff;
+    }
+
+    .google-login-btn:disabled{
+      opacity:.65;
+      cursor:wait;
+    }
+
+    .google-mark{
+      width:20px;
+      height:20px;
+      display:block;
+      flex:0 0 auto;
+    }
+
+    .google-login-note{
+      margin:8px 0 0;
+      color:var(--sb);
+      font-size:10px;
+      line-height:1.45;
+      text-align:center;
+    }
   </style>
 </head>
 
@@ -257,6 +319,18 @@
 
         <button class="btn btn-primary" onclick="login()">로그인 | Login</button>
       </div>
+
+      <div class="login-divider">학교 계정 | School Account</div>
+      <button id="google-login-btn" class="google-login-btn" type="button" onclick="loginWithGoogle()">
+        <svg class="google-mark" viewBox="0 0 24 24" aria-hidden="true">
+          <path fill="#4285F4" d="M21.6 12.23c0-.71-.06-1.4-.18-2.06H12v3.9h5.38a4.6 4.6 0 0 1-2 3.02v2.53h3.24c1.9-1.75 2.98-4.33 2.98-7.39Z"/>
+          <path fill="#34A853" d="M12 22c2.7 0 4.98-.9 6.64-2.38l-3.24-2.53c-.9.6-2.05.96-3.4.96-2.61 0-4.82-1.76-5.61-4.13H3.04v2.61A10 10 0 0 0 12 22Z"/>
+          <path fill="#FBBC05" d="M6.39 13.92A6 6 0 0 1 6.08 12c0-.67.11-1.32.31-1.92V7.47H3.04A10 10 0 0 0 2 12c0 1.61.38 3.14 1.04 4.53l3.35-2.61Z"/>
+          <path fill="#EA4335" d="M12 5.95c1.47 0 2.79.51 3.83 1.5l2.88-2.88A9.65 9.65 0 0 0 12 2a10 10 0 0 0-8.96 5.47l3.35 2.61C7.18 7.71 9.39 5.95 12 5.95Z"/>
+        </svg>
+        <span>학교 Google 계정으로 로그인 | Sign in with HIS Google</span>
+      </button>
+      <p class="google-login-note">관리자센터에 등록된 @his.sc.kr 교사 계정만 사용할 수 있습니다.<br>Only registered HIS teacher accounts are allowed.</p>
     </div>
   </div>
 
@@ -520,6 +594,93 @@
       return [];
     }
 
+
+
+    function findTeacherByEmail(email) {
+      const target = String(email || '').trim().toLowerCase();
+      if (!target) return null;
+
+      for (const [key, value] of Object.entries(teachers || {})) {
+        const teacher = value || {};
+        if (String(teacher.email || '').trim().toLowerCase() === target) {
+          return { key, teacher };
+        }
+      }
+      return null;
+    }
+
+    function saveTeacherSession(key, teacher, roles, authProvider) {
+      sessionStorage.setItem(
+        'his_teacher',
+        JSON.stringify({
+          key,
+          name: teacher.name || '',
+          email: teacher.email || '',
+          roles: roles,
+          homeroom: teacher.homeroom || '',
+          authProvider: authProvider || 'legacy'
+        })
+      );
+    }
+
+    async function restoreAnonymousAuth() {
+      try {
+        if (firebaseAuth && !firebaseAuth.currentUser) {
+          await firebaseAuth.signInAnonymously();
+        }
+      } catch (restoreError) {
+        console.error('Firebase anonymous auth restore failed:', restoreError);
+      }
+    }
+
+    async function loginWithGoogle() {
+      const button = document.getElementById('google-login-btn');
+      if (button) button.disabled = true;
+
+      try {
+        if (!firebaseAuth) {
+          throw new Error('Firebase Auth SDK is not available.');
+        }
+
+        const provider = new firebase.auth.GoogleAuthProvider();
+        provider.setCustomParameters({
+          hd: 'his.sc.kr',
+          prompt: 'select_account'
+        });
+
+        const result = await firebaseAuth.signInWithPopup(provider);
+        const user = result && result.user ? result.user : firebaseAuth.currentUser;
+        const email = String(user && user.email || '').trim().toLowerCase();
+        const emailVerified = !!(user && user.emailVerified);
+
+        if (!email || !email.endsWith('@his.sc.kr') || !emailVerified) {
+          await firebaseAuth.signOut();
+          await restoreAnonymousAuth();
+          return toast('학교에서 승인한 @his.sc.kr Google 계정으로 로그인해 주세요.\nPlease sign in with an approved HIS Google account.', 'err');
+        }
+
+        const matched = findTeacherByEmail(email);
+        if (!matched || matched.teacher.active === false) {
+          await firebaseAuth.signOut();
+          await restoreAnonymousAuth();
+          return toast('관리자센터에 등록되지 않았거나 비활성화된 교사 계정입니다.\nThis teacher account is not registered or is inactive.', 'err');
+        }
+
+        const roles = normalizeRoles(matched.teacher.roles || matched.teacher.role || []);
+        saveTeacherSession(matched.key, matched.teacher, roles, 'google');
+        location.href = 'teacher.html';
+      } catch (e) {
+        console.error('Google login failed:', e);
+        if (e && (e.code === 'auth/popup-closed-by-user' || e.code === 'auth/cancelled-popup-request')) {
+          return;
+        }
+        await restoreAnonymousAuth();
+        toast('Google 로그인 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.\nAn error occurred during Google sign-in.', 'err');
+      } finally {
+        if (button) button.disabled = false;
+      }
+    }
+
     async function login() {
       const selectedEmail = syncTeacherSelection();
       const pw = (document.getElementById('pw').value || '').trim();
@@ -578,16 +739,7 @@
           }
         }
 
-        sessionStorage.setItem(
-          'his_teacher',
-          JSON.stringify({
-            key,
-            name: found.name || '',
-            email: found.email || '',
-            roles: roles,
-            homeroom: found.homeroom || ''
-          })
-        );
+        saveTeacherSession(key, found, roles, 'legacy');
 
         location.href = 'teacher.html';
       } catch (e) {
