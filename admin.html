@@ -830,9 +830,18 @@
       return synthetic;
     }
 
+    function googleVerifyEscapeHtml(value) {
+      return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
     function googleVerifyItem(label, value, state) {
-      const safeLabel = escapeHtml(String(label || ''));
-      const safeValue = escapeHtml(String(value || '-'));
+      const safeLabel = googleVerifyEscapeHtml(String(label || ''));
+      const safeValue = googleVerifyEscapeHtml(String(value || '-'));
       const cls = state === 'ok' ? 'ok' : (state === 'err' ? 'err' : (state === 'warn' ? 'warn' : ''));
       return `<div class="google-verify-item"><div class="google-verify-label">${safeLabel}</div><div class="google-verify-value ${cls}">${safeValue}</div></div>`;
     }
