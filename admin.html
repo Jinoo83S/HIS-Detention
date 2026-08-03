@@ -79,6 +79,14 @@
     .google-verify-label{font-size:9px;font-weight:800;color:#70809d}.google-verify-value{margin-top:3px;font-size:11px;font-weight:900;color:#263a60;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     .google-verify-value.ok{color:#137333}.google-verify-value.warn{color:#9a6700}.google-verify-value.err{color:#b42318}
     .google-verify-note{padding:0 10px 10px;font-size:10px;color:#66758f;line-height:1.45}
+    .google-transition-panel{margin:0 10px 10px;padding:10px;border:1px solid #d7e2f2;border-radius:8px;background:#fff}
+    .google-transition-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:7px}
+    .google-transition-title{font-size:11px;font-weight:900;color:#17366f}.google-transition-title span{font-size:9px;color:#71809b;margin-left:4px}
+    .google-transition-status{font-size:10px;font-weight:900;color:#9a6700}.google-transition-status.ok{color:#137333}
+    .google-transition-list{display:flex;flex-wrap:wrap;gap:5px;max-height:92px;overflow:auto}
+    .google-transition-chip{max-width:100%;padding:4px 7px;border-radius:999px;background:#fff4df;border:1px solid #f1cf91;font-size:9px;font-weight:800;color:#7b5200;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .google-transition-empty{font-size:10px;font-weight:800;color:#137333}
+    .google-transition-legacy{margin-top:7px;font-size:9px;color:#7a879c;line-height:1.4}
     @media(max-width:900px){.google-verify-body{grid-template-columns:repeat(2,minmax(0,1fr))}}
     @media(max-width:520px){.google-verify-body{grid-template-columns:1fr}}
 
@@ -344,6 +352,14 @@
               </div>
               <div id="google-login-verification" class="google-verify-body"></div>
               <div id="google-login-verification-note" class="google-verify-note"></div>
+              <div class="google-transition-panel">
+                <div class="google-transition-head">
+                  <div class="google-transition-title">Google 전환 준비 현황 <span>Migration Readiness</span></div>
+                  <div id="google-transition-status" class="google-transition-status">확인 중 | Checking</div>
+                </div>
+                <div id="google-transition-list" class="google-transition-list"></div>
+                <div id="google-transition-legacy" class="google-transition-legacy"></div>
+              </div>
             </div>
             <div class="teacher-filter-row">
               <input id="teacher-search" class="edit-input" placeholder="교사명, 이메일, 학반, 권한 검색 | Search teachers">
@@ -846,6 +862,47 @@
       return `<div class="google-verify-item"><div class="google-verify-label">${safeLabel}</div><div class="google-verify-value ${cls}">${safeValue}</div></div>`;
     }
 
+    function renderGoogleTransitionReadiness() {
+      const status = document.getElementById('google-transition-status');
+      const list = document.getElementById('google-transition-list');
+      const legacy = document.getElementById('google-transition-legacy');
+      if (!status || !list || !legacy) return;
+
+      const activeRows = teacherRows.filter(row => !row._delete && row.active !== false);
+      const googleTargets = activeRows.filter(row => {
+        const email = String(row.email || '').trim().toLowerCase();
+        return email.endsWith('@his.sc.kr') && String(row.loginProvider || '').trim() === 'google';
+      });
+      const linkedTargets = googleTargets.filter(row => String(row.authUid || '').trim());
+      const unlinkedTargets = googleTargets.filter(row => !String(row.authUid || '').trim());
+      const legacyOnly = activeRows.filter(row => {
+        const email = String(row.email || '').trim().toLowerCase();
+        return !email.endsWith('@his.sc.kr');
+      });
+      const complete = googleTargets.length > 0 && unlinkedTargets.length === 0;
+
+      status.textContent = complete
+        ? `${linkedTargets.length}/${googleTargets.length}명 연결 완료 | Ready`
+        : `${linkedTargets.length}/${googleTargets.length}명 연결 · 미연결 ${unlinkedTargets.length}명`;
+      status.className = `google-transition-status${complete ? ' ok' : ''}`;
+
+      if (unlinkedTargets.length) {
+        list.innerHTML = unlinkedTargets
+          .sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'ko'))
+          .map(row => {
+            const name = googleVerifyEscapeHtml(String(row.name || '이름 없음'));
+            const email = googleVerifyEscapeHtml(String(row.email || ''));
+            return `<span class="google-transition-chip" title="${email}">${name} · ${email}</span>`;
+          }).join('');
+      } else {
+        list.innerHTML = '<div class="google-transition-empty">모든 전환 대상 교사의 Google UID가 연결되었습니다. | All target teachers are linked.</div>';
+      }
+
+      legacy.textContent = legacyOnly.length
+        ? `Google 전환 대상에서 제외된 기존 전용 계정 ${legacyOnly.length}개: ${legacyOnly.map(row => `${row.name || '-'} (${row.email || '-'})`).join(', ')}. 최종 보안 규칙 적용 전 이 계정의 유지 또는 삭제 방침을 결정해야 합니다.`
+        : 'Google 전환 대상에서 제외된 기존 전용 계정이 없습니다.';
+    }
+
     async function renderGoogleLoginVerification() {
       const box = document.getElementById('google-login-verification');
       const note = document.getElementById('google-login-verification-note');
@@ -908,6 +965,7 @@
         googleVerifyItem('감사 로그 권한 | Audit Logs', auditAccessState, auditAccessClass),
         googleVerifyItem('전체 준비 현황 | Readiness', `${prepared} / ${registered}명 · UID 연결 ${linked}명`, prepared === registered && linked > 0 && registered > 0 ? 'ok' : 'warn')
       ].join('');
+      renderGoogleTransitionReadiness();
 
       if (googleSession) {
         note.textContent = emailMatch && active
