@@ -97,6 +97,22 @@
     @media(max-width:900px){.google-readiness-summary{grid-template-columns:repeat(2,minmax(0,1fr))}}
     @media(max-width:520px){.google-readiness-summary{grid-template-columns:1fr}.google-readiness-table th:nth-child(2),.google-readiness-table td:nth-child(2){display:none}}
 
+    .google-login-history-panel{margin:10px 0 0;border:1px solid #d8e0ec;border-radius:10px;background:#fff;overflow:hidden}
+    .google-login-history-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 11px;background:#f5f7fb;border-bottom:1px solid #e0e6ef}
+    .google-login-history-title{font-size:12px;font-weight:900;color:#17366f}.google-login-history-title span{font-size:10px;color:#5c6f91;margin-left:4px}
+    .google-login-history-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:10px}
+    .google-login-history-card{padding:8px 9px;border:1px solid #dde5f1;border-radius:8px;background:#fbfcfe}
+    .google-login-history-card-label{font-size:9px;font-weight:800;color:#70809d}.google-login-history-card-value{margin-top:3px;font-size:15px;font-weight:900;color:#263a60}
+    .google-login-history-card-value.ok{color:#137333}.google-login-history-card-value.warn{color:#9a6700}
+    .google-login-history-list{max-height:240px;overflow:auto;border-top:1px solid #e5eaf2}
+    .google-login-history-table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:10px}
+    .google-login-history-table th,.google-login-history-table td{padding:7px 8px;border-bottom:1px solid #edf0f5;text-align:left;vertical-align:top;overflow-wrap:anywhere}
+    .google-login-history-table th{position:sticky;top:0;background:#f8faff;color:#52627e;font-size:9px;z-index:1}
+    .google-login-history-empty{padding:10px 11px;color:#66758f;font-size:10px}
+    .google-login-history-note{padding:8px 10px;color:#66758f;background:#fbfcfe;font-size:9px;line-height:1.45}
+    @media(max-width:900px){.google-login-history-summary{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media(max-width:520px){.google-login-history-summary{grid-template-columns:1fr}.google-login-history-table th:nth-child(2),.google-login-history-table td:nth-child(2){display:none}}
+
     /* 학생 명단 화면: 기존 편집 구조를 유지한 최소 가독성 개선 */
     .student-account-head{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 15px;border-radius:11px 11px 0 0;background:#142b70;color:#fff}
     .student-account-title{font-size:16px;font-weight:900;line-height:1.25}.student-account-title span{font-size:11px;font-weight:700;color:#dbe5ff;margin-left:4px}
@@ -368,6 +384,15 @@
               <div id="google-email-readiness-summary" class="google-readiness-summary"></div>
               <div id="google-email-readiness-list" class="google-readiness-list"></div>
               <div class="google-readiness-note">실제 로그인 전에도 등록 이메일, 사용 상태, 로그인 방식, Firebase 교사 키를 점검합니다. UID 연결 여부는 로그인 허용 조건에 포함하지 않습니다.</div>
+            </div>
+            <div class="google-login-history-panel">
+              <div class="google-login-history-head">
+                <div class="google-login-history-title">Google 첫 로그인 기록 <span>First Sign-in History</span></div>
+                <button type="button" class="btn btn-secondary" onclick="renderGoogleFirstLoginHistory()">기록 새로고침 | Refresh</button>
+              </div>
+              <div id="google-login-history-summary" class="google-login-history-summary"></div>
+              <div id="google-login-history-list" class="google-login-history-list"></div>
+              <div class="google-login-history-note">교사가 학교 Google 계정으로 처음 로그인하면 인증 이메일, Firebase UID, 마지막 Google 로그인 시간이 표시됩니다. 미로그인 교사는 기존 로그인 사용에 영향을 받지 않습니다.</div>
             </div>
             <div class="teacher-filter-row">
               <input id="teacher-search" class="edit-input" placeholder="교사명, 이메일, 학반, 권한 검색 | Search teachers">
@@ -915,6 +940,7 @@
         note.textContent = '현재는 기존 로그인입니다. 기존 로그인은 전환 기간 동안 유지되며, Google 로그인은 관리자·마스터가 등록한 교사 이메일을 기준으로 허용됩니다.';
       }
       renderGoogleEmailReadinessAudit();
+      renderGoogleFirstLoginHistory();
     }
 
     function renderGoogleEmailReadinessAudit() {
@@ -981,6 +1007,60 @@
       }
 
       list.innerHTML = `<table class="google-readiness-table"><thead><tr><th style="width:22%">교사 | Teacher</th><th style="width:35%">이메일 | Email</th><th style="width:43%">점검 항목 | Review</th></tr></thead><tbody>${issues.map(item => `<tr><td>${googleVerifyEscapeHtml(item.name)}</td><td>${googleVerifyEscapeHtml(item.email)}</td><td>${googleVerifyEscapeHtml(item.issues)}</td></tr>`).join('')}</tbody></table>`;
+    }
+
+    function formatGoogleLoginDate(value) {
+      const raw = String(value || '').trim();
+      if (!raw) return '-';
+      const date = new Date(raw);
+      if (Number.isNaN(date.getTime())) return raw;
+      try {
+        return new Intl.DateTimeFormat('ko-KR', {
+          year: 'numeric', month: '2-digit', day: '2-digit',
+          hour: '2-digit', minute: '2-digit', hour12: false
+        }).format(date);
+      } catch (_) {
+        return raw;
+      }
+    }
+
+    function renderGoogleFirstLoginHistory() {
+      const summary = document.getElementById('google-login-history-summary');
+      const list = document.getElementById('google-login-history-list');
+      if (!summary || !list) return;
+
+      const targets = teacherRows.filter(row => {
+        if (!row || row._delete || row.active === false) return false;
+        const email = String(row.email || '').trim().toLowerCase();
+        return /^[^\s@]+@his\.sc\.kr$/.test(email) && String(row.loginProvider || '').trim() === 'google';
+      });
+      const signedIn = targets.filter(row => String(row.authUid || '').trim() && String(row.authEmail || '').trim());
+      const pending = targets.filter(row => !(String(row.authUid || '').trim() && String(row.authEmail || '').trim()));
+      const verified = signedIn.filter(row => row.authEmailVerified === true);
+
+      summary.innerHTML = [
+        `<div class="google-login-history-card"><div class="google-login-history-card-label">Google 로그인 완료 | Signed In</div><div class="google-login-history-card-value ${signedIn.length ? 'ok' : 'warn'}">${signedIn.length} / ${targets.length}</div></div>`,
+        `<div class="google-login-history-card"><div class="google-login-history-card-label">아직 미로그인 | Pending</div><div class="google-login-history-card-value ${pending.length ? 'warn' : 'ok'}">${pending.length}</div></div>`,
+        `<div class="google-login-history-card"><div class="google-login-history-card-label">이메일 인증 확인 | Verified</div><div class="google-login-history-card-value ${verified.length === signedIn.length && signedIn.length ? 'ok' : 'warn'}">${verified.length} / ${signedIn.length}</div></div>`
+      ].join('');
+
+      if (!signedIn.length) {
+        list.innerHTML = '<div class="google-login-history-empty">아직 Google 첫 로그인 기록이 없습니다. 기존 로그인은 계속 사용할 수 있습니다. | No Google first sign-in records yet.</div>';
+        return;
+      }
+
+      const ordered = signedIn.slice().sort((a, b) => {
+        const at = Date.parse(a.lastGoogleLoginAt || '') || 0;
+        const bt = Date.parse(b.lastGoogleLoginAt || '') || 0;
+        return bt - at || String(a.name || '').localeCompare(String(b.name || ''), 'ko');
+      });
+      list.innerHTML = `<table class="google-login-history-table"><thead><tr><th style="width:18%">교사 | Teacher</th><th style="width:30%">등록 이메일 | Registered Email</th><th style="width:20%">인증 상태 | Verification</th><th style="width:32%">마지막 Google 로그인 | Last Sign-in</th></tr></thead><tbody>${ordered.map(row => {
+        const registeredEmail = String(row.email || '').trim().toLowerCase();
+        const authEmail = String(row.authEmail || '').trim().toLowerCase();
+        const matched = !!registeredEmail && registeredEmail === authEmail;
+        const status = matched && row.authEmailVerified === true ? '일치·인증됨 | Matched & verified' : (matched ? '일치·인증 미확인 | Matched' : '이메일 불일치 | Email mismatch');
+        return `<tr><td>${googleVerifyEscapeHtml(String(row.name || '').trim() || '(이름 없음)')}</td><td>${googleVerifyEscapeHtml(registeredEmail || '-')}</td><td>${googleVerifyEscapeHtml(status)}</td><td>${googleVerifyEscapeHtml(formatGoogleLoginDate(row.lastGoogleLoginAt))}</td></tr>`;
+      }).join('')}</tbody></table>`;
     }
 
     function updateAdminIdentity() {
@@ -1243,6 +1323,7 @@
           homeroom: v.homeroom || '', roles: normalizeRoles(v.roles || v.role || []),
           active: v.active !== false, loginProvider: v.loginProvider || '',
           authUid: v.authUid || '', authEmail: v.authEmail || '',
+          authEmailVerified: v.authEmailVerified === true, lastGoogleLoginAt: v.lastGoogleLoginAt || '',
           _delete: false, _status: '기존'
         }));
 
@@ -1329,6 +1410,7 @@
       document.getElementById('teacher-list-summary').innerHTML=`<span class="admin-count-pill">전체 ${teacherRows.length}</span><span class="admin-count-pill">표시 ${visible.length}</span>${deleted?`<span class="admin-count-pill" style="background:#fee2e2;color:#b91c1c">삭제 표시 ${deleted}</span>`:''}`;
       updateTeacherPageSummary();
       renderGoogleEmailReadinessAudit();
+      renderGoogleFirstLoginHistory();
       if(!visible.length){tb.innerHTML='<tr><td colspan="3" class="empty">조건에 맞는 교사 데이터가 없습니다.<br><span class="admin-secondary">No teachers match the current filters.</span></td></tr>';renderTeacherDetail();return;}
       if(selectedTeacherIndex<0 || !teacherRows[selectedTeacherIndex] || teacherRows[selectedTeacherIndex]._delete || !visible.some(item=>item.idx===selectedTeacherIndex)){selectedTeacherIndex=visible[0].idx;}
       tb.innerHTML=visible.map(({r,idx})=>`<tr class="admin-list-row ${idx===selectedTeacherIndex?'selected':''}" onclick="selectTeacher(${idx})">
